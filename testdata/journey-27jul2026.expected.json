@@ -1,0 +1,60 @@
+{
+ "_comment": "Reference values the Go implementation must reproduce. Measured 2026-07-29 with params below.",
+ "params": {
+  "gapThresholdMinutes": 20,
+  "minGeometryPoints": 4,
+  "joinSlackSeconds": 120
+ },
+ "window": {
+  "startTime": "2026-07-27T19:46:00+05:30",
+  "endTime": "2026-07-28T07:12:00+05:30",
+  "durationHours": 11.4
+ },
+ "join": {
+  "tracePoints": 69,
+  "mergedPointsWithRawSignals": 121
+ },
+ "distanceKm": {
+  "reconstructedChordSum": 672.6,
+  "traceOnlyChordSum": 671.1,
+  "googleActivitySum": 657.1,
+  "disagreementPct": 2.4
+ },
+ "gaps": {
+  "count": 6,
+  "inferredKm": 222.2,
+  "inferredPctOfDistance": 33.0,
+  "worstMinutes": [
+   36,
+   36,
+   36,
+   29,
+   28,
+   28
+  ]
+ },
+ "legs": {
+  "observed": 7,
+  "gap": 6
+ },
+ "stopDetection": {
+  "restHaltStart": "2026-07-27T21:29:00+05:30",
+  "restHaltEnd": "2026-07-27T21:57:00+05:30",
+  "movementKm": 0.2
+ },
+ "knownSourceDefect": {
+  "what": "Google activity leg 2 claims start 16.6792036,78.0243547 at 21:57, but the trace places that coordinate at 22:17. At 21:57 the device was ~15km back at 16.7938,78.1411.",
+  "check": "activity start/end coordinate vs trace position at stated start/end time"
+ },
+ "rawSignalsVerdict": {
+  "positionsInWindow": 120,
+  "bySource": {
+   "WIFI": 62,
+   "CELL": 32,
+   "WIFI_ONLY": 25,
+   "GPS": 1
+  },
+  "gapsFilled": 0,
+  "conclusion": "adds 52 points, fills zero gaps, 1/120 are GPS - excluded from the pipeline"
+ }
+}

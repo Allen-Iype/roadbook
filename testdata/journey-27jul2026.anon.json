@@ -1,0 +1,2640 @@
+{
+ "_comment": "Golden fixture: overnight bus journey, 27-28 Jul 2026. ANONYMISED - every longitude shifted by a constant; latitudes and all timestamps untouched, so every distance, gap duration and leg boundary is identical to the real data. Expected outputs in journey-27jul2026.expected.json",
+ "semanticSegments": [
+  {
+   "startTime": "2026-07-27T13:39:09.000+05:30",
+   "endTime": "2026-07-27T19:08:47.000+05:30",
+   "startTimeTimezoneUtcOffsetMinutes": 330,
+   "endTimeTimezoneUtcOffsetMinutes": 330,
+   "visit": {
+    "hierarchyLevel": 0,
+    "probability": 0.8876625895500183,
+    "topCandidate": {
+     "placeId": "ChIJPZsxeLKTyzsRs7cGB9h1xzY",
+     "semanticType": "INFERRED_HOME",
+     "probability": 0.9163739681243896,
+     "placeLocation": {
+      "latLng": "17.4629745°, 46.8502543°"
+     }
+    }
+   }
+  },
+  {
+   "startTime": "2026-07-27T18:30:00.000+05:30",
+   "endTime": "2026-07-27T20:30:00.000+05:30",
+   "timelinePath": [
+    {
+     "point": "17.4625375°, 46.8500018°",
+     "time": "2026-07-27T19:09:00.000+05:30"
+    },
+    {
+     "point": "17.4556564°, 46.8643874°",
+     "time": "2026-07-27T19:12:00.000+05:30"
+    },
+    {
+     "point": "17.4483284°, 46.8638342°",
+     "time": "2026-07-27T19:18:00.000+05:30"
+    },
+    {
+     "point": "17.4394033°, 46.8639855°",
+     "time": "2026-07-27T19:22:00.000+05:30"
+    },
+    {
+     "point": "17.4400656°, 46.8586839°",
+     "time": "2026-07-27T19:35:00.000+05:30"
+    },
+    {
+     "point": "17.438022°, 46.8640052°",
+     "time": "2026-07-27T19:36:00.000+05:30"
+    },
+    {
+     "point": "17.4400674°, 46.8586905°",
+     "time": "2026-07-27T19:40:00.000+05:30"
+    },
+    {
+     "point": "17.438523°, 46.8644032°",
+     "time": "2026-07-27T19:40:00.000+05:30"
+    },
+    {
+     "point": "17.4387548°, 46.8650012°",
+     "time": "2026-07-27T19:47:00.000+05:30"
+    },
+    {
+     "point": "17.4363095°, 46.8663409°",
+     "time": "2026-07-27T19:48:00.000+05:30"
+    },
+    {
+     "point": "17.4374408°, 46.8613747°",
+     "time": "2026-07-27T19:53:00.000+05:30"
+    },
+    {
+     "point": "17.3953613°, 46.8533714°",
+     "time": "2026-07-27T19:59:00.000+05:30"
+    },
+    {
+     "point": "17.3089665°, 46.8766493°",
+     "time": "2026-07-27T20:07:00.000+05:30"
+    },
+    {
+     "point": "17.2494193°, 46.8747181°",
+     "time": "2026-07-27T20:13:00.000+05:30"
+    },
+    {
+     "point": "17.2474081°, 46.8734367°",
+     "time": "2026-07-27T20:17:00.000+05:30"
+    },
+    {
+     "point": "17.2267681°, 46.8477894°",
+     "time": "2026-07-27T20:24:00.000+05:30"
+    }
+   ]
+  },
+  {
+   "startTime": "2026-07-27T19:08:47.000+05:30",
+   "endTime": "2026-07-27T19:46:35.000+05:30",
+   "startTimeTimezoneUtcOffsetMinutes": 330,
+   "endTimeTimezoneUtcOffsetMinutes": 330,
+   "activity": {
+    "start": {
+     "latLng": "17.4394033°, 46.8639855°"
+    },
+    "end": {
+     "latLng": "17.4387548°, 46.8650012°"
+    },
+    "distanceMeters": 4248.23046875,
+    "probability": 0.6060702204704285,
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE",
+     "probability": 0.4288443922996521
+    },
+    "parking": {
+     "location": {
+      "latLng": "17.4387548°, 46.8650012°"
+     },
+     "startTime": "2026-07-27T19:46:35.000+05:30"
+    }
+   }
+  },
+  {
+   "startTime": "2026-07-27T19:46:35.000+05:30",
+   "endTime": "2026-07-27T21:29:58.000+05:30",
+   "startTimeTimezoneUtcOffsetMinutes": 330,
+   "endTimeTimezoneUtcOffsetMinutes": 330,
+   "activity": {
+    "start": {
+     "latLng": "17.4387548°, 46.8650012°"
+    },
+    "end": {
+     "latLng": "16.7951751°, 46.6405350°"
+    },
+    "distanceMeters": 80619.9375,
+    "probability": 0.996623694896698,
+    "topCandidate": {
+     "type": "IN_BUS",
+     "probability": 0.5241416096687317
+    }
+   }
+  },
+  {
+   "startTime": "2026-07-27T20:30:00.000+05:30",
+   "endTime": "2026-07-27T22:30:00.000+05:30",
+   "timelinePath": [
+    {
+     "point": "17.1883023°, 46.8098895°",
+     "time": "2026-07-27T20:30:00.000+05:30"
+    },
+    {
+     "point": "17.1638422°, 46.7967742°",
+     "time": "2026-07-27T20:36:00.000+05:30"
+    },
+    {
+     "point": "17.1045301°, 46.7556239°",
+     "time": "2026-07-27T20:44:00.000+05:30"
+    },
+    {
+     "point": "17.0578064°, 46.7128789°",
+     "time": "2026-07-27T20:50:00.000+05:30"
+    },
+    {
+     "point": "17.0025238°, 46.6942302°",
+     "time": "2026-07-27T20:56:00.000+05:30"
+    },
+    {
+     "point": "16.954791°, 46.6851208°",
+     "time": "2026-07-27T21:05:00.000+05:30"
+    },
+    {
+     "point": "16.894159°, 46.6722969°",
+     "time": "2026-07-27T21:15:00.000+05:30"
+    },
+    {
+     "point": "16.7951751°, 46.6405350°",
+     "time": "2026-07-27T21:30:00.000+05:30"
+    },
+    {
+     "point": "16.793803°, 46.6410867°",
+     "time": "2026-07-27T21:58:00.000+05:30"
+    },
+    {
+     "point": "16.7713628°, 46.6293306°",
+     "time": "2026-07-27T22:03:00.000+05:30"
+    },
+    {
+     "point": "16.7383256°, 46.5935388°",
+     "time": "2026-07-27T22:09:00.000+05:30"
+    },
+    {
+     "point": "16.6792036°, 46.5243547°",
+     "time": "2026-07-27T22:17:00.000+05:30"
+    },
+    {
+     "point": "16.6243388°, 46.4843930°",
+     "time": "2026-07-27T22:23:00.000+05:30"
+    }
+   ]
+  },
+  {
+   "startTime": "2026-07-27T21:29:58.000+05:30",
+   "endTime": "2026-07-27T21:57:39.000+05:30",
+   "startTimeTimezoneUtcOffsetMinutes": 330,
+   "endTimeTimezoneUtcOffsetMinutes": 330,
+   "visit": {
+    "hierarchyLevel": 0,
+    "probability": 0.9396690130233765,
+    "topCandidate": {
+     "placeId": "ChIJm6JtGk8wyjsRvfLKLsBiSP0",
+     "semanticType": "UNKNOWN",
+     "probability": 0.8374201655387878,
+     "placeLocation": {
+      "latLng": "16.7937739°, 46.6411996°"
+     }
+    }
+   }
+  },
+  {
+   "startTime": "2026-07-27T21:57:39.000+05:30",
+   "endTime": "2026-07-28T07:12:22.000+05:30",
+   "startTimeTimezoneUtcOffsetMinutes": 330,
+   "endTimeTimezoneUtcOffsetMinutes": 330,
+   "activity": {
+    "start": {
+     "latLng": "16.6792036°, 46.5243547°"
+    },
+    "end": {
+     "latLng": "12.3140793°, 45.1584064°"
+    },
+    "distanceMeters": 572237.0,
+    "probability": 0.9965640306472778,
+    "topCandidate": {
+     "type": "IN_BUS",
+     "probability": 0.6172288060188293
+    }
+   }
+  },
+  {
+   "startTime": "2026-07-27T22:30:00.000+05:30",
+   "endTime": "2026-07-28T00:30:00.000+05:30",
+   "timelinePath": [
+    {
+     "point": "16.5682355°, 46.4601234°",
+     "time": "2026-07-27T22:30:00.000+05:30"
+    },
+    {
+     "point": "16.4457851°, 46.4397755°",
+     "time": "2026-07-27T22:40:00.000+05:30"
+    },
+    {
+     "point": "16.2723414°, 46.4554830°",
+     "time": "2026-07-27T23:00:00.000+05:30"
+    },
+    {
+     "point": "16.2178917°, 46.4768986°",
+     "time": "2026-07-27T23:07:00.000+05:30"
+    },
+    {
+     "point": "16.0689312°, 46.4054967°",
+     "time": "2026-07-27T23:26:00.000+05:30"
+    },
+    {
+     "point": "15.8238801°, 46.5215008°",
+     "time": "2026-07-27T23:54:00.000+05:30"
+    },
+    {
+     "point": "15.7835786°, 46.5324843°",
+     "time": "2026-07-28T00:02:00.000+05:30"
+    },
+    {
+     "point": "15.7146789°, 46.4968827°",
+     "time": "2026-07-28T00:10:00.000+05:30"
+    }
+   ]
+  },
+  {
+   "startTime": "2026-07-28T00:30:00.000+05:30",
+   "endTime": "2026-07-28T02:30:00.000+05:30",
+   "timelinePath": [
+    {
+     "point": "15.4293469°, 46.3822564°",
+     "time": "2026-07-28T00:37:00.000+05:30"
+    },
+    {
+     "point": "15.3761197°, 46.3326185°",
+     "time": "2026-07-28T00:44:00.000+05:30"
+    },
+    {
+     "point": "15.2865859°, 46.2736374°",
+     "time": "2026-07-28T00:54:00.000+05:30"
+    },
+    {
+     "point": "15.2088622°, 46.2192755°",
+     "time": "2026-07-28T01:02:00.000+05:30"
+    },
+    {
+     "point": "15.1313033°, 46.1670344°",
+     "time": "2026-07-28T01:08:00.000+05:30"
+    },
+    {
+     "point": "15.0618308°, 46.1302822°",
+     "time": "2026-07-28T01:16:00.000+05:30"
+    },
+    {
+     "point": "14.9434674°, 46.0972224°",
+     "time": "2026-07-28T01:27:00.000+05:30"
+    },
+    {
+     "point": "14.8707313°, 46.0907760°",
+     "time": "2026-07-28T01:34:00.000+05:30"
+    },
+    {
+     "point": "14.750502°, 46.1014165°",
+     "time": "2026-07-28T01:44:00.000+05:30"
+    },
+    {
+     "point": "14.6448256°, 46.0836183°",
+     "time": "2026-07-28T01:54:00.000+05:30"
+    },
+    {
+     "point": "14.5716375°, 46.1194237°",
+     "time": "2026-07-28T02:02:00.000+05:30"
+    },
+    {
+     "point": "14.5029347°, 46.1315968°",
+     "time": "2026-07-28T02:08:00.000+05:30"
+    }
+   ]
+  },
+  {
+   "startTime": "2026-07-28T02:30:00.000+05:30",
+   "endTime": "2026-07-28T04:30:00.000+05:30",
+   "timelinePath": [
+    {
+     "point": "14.1366824°, 46.1036684°",
+     "time": "2026-07-28T02:44:00.000+05:30"
+    },
+    {
+     "point": "14.0430569°, 46.1122625°",
+     "time": "2026-07-28T02:54:00.000+05:30"
+    },
+    {
+     "point": "13.9891065°, 46.1573707°",
+     "time": "2026-07-28T03:02:00.000+05:30"
+    },
+    {
+     "point": "13.7852933°, 46.2933013°",
+     "time": "2026-07-28T03:31:00.000+05:30"
+    },
+    {
+     "point": "13.6849839°, 46.2854362°",
+     "time": "2026-07-28T03:44:00.000+05:30"
+    },
+    {
+     "point": "13.5769574°, 46.2816230°",
+     "time": "2026-07-28T03:54:00.000+05:30"
+    },
+    {
+     "point": "13.4940041°, 46.2541002°",
+     "time": "2026-07-28T04:02:00.000+05:30"
+    },
+    {
+     "point": "13.4411568°, 46.2381107°",
+     "time": "2026-07-28T04:06:00.000+05:30"
+    },
+    {
+     "point": "13.4155255°, 46.2423673°",
+     "time": "2026-07-28T04:08:00.000+05:30"
+    }
+   ]
+  },
+  {
+   "startTime": "2026-07-28T04:30:00.000+05:30",
+   "endTime": "2026-07-28T06:30:00.000+05:30",
+   "timelinePath": [
+    {
+     "point": "13.0951405°, 46.0978207°",
+     "time": "2026-07-28T04:44:00.000+05:30"
+    },
+    {
+     "point": "13.0231464°, 46.0848039°",
+     "time": "2026-07-28T04:54:00.000+05:30"
+    },
+    {
+     "point": "12.9790521°, 46.0853611°",
+     "time": "2026-07-28T05:01:00.000+05:30"
+    },
+    {
+     "point": "12.9767103°, 46.0867077°",
+     "time": "2026-07-28T05:03:00.000+05:30"
+    },
+    {
+     "point": "12.9658132°, 46.0874360°",
+     "time": "2026-07-28T05:07:00.000+05:30"
+    },
+    {
+     "point": "12.9615046°, 46.0627930°",
+     "time": "2026-07-28T05:11:00.000+05:30"
+    },
+    {
+     "point": "12.9291926°, 46.0046188°",
+     "time": "2026-07-28T05:28:00.000+05:30"
+    },
+    {
+     "point": "12.9098666°, 45.9809284°",
+     "time": "2026-07-28T05:34:00.000+05:30"
+    },
+    {
+     "point": "12.8992716°, 45.9653998°",
+     "time": "2026-07-28T05:40:00.000+05:30"
+    },
+    {
+     "point": "12.8593574°, 45.9298906°",
+     "time": "2026-07-28T05:46:00.000+05:30"
+    },
+    {
+     "point": "12.788115°, 45.8742525°",
+     "time": "2026-07-28T05:54:00.000+05:30"
+    },
+    {
+     "point": "12.7489001°, 45.7629650°",
+     "time": "2026-07-28T06:04:00.000+05:30"
+    },
+    {
+     "point": "12.6870324°, 45.7141088°",
+     "time": "2026-07-28T06:10:00.000+05:30"
+    }
+   ]
+  },
+  {
+   "startTime": "2026-07-28T06:30:00.000+05:30",
+   "endTime": "2026-07-28T08:30:00.000+05:30",
+   "timelinePath": [
+    {
+     "point": "12.4909354°, 45.2839640°",
+     "time": "2026-07-28T06:46:00.000+05:30"
+    },
+    {
+     "point": "12.4062701°, 45.1831768°",
+     "time": "2026-07-28T06:57:00.000+05:30"
+    },
+    {
+     "point": "12.346689°, 45.1598610°",
+     "time": "2026-07-28T07:04:00.000+05:30"
+    },
+    {
+     "point": "12.3335561°, 45.1576319°",
+     "time": "2026-07-28T07:06:00.000+05:30"
+    },
+    {
+     "point": "12.3212414°, 45.1606313°",
+     "time": "2026-07-28T07:08:00.000+05:30"
+    },
+    {
+     "point": "12.3140793°, 45.1584064°",
+     "time": "2026-07-28T07:12:00.000+05:30"
+    },
+    {
+     "point": "12.3130013°, 45.1582578°",
+     "time": "2026-07-28T07:42:00.000+05:30"
+    },
+    {
+     "point": "12.3130934°, 45.1602220°",
+     "time": "2026-07-28T07:43:00.000+05:30"
+    },
+    {
+     "point": "12.2389361°, 45.1609438°",
+     "time": "2026-07-28T07:57:00.000+05:30"
+    },
+    {
+     "point": "12.2132112°, 45.1628723°",
+     "time": "2026-07-28T07:59:00.000+05:30"
+    },
+    {
+     "point": "12.2054827°, 45.1666296°",
+     "time": "2026-07-28T08:00:00.000+05:30"
+    },
+    {
+     "point": "12.1933868°, 45.1662448°",
+     "time": "2026-07-28T08:02:00.000+05:30"
+    },
+    {
+     "point": "12.1479336°, 45.1807939°",
+     "time": "2026-07-28T08:08:00.000+05:30"
+    },
+    {
+     "point": "12.1148368°, 45.1739920°",
+     "time": "2026-07-28T08:14:00.000+05:30"
+    },
+    {
+     "point": "12.0557743°, 45.1753806°",
+     "time": "2026-07-28T08:24:00.000+05:30"
+    },
+    {
+     "point": "11.9906061°, 45.1706888°",
+     "time": "2026-07-28T08:29:00.000+05:30"
+    }
+   ]
+  },
+  {
+   "startTime": "2026-07-28T07:12:22.000+05:30",
+   "endTime": "2026-07-28T07:42:13.000+05:30",
+   "startTimeTimezoneUtcOffsetMinutes": 330,
+   "endTimeTimezoneUtcOffsetMinutes": 330,
+   "visit": {
+    "hierarchyLevel": 0,
+    "probability": 0.8688112497329712,
+    "topCandidate": {
+     "placeId": "ChIJVVjBXxNwrzsRfFjfPhlJ35A",
+     "semanticType": "SEARCHED_ADDRESS",
+     "probability": 0.4922073185443878,
+     "placeLocation": {
+      "latLng": "12.3125711°, 45.1585075°"
+     }
+    },
+    "isTimelessVisit": false
+   }
+  },
+  {
+   "startTime": "2026-07-28T07:42:13.000+05:30",
+   "endTime": "2026-07-28T09:11:59.000+05:30",
+   "startTimeTimezoneUtcOffsetMinutes": 330,
+   "endTimeTimezoneUtcOffsetMinutes": 330,
+   "activity": {
+    "start": {
+     "latLng": "12.3130013°, 45.1582578°"
+    },
+    "end": {
+     "latLng": "11.7804762°, 45.1109246°"
+    },
+    "distanceMeters": 66792.2734375,
+    "probability": 0.9936438202857971,
+    "topCandidate": {
+     "type": "IN_BUS",
+     "probability": 0.6845079064369202
+    }
+   }
+  },
+  {
+   "startTime": "2026-07-28T08:30:00.000+05:30",
+   "endTime": "2026-07-28T10:30:00.000+05:30",
+   "timelinePath": [
+    {
+     "point": "11.9276728°, 45.1706239°",
+     "time": "2026-07-28T08:37:00.000+05:30"
+    },
+    {
+     "point": "11.8770067°, 45.1659969°",
+     "time": "2026-07-28T08:44:00.000+05:30"
+    },
+    {
+     "point": "11.8109978°, 45.1872832°",
+     "time": "2026-07-28T08:54:00.000+05:30"
+    },
+    {
+     "point": "11.808479°, 45.1881835°",
+     "time": "2026-07-28T08:58:00.000+05:30"
+    },
+    {
+     "point": "11.8128921°, 45.1663578°",
+     "time": "2026-07-28T09:04:00.000+05:30"
+    },
+    {
+     "point": "11.780081°, 45.1136521°",
+     "time": "2026-07-28T09:10:00.000+05:30"
+    },
+    {
+     "point": "11.7804762°, 45.1109246°",
+     "time": "2026-07-28T09:12:00.000+05:30"
+    },
+    {
+     "point": "11.7803867°, 45.1110117°",
+     "time": "2026-07-28T09:29:00.000+05:30"
+    },
+    {
+     "point": "11.6934048°, 44.8946560°",
+     "time": "2026-07-28T10:12:00.000+05:30"
+    },
+    {
+     "point": "11.6773836°, 44.8753091°",
+     "time": "2026-07-28T10:16:00.000+05:30"
+    },
+    {
+     "point": "11.6770492°, 44.8728110°",
+     "time": "2026-07-28T10:19:00.000+05:30"
+    },
+    {
+     "point": "11.6708284°, 44.8686211°",
+     "time": "2026-07-28T10:21:00.000+05:30"
+    },
+    {
+     "point": "11.6624106°, 44.8251879°",
+     "time": "2026-07-28T10:28:00.000+05:30"
+    }
+   ]
+  }
+ ],
+ "rawSignals": [
+  {
+   "position": {
+    "LatLng": "17.4631153°, 46.8500475°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 529.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:02:57.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4630873°, 46.8500681°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 526.4756469726562,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:15:25.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631421°, 46.8501196°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:17:27.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631271°, 46.8500857°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:26:58.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631157°, 46.8500723°",
+    "accuracyMeters": 14,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:28:59.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631287°, 46.8500627°",
+    "accuracyMeters": 17,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:31:00.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631267°, 46.8500841°",
+    "accuracyMeters": 16,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:33:02.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.463119°, 46.8500569°",
+    "accuracyMeters": 16,
+    "altitudeMeters": 529.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:35:05.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631277°, 46.8500749°",
+    "accuracyMeters": 16,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:37:08.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631389°, 46.8500807°",
+    "accuracyMeters": 16,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:39:09.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631264°, 46.8500732°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:41:10.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631225°, 46.8500791°",
+    "accuracyMeters": 16,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:43:11.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631229°, 46.8500583°",
+    "accuracyMeters": 17,
+    "altitudeMeters": 529.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:45:12.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631238°, 46.8500761°",
+    "accuracyMeters": 17,
+    "altitudeMeters": 529.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:47:13.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631139°, 46.8500713°",
+    "accuracyMeters": 16,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:49:14.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631273°, 46.8500890°",
+    "accuracyMeters": 16,
+    "altitudeMeters": 529.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:51:15.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.463125°, 46.8500592°",
+    "accuracyMeters": 18,
+    "altitudeMeters": 529.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:53:22.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4630984°, 46.8500580°",
+    "accuracyMeters": 18,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:55:49.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631091°, 46.8500760°",
+    "accuracyMeters": 16,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:57:50.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4630867°, 46.8500946°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T18:59:52.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4630943°, 46.8500734°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 529.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:01:55.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4631193°, 46.8500614°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 529.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:03:56.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4630661°, 46.8503165°",
+    "accuracyMeters": 20,
+    "altitudeMeters": 523.6671142578125,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:05:58.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4632132°, 46.8502949°",
+    "accuracyMeters": 16,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:07:24.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4632628°, 46.8503064°",
+    "accuracyMeters": 11,
+    "altitudeMeters": 523.6671142578125,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:07:57.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4625375°, 46.8500018°",
+    "accuracyMeters": 21,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:08:47.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4556564°, 46.8643874°",
+    "accuracyMeters": 26,
+    "altitudeMeters": 531.141357421875,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:11:58.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4534222°, 46.8639725°",
+    "accuracyMeters": 13,
+    "altitudeMeters": 531.141357421875,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:13:58.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4511729°, 46.8637617°",
+    "accuracyMeters": 13,
+    "altitudeMeters": 528.7706298828125,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:15:59.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4483284°, 46.8638342°",
+    "accuracyMeters": 28,
+    "altitudeMeters": 528.7706298828125,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:18:01.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4394033°, 46.8639855°",
+    "accuracyMeters": 21,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:21:54.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4382453°, 46.8645516°",
+    "accuracyMeters": 72,
+    "altitudeMeters": 514.0,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:23:46.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4388351°, 46.8646100°",
+    "accuracyMeters": 44,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:27:08.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.440005°, 46.8641405°",
+    "accuracyMeters": 110,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:28:08.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4388637°, 46.8645128°",
+    "accuracyMeters": 28,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:28:49.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4397876°, 46.8642340°",
+    "accuracyMeters": 122,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:29:50.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.438146°, 46.8638238°",
+    "accuracyMeters": 66,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:31:10.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4388136°, 46.8645377°",
+    "accuracyMeters": 58,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:33:50.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4400656°, 46.8586839°",
+    "accuracyMeters": 104,
+    "altitudeMeters": 517.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:34:50.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.438022°, 46.8640052°",
+    "accuracyMeters": 104,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:35:33.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4393485°, 46.8628845°",
+    "accuracyMeters": 110,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:36:13.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4389627°, 46.8646112°",
+    "accuracyMeters": 54,
+    "altitudeMeters": 515.718505859375,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:37:13.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4387531°, 46.8644666°",
+    "accuracyMeters": 110,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:38:13.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4400674°, 46.8586905°",
+    "accuracyMeters": 64,
+    "altitudeMeters": 515.718505859375,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:39:33.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.438523°, 46.8644032°",
+    "accuracyMeters": 27,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:40:05.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4387321°, 46.8645146°",
+    "accuracyMeters": 54,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:41:00.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4394691°, 46.8628791°",
+    "accuracyMeters": 56,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:41:40.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4388328°, 46.8645985°",
+    "accuracyMeters": 72,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:42:20.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4388328°, 46.8645985°",
+    "accuracyMeters": 72,
+    "altitudeMeters": 538.0999755859375,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:43:00.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4388045°, 46.8647773°",
+    "accuracyMeters": 59,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:44:04.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4387548°, 46.8650012°",
+    "accuracyMeters": 56,
+    "altitudeMeters": 566.2999877929688,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:46:35.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4363095°, 46.8663409°",
+    "accuracyMeters": 60,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:47:34.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4374408°, 46.8613747°",
+    "accuracyMeters": 110,
+    "altitudeMeters": 534.8989868164062,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:52:37.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.423131°, 46.8584500°",
+    "accuracyMeters": 87,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:55:00.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.4166146°, 46.8558615°",
+    "accuracyMeters": 51,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T19:55:40.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.3953613°, 46.8533714°",
+    "accuracyMeters": 104,
+    "altitudeMeters": 544.1659545898438,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T19:59:13.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.3525765°, 46.8584698°",
+    "accuracyMeters": 92,
+    "altitudeMeters": 489.6055603027344,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:03:15.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.3089665°, 46.8766493°",
+    "accuracyMeters": 82,
+    "altitudeMeters": 489.6055603027344,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:07:17.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2573455°, 46.8739217°",
+    "accuracyMeters": 122,
+    "altitudeMeters": 484.8692932128906,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:11:19.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2494193°, 46.8747181°",
+    "accuracyMeters": 47,
+    "altitudeMeters": 486.7078552246094,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:13:20.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2487935°, 46.8745494°",
+    "accuracyMeters": 104,
+    "altitudeMeters": 487.9134826660156,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:14:35.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2484082°, 46.8743418°",
+    "accuracyMeters": 40,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T20:15:19.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2480164°, 46.8738685°",
+    "accuracyMeters": 32,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T20:16:06.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2474081°, 46.8734367°",
+    "accuracyMeters": 39,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T20:16:47.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2476596°, 46.8732762°",
+    "accuracyMeters": 87,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T20:17:46.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2460427°, 46.8730994°",
+    "accuracyMeters": 64,
+    "altitudeMeters": 519.096923828125,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:18:18.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2475147°, 46.8724788°",
+    "accuracyMeters": 40,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T20:19:07.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2465599°, 46.8722841°",
+    "accuracyMeters": 31,
+    "altitudeMeters": 519.096923828125,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:20:19.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2267681°, 46.8477894°",
+    "accuracyMeters": 122,
+    "altitudeMeters": 518.7953491210938,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:24:21.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2139784°, 46.8395932°",
+    "accuracyMeters": 24,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T20:26:05.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.2021183°, 46.8251709°",
+    "accuracyMeters": 110,
+    "altitudeMeters": 522.5596923828125,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:28:02.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.1883023°, 46.8098895°",
+    "accuracyMeters": 52,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T20:30:26.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.1738881°, 46.8001495°",
+    "accuracyMeters": 48,
+    "altitudeMeters": 551.4617919921875,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:34:03.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.1638422°, 46.7967742°",
+    "accuracyMeters": 23,
+    "altitudeMeters": 551.4617919921875,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:36:04.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.1481297°, 46.7902244°",
+    "accuracyMeters": 98,
+    "altitudeMeters": 551.4617919921875,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:38:05.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.1045301°, 46.7556239°",
+    "accuracyMeters": 300,
+    "altitudeMeters": 560.3278198242188,
+    "source": "CELL",
+    "timestamp": "2026-07-27T20:44:19.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.0754435°, 46.7252466°",
+    "accuracyMeters": 77,
+    "altitudeMeters": 574.0,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:48:20.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.0578064°, 46.7128789°",
+    "accuracyMeters": 51,
+    "altitudeMeters": 574.0,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:50:21.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.02098°, 46.6976343°",
+    "accuracyMeters": 24,
+    "altitudeMeters": 538.7571411132812,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:54:22.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "17.0025238°, 46.6942302°",
+    "accuracyMeters": 24,
+    "altitudeMeters": 536.8313598632812,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:56:24.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.9834969°, 46.6905492°",
+    "accuracyMeters": 110,
+    "altitudeMeters": 535.7000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T20:58:25.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.973224°, 46.6880881°",
+    "accuracyMeters": 98,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T20:59:31.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.954791°, 46.6851208°",
+    "accuracyMeters": 400,
+    "altitudeMeters": 498.62493896484375,
+    "source": "CELL",
+    "timestamp": "2026-07-27T21:04:31.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.9476631°, 46.6842268°",
+    "accuracyMeters": 19,
+    "altitudeMeters": 498.62493896484375,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T21:08:34.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.894159°, 46.6722969°",
+    "accuracyMeters": 400,
+    "altitudeMeters": 476.6247863769531,
+    "source": "CELL",
+    "timestamp": "2026-07-27T21:14:37.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.8621981°, 46.6630431°",
+    "accuracyMeters": 30,
+    "altitudeMeters": 477.20001220703125,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T21:18:41.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7951751°, 46.6405350°",
+    "accuracyMeters": 98,
+    "altitudeMeters": 502.32391357421875,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T21:29:58.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7944246°, 46.6409967°",
+    "accuracyMeters": 5,
+    "altitudeMeters": 498.70001220703125,
+    "source": "GPS",
+    "timestamp": "2026-07-27T21:30:28.000+05:30",
+    "speedMetersPerSecond": 0.3166846036911011
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941185°, 46.6412541°",
+    "accuracyMeters": 21,
+    "altitudeMeters": 497.1000061035156,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T21:33:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.794045°, 46.6412221°",
+    "accuracyMeters": 25,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:34:17.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941893°, 46.6412719°",
+    "accuracyMeters": 37,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:36:39.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941267°, 46.6412608°",
+    "accuracyMeters": 29,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:37:39.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7945279°, 46.6407738°",
+    "accuracyMeters": 77,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:38:59.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.794598°, 46.6407048°",
+    "accuracyMeters": 81,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:41:39.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941185°, 46.6412541°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 497.1000061035156,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T21:43:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7951555°, 46.6405874°",
+    "accuracyMeters": 60,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:44:19.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941297°, 46.6412622°",
+    "accuracyMeters": 38,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:44:59.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941238°, 46.6412547°",
+    "accuracyMeters": 66,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:45:39.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7943227°, 46.6411836°",
+    "accuracyMeters": 60,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:46:59.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941321°, 46.6412649°",
+    "accuracyMeters": 19,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:49:39.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941315°, 46.6412623°",
+    "accuracyMeters": 36,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:52:19.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7941185°, 46.6412541°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 497.1000061035156,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T21:53:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7943227°, 46.6411836°",
+    "accuracyMeters": 60,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:54:59.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.793803°, 46.6410867°",
+    "accuracyMeters": 24,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-27T21:57:39.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7713628°, 46.6293306°",
+    "accuracyMeters": 23,
+    "altitudeMeters": 420.3678894042969,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T22:02:43.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.7383256°, 46.5935388°",
+    "accuracyMeters": 500,
+    "altitudeMeters": 420.3678894042969,
+    "source": "CELL",
+    "timestamp": "2026-07-27T22:08:46.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.6792036°, 46.5243547°",
+    "accuracyMeters": 800,
+    "altitudeMeters": 334.4197082519531,
+    "source": "CELL",
+    "timestamp": "2026-07-27T22:16:53.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.6243388°, 46.4843930°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 480.70001220703125,
+    "source": "CELL",
+    "timestamp": "2026-07-27T22:22:57.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.5682355°, 46.4601234°",
+    "accuracyMeters": 500,
+    "altitudeMeters": 480.70001220703125,
+    "source": "CELL",
+    "timestamp": "2026-07-27T22:30:09.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.4457851°, 46.4397755°",
+    "accuracyMeters": 699,
+    "altitudeMeters": 480.70001220703125,
+    "source": "CELL",
+    "timestamp": "2026-07-27T22:40:22.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.4351868°, 46.4384349°",
+    "accuracyMeters": 116,
+    "altitudeMeters": 280.1700744628906,
+    "source": "WIFI",
+    "timestamp": "2026-07-27T22:43:45.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.2723414°, 46.4554830°",
+    "accuracyMeters": 800,
+    "altitudeMeters": 243.10923767089844,
+    "source": "CELL",
+    "timestamp": "2026-07-27T23:00:04.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.2178917°, 46.4768986°",
+    "accuracyMeters": 600,
+    "altitudeMeters": 283.1000061035156,
+    "source": "CELL",
+    "timestamp": "2026-07-27T23:06:45.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "16.0689312°, 46.4054967°",
+    "accuracyMeters": 699,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-27T23:26:03.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.8238801°, 46.5215008°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-27T23:53:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.7835786°, 46.5324843°",
+    "accuracyMeters": 92,
+    "altitudeMeters": 230.57247924804688,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T00:02:06.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.7813879°, 46.5314495°",
+    "accuracyMeters": 68,
+    "altitudeMeters": 230.3000030517578,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T00:04:07.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.7146789°, 46.4968827°",
+    "accuracyMeters": 400,
+    "altitudeMeters": 230.3000030517578,
+    "source": "CELL",
+    "timestamp": "2026-07-28T00:10:10.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.4293469°, 46.3822564°",
+    "accuracyMeters": 128,
+    "altitudeMeters": 321.9000244140625,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T00:36:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.3761197°, 46.3326185°",
+    "accuracyMeters": 1100,
+    "altitudeMeters": 359.3047180175781,
+    "source": "CELL",
+    "timestamp": "2026-07-28T00:43:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.2865859°, 46.2736374°",
+    "accuracyMeters": 699,
+    "altitudeMeters": 321.9000244140625,
+    "source": "CELL",
+    "timestamp": "2026-07-28T00:53:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.2088622°, 46.2192755°",
+    "accuracyMeters": 500,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-28T01:02:05.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.1313033°, 46.1670344°",
+    "accuracyMeters": 1399,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-28T01:08:10.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.1109514°, 46.1614239°",
+    "accuracyMeters": 82,
+    "altitudeMeters": 250.7712860107422,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T01:10:12.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "15.0618308°, 46.1302822°",
+    "accuracyMeters": 72,
+    "altitudeMeters": 266.9000244140625,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T01:16:10.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "14.9434674°, 46.0972224°",
+    "accuracyMeters": 300,
+    "altitudeMeters": 254.26731872558594,
+    "source": "CELL",
+    "timestamp": "2026-07-28T01:26:56.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "14.8707313°, 46.0907760°",
+    "accuracyMeters": 500,
+    "altitudeMeters": 303.8081970214844,
+    "source": "CELL",
+    "timestamp": "2026-07-28T01:33:51.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "14.750502°, 46.1014165°",
+    "accuracyMeters": 92,
+    "altitudeMeters": 291.51025390625,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T01:43:45.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "14.6448256°, 46.0836183°",
+    "accuracyMeters": 142,
+    "altitudeMeters": 291.51025390625,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T01:53:46.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "14.5716375°, 46.1194237°",
+    "accuracyMeters": 1500,
+    "altitudeMeters": 297.6976318359375,
+    "source": "CELL",
+    "timestamp": "2026-07-28T02:02:05.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "14.5029347°, 46.1315968°",
+    "accuracyMeters": 200,
+    "altitudeMeters": 288.5,
+    "source": "CELL",
+    "timestamp": "2026-07-28T02:08:10.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "14.1366824°, 46.1036684°",
+    "accuracyMeters": 600,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-28T02:43:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "14.0430569°, 46.1122625°",
+    "accuracyMeters": 600,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-28T02:53:45.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.9891065°, 46.1573707°",
+    "accuracyMeters": 400,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-28T03:02:05.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.7852933°, 46.2933013°",
+    "accuracyMeters": 699,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-28T03:30:37.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.6849839°, 46.2854362°",
+    "accuracyMeters": 400,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-28T03:43:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.5769574°, 46.2816230°",
+    "accuracyMeters": 22,
+    "altitudeMeters": 859.8458862304688,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T03:53:47.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.4940041°, 46.2541002°",
+    "accuracyMeters": 37,
+    "altitudeMeters": 859.8458862304688,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T04:02:07.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.4411568°, 46.2381107°",
+    "accuracyMeters": 77,
+    "altitudeMeters": 839.8999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T04:06:10.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.4155255°, 46.2423673°",
+    "accuracyMeters": 122,
+    "altitudeMeters": 839.8999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T04:08:12.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.0951405°, 46.0978207°",
+    "accuracyMeters": 66,
+    "altitudeMeters": 839.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T04:43:45.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "13.0231464°, 46.0848039°",
+    "accuracyMeters": 12,
+    "altitudeMeters": 851.0999755859375,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T04:53:44.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9790521°, 46.0853611°",
+    "accuracyMeters": 23,
+    "altitudeMeters": 834.519287109375,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:01:07.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9767103°, 46.0867077°",
+    "accuracyMeters": 64,
+    "altitudeMeters": 834.519287109375,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:03:08.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.968149°, 46.0874951°",
+    "accuracyMeters": 44,
+    "altitudeMeters": 834.519287109375,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:05:10.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9658132°, 46.0874360°",
+    "accuracyMeters": 63,
+    "altitudeMeters": 834.519287109375,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:07:11.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9640551°, 46.0767839°",
+    "accuracyMeters": 31,
+    "altitudeMeters": 834.519287109375,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:09:12.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9615046°, 46.0627930°",
+    "accuracyMeters": 20,
+    "altitudeMeters": 834.519287109375,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:11:13.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9291926°, 46.0046188°",
+    "accuracyMeters": 17,
+    "altitudeMeters": 716.9051513671875,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:27:49.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9221003°, 45.9950856°",
+    "accuracyMeters": 39,
+    "altitudeMeters": 692.7198486328125,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:29:51.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9143419°, 45.9869996°",
+    "accuracyMeters": 29,
+    "altitudeMeters": 692.7198486328125,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:32:02.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9098666°, 45.9809284°",
+    "accuracyMeters": 36,
+    "altitudeMeters": 693.7988891601562,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:34:04.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9070814°, 45.9751845°",
+    "accuracyMeters": 19,
+    "altitudeMeters": 694.8805541992188,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:36:06.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.9010548°, 45.9677192°",
+    "accuracyMeters": 46,
+    "altitudeMeters": 697.9166870117188,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:38:07.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.8992716°, 45.9653998°",
+    "accuracyMeters": 67,
+    "altitudeMeters": 694.8805541992188,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:40:08.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.886492°, 45.9511424°",
+    "accuracyMeters": 42,
+    "altitudeMeters": 678.6102294921875,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:42:10.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.8691058°, 45.9388963°",
+    "accuracyMeters": 47,
+    "altitudeMeters": 676.2999877929688,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:44:11.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.8593574°, 45.9298906°",
+    "accuracyMeters": 55,
+    "altitudeMeters": 678.6102294921875,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:46:12.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.8409982°, 45.9197809°",
+    "accuracyMeters": 26,
+    "altitudeMeters": 677.5285034179688,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:48:13.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.788115°, 45.8742525°",
+    "accuracyMeters": 300,
+    "altitudeMeters": 683.0470581054688,
+    "source": "CELL",
+    "timestamp": "2026-07-28T05:54:15.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.7655227°, 45.8307567°",
+    "accuracyMeters": 110,
+    "altitudeMeters": 683.0470581054688,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T05:58:18.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.7489001°, 45.7629650°",
+    "accuracyMeters": 500,
+    "altitudeMeters": 635.61474609375,
+    "source": "CELL",
+    "timestamp": "2026-07-28T06:04:03.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.6870324°, 45.7141088°",
+    "accuracyMeters": 1200,
+    "altitudeMeters": 635.61474609375,
+    "source": "CELL",
+    "timestamp": "2026-07-28T06:10:07.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.4909354°, 45.2839640°",
+    "accuracyMeters": 600,
+    "altitudeMeters": 0.0,
+    "source": "CELL",
+    "timestamp": "2026-07-28T06:46:13.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.4062701°, 45.1831768°",
+    "accuracyMeters": 92,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T06:57:18.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3562359°, 45.1621583°",
+    "accuracyMeters": 20,
+    "altitudeMeters": 646.3494262695312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:02:01.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.346689°, 45.1598610°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 646.3494262695312,
+    "source": "CELL",
+    "timestamp": "2026-07-28T07:04:01.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3335561°, 45.1576319°",
+    "accuracyMeters": 36,
+    "altitudeMeters": 646.3494262695312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:06:03.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3212414°, 45.1606313°",
+    "accuracyMeters": 61,
+    "altitudeMeters": 656.2420654296875,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:08:20.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3172231°, 45.1587782°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 656.2420654296875,
+    "source": "CELL",
+    "timestamp": "2026-07-28T07:10:20.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3140793°, 45.1584064°",
+    "accuracyMeters": 49,
+    "altitudeMeters": 658.9926147460938,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:12:22.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3138892°, 45.1583868°",
+    "accuracyMeters": 46,
+    "altitudeMeters": 656.3179931640625,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:14:25.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130468°, 45.1582748°",
+    "accuracyMeters": 21,
+    "altitudeMeters": 659.1563110351562,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:16:26.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130528°, 45.1582786°",
+    "accuracyMeters": 14,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:18:22.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130625°, 45.1582781°",
+    "accuracyMeters": 13,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:19:11.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130696°, 45.1582569°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:19:41.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130402°, 45.1582671°",
+    "accuracyMeters": 17,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:21:11.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.313015°, 45.1582474°",
+    "accuracyMeters": 17,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:21:42.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3129886°, 45.1582744°",
+    "accuracyMeters": 22,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:23:10.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.313015°, 45.1582474°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:25:00.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130281°, 45.1582215°",
+    "accuracyMeters": 18,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:25:45.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130551°, 45.1582321°",
+    "accuracyMeters": 48,
+    "altitudeMeters": 661.2000122070312,
+    "source": "GPS",
+    "timestamp": "2026-07-28T07:26:16.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130489°, 45.1582000°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "GPS",
+    "timestamp": "2026-07-28T07:29:32.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130282°, 45.1582248°",
+    "accuracyMeters": 24,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:30:28.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130127°, 45.1582433°",
+    "accuracyMeters": 15,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:31:14.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130013°, 45.1582578°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:33:45.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130013°, 45.1582578°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:36:00.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130013°, 45.1582578°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:38:39.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.313073°, 45.1582475°",
+    "accuracyMeters": 17,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:39:19.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130013°, 45.1582578°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:40:00.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130676°, 45.1582607°",
+    "accuracyMeters": 19,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:40:39.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130013°, 45.1582578°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:41:11.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130013°, 45.1582578°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:42:13.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3130934°, 45.1602220°",
+    "accuracyMeters": 100,
+    "altitudeMeters": 661.2000122070312,
+    "source": "CELL",
+    "timestamp": "2026-07-28T07:43:15.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3116879°, 45.1611848°",
+    "accuracyMeters": 98,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:43:55.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3076574°, 45.1604859°",
+    "accuracyMeters": 116,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T07:44:44.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.3083747°, 45.1606188°",
+    "accuracyMeters": 2210,
+    "altitudeMeters": 649.7676391601562,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:50:29.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.2389361°, 45.1609438°",
+    "accuracyMeters": 500,
+    "altitudeMeters": 637.51513671875,
+    "source": "CELL",
+    "timestamp": "2026-07-28T07:56:36.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.2132112°, 45.1628723°",
+    "accuracyMeters": 68,
+    "altitudeMeters": 626.2000122070312,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T07:58:49.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.2054827°, 45.1666296°",
+    "accuracyMeters": 104,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T08:00:24.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.1933868°, 45.1662448°",
+    "accuracyMeters": 77,
+    "altitudeMeters": 584.1329345703125,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:01:32.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.1479336°, 45.1807939°",
+    "accuracyMeters": 300,
+    "altitudeMeters": 584.1329345703125,
+    "source": "CELL",
+    "timestamp": "2026-07-28T08:07:35.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.1229746°, 45.1777186°",
+    "accuracyMeters": 44,
+    "altitudeMeters": 582.0999755859375,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:11:37.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.1148368°, 45.1739920°",
+    "accuracyMeters": 98,
+    "altitudeMeters": 620.4830932617188,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:13:38.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.0883044°, 45.1744137°",
+    "accuracyMeters": 36,
+    "altitudeMeters": 621.9671020507812,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:17:40.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "12.0557743°, 45.1753806°",
+    "accuracyMeters": 400,
+    "altitudeMeters": 667.404296875,
+    "source": "CELL",
+    "timestamp": "2026-07-28T08:23:42.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.9906061°, 45.1706888°",
+    "accuracyMeters": 500,
+    "altitudeMeters": 681.318359375,
+    "source": "CELL",
+    "timestamp": "2026-07-28T08:29:01.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.9764311°, 45.1691014°",
+    "accuracyMeters": 77,
+    "altitudeMeters": 668.7999877929688,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:30:03.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.9276728°, 45.1706239°",
+    "accuracyMeters": 87,
+    "altitudeMeters": 676.3999633789062,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:36:59.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.9234281°, 45.1707213°",
+    "accuracyMeters": 104,
+    "source": "WIFI_ONLY",
+    "timestamp": "2026-07-28T08:37:31.000+05:30"
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.8770067°, 45.1659969°",
+    "accuracyMeters": 600,
+    "altitudeMeters": 718.0916137695312,
+    "source": "CELL",
+    "timestamp": "2026-07-28T08:43:35.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.8390532°, 45.1752535°",
+    "accuracyMeters": 72,
+    "altitudeMeters": 717.5,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:47:38.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.8109978°, 45.1872832°",
+    "accuracyMeters": 87,
+    "altitudeMeters": 728.2266235351562,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:53:45.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.810993°, 45.1872799°",
+    "accuracyMeters": 68,
+    "altitudeMeters": 728.2266235351562,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:55:46.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  },
+  {
+   "position": {
+    "LatLng": "11.808479°, 45.1881835°",
+    "accuracyMeters": 122,
+    "altitudeMeters": 728.2266235351562,
+    "source": "WIFI",
+    "timestamp": "2026-07-28T08:57:47.000+05:30",
+    "speedMetersPerSecond": 0.0
+   }
+  }
+ ]
+}

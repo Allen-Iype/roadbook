@@ -1,0 +1,26 @@
+# ── private location data — NEVER commit ──
+# Everything under data/ is the owner's real movement history.
+/data/
+
+# Belt and braces: catch stray copies anywhere in the tree.
+Timeline.json
+*.timeline.json
+*.geojson
+
+# Only anonymised fixtures belong in testdata/.
+testdata/journey-27jul2026.json
+
+# ── build output ──
+/node_modules
+/.next
+.DS_Store
+
+# detector output — contains real destination coordinates
+fixture-candidates.json
+__pycache__/
+*.pyc
+
+# bootstrap brief — private (home locations, working agreement).
+# Superseded by CLAUDE.md / docs/PRODUCT.md / docs/PLAN.md; delete once those exist.
+/HANDOFF.md
+/CLAUDE.local.md
