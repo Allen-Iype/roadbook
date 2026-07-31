@@ -6,6 +6,7 @@
 # Generated files are committed and never edited by hand.
 generate:
 	go tool oapi-codegen -config api/codegen.yaml api/openapi.yaml
+	cd web && npm run generate
 
 build:
 	go build -o bin/roadbook ./cmd/roadbook

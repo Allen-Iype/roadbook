@@ -11,8 +11,12 @@ Timeline.json
 testdata/journey-27jul2026.json
 
 # ── build output ──
-/node_modules
-/.next
+# unanchored deliberately: the app lives in web/, and root-anchored patterns
+# not matching subdirectories caused one of the two data near-leaks
+node_modules/
+.next/
+next-env.d.ts
+web/.env*
 .DS_Store
 
 # detector output — contains real destination coordinates

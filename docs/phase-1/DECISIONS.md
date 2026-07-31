@@ -81,6 +81,32 @@ Rejected: silently resolving to the nearest current candidate — deciding the w
 span quietly is exactly the class of failure this phase exists to prevent.
 Reconsider if: it never fires outside tests; the reload prompt may then soften.
 
+**The candidates page is `force-dynamic`.**
+Rejected: Next's default (`auto`), which prerenders the page at build time and
+freezes the candidate list into the build output; also rejected (for now) the new
+opt-in Cache Components model — one caching model at a time, and the simplest one
+that is correct.
+Reconsider if: the app grows pages that genuinely benefit from partial
+prerendering; adopt `cacheComponents` deliberately then.
+
+**Journey dates render by slicing the ISO string, never `new Date()`.**
+Rejected: Date parsing, which shifts the civil date into the viewer's timezone —
+an evening departure viewed from the west shows the wrong day. The API string
+carries the journey's own offset end to end; the substring is the truth.
+Reconsider if: the UI ever needs date arithmetic, then a TZ-aware library, not Date.
+
+**The API client module imports `server-only`.**
+Rejected: convention alone. The package makes any client-component import of the
+API client a build failure, which turns the architecture rule "the browser never
+talks to the Go API" into a compile-time fact (the frontend twin of invariant 11).
+Reconsider if: never; this guard is nearly free.
+
+**The scaffold's Google-hosted font was removed.**
+Rejected: keeping `next/font/google`, which made every production build depend on
+an external fetch — a build-time network dependency nothing needs, and this
+build's first npm install already failed once on this network.
+Reconsider if: typography ever matters enough to self-host a font file.
+
 **Expected regression values live in `data/`, produced by the prototype itself**
 (`fixture-candidates.json`; `archive-candidates.json` from a scratch copy pointed at
 the archive). Committed tests skip when `data/` is absent.
