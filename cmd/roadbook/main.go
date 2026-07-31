@@ -4,13 +4,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
+	"roadbook/internal/api"
 	"roadbook/internal/detect"
+	"roadbook/internal/domain"
+	"roadbook/internal/store"
 	"roadbook/internal/timeline"
 )
 
@@ -25,6 +31,12 @@ func main() {
 		err = runDetect(os.Args[2:])
 	case "probe":
 		err = runProbe(os.Args[2:])
+	case "migrate":
+		err = runMigrate(os.Args[2:])
+	case "import":
+		err = runImport(os.Args[2:])
+	case "serve":
+		err = runServe(os.Args[2:])
 	default:
 		usage()
 		os.Exit(2)
@@ -37,25 +49,60 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  roadbook detect -src <timeline export.json> [threshold flags] [-json out.json]
-  roadbook probe  -src <timeline export.json>
+  roadbook migrate [-db url]
+  roadbook import  -src <timeline export.json> [-db url] [-from date] [-to date] [-label name]
+  roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
+  roadbook serve   [-db url] [-addr :8080]
+  roadbook probe   -src <timeline export.json>
 
-'detect' parses a Google Timeline export and prints ranked adventure candidates.
+'migrate' applies embedded schema migrations.
+'import' parses an export and stores observations idempotently.
+'detect' finds adventure candidates: from a file (prints only) or from the
+database (persists a run and its candidates, then prints).
+'serve' runs the HTTP API.
 'probe' reports every JSON key path in an export and its frequency; diff two
-probes to spot unannounced schema changes.`)
+probes to spot unannounced schema changes.
+
+-db defaults to $DATABASE_URL.`)
 }
 
-func runDetect(args []string) error {
-	fs := flag.NewFlagSet("detect", flag.ExitOnError)
+// dbFlag wires -db with $DATABASE_URL as the default. Configuration is via
+// environment (docs/PLAN.md phase 5); the flag exists for one-off overrides.
+func dbFlag(fs *flag.FlagSet) *string {
+	return fs.String("db", os.Getenv("DATABASE_URL"), "Postgres URL (default $DATABASE_URL)")
+}
+
+func openStore(ctx context.Context, dbURL string) (*store.Store, error) {
+	if dbURL == "" {
+		return nil, fmt.Errorf("no database configured: set DATABASE_URL or pass -db")
+	}
+	return store.Open(ctx, dbURL)
+}
+
+func runMigrate(args []string) error {
+	fs := flag.NewFlagSet("migrate", flag.ExitOnError)
+	db := dbFlag(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *db == "" {
+		return fmt.Errorf("no database configured: set DATABASE_URL or pass -db")
+	}
+	n, err := store.Migrate(context.Background(), *db)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("applied %d migration(s)\n", n)
+	return nil
+}
+
+func runImport(args []string) error {
+	fs := flag.NewFlagSet("import", flag.ExitOnError)
 	src := fs.String("src", "", "path to a Timeline export (required)")
-	jsonOut := fs.String("json", "", "also write full results as JSON to this path")
-	p := detect.DefaultParams()
-	fs.Float64Var(&p.NearM, "near-m", p.NearM, "'away' threshold from every active home base, metres")
-	fs.Float64Var(&p.FarKm, "far-km", p.FarKm, "minimum distance of the dwelt destination, km")
-	fs.IntVar(&p.MinObs, "min-obs", p.MinObs, "minimum observations in a span")
-	fs.Float64Var(&p.MinHrs, "min-hrs", p.MinHrs, "minimum span duration, hours")
-	fs.Float64Var(&p.MinDwellMin, "min-dwell-min", p.MinDwellMin, "minimum stay to count as dwelling, minutes")
-	fs.Float64Var(&p.MaxKmh, "max-kmh", p.MaxKmh, "implied-speed outlier threshold, km/h")
+	db := dbFlag(fs)
+	from := fs.String("from", "", "only import observations starting on/after this date (YYYY-MM-DD, UTC)")
+	to := fs.String("to", "", "only import observations starting before this date (YYYY-MM-DD, UTC)")
+	label := fs.String("label", "", "provenance label for this import (default: source file name)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -72,14 +119,170 @@ func runDetect(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("parsed %s: %d visits, %d activities, %d path points",
-		filepath.Base(*src), st.Visits, st.Activities, st.Points)
-	if st.Skipped > 0 {
-		fmt.Printf(" (%d segments skipped)", st.Skipped)
+	fmt.Printf("parsed %s: %d visits, %d activities, %d path points (%d skipped)\n",
+		filepath.Base(*src), st.Visits, st.Activities, st.Points, st.Skipped)
+
+	winStart, err := parseDateFlag(*from)
+	if err != nil {
+		return fmt.Errorf("-from: %w", err)
 	}
-	fmt.Println()
+	winEnd, err := parseDateFlag(*to)
+	if err != nil {
+		return fmt.Errorf("-to: %w", err)
+	}
+	if winStart != nil || winEnd != nil {
+		obs = filterWindow(obs, winStart, winEnd)
+		fmt.Printf("window filter kept %d visits, %d activities, %d path points\n",
+			len(obs.Visits), len(obs.Activities), len(obs.Points))
+	}
+
+	ctx := context.Background()
+	s, err := openStore(ctx, *db)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	lbl := *label
+	if lbl == "" {
+		lbl = filepath.Base(*src)
+	}
+	res, err := s.ImportObservations(ctx, lbl, winStart, winEnd, obs, st.Skipped)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("import %d: %d observations, %d new (%d already present)\n",
+		res.ImportID, res.Parsed, res.Inserted, res.Parsed-res.Inserted)
+	return nil
+}
+
+func parseDateFlag(s string) (*time.Time, error) {
+	if s == "" {
+		return nil, nil
+	}
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+// filterWindow keeps observations whose start falls in [from, to). Inputs are
+// immutable — this builds new slices, it never mutates.
+func filterWindow(obs domain.Observations, from, to *time.Time) domain.Observations {
+	in := func(t time.Time) bool {
+		if from != nil && t.Before(*from) {
+			return false
+		}
+		if to != nil && !t.Before(*to) {
+			return false
+		}
+		return true
+	}
+	var out domain.Observations
+	for _, v := range obs.Visits {
+		if in(v.Start) {
+			out.Visits = append(out.Visits, v)
+		}
+	}
+	for _, a := range obs.Activities {
+		if in(a.Start) {
+			out.Activities = append(out.Activities, a)
+		}
+	}
+	for _, p := range obs.Points {
+		if in(p.Time) {
+			out.Points = append(out.Points, p)
+		}
+	}
+	return out
+}
+
+func runServe(args []string) error {
+	fs := flag.NewFlagSet("serve", flag.ExitOnError)
+	db := dbFlag(fs)
+	addr := fs.String("addr", ":8080", "listen address")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	ctx := context.Background()
+	s, err := openStore(ctx, *db)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams()}
+	handler := api.HandlerFromMux(api.NewStrictHandler(srv, nil), http.NewServeMux())
+	fmt.Printf("roadbook API listening on %s\n", *addr)
+	return http.ListenAndServe(*addr, handler)
+}
+
+func runDetect(args []string) error {
+	fs := flag.NewFlagSet("detect", flag.ExitOnError)
+	src := fs.String("src", "", "path to a Timeline export (file mode: print only)")
+	db := dbFlag(fs)
+	useDB := fs.Bool("from-db", false, "detect over the database's observations and persist the run")
+	jsonOut := fs.String("json", "", "also write full results as JSON to this path")
+	p := detect.DefaultParams()
+	fs.Float64Var(&p.NearM, "near-m", p.NearM, "'away' threshold from every active home base, metres")
+	fs.Float64Var(&p.FarKm, "far-km", p.FarKm, "minimum distance of the dwelt destination, km")
+	fs.IntVar(&p.MinObs, "min-obs", p.MinObs, "minimum observations in a span")
+	fs.Float64Var(&p.MinHrs, "min-hrs", p.MinHrs, "minimum span duration, hours")
+	fs.Float64Var(&p.MinDwellMin, "min-dwell-min", p.MinDwellMin, "minimum stay to count as dwelling, minutes")
+	fs.Float64Var(&p.MaxKmh, "max-kmh", p.MaxKmh, "implied-speed outlier threshold, km/h")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if (*src == "") == !*useDB {
+		fs.Usage()
+		return fmt.Errorf("exactly one of -src (file mode) or -from-db (database mode) is required")
+	}
+
+	var obs domain.Observations
+	var s *store.Store
+	ctx := context.Background()
+	if *useDB {
+		var err error
+		s, err = openStore(ctx, *db)
+		if err != nil {
+			return err
+		}
+		defer s.Close()
+		obs, err = s.LoadObservations(ctx)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("loaded from database: %d visits, %d activities, %d path points\n",
+			len(obs.Visits), len(obs.Activities), len(obs.Points))
+	} else {
+		data, err := os.ReadFile(*src)
+		if err != nil {
+			return err
+		}
+		var st timeline.Stats
+		obs, st, err = timeline.Parse(data)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("parsed %s: %d visits, %d activities, %d path points",
+			filepath.Base(*src), st.Visits, st.Activities, st.Points)
+		if st.Skipped > 0 {
+			fmt.Printf(" (%d segments skipped)", st.Skipped)
+		}
+		fmt.Println()
+	}
 
 	res := detect.Run(obs, p)
+
+	if s != nil {
+		runID, err := s.SaveRun(ctx, p, res)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("saved detection run %d (%d candidates); decisions re-match on read\n",
+			runID, len(res.Candidates))
+	}
 
 	fmt.Printf("outliers dropped %d | home bases %d:", res.OutliersDropped, len(res.Bases))
 	for i, b := range res.Bases {

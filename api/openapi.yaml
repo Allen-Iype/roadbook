@@ -1,0 +1,227 @@
+openapi: 3.0.3
+info:
+  title: Roadbook API
+  description: >
+    Read candidates and record decisions. This file is the contract (CLAUDE.md
+    invariant 10): the Go server interface and the TypeScript client are both
+    generated from it and never hand-written. Import and detection are CLI
+    operations in phase 1 and do not appear here.
+  version: 0.1.0
+
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      summary: Liveness check
+      responses:
+        "200":
+          description: Service is up.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /candidates:
+    get:
+      operationId: listCandidates
+      summary: The latest detection run's candidates, with decision state attached
+      description: >
+        Candidates come from the most recent detection run. Each carries its
+        matched decision, if any; decisions no current candidate matched are
+        returned separately as orphans, because a decision is never silently
+        lost (BRIEF §3.1). When no detection run exists yet, `run` is omitted,
+        `candidates` is empty, and every decision is an orphan.
+      responses:
+        "200":
+          description: Candidates and orphaned decisions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CandidateList"
+
+  /candidates/{id}/decision:
+    post:
+      operationId: decideCandidate
+      summary: Confirm or dismiss a candidate
+      description: >
+        Records a decision on a candidate of the latest run, snapshotting the
+        candidate's span and destination as the decision's anchor. If the
+        candidate already has a matched decision, that decision is updated in
+        place and its anchor refreshed; otherwise a new decision is created.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Candidate id from the latest run.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionRequest"
+      responses:
+        "200":
+          description: The decision as stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Decision"
+        "400":
+          description: Invalid request — confirming without a name, or an unknown action.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: No such candidate in the latest run (stale id after re-detection).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    LatLng:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+
+    ModeCount:
+      type: object
+      required: [mode, n]
+      properties:
+        mode:
+          type: string
+          description: Google's mode guess, e.g. IN_PASSENGER_VEHICLE. Unreliable at extremes.
+        n:
+          type: integer
+
+    Run:
+      type: object
+      required: [id, ran_at, params, outliers_dropped]
+      properties:
+        id:
+          type: integer
+          format: int64
+        ran_at:
+          type: string
+          format: date-time
+        params:
+          type: object
+          additionalProperties: true
+          description: Exactly the parameters that produced this run (invariant 3).
+        outliers_dropped:
+          type: integer
+
+    Candidate:
+      type: object
+      required:
+        [id, span_start, span_end, days, dest, dest_km, track_km, stops,
+         repeat, obs_count, start_truncated, end_truncated, modes]
+      properties:
+        id:
+          type: integer
+          format: int64
+        span_start:
+          type: string
+          format: date-time
+        span_end:
+          type: string
+          format: date-time
+        days:
+          type: number
+          format: double
+        dest:
+          $ref: "#/components/schemas/LatLng"
+        dest_km:
+          type: integer
+          description: Distance home → farthest place dwelt, never merely passed through.
+        track_km:
+          type: integer
+        stops:
+          type: integer
+        repeat:
+          type: integer
+        obs_count:
+          type: integer
+        start_truncated:
+          type: boolean
+          description: The span begins at the window edge; the real journey started earlier (bug 4).
+        end_truncated:
+          type: boolean
+        modes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModeCount"
+        decision:
+          $ref: "#/components/schemas/Decision"
+
+    Decision:
+      type: object
+      required: [id, action, updated_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        action:
+          type: string
+          enum: [confirmed, dismissed]
+        name:
+          type: string
+          description: Present when action is confirmed.
+        updated_at:
+          type: string
+          format: date-time
+
+    CandidateList:
+      type: object
+      required: [candidates, orphaned_decisions]
+      properties:
+        run:
+          $ref: "#/components/schemas/Run"
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/Candidate"
+        orphaned_decisions:
+          type: array
+          description: >
+            Decisions no current candidate matched. Never hidden: a parameter
+            change may orphan a decision, and lowering it back re-matches.
+          items:
+            $ref: "#/components/schemas/Decision"
+
+    DecisionRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [confirmed, dismissed]
+        name:
+          type: string
+          description: Required when action is confirmed.
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

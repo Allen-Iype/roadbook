@@ -1,0 +1,9 @@
+# oapi-codegen configuration: generates the Go server side of the contract.
+# Run via `make generate`. The output is committed but never edited
+# (CLAUDE.md invariant 10).
+package: api
+generate:
+  models: true
+  std-http-server: true
+  strict-server: true
+output: internal/api/gen.go

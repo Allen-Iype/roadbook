@@ -47,8 +47,8 @@ type Base struct {
 // in Candidate.Modes is significant: most frequent first, ties by first
 // occurrence (replicating Python's Counter.most_common).
 type ModeCount struct {
-	Mode string
-	N    int
+	Mode string `json:"mode"`
+	N    int    `json:"n"`
 }
 
 // Candidate is one detected adventure candidate. Derived and disposable: every

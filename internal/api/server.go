@@ -1,0 +1,158 @@
+// Package api implements the generated StrictServerInterface (gen.go, produced
+// from api/openapi.yaml — never edited by hand). Handlers translate between
+// store rows and contract types and run candidate↔decision matching; business
+// rules live in internal/detect, persistence in internal/store.
+package api
+
+import (
+	"context"
+	"encoding/json"
+	"strings"
+
+	"roadbook/internal/detect"
+	"roadbook/internal/store"
+)
+
+type Server struct {
+	Store       *store.Store
+	MatchParams detect.MatchParams
+}
+
+var _ StrictServerInterface = (*Server)(nil)
+
+func (s *Server) GetHealth(ctx context.Context, _ GetHealthRequestObject) (GetHealthResponseObject, error) {
+	return GetHealth200JSONResponse{Status: "ok"}, nil
+}
+
+func (s *Server) ListCandidates(ctx context.Context, _ ListCandidatesRequestObject) (ListCandidatesResponseObject, error) {
+	run, cands, decs, matched, err := s.matchedState(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := CandidateList{
+		Candidates:        []Candidate{},
+		OrphanedDecisions: []Decision{},
+	}
+	if run != nil {
+		params := map[string]any{}
+		if err := json.Unmarshal(run.Params, &params); err != nil {
+			return nil, err
+		}
+		resp.Run = &Run{Id: run.ID, RanAt: run.RanAt, Params: params, OutliersDropped: run.OutliersDropped}
+	}
+
+	decByID := make(map[int64]store.DecisionRow, len(decs))
+	for _, d := range decs {
+		decByID[d.ID] = d
+	}
+	attachedDec := map[int64]bool{}
+	for _, c := range cands {
+		ac := toAPICandidate(c)
+		if did, ok := matched[c.ID]; ok {
+			d := toAPIDecision(decByID[did])
+			ac.Decision = &d
+			attachedDec[did] = true
+		}
+		resp.Candidates = append(resp.Candidates, ac)
+	}
+	for _, d := range decs {
+		if !attachedDec[d.ID] {
+			resp.OrphanedDecisions = append(resp.OrphanedDecisions, toAPIDecision(d))
+		}
+	}
+	return ListCandidates200JSONResponse(resp), nil
+}
+
+func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequestObject) (DecideCandidateResponseObject, error) {
+	action := DecisionAction(req.Body.Action)
+	if !action.Valid() {
+		return DecideCandidate400JSONResponse{Error: "action must be 'confirmed' or 'dismissed'"}, nil
+	}
+	var name *string
+	if action == DecisionActionConfirmed {
+		trimmed := ""
+		if req.Body.Name != nil {
+			trimmed = strings.TrimSpace(*req.Body.Name)
+		}
+		if trimmed == "" {
+			return DecideCandidate400JSONResponse{Error: "confirming requires a non-empty name"}, nil
+		}
+		name = &trimmed
+	}
+
+	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	if cand == nil {
+		return DecideCandidate404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+	}
+
+	// If this candidate already has a matched decision, the user is re-deciding:
+	// update it in place and refresh its anchor to what they are looking at now.
+	// Otherwise this is a fresh decision.
+	_, _, _, matched, err := s.matchedState(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var row store.DecisionRow
+	if did, ok := matched[cand.ID]; ok {
+		row, err = s.Store.UpdateDecision(ctx, did, string(action), name, *cand)
+	} else {
+		row, err = s.Store.InsertDecision(ctx, string(action), name, *cand)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return DecideCandidate200JSONResponse(toAPIDecision(row)), nil
+}
+
+// matchedState loads the latest run, its candidates, all decisions, and the
+// recomputed candidate→decision association (BRIEF §3.1: matching is derived,
+// never stored).
+func (s *Server) matchedState(ctx context.Context) (*store.Run, []store.CandidateRow, []store.DecisionRow, map[int64]int64, error) {
+	run, cands, err := s.Store.LatestRun(ctx)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	decs, err := s.Store.ListDecisions(ctx)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	refs := make([]detect.SpanRef, len(cands))
+	for i, c := range cands {
+		refs[i] = detect.SpanRef{ID: c.ID, Start: c.SpanStart, End: c.SpanEnd, Dest: c.Dest}
+	}
+	anchors := make([]detect.Anchor, len(decs))
+	for i, d := range decs {
+		anchors[i] = detect.Anchor{ID: d.ID, Start: d.AnchorStart, End: d.AnchorEnd, Dest: d.AnchorDest, CreatedAt: d.CreatedAt}
+	}
+	return run, cands, decs, detect.Match(refs, anchors, s.MatchParams), nil
+}
+
+func toAPICandidate(c store.CandidateRow) Candidate {
+	modes := make([]ModeCount, len(c.Modes))
+	for i, m := range c.Modes {
+		modes[i] = ModeCount{Mode: m.Mode, N: m.N}
+	}
+	return Candidate{
+		Id:             c.ID,
+		SpanStart:      c.SpanStart,
+		SpanEnd:        c.SpanEnd,
+		Days:           c.Days,
+		Dest:           LatLng{Lat: c.Dest.Lat, Lon: c.Dest.Lon},
+		DestKm:         c.DestKm,
+		TrackKm:        c.TrackKm,
+		Stops:          c.Stops,
+		Repeat:         c.Repeat,
+		ObsCount:       c.ObsCount,
+		StartTruncated: c.StartTruncated,
+		EndTruncated:   c.EndTruncated,
+		Modes:          modes,
+	}
+}
+
+func toAPIDecision(d store.DecisionRow) Decision {
+	return Decision{Id: d.ID, Action: DecisionAction(d.Action), Name: d.Name, UpdatedAt: d.UpdatedAt}
+}

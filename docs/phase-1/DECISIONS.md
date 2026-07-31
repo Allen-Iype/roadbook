@@ -52,6 +52,35 @@ Rejected: panicking or returning an error from the pure core.
 Reconsider if: the CLI needs to distinguish "no data" from "no home" — surface it in
 Result then.
 
+**Timestamps are stored as `timestamptz` plus a `*_offset_sec` column.**
+Rejected: `timestamptz` alone (forgets the writer's UTC offset, and home-base eras
+take civil dates in each timestamp's own offset — a DB round-trip would shift
+late-evening dates and break file/DB detection parity); `timestamp without time
+zone` (loses the instant instead).
+Reconsider if: detection ever stops using offset-local civil dates.
+
+**Migrations are embedded in the binary; `roadbook migrate` applies them.**
+Rejected: requiring the goose CLI as an external tool — a self-hoster's deployment
+could then drift from the schema its binary expects.
+Reconsider if: migrations need to run against a database the binary shouldn't reach.
+
+**Observations load in `(start_ts, id)` order.**
+Rejected: storing an explicit source-file sequence column. Insertion order breaks
+timestamp ties identically to file order within one import, and the regression
+tests hold through the DB round-trip, which is the actual requirement.
+Reconsider if: a DB-path regression run ever differs from the file path — then ties
+across overlapping imports are the suspect and a sequence column is the fix.
+
+**Re-deciding updates the matched decision in place and refreshes its anchor.**
+Rejected: append-only decision history — nothing needs it yet, and the update is
+the user overwriting their own user-data, which invariant 2 does not protect.
+Reconsider if: an undo feature is wanted; then an audit table, not a flag.
+
+**A stale candidate id (from a superseded run) is a 404, not a best-effort match.**
+Rejected: silently resolving to the nearest current candidate — deciding the wrong
+span quietly is exactly the class of failure this phase exists to prevent.
+Reconsider if: it never fires outside tests; the reload prompt may then soften.
+
 **Expected regression values live in `data/`, produced by the prototype itself**
 (`fixture-candidates.json`; `archive-candidates.json` from a scratch copy pointed at
 the archive). Committed tests skip when `data/` is absent.
