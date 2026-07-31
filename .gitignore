@@ -24,3 +24,6 @@ __pycache__/
 # Superseded by CLAUDE.md / docs/PRODUCT.md / docs/PLAN.md; delete once those exist.
 /HANDOFF.md
 /CLAUDE.local.md
+
+# go build output
+/bin/
