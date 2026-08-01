@@ -132,6 +132,29 @@ and the failure modes are already enumerated; also rejected: doing it before
 checkpoint 4, which would delay the slice this phase exists to prove.
 Reconsider if: checkpoint 4 review surfaces schema changes that touch import anyway.
 
+**Interactivity is one client component per decision cell, not a client table.**
+Rejected: making the table (or page) a client component — it would ship the whole
+list's rendering to the browser to animate one cell, and the server/client boundary
+is the concept this phase exists to teach correctly.
+Reconsider if: cells need shared client state (bulk actions, keyboard navigation
+across rows); then one client boundary around the table body is the next size up.
+
+**Optimistic state is a discriminated union set inside a transition; failures
+surface as returned values, not exceptions.**
+Rejected: manual rollback state (useOptimistic reverts to server truth
+automatically when the transition settles); thrown errors from the action (a failed
+decide is an expected outcome — API down, stale id — and expected outcomes are
+data rendered inline, while error.tsx stays reserved for the unexpected).
+Reconsider if: actions multiply and the per-action result plumbing gets repetitive
+— useActionState consolidates it.
+
+**Re-deciding is explicit: a "change" affordance reopens the controls; there is no
+undo.** A new decision overwrites via the same anchored-matching path as checkpoint
+2 (update-in-place, anchor refreshed).
+Rejected: an undo stack — no history table exists yet (logged earlier), and a
+mis-decision is fully repaired by deciding again.
+Reconsider if: users report losing names to accidental re-decides.
+
 **Expected regression values live in `data/`, produced by the prototype itself**
 (`fixture-candidates.json`; `archive-candidates.json` from a scratch copy pointed at
 the archive). Committed tests skip when `data/` is absent.

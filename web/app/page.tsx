@@ -1,5 +1,6 @@
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
+import { DecideCell } from "@/app/decide-cell";
 
 // Server component (the default in the App Router): this async function runs
 // on the server per request, calls the Go API, and ships rendered HTML — no
@@ -131,7 +132,8 @@ function CandidateTable({ candidates }: { candidates: Candidate[] }) {
                 {c.repeat > 0 ? `${c.repeat + 1}×` : "first"}
               </td>
               <td className="py-2 pr-4">
-                <DecisionBadge candidate={c} />
+                {/* The row is server HTML; only this cell hydrates. */}
+                <DecideCell candidateId={c.id} decision={c.decision} />
               </td>
             </tr>
           ))}
@@ -149,13 +151,3 @@ function startDate(c: Candidate): string {
   return c.span_start.slice(0, 10);
 }
 
-function DecisionBadge({ candidate }: { candidate: Candidate }) {
-  const d = candidate.decision;
-  if (!d) {
-    return <span className="text-neutral-500">undecided</span>;
-  }
-  if (d.action === "confirmed") {
-    return <span className="text-emerald-400">{d.name ?? "confirmed"}</span>;
-  }
-  return <span className="text-neutral-600 line-through">dismissed</span>;
-}
