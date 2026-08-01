@@ -29,5 +29,8 @@ __pycache__/
 /HANDOFF.md
 /CLAUDE.local.md
 
+# confidential docs — private strategy notes, never committed
+/docs/private/
+
 # go build output
 /bin/
