@@ -107,6 +107,31 @@ an external fetch — a build-time network dependency nothing needs, and this
 build's first npm install already failed once on this network.
 Reconsider if: typography ever matters enough to self-host a font file.
 
+**PostGIS is deferred to phase 2, and only for the countries polygon table.**
+Rejected: the Dawarich comparison's advice to add a `geography` column in phase 1 —
+its retrofit-cost argument assumes leg segmentation in SQL, but our phase 2 does
+assembly in pure Go against the committed golden fixture (invariant 1's testing
+strategy), so there are no queries to retrofit; Dawarich's experience keeping two
+segmentation implementations consistent argues for one implementation in one
+language.
+Reconsider if: spatial queries appear that Go genuinely cannot own — point-in-polygon
+at phase 2's countries table is the expected (and only) entry point.
+
+**Legacy Takeout variants (`Records.json`, `timelineObjects`) wait until phase 5.**
+Rejected: parsing them in phase 1. They serve other users' old archives — the
+maintainer's own data is the current format — and `Records.json` has no visit
+segments, so support means stay-point visit synthesis and a home-derivation design
+pass, not a parser. Phase 1 instead detects them and rejects with a pointer.
+Reconsider if: an early external user materialises with only an old archive.
+
+**Import hardening joins phase 1 as checkpoint 5** (failure taxonomy + streaming
+parse), after the decide UI completes the vertical slice.
+Rejected: shipping phase 1 with "not a Timeline export" as the only import error —
+the comparison doc's strongest finding is that a failed first import is a lost user
+and the failure modes are already enumerated; also rejected: doing it before
+checkpoint 4, which would delay the slice this phase exists to prove.
+Reconsider if: checkpoint 4 review surfaces schema changes that touch import anyway.
+
 **Expected regression values live in `data/`, produced by the prototype itself**
 (`fixture-candidates.json`; `archive-candidates.json` from a scratch copy pointed at
 the archive). Committed tests skip when `data/` is absent.

@@ -16,6 +16,17 @@ Each phase follows the documentation requirement in `CLAUDE.md`: a design brief 
 code, a decision log as decisions are made, a phase log at the end. A phase is not
 complete until its log exists.
 
+Several items below were adopted from a comparative analysis of Dawarich, a mature
+coverage-oriented timeline product — see
+`docs/feature-comparison-dawarich-roadbook.md` for each item's origin, the features
+rejected on principle, and one parked direction that must not enter this plan without
+a charter change (its §8.2).
+
+One seam for all sources: any input format parses into domain types and joins the
+identical pipeline (CLAUDE.md invariant 4). Detection, confirmation, and routing never
+learn where an observation came from. This is also how a 15-format product keeps its
+pipeline sane — the pattern is field-tested.
+
 ---
 
 ## Phase 1 — Candidates on screen
@@ -33,6 +44,10 @@ one, and have those decisions survive re-import.
 - List candidates ranked, showing date, duration, distance, stop count, repeat count
 - Confirm a candidate as an adventure with a name, or dismiss it
 - Re-import and re-detection preserve every decision already made
+- Import hardening: recognise the known non-importable inputs (legacy Takeout
+  variants, encrypted Timeline backups, "My Activity" exports, KML, binary formats,
+  truncated JSON) and reject each with a specific, actionable message; parse as a
+  stream so file size never dictates memory
 
 **How**
 
@@ -101,10 +116,20 @@ for decision state, consuming a generated client.
    *Checkpoint: the full candidate list rendered in a browser.*
 4. **Frontend, decide** — confirm with a name, dismiss, optimistic update.
    *Checkpoint: decisions persist across a reload and a re-import.*
+5. **Import hardening** — source-detection rules and the failure taxonomy, streaming
+   parse. *Checkpoint: every known wrong input is rejected with a message that says
+   what it is and what to do instead; the supported variant still imports
+   byte-identically.*
 
 Do not start step 3 before step 2 returns real data over HTTP. The extra layer this
 architecture adds is worth paying for only if it is proven working before anything is
 built on top of it.
+
+Deliberately deferred out of this phase: candidate confidence scoring (live with the
+plain ranked list first — see phase 2), PostGIS (enters with phase 2's countries
+table; leg segmentation stays in pure Go), and parsing the legacy Takeout variants
+(phase 5 — they serve other users' old archives and need visit synthesis, not just a
+parser).
 
 **Done when.** Every candidate the reference detector finds in the fixture appears on
 a page. Each can be confirmed with a name or dismissed. Re-running import and
@@ -124,6 +149,22 @@ unknown.
 - Observed legs drawn distinctly from gaps
 - Distance, duration, and stop list
 - A provenance line stating what fraction was observed
+- The leg model carries a gap `kind` (`unknown | road | air`) from the first design —
+  phase 3 classifies and consumes it, but retrofitting the field after the renderer
+  exists means reworking both
+- Ingest `rawSignals` positions (the export's only high-accuracy data; currently
+  parsed past) so recent adventures draw from dense points
+- Countries crossed per adventure, from a bundled polygon table queried locally —
+  PostGIS enters the stack here, for point-in-polygon, never as the leg-segmentation
+  engine (that stays in the pure Go core, tested against the golden fixture)
+- Candidate confidence scoring from named weighted components, the per-component
+  breakdown stored and shown in the confirm UI — decision support, never
+  auto-confirmation
+- Name suggestion at confirm time: a one-shot geocoder lookup behind the same
+  pluggable-with-offline-fallback seam as routing
+- Anomaly-filter extensions beyond the speed-spike test (exact 0,0; accuracy
+  thresholds once rawSignals carries them), as named parameters, flagging never
+  deleting
 
 **How**
 
@@ -169,6 +210,15 @@ are visibly marked as unknown.
 - Routed totals validated against Google's own distance figure, with divergence
   flagged
 - Routed gaps rendered distinctly from both observed legs and unrouted gaps
+- Air-leg classification: a gap whose implied speed exceeds a named threshold gets
+  `kind = air`, renders as a great-circle arc (a third visual class), and is excluded
+  from road-distance validation — without this, any adventure containing a flight
+  fails validation systematically
+- A stated expectation, not an error path: OSM coverage is patchy exactly where
+  adventures happen (rural and mountain roads). A gap the router cannot fill stays
+  `unknown` and renders as visibly unknown — that is the designed behaviour for an
+  incomplete road network, and a failed distance validation there is the expected
+  case, not a detection bug
 
 **How**
 
@@ -209,6 +259,10 @@ route.
 - Place them on the map and on the journey timeline
 - Store a thumbnail, not the original
 - Flag photos that sit far from the inferred route
+- Accept Google Photos Takeout JSON sidecars (`geoData` + `creationTime`) alongside
+  raw EXIF: photo auto-backup is near-universal for the target audience, which makes
+  a decade of geotagged photos a primary location source — for users with no
+  Timeline data at all, the primary source
 
 **How**
 
@@ -248,8 +302,42 @@ handling, optimistic UI for slow operations.
 - Import date range as a parameter
 - Configuration via environment, no coordinates anywhere in it
 - A README that states only what the repository can demonstrate
+- Legacy Timeline variants: `Records.json` (E7 integer coordinates, raw samples — no
+  visit segments, so it needs stay-point visit synthesis and a home-derivation pass)
+  and Semantic History `timelineObjects` (monthly files). Other users' past
+  adventures exist only in old archives; the current phone export is the only format
+  needed until then
+- Import bookkeeping in the UI: per-import status, error message, and counters
+  surfaced (two additive columns on `imports`)
+- A demo dataset, so Roadbook can be evaluated without handing over a real export
+- Configurable map tile provider — the viewport request is the one thing that leaks
+  to a third party; self-hosters can point at their own tiles
+- Backup/restore of the one thing users cannot regenerate: their decisions
 
 **Decisions and their motivation**
 
 *Self-hostability is tested by doing it*, not by intending it. Any assumption about a
 specific user or region surfaces the first time someone else's export is imported.
+
+---
+
+## After phase 5 — backlog, unordered
+
+Adopted into the backlog from the Dawarich comparison; none is scheduled:
+
+- GPX ingestion (Garmin/Strava/Komoot/OsmAnd) — the enthusiast tier. GPX tracks are
+  dense, so these adventures arrive nearly gap-free: Timeline is the sparse case,
+  GPX the dense case, one observed/inferred model covers both
+- Per-adventure GPX/GeoJSON export, with the observed/inferred distinction preserved
+  in the output (separate track segments per confidence class) — an export that
+  flattens it silently violates the honesty principle
+- Poster / print view of an adventure
+- Adventure replay animation
+- Elevation profile per adventure
+- OSM amenity overlay along a route (fuel, food, hospitals, restrooms) from bundled
+  extracts — read-only, offline, no community layer; see the comparison doc §8.1
+
+**Parked, not planned:** one further direction is recorded in the project's private
+notes (comparison doc §8.2 points there). It contradicts the current charter and
+must not be absorbed into this plan silently; the private record includes explicit
+trigger conditions, all of which must hold before it is even reconsidered.
