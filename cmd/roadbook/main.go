@@ -111,13 +111,14 @@ func runImport(args []string) error {
 		return fmt.Errorf("-src is required")
 	}
 
-	data, err := os.ReadFile(*src)
+	f, err := os.Open(*src)
 	if err != nil {
 		return err
 	}
-	obs, st, err := timeline.Parse(data)
+	obs, st, err := timeline.Parse(f)
+	f.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot import %s: %w", filepath.Base(*src), err)
 	}
 	fmt.Printf("parsed %s: %d visits, %d activities, %d path points (%d skipped)\n",
 		filepath.Base(*src), st.Visits, st.Activities, st.Points, st.Skipped)
@@ -256,14 +257,15 @@ func runDetect(args []string) error {
 		fmt.Printf("loaded from database: %d visits, %d activities, %d path points\n",
 			len(obs.Visits), len(obs.Activities), len(obs.Points))
 	} else {
-		data, err := os.ReadFile(*src)
+		f, err := os.Open(*src)
 		if err != nil {
 			return err
 		}
 		var st timeline.Stats
-		obs, st, err = timeline.Parse(data)
+		obs, st, err = timeline.Parse(f)
+		f.Close()
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot read %s: %w", filepath.Base(*src), err)
 		}
 		fmt.Printf("parsed %s: %d visits, %d activities, %d path points",
 			filepath.Base(*src), st.Visits, st.Activities, st.Points)

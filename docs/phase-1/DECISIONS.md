@@ -155,6 +155,27 @@ Rejected: an undo stack — no history table exists yet (logged earlier), and a
 mis-decision is fully repaired by deciding again.
 Reconsider if: users report losing names to accidental re-decides.
 
+**The sniffer rejects only definite wrongs; the streaming parser is the
+authority on everything else.** A 4 KB head can prove a file is a ZIP or
+Records.json; it cannot prove a valid export's key layout, so unrecognised JSON
+falls through and the parser's error reports the top-level keys it actually saw.
+Rejected: hard-rejecting anything the sniffer doesn't recognise — false
+rejections of valid exports are the one failure worse than a vague error.
+Reconsider if: a wrong-input class appears that streams expensively before
+failing; add its marker to the sniffer then.
+
+**Skipped top-level sections are consumed token-by-token, never buffered.**
+`rawSignals` can dwarf `semanticSegments`; `skipValue` walks it at constant
+memory, which is the point of streaming at all.
+Rejected: decoding skipped sections into `json.RawMessage` (buffers the section
+whole) and full-document parsing (the pre-checkpoint-5 state).
+Reconsider if: a future phase *reads* rawSignals — then it gets its own streamed
+branch, not a buffer.
+
+**`probe` still reads whole documents.** It is a diagnostic run occasionally by
+a person, not the import path; key-frequency counting wants the whole tree.
+Reconsider if: probing a multi-GB Records.json ever matters in practice.
+
 **Expected regression values live in `data/`, produced by the prototype itself**
 (`fixture-candidates.json`; `archive-candidates.json` from a scratch copy pointed at
 the archive). Committed tests skip when `data/` is absent.

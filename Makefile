@@ -11,9 +11,11 @@ generate:
 build:
 	go build -o bin/roadbook ./cmd/roadbook
 
+# Scoped to our packages: web/node_modules ships a stray Go package that
+# ./... would otherwise pick up.
 test:
-	go test ./...
+	go test ./cmd/... ./internal/... ./migrations/...
 
 vet:
-	go vet ./...
-	gofmt -l .
+	go vet ./cmd/... ./internal/... ./migrations/...
+	gofmt -l cmd internal migrations

@@ -3,6 +3,8 @@ package timeline
 // Synthetic export snippets only — no real data.
 
 import (
+	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -52,7 +54,7 @@ const sample = `{
 }`
 
 func TestParse(t *testing.T) {
-	obs, st, err := Parse([]byte(sample))
+	obs, st, err := Parse(strings.NewReader(sample))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,6 +95,69 @@ func TestParse(t *testing.T) {
 	// the reference detector's accounting.
 	if obs.Points[1].Loc != nil {
 		t.Errorf("point 1 loc = %+v, want nil", obs.Points[1].Loc)
+	}
+}
+
+// One case per failure-taxonomy kind: every known wrong input is rejected with
+// a message that says what it is. Heads are synthetic minimal stand-ins.
+func TestParseRejectsKnownWrongInputs(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    string
+		wantKind string
+	}{
+		{"gzip archive", "\x1f\x8b\x08\x00rest", "gzip"},
+		{"zip archive (Takeout download)", "PK\x03\x04rest", "zip"},
+		{"PDF", "%PDF-1.7 blah", "pdf"},
+		{"JPEG photo", "\xff\xd8\xff\xe0JFIF", "image"},
+		{"HEIC photo", "\x00\x00\x00\x18ftypheic", "image"},
+		{"archive_browser.html", "<!DOCTYPE html><html><body>Takeout</body>", "html"},
+		{"KML from the old Timeline UI", `<?xml version="1.0"?><kml xmlns="x"><Document/></kml>`, "kml"},
+		{"encrypted/binary blob", "\x00\x01\x02\x03garbage\x05", "binary"},
+		{"plain text", "hello, this is notes.txt", "not-json"},
+		{"empty file", "", "empty"},
+		{"Semantic Location History (old Takeout)", `{"timelineObjects": [{"placeVisit": {}}]}`, "semantic-history"},
+		{"Records.json (old Takeout)", `{"locations": [{"latitudeE7": 100000000, "longitudeE7": 200000000}]}`, "records-json"},
+		{"My Activity export", `[{"header": "Maps", "title": "Searched", "titleUrl": "https://x"}]`, "my-activity"},
+		{"JSON but not a Timeline export", `{"settings": {}, "devices": []}`, "json-unrecognised"},
+		{"truncated mid-array", `{"semanticSegments": [{"startTime": "2025-01-01T10:00:00.000+05:30",`, "truncated"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, _, err := Parse(strings.NewReader(tc.input))
+			var ue *UnsupportedInputError
+			if !errors.As(err, &ue) {
+				t.Fatalf("err = %v, want UnsupportedInputError", err)
+			}
+			if ue.Kind != tc.wantKind {
+				t.Errorf("kind = %q (%s), want %q", ue.Kind, ue.Message, tc.wantKind)
+			}
+			if ue.Message == "" {
+				t.Error("message must never be empty — it is the user-facing explanation")
+			}
+		})
+	}
+}
+
+// The supported export must parse even when semanticSegments is not the first
+// key and the file carries large sections we skip (rawSignals), and a UTF-8
+// BOM must not trip the decoder.
+func TestParseSkipsOtherSectionsAndBOM(t *testing.T) {
+	input := "\xef\xbb\xbf" + `{
+	 "rawSignals": [{"position": {"point": "1.0°, 2.0°"}}, {"wifi": {"scan": [1,2,3]}}],
+	 "userLocationProfile": {"frequentPlaces": [{"placeLocation": "3.0°, 4.0°"}]},
+	 "semanticSegments": [
+	  {"startTime": "2025-01-01T10:00:00.000+05:30",
+	   "endTime": "2025-01-01T12:00:00.000+05:30",
+	   "visit": {"topCandidate": {"placeLocation": {"latLng": "10.5°, 20.5°"}, "semanticType": "UNKNOWN"}}}
+	 ]
+	}`
+	obs, st, err := Parse(strings.NewReader(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Visits != 1 || len(obs.Visits) != 1 {
+		t.Fatalf("stats = %+v, want exactly 1 visit", st)
 	}
 }
 

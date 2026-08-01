@@ -56,13 +56,14 @@ type expected struct {
 
 func compareWithReference(t *testing.T, srcPath, expPath string) {
 	t.Helper()
-	src, err := os.ReadFile(srcPath)
+	src, err := os.Open(srcPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		t.Skipf("private dataset %s not present; skipping", srcPath)
 	}
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer src.Close()
 	expRaw, err := os.ReadFile(expPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		t.Skipf("reference output %s not present; regenerate with the prototype", expPath)
