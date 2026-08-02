@@ -34,3 +34,4 @@ __pycache__/
 
 # go build output
 /bin/
+web/public/maplibre/

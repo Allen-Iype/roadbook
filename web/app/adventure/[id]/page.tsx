@@ -3,6 +3,14 @@ import { notFound } from "next/navigation";
 
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
+import { RouteMap } from "./route-map";
+
+// The basemap style URL is server-side config passed down as a prop — the
+// phase 5 "configurable tile provider" seam, done cheap now (BRIEF §1.2).
+// Tile requests are the map's one unavoidable third-party dependency; the
+// default is OpenFreeMap, which needs no key and no account.
+const MAP_STYLE_URL =
+  process.env.ROADBOOK_MAP_STYLE ?? "https://tiles.openfreemap.org/styles/liberty";
 
 // Server component for one adventure. Next 16 dynamic route: the [id] folder
 // segment arrives via `params`, which is a Promise here (async request APIs,
@@ -56,10 +64,47 @@ export default async function AdventurePage({
         </Link>
       </p>
       <Header journey={journey} candidate={candidate} />
+      {journey.legs.length > 0 && (
+        <>
+          <RouteMap journey={journey} styleUrl={MAP_STYLE_URL} />
+          <Legend />
+        </>
+      )}
       <Provenance journey={journey} />
       <LegTable legs={journey.legs} />
       <Stops journey={journey} />
     </main>
+  );
+}
+
+// The legend states the visual channel in words (invariant 8: confidence is
+// never hidden, and never left to interpretation).
+function Legend() {
+  return (
+    <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-neutral-400">
+      <span className="inline-flex items-center gap-2">
+        <span className="inline-block h-1 w-8 rounded bg-emerald-500" />
+        observed — positions recorded along the way
+      </span>
+      <span className="inline-flex items-center gap-2">
+        <svg width="32" height="4" aria-hidden>
+          <line
+            x1="0"
+            y1="2"
+            x2="32"
+            y2="2"
+            stroke="#a3a3a3"
+            strokeWidth="2"
+            strokeDasharray="4 5"
+          />
+        </svg>
+        unknown gap — no observations; the straight line is not a route
+      </span>
+      <span className="inline-flex items-center gap-2">
+        <span className="inline-block h-2.5 w-2.5 rounded-full border border-neutral-900 bg-amber-400" />
+        stop
+      </span>
+    </p>
   );
 }
 

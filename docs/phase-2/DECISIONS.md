@@ -58,3 +58,47 @@ deletes the very data rawSignals ingestion exists to add.
 Would change our mind: a journey where low-accuracy fixes visibly disfigure
 the drawn route — then the default becomes a measured threshold, recorded
 with the run that measured it.
+
+## 2026-08-02 — layer-per-class stands, but for z-order, not dasharray
+
+Chosen: separate gap/observed/stop layers filtered on feature properties.
+The brief's supporting claim that `line-dasharray` cannot be data-driven is
+wrong for the installed MapLibre (6.1.0 types it `CrossFadedDataDrivenProperty`);
+the decision survives on its other ground — paint order between classes
+comes from layer order, free and explicit.
+Rejected: one layer with data-driven paint expressions — saves nothing at
+three classes and buries z-order in expression evaluation.
+Would change our mind: enough leg classes (phase 3 adds road and air) that
+per-class layers stop being enumerable — then expressions earn their
+complexity.
+
+## 2026-08-02 — MapLibre 6.1.0, pinned exact; OpenFreeMap liberty as default basemap
+
+Chosen: `maplibre-gl` 6.1.0 with no version range (the Dawarich lesson:
+unpinned map libraries drift unauditable). v6 facts read from the bundled
+typings before any map code: ESM-only, named exports only (`MapLibreMap`
+alias, no default export), `setData` now returns a Promise. Basemap style
+URL comes from `ROADBOOK_MAP_STYLE` server-side with OpenFreeMap's liberty
+style as default — no API key, no account, self-hostable later (the phase 5
+provider seam, done cheap now).
+Rejected: raw OSM tiles as default (usage policy discourages app traffic);
+keyed free tiers (a key in a self-hosted product's default path).
+Would change our mind on the default: OpenFreeMap availability proving
+unreliable in practice — the env var is the escape hatch either way.
+
+## 2026-08-03 — MapLibre's worker is served from public/, pointed at by setWorkerUrl
+
+Chosen: `setWorkerUrl("/maplibre/maplibre-gl-worker.mjs")` at module scope,
+with the worker and its single import (maplibre-gl-shared.mjs) copied from
+the pinned package into `public/maplibre/` by a `copy:maplibre` npm script
+hooked into predev/prebuild; the copies are gitignored, so they always match
+the installed version.
+Rejected: relying on MapLibre's own worker-URL derivation — v6 derives it
+from `import.meta.url`, which under Turbopack points into the chunk
+directory where no worker file exists; the failure is fully silent (style
+never finishes loading, `load` never fires, the map stays blank — no console
+error). Also rejected: committing the two dist files (vendored generated
+code that drifts on upgrade).
+Would change our mind: Turbopack gaining first-class support for
+dependency-internal workers, or MapLibre shipping a bundler-safe worker
+entry — then the copy script goes.
