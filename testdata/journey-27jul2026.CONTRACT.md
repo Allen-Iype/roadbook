@@ -34,10 +34,12 @@ survives as `roadbook-archive/docs/SPEC.md` and is cited where used.
    Gives 7 observed and 6 gap legs. One observed run has only 3 points and still
    counts as a leg; whether tiny runs should stand is an open design question
    (phase 2 brief, outstanding questions) — the measured pipeline kept them.
-6. **Distance.** Spherical haversine, **R = 6371.0 km exactly**, summed over
-   consecutive kept points. Evidence this is what was measured: with
-   R = 6378.137 the chord sum is ≈673.4 km, incompatible with the recorded
-   672.6; only R ≈ 6371 reproduces all four one-decimal 2026-07-29 values.
+6. **Distance.** Spherical haversine, **R = 6371008.8 m**, summed over
+   consecutive kept points. Ground: this radius is hard-coded in
+   `prototype/detect_fixture.py` — the surviving reference implementation from
+   the same measurement era — and in `internal/geo`. The 2026-07-29 one-decimal
+   values exclude equatorial-radius conventions (R ≈ 6378 km gives ≈673.4) but
+   cannot distinguish mean-radius variants; the prototype's literal adjudicates.
 7. **Gap metrics.** `inferredKm` = sum of endpoint chords over gap legs;
    `inferredPctOfDistance` = inferred / total; `worstGapSeconds` = gap durations
    sorted worst-first, in raw seconds (rounding is display's job).
@@ -68,7 +70,7 @@ under the minute-truncated window; under the true window they are 121 / WIFI 63.
 | params joinSlackSeconds 120 | — | removed | SPEC.md stage 2 semantics; zero points in either 120 s margin |
 | params minGeometryPoints 4 | — | removed | SPEC.md journey tiering; 3-point run counts as a leg |
 | params thinSpacingSeconds | — | 30, RECOVERED BY FIT, unique on (29,30] | artifact timestamps |
-| distances, 1 dp | — | 4 dp, haversine R=6371.0 pinned | artifact coordinates; R adjudicated by the 1-dp values |
+| distances, 1 dp | — | 4 dp, haversine R=6371008.8 m pinned | artifact coordinates; radius from prototype/detect_fixture.py (1-dp values exclude only R≈6378) |
 | movementKm 0.2 | — | displacementKm 0.1635 | artifact points inside the halt |
 | restHalt 21:29 / 21:57 | — | 21:29:58 / 21:57:39 | fixture activity boundaries |
 | rawSignalsVerdict 120 / WIFI 62 / gapsFilled | — | 121 / WIFI 63 / movingGapsFilled | fixture rawSignals under the true window |

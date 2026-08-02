@@ -20,15 +20,15 @@
   }
  },
  "distanceKm": {
-  "reconstructedChordSum": 672.6377,
-  "traceOnlyChordSum": 671.112,
+  "reconstructedChordSum": 672.6387,
+  "traceOnlyChordSum": 671.1129,
   "googleActivitySum": 657.1052,
-  "disagreementPct": 2.3638,
-  "_note": "Chord sums are spherical haversine with R = 6371.0 km exactly (CONTRACT.md §6; other radii fail the 2026-07-29 one-decimal values). googleActivitySum is the sum of distanceMeters over the three activities intersecting the window: 657105.16796875 m."
+  "disagreementPct": 2.3639,
+  "_note": "Chord sums are spherical haversine with R = 6371008.8 m — the radius hard-coded in prototype/detect_fixture.py and internal/geo (CONTRACT.md §6). googleActivitySum is the sum of distanceMeters over the three activities intersecting the window: 657105.16796875 m."
  },
  "gaps": {
   "count": 6,
-  "inferredKm": 222.224,
+  "inferredKm": 222.2243,
   "inferredPctOfDistance": 33.0377,
   "worstGapSeconds": [
    2160,
