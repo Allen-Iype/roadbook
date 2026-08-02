@@ -1,0 +1,145 @@
+package journey_test
+
+import (
+	"math"
+	"testing"
+	"time"
+
+	"roadbook/internal/domain"
+	"roadbook/internal/journey"
+)
+
+var t0 = time.Date(2026, 1, 1, 8, 0, 0, 0, time.UTC)
+
+func at(sec int) time.Time { return t0.Add(time.Duration(sec) * time.Second) }
+
+func loc(lat, lon float64) *domain.LatLng { return &domain.LatLng{Lat: lat, Lon: lon} }
+
+func TestAssemble(t *testing.T) {
+	p := journey.DefaultParams()
+
+	t.Run("empty observations produce an empty journey, not a panic", func(t *testing.T) {
+		j := journey.Assemble(domain.Observations{}, t0, at(3600), p)
+		if len(j.Legs) != 0 || len(j.Stops) != 0 || j.TotalKm != 0 {
+			t.Errorf("got %+v, want empty", j)
+		}
+	})
+
+	t.Run("points outside the window and points without a location are excluded", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(-60), Loc: loc(10, 70)}, // before window
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(60), Loc: nil},           // no location
+				{Time: at(4000), Loc: loc(10, 71)}, // after window
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.TracePointsInWindow != 1 {
+			t.Errorf("trace points in window = %d, want 1", j.TracePointsInWindow)
+		}
+	})
+
+	t.Run("a silence over the threshold becomes a gap leg with exactly two endpoints", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10.0, 70.0)},
+				{Time: at(60), Loc: loc(10.1, 70.0)},
+				{Time: at(60 + 21*60), Loc: loc(10.5, 70.0)}, // 21 min silence
+				{Time: at(120 + 21*60), Loc: loc(10.6, 70.0)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(7200), p)
+		kinds := []journey.LegKind{}
+		for _, l := range j.Legs {
+			kinds = append(kinds, l.Kind)
+		}
+		want := []journey.LegKind{journey.LegObserved, journey.LegGap, journey.LegObserved}
+		if len(kinds) != len(want) {
+			t.Fatalf("legs = %v, want %v", kinds, want)
+		}
+		for i := range want {
+			if kinds[i] != want[i] {
+				t.Fatalf("legs = %v, want %v", kinds, want)
+			}
+		}
+		gap := j.Legs[1]
+		if gap.GapKind != journey.GapUnknown {
+			t.Errorf("gap kind = %q, want unknown", gap.GapKind)
+		}
+		if len(gap.Points) != 2 {
+			t.Errorf("gap points = %d, want 2", len(gap.Points))
+		}
+		// Observed and gap distances partition the full chord sum.
+		if math.Abs(j.TotalKm-(j.ObservedKm+j.InferredKm)) > 1e-12 {
+			t.Errorf("total %.6f != observed %.6f + inferred %.6f", j.TotalKm, j.ObservedKm, j.InferredKm)
+		}
+	})
+
+	t.Run("at an identical timestamp the trace point wins over the raw position", func(t *testing.T) {
+		obs := domain.Observations{
+			Points:       []domain.PathPoint{{Time: at(0), Loc: loc(10, 70)}},
+			RawPositions: []domain.RawPosition{{Time: at(0), Loc: loc(20, 80)}},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.TracePointsKept != 1 || j.RawPointsKept != 0 {
+			t.Errorf("kept %d trace + %d raw, want the trace point (CONTRACT.md §4)",
+				j.TracePointsKept, j.RawPointsKept)
+		}
+	})
+
+	t.Run("thinning keeps the earliest of any cluster, regardless of source", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{{Time: at(10), Loc: loc(10, 70)}},
+			RawPositions: []domain.RawPosition{
+				{Time: at(0), Loc: loc(10, 70)},  // earliest: kept
+				{Time: at(29), Loc: loc(10, 70)}, // 29 s after last kept: dropped
+				{Time: at(30), Loc: loc(10, 70)}, // exactly the spacing: kept
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.TracePointsKept != 0 || j.RawPointsKept != 2 {
+			t.Errorf("kept %d trace + %d raw, want 0 + 2 (raw@0 and raw@30)",
+				j.TracePointsKept, j.RawPointsKept)
+		}
+	})
+
+	t.Run("a pause between activities is a stop; a short one is not", func(t *testing.T) {
+		obs := domain.Observations{
+			Activities: []domain.Activity{
+				// Deliberately out of order: findStops must sort a copy.
+				{Start: at(2000), End: at(3000), DistanceM: 2000},
+				{Start: at(0), End: at(1400), DistanceM: 1000},
+				{Start: at(3100), End: at(3600), DistanceM: 500}, // 100 s pause: below threshold
+			},
+			Points: []domain.PathPoint{
+				{Time: at(1400), Loc: loc(10.0, 70.0)},
+				{Time: at(1700), Loc: loc(10.001, 70.0)},
+				{Time: at(2000), Loc: loc(10.002, 70.0)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if len(j.Stops) != 1 {
+			t.Fatalf("stops = %d, want 1 (the 600 s pause)", len(j.Stops))
+		}
+		s := j.Stops[0]
+		if !s.Start.Equal(at(1400)) || !s.End.Equal(at(2000)) {
+			t.Errorf("stop %v..%v, want %v..%v", s.Start, s.End, at(1400), at(2000))
+		}
+		if s.Points != 3 {
+			t.Errorf("stop points = %d, want 3", s.Points)
+		}
+		// Displacement is first->last, not the path sum.
+		wantKm := 0.002 * 111.2 // ~2 latitude millidegrees
+		if math.Abs(s.DisplacementKm-wantKm) > 0.01 {
+			t.Errorf("displacement = %.4f km, want ~%.4f", s.DisplacementKm, wantKm)
+		}
+		if j.GoogleDistanceKm != 3.5 {
+			t.Errorf("google sum = %.2f km, want 3.5", j.GoogleDistanceKm)
+		}
+		// The input slice was not reordered (invariant 2).
+		if !obs.Activities[0].Start.Equal(at(2000)) {
+			t.Error("Assemble reordered the caller's activity slice")
+		}
+	})
+}

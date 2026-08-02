@@ -38,10 +38,21 @@ type PathPoint struct {
 	Loc  *LatLng
 }
 
+// RawPosition is one position fix from the export's rawSignals section — the
+// only data in the export that carries a reported accuracy. An export holds
+// only the ~30 days before it was taken, so most of the timeline has none.
+type RawPosition struct {
+	Time      time.Time
+	Loc       *LatLng
+	AccuracyM float64 // reported horizontal accuracy in metres; 0 when absent
+	Source    string  // WIFI, CELL, WIFI_ONLY, GPS, or "" when absent
+}
+
 // Observations is everything parsed from one source, in source-file order.
 // Slices are treated as immutable after parsing (CLAUDE.md invariant 2).
 type Observations struct {
-	Visits     []Visit
-	Activities []Activity
-	Points     []PathPoint
+	Visits       []Visit
+	Activities   []Activity
+	Points       []PathPoint
+	RawPositions []RawPosition
 }

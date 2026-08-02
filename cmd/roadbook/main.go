@@ -16,6 +16,7 @@ import (
 	"roadbook/internal/api"
 	"roadbook/internal/detect"
 	"roadbook/internal/domain"
+	"roadbook/internal/journey"
 	"roadbook/internal/store"
 	"roadbook/internal/timeline"
 )
@@ -29,6 +30,8 @@ func main() {
 	switch os.Args[1] {
 	case "detect":
 		err = runDetect(os.Args[2:])
+	case "journey":
+		err = runJourney(os.Args[2:])
 	case "probe":
 		err = runProbe(os.Args[2:])
 	case "migrate":
@@ -52,6 +55,7 @@ func usage() {
   roadbook migrate [-db url]
   roadbook import  -src <timeline export.json> [-db url] [-from date] [-to date] [-label name]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
+  roadbook journey -src <export.json> -from <RFC3339> -to <RFC3339> [threshold flags]
   roadbook serve   [-db url] [-addr :8080]
   roadbook probe   -src <timeline export.json>
 
@@ -59,6 +63,8 @@ func usage() {
 'import' parses an export and stores observations idempotently.
 'detect' finds adventure candidates: from a file (prints only) or from the
 database (persists a run and its candidates, then prints).
+'journey' assembles one window of observations into observed and gap legs and
+prints the reconstruction — the command behind every journey figure.
 'serve' runs the HTTP API.
 'probe' reports every JSON key path in an export and its frequency; diff two
 probes to spot unannounced schema changes.
@@ -196,6 +202,11 @@ func filterWindow(obs domain.Observations, from, to *time.Time) domain.Observati
 			out.Points = append(out.Points, p)
 		}
 	}
+	for _, rp := range obs.RawPositions {
+		if in(rp.Time) {
+			out.RawPositions = append(out.RawPositions, rp)
+		}
+	}
 	return out
 }
 
@@ -328,6 +339,90 @@ func runDetect(args []string) error {
 			return err
 		}
 		fmt.Printf("\nwrote %s\n", *jsonOut)
+	}
+	return nil
+}
+
+// runJourney is the reproduction command for journey figures (CLAUDE.md
+// invariant 13): the golden fixture's numbers come from
+//
+//	roadbook journey -src testdata/journey-27jul2026.anon.json \
+//	  -from 2026-07-27T19:46:35+05:30 -to 2026-07-28T07:12:22+05:30
+func runJourney(args []string) error {
+	fs := flag.NewFlagSet("journey", flag.ExitOnError)
+	src := fs.String("src", "", "path to a Timeline export (required)")
+	from := fs.String("from", "", "window start, RFC3339 (required)")
+	to := fs.String("to", "", "window end, RFC3339 (required)")
+	p := journey.DefaultParams()
+	fs.Float64Var(&p.GapThresholdMinutes, "gap-min", p.GapThresholdMinutes,
+		"silence longer than this becomes a gap leg, minutes")
+	fs.Float64Var(&p.ThinSpacingSeconds, "thin-sec", p.ThinSpacingSeconds,
+		"minimum spacing between kept points, seconds")
+	fs.Float64Var(&p.MinStopDwellSeconds, "stop-sec", p.MinStopDwellSeconds,
+		"minimum activity pause reported as a stop, seconds")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *src == "" || *from == "" || *to == "" {
+		fs.Usage()
+		return fmt.Errorf("-src, -from and -to are required")
+	}
+	winStart, err := time.Parse(time.RFC3339, *from)
+	if err != nil {
+		return fmt.Errorf("-from: %w", err)
+	}
+	winEnd, err := time.Parse(time.RFC3339, *to)
+	if err != nil {
+		return fmt.Errorf("-to: %w", err)
+	}
+
+	f, err := os.Open(*src)
+	if err != nil {
+		return err
+	}
+	obs, st, err := timeline.Parse(f)
+	f.Close()
+	if err != nil {
+		return fmt.Errorf("cannot read %s: %w", filepath.Base(*src), err)
+	}
+	fmt.Printf("parsed %s: %d visits, %d activities, %d path points, %d raw positions\n",
+		filepath.Base(*src), st.Visits, st.Activities, st.Points, st.RawPositions)
+
+	j := journey.Assemble(obs, winStart, winEnd, p)
+
+	fmt.Printf("\nwindow %s .. %s (%.1f h)\n",
+		j.WindowStart.Format(time.RFC3339), j.WindowEnd.Format(time.RFC3339),
+		j.WindowEnd.Sub(j.WindowStart).Hours())
+	fmt.Printf("points: %d trace + %d raw in window -> %d kept (%d trace + %d raw)\n",
+		j.TracePointsInWindow, j.RawPointsInWindow, j.MergedPoints(),
+		j.TracePointsKept, j.RawPointsKept)
+	obsPct, infPct := 0.0, 0.0
+	if j.TotalKm > 0 {
+		obsPct = j.ObservedKm / j.TotalKm * 100
+		infPct = j.InferredKm / j.TotalKm * 100
+	}
+	fmt.Printf("distance %.1f km: observed %.1f (%.1f%%) + inferred %.1f (%.1f%%)\n",
+		j.TotalKm, j.ObservedKm, obsPct, j.InferredKm, infPct)
+	if j.GoogleDistanceKm > 0 {
+		fmt.Printf("google's own figure %.1f km (%+.1f%%)\n",
+			j.GoogleDistanceKm, (j.TotalKm-j.GoogleDistanceKm)/j.GoogleDistanceKm*100)
+	}
+
+	fmt.Printf("\n=== %d legs ===\n", len(j.Legs))
+	fmt.Printf("%3s %-8s %-7s %-9s %-9s %7s %6s %s\n",
+		"#", "kind", "gap", "start", "end", "min", "km", "pts")
+	for i, l := range j.Legs {
+		fmt.Printf("%3d %-8s %-7s %-9s %-9s %7.1f %6.1f %d\n",
+			i+1, l.Kind, l.GapKind,
+			l.Start().Format("15:04:05"), l.End().Format("15:04:05"),
+			l.End().Sub(l.Start()).Minutes(), l.DistanceKm, len(l.Points))
+	}
+
+	fmt.Printf("\n=== %d stops ===\n", len(j.Stops))
+	for i, s := range j.Stops {
+		fmt.Printf("%3d %s .. %s (%.0f min) displacement %.2f km, %d points, near [%.4f, %.4f]\n",
+			i+1, s.Start.Format("15:04:05"), s.End.Format("15:04:05"),
+			s.End.Sub(s.Start).Minutes(), s.DisplacementKm, s.Points, s.Loc.Lat, s.Loc.Lon)
 	}
 	return nil
 }

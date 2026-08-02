@@ -23,10 +23,11 @@ import (
 // Stats reports what one parse saw. Skipped counts segments or points that were
 // present but unusable (bad shape, missing/invalid timestamps).
 type Stats struct {
-	Visits     int
-	Activities int
-	Points     int
-	Skipped    int
+	Visits       int
+	Activities   int
+	Points       int
+	RawPositions int
+	Skipped      int
 }
 
 // UnsupportedInputError is a recognised-but-wrong input. Message is written for
@@ -105,33 +106,38 @@ func Parse(r io.Reader) (domain.Observations, Stats, error) {
 			return obs, st, malformed(fmt.Errorf("expected object key, got %v", keyTok))
 		}
 		topKeys = append(topKeys, key)
-		if key != "semanticSegments" {
+		switch key {
+		case "semanticSegments":
+			found = true
+			if err := expectDelim(dec, '['); err != nil {
+				return obs, st, err
+			}
+			for dec.More() {
+				var seg rawSegment
+				if err := dec.Decode(&seg); err != nil {
+					// A type mismatch consumes the value and leaves the decoder
+					// usable: count and continue (defensive-parse rule). A syntax
+					// error or EOF means the stream itself is broken: stop.
+					var typeErr *json.UnmarshalTypeError
+					if errors.As(err, &typeErr) {
+						st.Skipped++
+						continue
+					}
+					return obs, st, truncated(err)
+				}
+				processSegment(seg, &obs, &st)
+			}
+			if _, err := dec.Token(); err != nil { // consume ']'
+				return obs, st, truncated(err)
+			}
+		case "rawSignals":
+			if err := parseRawSignals(dec, &obs, &st); err != nil {
+				return obs, st, err
+			}
+		default:
 			if err := skipValue(dec); err != nil {
 				return obs, st, truncated(err)
 			}
-			continue
-		}
-		found = true
-		if err := expectDelim(dec, '['); err != nil {
-			return obs, st, err
-		}
-		for dec.More() {
-			var seg rawSegment
-			if err := dec.Decode(&seg); err != nil {
-				// A type mismatch consumes the value and leaves the decoder
-				// usable: count and continue (defensive-parse rule). A syntax
-				// error or EOF means the stream itself is broken: stop.
-				var typeErr *json.UnmarshalTypeError
-				if errors.As(err, &typeErr) {
-					st.Skipped++
-					continue
-				}
-				return obs, st, truncated(err)
-			}
-			processSegment(seg, &obs, &st)
-		}
-		if _, err := dec.Token(); err != nil { // consume ']'
-			return obs, st, truncated(err)
 		}
 	}
 	if _, err := dec.Token(); err != nil { // consume '}'
@@ -198,6 +204,57 @@ func processSegment(seg rawSegment, obs *domain.Observations, st *Stats) {
 	}
 	// Other segment kinds (timelineMemory, …) are ignored, matching the
 	// reference detector.
+}
+
+// rawSignal is one rawSignals array entry. Only position records carry
+// observations; the other kinds (activityRecord, wifiScan, …) are recognised
+// by their absence of a position key and ignored.
+type rawSignal struct {
+	Position *struct {
+		LatLng         json.RawMessage `json:"LatLng"`
+		AccuracyMeters float64         `json:"accuracyMeters"`
+		Source         string          `json:"source"`
+		Timestamp      string          `json:"timestamp"`
+	} `json:"position"`
+}
+
+// parseRawSignals streams the rawSignals array with the same defensive rules
+// as semanticSegments: a malformed entry is counted and skipped, a broken
+// stream is fatal.
+func parseRawSignals(dec *json.Decoder, obs *domain.Observations, st *Stats) error {
+	if err := expectDelim(dec, '['); err != nil {
+		return err
+	}
+	for dec.More() {
+		var sig rawSignal
+		if err := dec.Decode(&sig); err != nil {
+			var typeErr *json.UnmarshalTypeError
+			if errors.As(err, &typeErr) {
+				st.Skipped++
+				continue
+			}
+			return truncated(err)
+		}
+		if sig.Position == nil {
+			continue
+		}
+		t, err := parseTime(sig.Position.Timestamp)
+		if err != nil {
+			st.Skipped++
+			continue
+		}
+		obs.RawPositions = append(obs.RawPositions, domain.RawPosition{
+			Time:      t,
+			Loc:       parseLoc(sig.Position.LatLng),
+			AccuracyM: sig.Position.AccuracyMeters,
+			Source:    sig.Position.Source,
+		})
+		st.RawPositions++
+	}
+	if _, err := dec.Token(); err != nil { // consume ']'
+		return truncated(err)
+	}
+	return nil
 }
 
 // sniff classifies the head of the file. It rejects only inputs that are
