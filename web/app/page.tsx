@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { DecideCell } from "@/app/decide-cell";
@@ -106,7 +108,13 @@ function CandidateTable({ candidates }: { candidates: Candidate[] }) {
           {candidates.map((c) => (
             <tr key={c.id} className="border-b border-neutral-900">
               <td className="py-2 pr-4 font-mono">
-                {startDate(c)}
+                {/* Client-side navigation to the adventure detail page. */}
+                <Link
+                  href={`/adventure/${c.id}`}
+                  className="underline decoration-neutral-700 underline-offset-2 hover:text-neutral-100"
+                >
+                  {startDate(c)}
+                </Link>
                 {c.start_truncated && (
                   <span
                     className="ml-1 text-amber-400"

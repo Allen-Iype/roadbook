@@ -104,6 +104,42 @@ func TestAssemble(t *testing.T) {
 		}
 	})
 
+	t.Run("exact (0,0) is rejected and counted, never assembled", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(60), Loc: loc(0, 0)}, // Null Island: an export defect
+			},
+			RawPositions: []domain.RawPosition{{Time: at(120), Loc: loc(0, 0)}},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.RejectedNullIsland != 2 {
+			t.Errorf("null island rejected = %d, want 2", j.RejectedNullIsland)
+		}
+		if j.MergedPoints() != 1 {
+			t.Errorf("merged = %d, want 1", j.MergedPoints())
+		}
+	})
+
+	t.Run("the accuracy filter is off by default and excludes only when set", func(t *testing.T) {
+		obs := domain.Observations{
+			RawPositions: []domain.RawPosition{
+				{Time: at(0), Loc: loc(10, 70), AccuracyM: 1500},
+				{Time: at(60), Loc: loc(10.1, 70), AccuracyM: 15},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p) // default: filter off
+		if j.RawPointsKept != 2 || j.RejectedAccuracy != 0 {
+			t.Errorf("filter off: kept %d, rejected %d; want 2, 0", j.RawPointsKept, j.RejectedAccuracy)
+		}
+		strict := p
+		strict.MaxAccuracyM = 100
+		j = journey.Assemble(obs, t0, at(3600), strict)
+		if j.RawPointsKept != 1 || j.RejectedAccuracy != 1 {
+			t.Errorf("filter at 100 m: kept %d, rejected %d; want 1, 1", j.RawPointsKept, j.RejectedAccuracy)
+		}
+	})
+
 	t.Run("a pause between activities is a stop; a short one is not", func(t *testing.T) {
 		obs := domain.Observations{
 			Activities: []domain.Activity{

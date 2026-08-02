@@ -89,14 +89,21 @@ func (s *Store) ImportObservations(ctx context.Context, label string, winStart, 
 			return res, err
 		}
 	}
+	for _, rp := range obs.RawPositions {
+		if err := queue(`INSERT INTO raw_positions (ts, ts_offset_sec, lat, lon, accuracy_m, source, content_hash)
+			VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (content_hash) DO NOTHING`,
+			rp.Time, offsetOf(rp.Time), latOf(rp.Loc), lonOf(rp.Loc), rp.AccuracyM, rp.Source, hashRawPosition(rp)); err != nil {
+			return res, err
+		}
+	}
 	if err := flush(); err != nil {
 		return res, err
 	}
 
-	res.Parsed = len(obs.Visits) + len(obs.Activities) + len(obs.Points)
-	err = tx.QueryRow(ctx, `INSERT INTO imports (source_label, window_start, window_end, visits, activities, points, skipped)
-		VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-		label, winStart, winEnd, len(obs.Visits), len(obs.Activities), len(obs.Points), skipped).Scan(&res.ImportID)
+	res.Parsed = len(obs.Visits) + len(obs.Activities) + len(obs.Points) + len(obs.RawPositions)
+	err = tx.QueryRow(ctx, `INSERT INTO imports (source_label, window_start, window_end, visits, activities, points, raw_positions, skipped)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+		label, winStart, winEnd, len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions), skipped).Scan(&res.ImportID)
 	if err != nil {
 		return res, err
 	}
@@ -167,6 +174,96 @@ func (s *Store) LoadObservations(ctx context.Context) (domain.Observations, erro
 		}
 		obs.Points = append(obs.Points, domain.PathPoint{Time: withOffset(ts, off), Loc: locOf(lat, lon)})
 	}
+	if err := rows.Err(); err != nil {
+		return obs, err
+	}
+
+	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon, accuracy_m, source FROM raw_positions ORDER BY ts, id`)
+	if err != nil {
+		return obs, err
+	}
+	for rows.Next() {
+		var ts time.Time
+		var off int
+		var lat, lon *float64
+		var acc float64
+		var src string
+		if err := rows.Scan(&ts, &off, &lat, &lon, &acc, &src); err != nil {
+			return obs, err
+		}
+		obs.RawPositions = append(obs.RawPositions, domain.RawPosition{
+			Time: withOffset(ts, off), Loc: locOf(lat, lon), AccuracyM: acc, Source: src,
+		})
+	}
+	return obs, rows.Err()
+}
+
+// LoadJourneyInputs reads only what journey assembly needs — activities
+// overlapping the window plus path points and raw positions inside it — so a
+// journey request does not load the whole observation corpus. Visits stay
+// empty; assembly does not use them.
+func (s *Store) LoadJourneyInputs(ctx context.Context, winStart, winEnd time.Time) (domain.Observations, error) {
+	var obs domain.Observations
+
+	rows, err := s.pool.Query(ctx, `SELECT start_ts, start_offset_sec, end_ts, end_offset_sec, start_lat, start_lon, end_lat, end_lon, distance_m, mode
+		FROM activities WHERE end_ts >= $1 AND start_ts <= $2 ORDER BY start_ts, id`, winStart, winEnd)
+	if err != nil {
+		return obs, err
+	}
+	for rows.Next() {
+		var start, end time.Time
+		var soff, eoff int
+		var slat, slon, elat, elon *float64
+		var dist float64
+		var mode string
+		if err := rows.Scan(&start, &soff, &end, &eoff, &slat, &slon, &elat, &elon, &dist, &mode); err != nil {
+			return obs, err
+		}
+		obs.Activities = append(obs.Activities, domain.Activity{
+			Start: withOffset(start, soff), End: withOffset(end, eoff),
+			From: locOf(slat, slon), To: locOf(elat, elon), DistanceM: dist, Mode: mode,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return obs, err
+	}
+
+	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon FROM path_points
+		WHERE ts BETWEEN $1 AND $2 ORDER BY ts, id`, winStart, winEnd)
+	if err != nil {
+		return obs, err
+	}
+	for rows.Next() {
+		var ts time.Time
+		var off int
+		var lat, lon *float64
+		if err := rows.Scan(&ts, &off, &lat, &lon); err != nil {
+			return obs, err
+		}
+		obs.Points = append(obs.Points, domain.PathPoint{Time: withOffset(ts, off), Loc: locOf(lat, lon)})
+	}
+	if err := rows.Err(); err != nil {
+		return obs, err
+	}
+
+	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon, accuracy_m, source FROM raw_positions
+		WHERE ts BETWEEN $1 AND $2 ORDER BY ts, id`, winStart, winEnd)
+	if err != nil {
+		return obs, err
+	}
+	for rows.Next() {
+		var ts time.Time
+		var off int
+		var lat, lon *float64
+		var acc float64
+		var src string
+		if err := rows.Scan(&ts, &off, &lat, &lon, &acc, &src); err != nil {
+			return obs, err
+		}
+		obs.RawPositions = append(obs.RawPositions, domain.RawPosition{
+			Time: withOffset(ts, off), Loc: locOf(lat, lon), AccuracyM: acc, Source: src,
+		})
+	}
 	return obs, rows.Err()
 }
 
@@ -206,6 +303,11 @@ func hashActivity(a domain.Activity) string {
 
 func hashPoint(p domain.PathPoint) string {
 	return hashParts("p", canonTime(p.Time), canonLoc(p.Loc))
+}
+
+func hashRawPosition(rp domain.RawPosition) string {
+	return hashParts("r", canonTime(rp.Time), canonLoc(rp.Loc),
+		strconv.FormatFloat(rp.AccuracyM, 'g', -1, 64), rp.Source)
 }
 
 func hashParts(parts ...string) string {

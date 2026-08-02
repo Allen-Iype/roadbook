@@ -41,6 +41,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/{id}/journey": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The journey reconstruction for a candidate of the latest run
+         * @description Assembles the candidate's span into an ordered list of legs, each observed or a gap — never one undifferentiated line (CLAUDE.md invariant 5); every leg carries its kind so confidence survives to the renderer (invariant 8). Straight lines only in phase 2: gap_kind is always "unknown" until phase 3 classifies road and air gaps. The journey is derived on demand from immutable observations, and the response echoes the parameters that produced it (invariant 3).
+         */
+        get: operations["getCandidateJourney"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/candidates/{id}/decision": {
         parameters: {
             query?: never;
@@ -135,6 +155,73 @@ export interface components {
             /** @description Required when action is confirmed. */
             name?: string;
         };
+        TimedPoint: {
+            /** Format: date-time */
+            t: string;
+            /** Format: double */
+            lat: number;
+            /** Format: double */
+            lon: number;
+        };
+        Leg: {
+            /** @enum {string} */
+            kind: "observed" | "gap";
+            /**
+             * @description Present only when kind is "gap". Always "unknown" in phase 2; phase 3 classifies road gaps (routed) and air gaps (great-circle arcs) and consumes this field.
+             * @enum {string}
+             */
+            gap_kind?: "unknown" | "road" | "air";
+            /** @description An observed leg carries its full point run; a gap leg carries exactly its two endpoints. */
+            points: components["schemas"]["TimedPoint"][];
+            /**
+             * Format: double
+             * @description Chord sum for observed legs; endpoint chord for gaps.
+             */
+            distance_km: number;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+        };
+        Stop: {
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            loc: components["schemas"]["LatLng"];
+            points: number;
+            /**
+             * Format: double
+             * @description First-to-last straight line during the halt, not path sum.
+             */
+            displacement_km: number;
+        };
+        Journey: {
+            /** Format: date-time */
+            window_start: string;
+            /** Format: date-time */
+            window_end: string;
+            /** @description Exactly the parameters that produced this assembly (invariant 3). */
+            params: {
+                [key: string]: unknown;
+            };
+            legs: components["schemas"]["Leg"][];
+            stops: components["schemas"]["Stop"][];
+            /** Format: double */
+            total_km: number;
+            /** Format: double */
+            observed_km: number;
+            /** Format: double */
+            inferred_km: number;
+            /**
+             * Format: double
+             * @description Google's own distance figure summed over the window's activities — the independent check routed distance is validated against in phase 3. 0 when the window holds no activities.
+             */
+            google_km: number;
+            merged_points: number;
+            trace_points_kept: number;
+            raw_points_kept: number;
+        };
         Error: {
             error: string;
         };
@@ -183,6 +270,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CandidateList"];
+                };
+            };
+        };
+    };
+    getCandidateJourney: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Candidate id from the latest run. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The assembled journey. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Journey"];
+                };
+            };
+            /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };

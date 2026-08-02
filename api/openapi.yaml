@@ -39,6 +39,40 @@ paths:
               schema:
                 $ref: "#/components/schemas/CandidateList"
 
+  /candidates/{id}/journey:
+    get:
+      operationId: getCandidateJourney
+      summary: The journey reconstruction for a candidate of the latest run
+      description: >
+        Assembles the candidate's span into an ordered list of legs, each
+        observed or a gap — never one undifferentiated line (CLAUDE.md
+        invariant 5); every leg carries its kind so confidence survives to the
+        renderer (invariant 8). Straight lines only in phase 2: gap_kind is
+        always "unknown" until phase 3 classifies road and air gaps. The
+        journey is derived on demand from immutable observations, and the
+        response echoes the parameters that produced it (invariant 3).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Candidate id from the latest run.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: The assembled journey.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Journey"
+        "404":
+          description: No such candidate in the latest run (stale id after re-detection).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /candidates/{id}/decision:
     post:
       operationId: decideCandidate
@@ -218,6 +252,118 @@ components:
         name:
           type: string
           description: Required when action is confirmed.
+
+    TimedPoint:
+      type: object
+      required: [t, lat, lon]
+      properties:
+        t:
+          type: string
+          format: date-time
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+
+    Leg:
+      type: object
+      required: [kind, points, distance_km, start, end]
+      properties:
+        kind:
+          type: string
+          enum: [observed, gap]
+        gap_kind:
+          type: string
+          enum: [unknown, road, air]
+          description: >
+            Present only when kind is "gap". Always "unknown" in phase 2;
+            phase 3 classifies road gaps (routed) and air gaps (great-circle
+            arcs) and consumes this field.
+        points:
+          type: array
+          description: >
+            An observed leg carries its full point run; a gap leg carries
+            exactly its two endpoints.
+          items:
+            $ref: "#/components/schemas/TimedPoint"
+        distance_km:
+          type: number
+          format: double
+          description: Chord sum for observed legs; endpoint chord for gaps.
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+
+    Stop:
+      type: object
+      required: [start, end, loc, points, displacement_km]
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        loc:
+          $ref: "#/components/schemas/LatLng"
+        points:
+          type: integer
+        displacement_km:
+          type: number
+          format: double
+          description: First-to-last straight line during the halt, not path sum.
+
+    Journey:
+      type: object
+      required:
+        [window_start, window_end, params, legs, stops, total_km, observed_km,
+         inferred_km, google_km, merged_points, trace_points_kept, raw_points_kept]
+      properties:
+        window_start:
+          type: string
+          format: date-time
+        window_end:
+          type: string
+          format: date-time
+        params:
+          type: object
+          additionalProperties: true
+          description: Exactly the parameters that produced this assembly (invariant 3).
+        legs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Leg"
+        stops:
+          type: array
+          items:
+            $ref: "#/components/schemas/Stop"
+        total_km:
+          type: number
+          format: double
+        observed_km:
+          type: number
+          format: double
+        inferred_km:
+          type: number
+          format: double
+        google_km:
+          type: number
+          format: double
+          description: >
+            Google's own distance figure summed over the window's activities —
+            the independent check routed distance is validated against in
+            phase 3. 0 when the window holds no activities.
+        merged_points:
+          type: integer
+        trace_points_kept:
+          type: integer
+        raw_points_kept:
+          type: integer
 
     Error:
       type: object

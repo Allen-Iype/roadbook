@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"roadbook/internal/detect"
+	"roadbook/internal/journey"
 	"roadbook/internal/store"
 )
 
@@ -62,6 +63,84 @@ func (s *Server) ListCandidates(ctx context.Context, _ ListCandidatesRequestObje
 		}
 	}
 	return ListCandidates200JSONResponse(resp), nil
+}
+
+// GetCandidateJourney assembles the candidate's span on demand — legs are
+// derived data over immutable observations, never persisted (BRIEF §3B), so a
+// parameter change is free and nothing can drift out of date.
+func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourneyRequestObject) (GetCandidateJourneyResponseObject, error) {
+	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	if cand == nil {
+		return GetCandidateJourney404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+	}
+	obs, err := s.Store.LoadJourneyInputs(ctx, cand.SpanStart, cand.SpanEnd)
+	if err != nil {
+		return nil, err
+	}
+	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
+	out, err := toAPIJourney(j)
+	if err != nil {
+		return nil, err
+	}
+	return GetCandidateJourney200JSONResponse(out), nil
+}
+
+func toAPIJourney(j journey.Journey) (Journey, error) {
+	// Round-trip params through JSON so the response echoes exactly the named
+	// parameters that produced the assembly (invariant 3).
+	raw, err := json.Marshal(j.Params)
+	if err != nil {
+		return Journey{}, err
+	}
+	params := map[string]any{}
+	if err := json.Unmarshal(raw, &params); err != nil {
+		return Journey{}, err
+	}
+
+	out := Journey{
+		WindowStart:     j.WindowStart,
+		WindowEnd:       j.WindowEnd,
+		Params:          params,
+		Legs:            make([]Leg, 0, len(j.Legs)),
+		Stops:           make([]Stop, 0, len(j.Stops)),
+		TotalKm:         j.TotalKm,
+		ObservedKm:      j.ObservedKm,
+		InferredKm:      j.InferredKm,
+		GoogleKm:        j.GoogleDistanceKm,
+		MergedPoints:    j.MergedPoints(),
+		TracePointsKept: j.TracePointsKept,
+		RawPointsKept:   j.RawPointsKept,
+	}
+	for _, l := range j.Legs {
+		al := Leg{
+			Kind:       LegKind(l.Kind),
+			Points:     make([]TimedPoint, len(l.Points)),
+			DistanceKm: l.DistanceKm,
+			Start:      l.Start(),
+			End:        l.End(),
+		}
+		if l.Kind == journey.LegGap {
+			gk := LegGapKind(l.GapKind)
+			al.GapKind = &gk
+		}
+		for i, pt := range l.Points {
+			al.Points[i] = TimedPoint{T: pt.Time, Lat: pt.Loc.Lat, Lon: pt.Loc.Lon}
+		}
+		out.Legs = append(out.Legs, al)
+	}
+	for _, st := range j.Stops {
+		out.Stops = append(out.Stops, Stop{
+			Start:          st.Start,
+			End:            st.End,
+			Loc:            LatLng{Lat: st.Loc.Lat, Lon: st.Loc.Lon},
+			Points:         st.Points,
+			DisplacementKm: st.DisplacementKm,
+		})
+	}
+	return out, nil
 }
 
 func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequestObject) (DecideCandidateResponseObject, error) {

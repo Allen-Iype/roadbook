@@ -45,3 +45,16 @@ Would change our mind: a journey whose real halts fall inside one long
 activity (no boundary to dwell between) — the sweep then becomes necessary,
 lands as a separate named-parameter pass, and the fixture gains its expected
 output.
+
+## 2026-08-02 — the accuracy filter defaults to off
+
+Chosen: `MaxAccuracyM` exists as a named parameter but defaults to 0
+(disabled); exact (0,0) rejection is unconditional. Both flag at assembly
+time and never touch stored rows.
+Rejected: Dawarich's 100 m default — measured against the golden journey, 40
+of its 121 in-window fixes are worse than 100 m and they are the highway
+densification (cell fixes en route), not noise; a 100 m default silently
+deletes the very data rawSignals ingestion exists to add.
+Would change our mind: a journey where low-accuracy fixes visibly disfigure
+the drawn route — then the default becomes a measured threshold, recorded
+with the run that measured it.

@@ -28,10 +28,16 @@ type Params struct {
 	// MinStopDwellSeconds: a pause between consecutive activities shorter than
 	// this is not reported as a stop.
 	MinStopDwellSeconds float64 `json:"min_stop_dwell_seconds"`
+	// MaxAccuracyM: raw positions reporting worse accuracy are excluded from
+	// assembly; 0 disables the filter. Default off, deliberately: on the golden
+	// journey, 40 of the 121 in-window fixes are worse than 100 m and they are
+	// the highway densification, not noise — see DECISIONS.md 2026-08-02.
+	// The rows themselves are untouched either way: flagging, never deleting.
+	MaxAccuracyM float64 `json:"max_accuracy_m"`
 }
 
 func DefaultParams() Params {
-	return Params{GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300}
+	return Params{GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300, MaxAccuracyM: 0}
 }
 
 type LegKind string
@@ -107,6 +113,11 @@ type Journey struct {
 	TracePointsKept     int
 	RawPointsKept       int
 
+	// Anomaly counters: how many in-window points the filters excluded from
+	// assembly. The underlying rows are never modified (invariant 2).
+	RejectedNullIsland int // points at exactly (0, 0) — a known export defect
+	RejectedAccuracy   int // raw positions worse than MaxAccuracyM
+
 	TotalKm    float64 // ObservedKm + InferredKm: the chord sum over all kept points
 	ObservedKm float64
 	InferredKm float64
@@ -126,19 +137,35 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 	j := Journey{WindowStart: winStart, WindowEnd: winEnd, Params: p}
 	inWindow := func(t time.Time) bool { return !t.Before(winStart) && !t.After(winEnd) }
 
-	// Selection: every located trace point and raw position in the window.
+	// Selection: every located trace point and raw position in the window,
+	// minus anomalies — exact (0,0) is a known export defect, and raw fixes
+	// worse than MaxAccuracyM (when the filter is on) are excluded.
 	var pts []TimedPoint
 	for _, pp := range obs.Points {
-		if pp.Loc != nil && inWindow(pp.Time) {
-			pts = append(pts, TimedPoint{Time: pp.Time, Loc: *pp.Loc, Source: SourceTrace})
-			j.TracePointsInWindow++
+		if pp.Loc == nil || !inWindow(pp.Time) {
+			continue
 		}
+		if pp.Loc.Lat == 0 && pp.Loc.Lon == 0 {
+			j.RejectedNullIsland++
+			continue
+		}
+		pts = append(pts, TimedPoint{Time: pp.Time, Loc: *pp.Loc, Source: SourceTrace})
+		j.TracePointsInWindow++
 	}
 	for _, rp := range obs.RawPositions {
-		if rp.Loc != nil && inWindow(rp.Time) {
-			pts = append(pts, TimedPoint{Time: rp.Time, Loc: *rp.Loc, Source: SourceRaw})
-			j.RawPointsInWindow++
+		if rp.Loc == nil || !inWindow(rp.Time) {
+			continue
 		}
+		if rp.Loc.Lat == 0 && rp.Loc.Lon == 0 {
+			j.RejectedNullIsland++
+			continue
+		}
+		if p.MaxAccuracyM > 0 && rp.AccuracyM > p.MaxAccuracyM {
+			j.RejectedAccuracy++
+			continue
+		}
+		pts = append(pts, TimedPoint{Time: rp.Time, Loc: *rp.Loc, Source: SourceRaw})
+		j.RawPointsInWindow++
 	}
 
 	// One time-sorted stream. At equal timestamps trace sorts before raw — a

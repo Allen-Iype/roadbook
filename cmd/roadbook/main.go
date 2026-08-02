@@ -126,8 +126,8 @@ func runImport(args []string) error {
 	if err != nil {
 		return fmt.Errorf("cannot import %s: %w", filepath.Base(*src), err)
 	}
-	fmt.Printf("parsed %s: %d visits, %d activities, %d path points (%d skipped)\n",
-		filepath.Base(*src), st.Visits, st.Activities, st.Points, st.Skipped)
+	fmt.Printf("parsed %s: %d visits, %d activities, %d path points, %d raw positions (%d skipped)\n",
+		filepath.Base(*src), st.Visits, st.Activities, st.Points, st.RawPositions, st.Skipped)
 
 	winStart, err := parseDateFlag(*from)
 	if err != nil {
@@ -139,8 +139,8 @@ func runImport(args []string) error {
 	}
 	if winStart != nil || winEnd != nil {
 		obs = filterWindow(obs, winStart, winEnd)
-		fmt.Printf("window filter kept %d visits, %d activities, %d path points\n",
-			len(obs.Visits), len(obs.Activities), len(obs.Points))
+		fmt.Printf("window filter kept %d visits, %d activities, %d path points, %d raw positions\n",
+			len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions))
 	}
 
 	ctx := context.Background()
@@ -360,6 +360,8 @@ func runJourney(args []string) error {
 		"minimum spacing between kept points, seconds")
 	fs.Float64Var(&p.MinStopDwellSeconds, "stop-sec", p.MinStopDwellSeconds,
 		"minimum activity pause reported as a stop, seconds")
+	fs.Float64Var(&p.MaxAccuracyM, "max-acc-m", p.MaxAccuracyM,
+		"exclude raw positions with worse reported accuracy, metres (0 = off)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}

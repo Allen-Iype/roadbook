@@ -52,6 +52,45 @@ func (e DecisionRequestAction) Valid() bool {
 	}
 }
 
+// Defines values for LegGapKind.
+const (
+	Air     LegGapKind = "air"
+	Road    LegGapKind = "road"
+	Unknown LegGapKind = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the LegGapKind enum.
+func (e LegGapKind) Valid() bool {
+	switch e {
+	case Air:
+		return true
+	case Road:
+		return true
+	case Unknown:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LegKind.
+const (
+	Gap      LegKind = "gap"
+	Observed LegKind = "observed"
+)
+
+// Valid indicates whether the value is a known member of the LegKind enum.
+func (e LegKind) Valid() bool {
+	switch e {
+	case Gap:
+		return true
+	case Observed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Candidate defines model for Candidate.
 type Candidate struct {
 	Days     float64   `json:"days"`
@@ -118,11 +157,51 @@ type Health struct {
 	Status string `json:"status"`
 }
 
+// Journey defines model for Journey.
+type Journey struct {
+	// GoogleKm Google's own distance figure summed over the window's activities — the independent check routed distance is validated against in phase 3. 0 when the window holds no activities.
+	GoogleKm     float64 `json:"google_km"`
+	InferredKm   float64 `json:"inferred_km"`
+	Legs         []Leg   `json:"legs"`
+	MergedPoints int     `json:"merged_points"`
+	ObservedKm   float64 `json:"observed_km"`
+
+	// Params Exactly the parameters that produced this assembly (invariant 3).
+	Params          map[string]interface{} `json:"params"`
+	RawPointsKept   int                    `json:"raw_points_kept"`
+	Stops           []Stop                 `json:"stops"`
+	TotalKm         float64                `json:"total_km"`
+	TracePointsKept int                    `json:"trace_points_kept"`
+	WindowEnd       time.Time              `json:"window_end"`
+	WindowStart     time.Time              `json:"window_start"`
+}
+
 // LatLng defines model for LatLng.
 type LatLng struct {
 	Lat float64 `json:"lat"`
 	Lon float64 `json:"lon"`
 }
+
+// Leg defines model for Leg.
+type Leg struct {
+	// DistanceKm Chord sum for observed legs; endpoint chord for gaps.
+	DistanceKm float64   `json:"distance_km"`
+	End        time.Time `json:"end"`
+
+	// GapKind Present only when kind is "gap". Always "unknown" in phase 2; phase 3 classifies road gaps (routed) and air gaps (great-circle arcs) and consumes this field.
+	GapKind *LegGapKind `json:"gap_kind,omitempty"`
+	Kind    LegKind     `json:"kind"`
+
+	// Points An observed leg carries its full point run; a gap leg carries exactly its two endpoints.
+	Points []TimedPoint `json:"points"`
+	Start  time.Time    `json:"start"`
+}
+
+// LegGapKind Present only when kind is "gap". Always "unknown" in phase 2; phase 3 classifies road gaps (routed) and air gaps (great-circle arcs) and consumes this field.
+type LegGapKind string
+
+// LegKind defines model for Leg.Kind.
+type LegKind string
 
 // ModeCount defines model for ModeCount.
 type ModeCount struct {
@@ -141,6 +220,23 @@ type Run struct {
 	RanAt  time.Time              `json:"ran_at"`
 }
 
+// Stop defines model for Stop.
+type Stop struct {
+	// DisplacementKm First-to-last straight line during the halt, not path sum.
+	DisplacementKm float64   `json:"displacement_km"`
+	End            time.Time `json:"end"`
+	Loc            LatLng    `json:"loc"`
+	Points         int       `json:"points"`
+	Start          time.Time `json:"start"`
+}
+
+// TimedPoint defines model for TimedPoint.
+type TimedPoint struct {
+	Lat float64   `json:"lat"`
+	Lon float64   `json:"lon"`
+	T   time.Time `json:"t"`
+}
+
 // DecideCandidateJSONRequestBody defines body for DecideCandidate for application/json ContentType.
 type DecideCandidateJSONRequestBody = DecisionRequest
 
@@ -152,6 +248,9 @@ type ServerInterface interface {
 	// DecideCandidate Confirm or dismiss a candidate
 	// (POST /candidates/{id}/decision)
 	DecideCandidate(w http.ResponseWriter, r *http.Request, id int64)
+	// GetCandidateJourney The journey reconstruction for a candidate of the latest run
+	// (GET /candidates/{id}/journey)
+	GetCandidateJourney(w http.ResponseWriter, r *http.Request, id int64)
 	// GetHealth Liveness check
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -197,6 +296,32 @@ func (siw *ServerInterfaceWrapper) DecideCandidate(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DecideCandidate(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCandidateJourney operation middleware
+func (siw *ServerInterfaceWrapper) GetCandidateJourney(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCandidateJourney(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -342,6 +467,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/healthz", wrapper.GetHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates", wrapper.ListCandidates)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/journey", wrapper.GetCandidateJourney)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/decision", wrapper.DecideCandidate)
 
 	return m
@@ -419,6 +545,42 @@ func (response DecideCandidate404JSONResponse) VisitDecideCandidateResponse(w ht
 	return err
 }
 
+type GetCandidateJourneyRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type GetCandidateJourneyResponseObject interface {
+	VisitGetCandidateJourneyResponse(w http.ResponseWriter) error
+}
+
+type GetCandidateJourney200JSONResponse Journey
+
+func (response GetCandidateJourney200JSONResponse) VisitGetCandidateJourneyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCandidateJourney404JSONResponse Error
+
+func (response GetCandidateJourney404JSONResponse) VisitGetCandidateJourneyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetHealthRequestObject struct {
 }
 
@@ -448,6 +610,9 @@ type StrictServerInterface interface {
 	// DecideCandidate Confirm or dismiss a candidate
 	// (POST /candidates/{id}/decision)
 	DecideCandidate(ctx context.Context, request DecideCandidateRequestObject) (DecideCandidateResponseObject, error)
+	// GetCandidateJourney The journey reconstruction for a candidate of the latest run
+	// (GET /candidates/{id}/journey)
+	GetCandidateJourney(ctx context.Context, request GetCandidateJourneyRequestObject) (GetCandidateJourneyResponseObject, error)
 	// GetHealth Liveness check
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -542,6 +707,32 @@ func (sh *strictHandler) DecideCandidate(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DecideCandidateResponseObject); ok {
 		if err := validResponse.VisitDecideCandidateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCandidateJourney operation middleware
+func (sh *strictHandler) GetCandidateJourney(w http.ResponseWriter, r *http.Request, id int64) {
+	var request GetCandidateJourneyRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCandidateJourney(ctx, request.(GetCandidateJourneyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCandidateJourney")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCandidateJourneyResponseObject); ok {
+		if err := validResponse.VisitGetCandidateJourneyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
