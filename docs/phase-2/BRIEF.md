@@ -367,7 +367,19 @@ the standing build order; 4 and 5 are independent of 3 but come after so the pha
 namesake lands as early as possible. Each checkpoint ends with something visible
 and stops for review, like phase 1's five.
 
-## 5. Verification at phase close
+## 5. Outstanding questions
+
+**Tiny observed runs.** The golden fixture's merged set contains a 3-point
+observed run that the July measurement counted as a full observed leg (7 legs
+include it). Should runs below some point count stand as observed legs, fold
+into the surrounding gaps, or render as endpoints-only? This is a detector
+design question, not a parameter to delete: the archived spec's
+`minGeometryPoints` tiered whole journeys, never legs, so no prior decision
+covers it. Decide during checkpoint 1; whatever the answer, it is a named
+parameter, and the golden expectations change only if the answer is not
+"keep them".
+
+## 6. Verification at phase close
 
 `make test` green everywhere including the golden journey regression (no `data/`
 gate); the CLI, the API, and the page agree on every journey number; fixture

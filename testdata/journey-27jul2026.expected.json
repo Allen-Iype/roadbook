@@ -1,60 +1,70 @@
 {
- "_comment": "Reference values the Go implementation must reproduce. Measured 2026-07-29 with params below.",
+ "_comment": "Reference values the Go implementation must reproduce, measured 2026-07-29 from the merged point set preserved as data/bus_27jul_points.json. Amended 2026-08-02: display-rounded values replaced with full precision, worstMinutes corrected, params reduced to the two the pipeline exercises. Pipeline semantics and amendment evidence: journey-27jul2026.CONTRACT.md.",
  "params": {
   "gapThresholdMinutes": 20,
-  "minGeometryPoints": 4,
-  "joinSlackSeconds": 120
+  "thinSpacingSeconds": 30,
+  "_provenance": "gapThresholdMinutes: read from the archived design spec (roadbook-archive docs/SPEC.md, stage 3). thinSpacingSeconds: RECOVERED BY FIT, not observed — the keep-earliest walk over trace+rawSignals reproduces all 121 timestamps of data/bus_27jul_points.json exactly for spacing in (29, 30] seconds and for no other value; the script that produced this file was not found. joinSlackSeconds (was 120) removed: per SPEC.md stage 2 it padded activity windows during trace attachment, and both 120 s margins around this journey's window contain zero points, so it is unexercised here. minGeometryPoints (was 4) removed: per SPEC.md it tiered whole journeys (ENDPOINTS_ONLY below 4 points), never legs — the merged set contains a 3-point observed run that still counts among the 7 observed legs."
  },
  "window": {
-  "startTime": "2026-07-27T19:46:00+05:30",
-  "endTime": "2026-07-28T07:12:00+05:30",
-  "durationHours": 11.4
+  "startTime": "2026-07-27T19:46:35+05:30",
+  "endTime": "2026-07-28T07:12:22+05:30",
+  "durationSeconds": 41147,
+  "_note": "Exact activity-boundary times from the fixture (start of the first IN_BUS activity, end of the second). The previous minute-truncated values (19:46, 07:12) could not reconstruct the point selection."
  },
  "join": {
   "tracePoints": 69,
-  "mergedPointsWithRawSignals": 121
+  "mergedPointsWithRawSignals": 121,
+  "mergedComposition": {
+   "fromTrace": 40,
+   "fromRawSignals": 81
+  }
  },
  "distanceKm": {
-  "reconstructedChordSum": 672.6,
-  "traceOnlyChordSum": 671.1,
-  "googleActivitySum": 657.1,
-  "disagreementPct": 2.4
+  "reconstructedChordSum": 672.6377,
+  "traceOnlyChordSum": 671.112,
+  "googleActivitySum": 657.1052,
+  "disagreementPct": 2.3638,
+  "_note": "Chord sums are spherical haversine with R = 6371.0 km exactly (CONTRACT.md §6; other radii fail the 2026-07-29 one-decimal values). googleActivitySum is the sum of distanceMeters over the three activities intersecting the window: 657105.16796875 m."
  },
  "gaps": {
   "count": 6,
-  "inferredKm": 222.2,
-  "inferredPctOfDistance": 33.0,
-  "worstMinutes": [
-   36,
-   36,
-   36,
-   29,
-   28,
-   28
-  ]
+  "inferredKm": 222.224,
+  "inferredPctOfDistance": 33.0377,
+  "worstGapSeconds": [
+   2160,
+   2145,
+   2144,
+   1717,
+   1664,
+   1604
+  ],
+  "_note": "Replaces worstMinutes [36,36,36,29,28,28], which was the top six of the SEVEN trace-only gaps, not a measurement of the merged set this file pins — CONTRACT.md §9."
  },
  "legs": {
   "observed": 7,
   "gap": 6
  },
  "stopDetection": {
-  "restHaltStart": "2026-07-27T21:29:00+05:30",
-  "restHaltEnd": "2026-07-27T21:57:00+05:30",
-  "movementKm": 0.2
+  "restHaltStart": "2026-07-27T21:29:58+05:30",
+  "restHaltEnd": "2026-07-27T21:57:39+05:30",
+  "displacementKm": 0.1635,
+  "_note": "Bounds are the exact inter-bus-activity dwell from the fixture (previously minute-truncated). displacementKm is first-to-last straight-line displacement of the merged points inside the halt — not the path sum (0.7337); the former movementKm 0.2 was the displacement, rounded."
  },
  "knownSourceDefect": {
-  "what": "Google activity leg 2 claims start 16.6792036,78.0243547 at 21:57, but the trace places that coordinate at 22:17. At 21:57 the device was ~15km back at 16.7938,78.1411.",
-  "check": "activity start/end coordinate vs trace position at stated start/end time"
+  "what": "Google activity leg 2 claims start 16.6792036,46.5243547 at 21:57, but the trace places that coordinate at 22:17. At 21:57 the device was ~15 km back at 16.7938,46.6411.",
+  "check": "activity start/end coordinate vs trace position at stated start/end time",
+  "_note": "Coordinates restated in the fixture's anonymised longitude frame, matching journey-27jul2026.anon.json; the previous text carried source-frame longitudes."
  },
  "rawSignalsVerdict": {
-  "positionsInWindow": 120,
+  "positionsInWindow": 121,
   "bySource": {
-   "WIFI": 62,
+   "WIFI": 63,
    "CELL": 32,
    "WIFI_ONLY": 25,
    "GPS": 1
   },
-  "gapsFilled": 0,
-  "conclusion": "adds 52 points, fills zero gaps, 1/120 are GPS - excluded from the pipeline"
+  "movingGapsFilled": 0,
+  "conclusion": "adds 52 points to the 69-point trace and covers the stationary rest halt, but fills none of the six moving gaps; 1/121 fixes are true GPS",
+  "_note": "Counts taken under the full-precision window; the former 120 / WIFI 62 were counts under the minute-truncated window."
  }
 }
