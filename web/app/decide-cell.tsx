@@ -5,10 +5,11 @@
 // the JavaScript sent to the browser is exactly this file and nothing else.
 
 import { useOptimistic, useState, useTransition } from "react";
-import { decideCandidate } from "@/app/actions";
+import { decideCandidate, suggestName } from "@/app/actions";
 import type { components } from "@/lib/api/schema";
 
 type Decision = components["schemas"]["Decision"];
+type ScoreComponent = components["schemas"]["ScoreComponent"];
 
 // A discriminated union: `status` is the discriminant, and narrowing on it
 // makes illegal states unrepresentable — a dismissed candidate cannot carry a
@@ -30,9 +31,13 @@ function toState(d: Decision | undefined): DecisionState {
 export function DecideCell({
   candidateId,
   decision,
+  score,
+  scoreBreakdown,
 }: {
   candidateId: number;
   decision: Decision | undefined;
+  score?: number;
+  scoreBreakdown?: ScoreComponent[];
 }) {
   // useOptimistic: `shown` mirrors the server-derived state, except while a
   // transition is in flight, when it shows whatever we set optimistically.
@@ -73,33 +78,36 @@ export function DecideCell({
 
   if (editing === "naming") {
     return (
-      <span className="flex items-center gap-2">
-        <input
-          autoFocus
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && trimmed !== "") {
-              submit({ status: "confirmed", name: trimmed });
-            }
-            if (e.key === "Escape") setEditing("closed");
-          }}
-          placeholder="Name this adventure"
-          className="w-40 rounded border border-neutral-700 bg-neutral-900 px-2 py-0.5 text-sm outline-none focus:border-neutral-400"
-        />
-        <button
-          disabled={trimmed === ""}
-          onClick={() => submit({ status: "confirmed", name: trimmed })}
-          className="text-emerald-400 disabled:text-neutral-600"
-        >
-          save
-        </button>
-        <button
-          onClick={() => setEditing("closed")}
-          className="text-neutral-500 hover:text-neutral-300"
-        >
-          cancel
-        </button>
+      <span className="flex flex-col gap-1.5">
+        <span className="flex items-center gap-2">
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && trimmed !== "") {
+                submit({ status: "confirmed", name: trimmed });
+              }
+              if (e.key === "Escape") setEditing("closed");
+            }}
+            placeholder="Name this adventure"
+            className="w-40 rounded border border-neutral-700 bg-neutral-900 px-2 py-0.5 text-sm outline-none focus:border-neutral-400"
+          />
+          <button
+            disabled={trimmed === ""}
+            onClick={() => submit({ status: "confirmed", name: trimmed })}
+            className="text-emerald-400 disabled:text-neutral-600"
+          >
+            save
+          </button>
+          <button
+            onClick={() => setEditing("closed")}
+            className="text-neutral-500 hover:text-neutral-300"
+          >
+            cancel
+          </button>
+        </span>
+        <ScoreBreakdownBox score={score} components={scoreBreakdown} />
       </span>
     );
   }
@@ -110,6 +118,13 @@ export function DecideCell({
         onClick={() => {
           setName(shown.status === "confirmed" ? shown.name : "");
           setEditing("naming");
+          // Prefill, never auto-apply (BRIEF §1.7): the suggestion lands in
+          // the input only if it is still empty when the lookup returns —
+          // anything the user typed in the meantime wins.
+          suggestName(candidateId).then((s) => {
+            const suggested = s.name;
+            if (suggested) setName((cur) => (cur === "" ? suggested : cur));
+          });
         }}
         className="text-emerald-400 hover:underline"
       >
@@ -152,6 +167,48 @@ export function DecideCell({
         </button>
       )}
       {error && <span className="text-xs text-red-400">{error}</span>}
+    </span>
+  );
+}
+
+// Why the machine proposed this candidate: the stored per-component
+// arithmetic, shown at the moment of confirming (BRIEF §1.6). Decision
+// support only — nothing here confirms anything. Candidates from runs before
+// scoring existed have no breakdown and the box simply doesn't render.
+function ScoreBreakdownBox({
+  score,
+  components,
+}: {
+  score?: number;
+  components?: ScoreComponent[];
+}) {
+  if (score === undefined || !components || components.length === 0) {
+    return null;
+  }
+  return (
+    <span className="w-max rounded border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-xs text-neutral-400">
+      <span className="block pb-1 text-neutral-300">
+        confidence {score.toFixed(1)} / 100
+      </span>
+      {components.map((c) => (
+        <span key={c.name} className="flex items-baseline gap-2 py-px">
+          <span className="w-36">{c.name.replaceAll("_", " ")}</span>
+          {c.present ? (
+            <>
+              <span className="w-24 text-right font-mono">
+                {c.raw} {c.unit}
+              </span>
+              <span className="w-14 text-right font-mono text-neutral-300">
+                +{c.contribution.toFixed(1)}
+              </span>
+            </>
+          ) : (
+            <span className="text-neutral-600">
+              not measurable — weight redistributed
+            </span>
+          )}
+        </span>
+      ))}
     </span>
   );
 }

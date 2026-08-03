@@ -104,8 +104,14 @@ type Candidate struct {
 	Modes        []ModeCount `json:"modes"`
 	ObsCount     int         `json:"obs_count"`
 	Repeat       int         `json:"repeat"`
-	SpanEnd      time.Time   `json:"span_end"`
-	SpanStart    time.Time   `json:"span_start"`
+
+	// Score Confidence 0–100 from named weighted components (weights recorded in the run's params). Ranking and decision support only — never a filter, never auto-confirmation. Absent on candidates stored before scoring existed: not scored is different information than a low score.
+	Score *float64 `json:"score,omitempty"`
+
+	// ScoreBreakdown The per-component arithmetic that reproduces `score`.
+	ScoreBreakdown *[]ScoreComponent `json:"score_breakdown,omitempty"`
+	SpanEnd        time.Time         `json:"span_end"`
+	SpanStart      time.Time         `json:"span_start"`
 
 	// StartTruncated The span begins at the window edge; the real journey started earlier (bug 4).
 	StartTruncated bool `json:"start_truncated"`
@@ -220,6 +226,15 @@ type ModeCount struct {
 	N    int    `json:"n"`
 }
 
+// NameSuggestion defines model for NameSuggestion.
+type NameSuggestion struct {
+	// Name Absent when there is nothing to suggest.
+	Name *string `json:"name,omitempty"`
+
+	// Source Which suggester answered — "none" for the null implementation.
+	Source string `json:"source"`
+}
+
 // Run defines model for Run.
 type Run struct {
 	Id              int64 `json:"id"`
@@ -228,6 +243,28 @@ type Run struct {
 	// Params Exactly the parameters that produced this run (invariant 3).
 	Params map[string]interface{} `json:"params"`
 	RanAt  time.Time              `json:"ran_at"`
+}
+
+// ScoreComponent defines model for ScoreComponent.
+type ScoreComponent struct {
+	// Contribution Points contributed to the 0–100 score; contributions sum to it.
+	Contribution float64 `json:"contribution"`
+
+	// Name e.g. distance_from_home, destination_dwell.
+	Name string `json:"name"`
+
+	// Normalized Raw scaled against its saturation anchor, clamped to [0,1].
+	Normalized float64 `json:"normalized"`
+
+	// Present False when the component could not be computed; its weight was redistributed across the rest, never scored as zero.
+	Present bool `json:"present"`
+
+	// Raw Measured value in `unit`; 0 when not present.
+	Raw  float64 `json:"raw"`
+	Unit string  `json:"unit"`
+
+	// Weight Configured weight, before any redistribution.
+	Weight float64 `json:"weight"`
 }
 
 // Stop defines model for Stop.
@@ -261,6 +298,9 @@ type ServerInterface interface {
 	// GetCandidateJourney The journey reconstruction for a candidate of the latest run
 	// (GET /candidates/{id}/journey)
 	GetCandidateJourney(w http.ResponseWriter, r *http.Request, id int64)
+	// SuggestCandidateName A proposed name for the candidate's adventure
+	// (GET /candidates/{id}/name-suggestion)
+	SuggestCandidateName(w http.ResponseWriter, r *http.Request, id int64)
 	// GetHealth Liveness check
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -332,6 +372,32 @@ func (siw *ServerInterfaceWrapper) GetCandidateJourney(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCandidateJourney(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SuggestCandidateName operation middleware
+func (siw *ServerInterfaceWrapper) SuggestCandidateName(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SuggestCandidateName(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -478,6 +544,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/healthz", wrapper.GetHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates", wrapper.ListCandidates)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/journey", wrapper.GetCandidateJourney)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/name-suggestion", wrapper.SuggestCandidateName)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/decision", wrapper.DecideCandidate)
 
 	return m
@@ -591,6 +658,56 @@ func (response GetCandidateJourney404JSONResponse) VisitGetCandidateJourneyRespo
 	return err
 }
 
+type SuggestCandidateNameRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type SuggestCandidateNameResponseObject interface {
+	VisitSuggestCandidateNameResponse(w http.ResponseWriter) error
+}
+
+type SuggestCandidateName200JSONResponse NameSuggestion
+
+func (response SuggestCandidateName200JSONResponse) VisitSuggestCandidateNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestCandidateName404JSONResponse Error
+
+func (response SuggestCandidateName404JSONResponse) VisitSuggestCandidateNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestCandidateName502JSONResponse Error
+
+func (response SuggestCandidateName502JSONResponse) VisitSuggestCandidateNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetHealthRequestObject struct {
 }
 
@@ -623,6 +740,9 @@ type StrictServerInterface interface {
 	// GetCandidateJourney The journey reconstruction for a candidate of the latest run
 	// (GET /candidates/{id}/journey)
 	GetCandidateJourney(ctx context.Context, request GetCandidateJourneyRequestObject) (GetCandidateJourneyResponseObject, error)
+	// SuggestCandidateName A proposed name for the candidate's adventure
+	// (GET /candidates/{id}/name-suggestion)
+	SuggestCandidateName(ctx context.Context, request SuggestCandidateNameRequestObject) (SuggestCandidateNameResponseObject, error)
 	// GetHealth Liveness check
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -743,6 +863,32 @@ func (sh *strictHandler) GetCandidateJourney(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetCandidateJourneyResponseObject); ok {
 		if err := validResponse.VisitGetCandidateJourneyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SuggestCandidateName operation middleware
+func (sh *strictHandler) SuggestCandidateName(w http.ResponseWriter, r *http.Request, id int64) {
+	var request SuggestCandidateNameRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SuggestCandidateName(ctx, request.(SuggestCandidateNameRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SuggestCandidateName")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SuggestCandidateNameResponseObject); ok {
+		if err := validResponse.VisitSuggestCandidateNameResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

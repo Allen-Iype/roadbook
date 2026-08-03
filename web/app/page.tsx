@@ -99,6 +99,7 @@ function CandidateTable({ candidates }: { candidates: Candidate[] }) {
             <th className="py-2 pr-4 text-right">Track</th>
             <th className="py-2 pr-4 text-right">Stops</th>
             <th className="py-2 pr-4 text-right">Visits</th>
+            <th className="py-2 pr-4 text-right">Score</th>
             <th className="py-2 pr-4">Status</th>
           </tr>
         </thead>
@@ -139,9 +140,22 @@ function CandidateTable({ candidates }: { candidates: Candidate[] }) {
               <td className="py-2 pr-4 text-right">
                 {c.repeat > 0 ? `${c.repeat + 1}×` : "first"}
               </td>
+              <td
+                className="py-2 pr-4 text-right font-mono"
+                title="Confidence 0–100; the breakdown appears when confirming."
+              >
+                {/* Absent means "not scored" (a pre-scoring run), which is
+                    different information than a low score — show a dash. */}
+                {c.score !== undefined ? c.score.toFixed(0) : "—"}
+              </td>
               <td className="py-2 pr-4">
                 {/* The row is server HTML; only this cell hydrates. */}
-                <DecideCell candidateId={c.id} decision={c.decision} />
+                <DecideCell
+                  candidateId={c.id}
+                  decision={c.decision}
+                  score={c.score}
+                  scoreBreakdown={c.score_breakdown}
+                />
               </td>
             </tr>
           ))}

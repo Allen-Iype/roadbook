@@ -27,11 +27,14 @@ type Params struct {
 	MinHrs      float64 `json:"MIN_HRS"`       // reject spans shorter than this
 	MinDwellMin float64 `json:"MIN_DWELL_MIN"` // a stop counts as dwelling only at or above this
 	MaxKmh      float64 `json:"MAX_KMH"`       // implied-speed outlier threshold; must clear real air travel
+
+	Score ScoreParams `json:"SCORE"` // confidence-scoring weights and anchors (score.go)
 }
 
 // DefaultParams are the measured defaults from the exploration phase.
 func DefaultParams() Params {
-	return Params{NearM: 25000, FarKm: 100, MinObs: 5, MinHrs: 1.0, MinDwellMin: 60, MaxKmh: 900}
+	return Params{NearM: 25000, FarKm: 100, MinObs: 5, MinHrs: 1.0, MinDwellMin: 60, MaxKmh: 900,
+		Score: DefaultScoreParams()}
 }
 
 // Base is a derived home base: a cluster of INFERRED_HOME visits with the era in
@@ -66,6 +69,12 @@ type Candidate struct {
 	ObsCount       int           // observations in the span
 	StartTruncated bool          // span begins at the first observation of the window (bug 4)
 	EndTruncated   bool          // span ends at the last observation of the window
+
+	// Confidence score, 0–100, with the per-component breakdown that
+	// reproduces it (BRIEF §1.6). Ranking support only: no threshold on it
+	// ever filters a candidate or confirms one automatically.
+	Score          float64
+	ScoreBreakdown []ScoreComponent
 }
 
 // Result is everything one detection run produces.
@@ -123,12 +132,13 @@ func Run(o domain.Observations, p Params) Result {
 		type dwell struct {
 			distM float64
 			loc   domain.LatLng
+			hrs   float64
 		}
 		var dwells []dwell
 		for j := bisectLeft(visitStarts, t0); j < bisectRight(visitStarts, t1); j++ {
 			v := o.Visits[j]
 			if v.Loc != nil && v.End.Sub(v.Start).Minutes() >= p.MinDwellMin {
-				dwells = append(dwells, dwell{homeDistM(bases, v.Start, *v.Loc), *v.Loc})
+				dwells = append(dwells, dwell{homeDistM(bases, v.Start, *v.Loc), *v.Loc, v.End.Sub(v.Start).Hours()})
 			}
 		}
 		if len(dwells) == 0 {
@@ -163,6 +173,27 @@ func Run(o domain.Observations, p Params) Result {
 			}
 		}
 
+		// Destination dwell for scoring: time dwelt within DestRadiusKm of
+		// the chosen destination, so days spent *at* the place count and a
+		// lunch stop en route does not.
+		var destDwellHrs float64
+		for _, d := range dwells {
+			if geo.HaversineM(best.loc, d.loc)/1000 <= p.Score.DestRadiusKm {
+				destDwellHrs += d.hrs
+			}
+		}
+		days := durHrs / 24
+		score, breakdown := scoreCandidate([]scoreInput{
+			{name: "distance_from_home", unit: "km", raw: best.distM / 1000, known: true,
+				w: p.Score.WeightDistance, full: p.Score.DistanceFullKm},
+			{name: "destination_dwell", unit: "h", raw: destDwellHrs, known: true,
+				w: p.Score.WeightDwell, full: p.Score.DwellFullHrs},
+			{name: "observation_density", unit: "obs/day", raw: float64(sp.e-sp.s+1) / days, known: days > 0,
+				w: p.Score.WeightDensity, full: p.Score.DensityFullPerDay},
+			{name: "span_duration", unit: "days", raw: days, known: true,
+				w: p.Score.WeightDuration, full: p.Score.DurationFullDays},
+		})
+
 		cands = append(cands, Candidate{
 			Start:    t0,
 			End:      t1,
@@ -177,6 +208,8 @@ func Run(o domain.Observations, p Params) Result {
 			// the import boundary, not ended by a return home. Mark, don't guess.
 			StartTruncated: sp.s == 0,
 			EndTruncated:   sp.e == len(all)-1,
+			Score:          score,
+			ScoreBreakdown: breakdown,
 		})
 	}
 

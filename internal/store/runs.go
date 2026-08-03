@@ -39,6 +39,10 @@ type CandidateRow struct {
 	StartTruncated bool
 	EndTruncated   bool
 	Modes          []detect.ModeCount
+	// Nullable: candidates stored before scoring existed have no score, and
+	// absence must stay distinguishable from zero.
+	Score          *float64
+	ScoreBreakdown []detect.ScoreComponent
 }
 
 // SaveRun records a detection run and its candidates. Candidates are derived
@@ -71,13 +75,17 @@ func (s *Store) SaveRun(ctx context.Context, p detect.Params, res detect.Result)
 		if err != nil {
 			return 0, err
 		}
+		breakdownJSON, err := json.Marshal(c.ScoreBreakdown)
+		if err != nil {
+			return 0, err
+		}
 		b.Queue(`INSERT INTO candidates (run_id, seq, span_start, span_start_offset_sec, span_end, span_end_offset_sec,
 			days, dest_lat, dest_lon, dest_km, track_km, stop_count, repeat_count, obs_count,
-			start_truncated, end_truncated, modes)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+			start_truncated, end_truncated, modes, score, score_breakdown)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
 			runID, i, c.Start, offsetOf(c.Start), c.End, offsetOf(c.End),
 			c.Days, c.Dest.Lat, c.Dest.Lon, c.DestKm, c.TrackKm, c.Stops, c.Repeat, c.ObsCount,
-			c.StartTruncated, c.EndTruncated, modesJSON)
+			c.StartTruncated, c.EndTruncated, modesJSON, c.Score, breakdownJSON)
 	}
 	br := tx.SendBatch(ctx, b)
 	for range b.Len() {
@@ -125,7 +133,7 @@ func (s *Store) LatestCandidate(ctx context.Context, id int64) (*CandidateRow, e
 
 const candidateSelect = `SELECT id, run_id, seq, span_start, span_start_offset_sec, span_end, span_end_offset_sec,
 	days, dest_lat, dest_lon, dest_km, track_km, stop_count, repeat_count, obs_count,
-	start_truncated, end_truncated, modes FROM candidates `
+	start_truncated, end_truncated, modes, score, score_breakdown FROM candidates `
 
 func (s *Store) candidatesForRun(ctx context.Context, runID int64) ([]CandidateRow, error) {
 	rows, err := s.pool.Query(ctx, candidateSelect+`WHERE run_id = $1 ORDER BY seq`, runID)
@@ -141,16 +149,21 @@ func scanCandidates(rows pgx.Rows) ([]CandidateRow, error) {
 	for rows.Next() {
 		var c CandidateRow
 		var soff, eoff int
-		var modes []byte
+		var modes, breakdown []byte
 		if err := rows.Scan(&c.ID, &c.RunID, &c.Seq, &c.SpanStart, &soff, &c.SpanEnd, &eoff,
 			&c.Days, &c.Dest.Lat, &c.Dest.Lon, &c.DestKm, &c.TrackKm, &c.Stops, &c.Repeat, &c.ObsCount,
-			&c.StartTruncated, &c.EndTruncated, &modes); err != nil {
+			&c.StartTruncated, &c.EndTruncated, &modes, &c.Score, &breakdown); err != nil {
 			return nil, err
 		}
 		c.SpanStart = withOffset(c.SpanStart, soff)
 		c.SpanEnd = withOffset(c.SpanEnd, eoff)
 		if err := json.Unmarshal(modes, &c.Modes); err != nil {
 			return nil, err
+		}
+		if breakdown != nil {
+			if err := json.Unmarshal(breakdown, &c.ScoreBreakdown); err != nil {
+				return nil, err
+			}
 		}
 		out = append(out, c)
 	}

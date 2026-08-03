@@ -19,6 +19,7 @@ import (
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
 	"roadbook/internal/store"
+	"roadbook/internal/suggest"
 	"roadbook/internal/timeline"
 )
 
@@ -83,6 +84,13 @@ probes to spot unannounced schema changes.
 // environment (docs/PLAN.md phase 5); the flag exists for one-off overrides.
 func dbFlag(fs *flag.FlagSet) *string {
 	return fs.String("db", os.Getenv("DATABASE_URL"), "Postgres URL (default $DATABASE_URL)")
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
 
 func openStore(ctx context.Context, dbURL string) (*store.Store, error) {
@@ -267,9 +275,26 @@ func runServe(args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	db := dbFlag(fs)
 	addr := fs.String("addr", ":8080", "listen address")
+	geocoder := fs.String("geocoder", envOr("ROADBOOK_GEOCODER", "none"),
+		"name suggester: none | nominatim (default $ROADBOOK_GEOCODER)")
+	nominatimURL := fs.String("nominatim-url", envOr("ROADBOOK_NOMINATIM_URL", "https://nominatim.openstreetmap.org"),
+		"Nominatim base URL (default $ROADBOOK_NOMINATIM_URL)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+
+	// The Suggester seam (BRIEF §1.7): null by default — a self-hosted
+	// product makes no surprise network calls; the geocoder is opt-in.
+	var sug suggest.Suggester
+	switch *geocoder {
+	case "none":
+		sug = suggest.Null{}
+	case "nominatim":
+		sug = suggest.NewNominatim(*nominatimURL)
+	default:
+		return fmt.Errorf("unknown -geocoder %q: use none or nominatim", *geocoder)
+	}
+
 	ctx := context.Background()
 	s, err := openStore(ctx, *db)
 	if err != nil {
@@ -277,7 +302,7 @@ func runServe(args []string) error {
 	}
 	defer s.Close()
 
-	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams()}
+	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Suggester: sug}
 	handler := api.HandlerFromMux(api.NewStrictHandler(srv, nil), http.NewServeMux())
 	fmt.Printf("roadbook API listening on %s\n", *addr)
 	return http.ListenAndServe(*addr, handler)
@@ -296,6 +321,15 @@ func runDetect(args []string) error {
 	fs.Float64Var(&p.MinHrs, "min-hrs", p.MinHrs, "minimum span duration, hours")
 	fs.Float64Var(&p.MinDwellMin, "min-dwell-min", p.MinDwellMin, "minimum stay to count as dwelling, minutes")
 	fs.Float64Var(&p.MaxKmh, "max-kmh", p.MaxKmh, "implied-speed outlier threshold, km/h")
+	fs.Float64Var(&p.Score.WeightDistance, "score-w-distance", p.Score.WeightDistance, "score weight: distance from home")
+	fs.Float64Var(&p.Score.WeightDwell, "score-w-dwell", p.Score.WeightDwell, "score weight: destination dwell")
+	fs.Float64Var(&p.Score.WeightDensity, "score-w-density", p.Score.WeightDensity, "score weight: observation density")
+	fs.Float64Var(&p.Score.WeightDuration, "score-w-duration", p.Score.WeightDuration, "score weight: span duration")
+	fs.Float64Var(&p.Score.DistanceFullKm, "score-distance-full-km", p.Score.DistanceFullKm, "destination distance saturating its score component, km")
+	fs.Float64Var(&p.Score.DwellFullHrs, "score-dwell-full-hrs", p.Score.DwellFullHrs, "destination dwell saturating its score component, hours")
+	fs.Float64Var(&p.Score.DensityFullPerDay, "score-density-full", p.Score.DensityFullPerDay, "observations/day saturating its score component")
+	fs.Float64Var(&p.Score.DurationFullDays, "score-duration-full-days", p.Score.DurationFullDays, "span days saturating its score component")
+	fs.Float64Var(&p.Score.DestRadiusKm, "score-dest-radius-km", p.Score.DestRadiusKm, "dwells within this of the destination count as destination dwell, km")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -361,8 +395,8 @@ func runDetect(args []string) error {
 	fmt.Println()
 
 	fmt.Printf("\n=== %d candidates ===\n", len(res.Candidates))
-	fmt.Printf("%3s %-11s %5s %8s %6s %5s %4s %-5s %s\n",
-		"#", "start", "days", "dest_km", "track", "stops", "rpt", "trunc", "dest")
+	fmt.Printf("%3s %-11s %5s %8s %6s %5s %4s %5s %-5s %s\n",
+		"#", "start", "days", "dest_km", "track", "stops", "rpt", "score", "trunc", "dest")
 	for i, c := range res.Candidates {
 		trunc := ""
 		if c.StartTruncated {
@@ -374,9 +408,9 @@ func runDetect(args []string) error {
 			}
 			trunc += "end"
 		}
-		fmt.Printf("%3d %-11s %5.1f %8d %6d %5d %4d %-5s [%.4f, %.4f]\n",
+		fmt.Printf("%3d %-11s %5.1f %8d %6d %5d %4d %5.1f %-5s [%.4f, %.4f]\n",
 			i+1, c.Start.Format("2006-01-02"), c.Days, c.DestKm, c.TrackKm,
-			c.Stops, c.Repeat, trunc, c.Dest.Lat, c.Dest.Lon)
+			c.Stops, c.Repeat, c.Score, trunc, c.Dest.Lat, c.Dest.Lon)
 	}
 
 	if *jsonOut != "" {

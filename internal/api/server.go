@@ -13,11 +13,13 @@ import (
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
 	"roadbook/internal/store"
+	"roadbook/internal/suggest"
 )
 
 type Server struct {
 	Store       *store.Store
 	MatchParams detect.MatchParams
+	Suggester   suggest.Suggester
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -162,6 +164,32 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 	return out, nil
 }
 
+// SuggestCandidateName is a one-shot lookup through the configured Suggester
+// (BRIEF §1.7). The suggestion prefills the confirm step's name input and is
+// never applied automatically; the null suggester's empty answer renders as
+// exactly today's empty input.
+func (s *Server) SuggestCandidateName(ctx context.Context, req SuggestCandidateNameRequestObject) (SuggestCandidateNameResponseObject, error) {
+	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	if cand == nil {
+		return SuggestCandidateName404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+	}
+	sug, err := s.Suggester.Suggest(ctx, cand.Dest)
+	if err != nil {
+		// The seam degrades visibly (invariant 7's shape): a reachable API
+		// with an unreachable geocoder says so instead of pretending the
+		// null answer.
+		return SuggestCandidateName502JSONResponse{Error: err.Error()}, nil
+	}
+	out := NameSuggestion{Source: sug.Source}
+	if sug.Name != "" {
+		out.Name = &sug.Name
+	}
+	return SuggestCandidateName200JSONResponse(out), nil
+}
+
 func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequestObject) (DecideCandidateResponseObject, error) {
 	action := DecisionAction(req.Body.Action)
 	if !action.Valid() {
@@ -234,7 +262,7 @@ func toAPICandidate(c store.CandidateRow) Candidate {
 	for i, m := range c.Modes {
 		modes[i] = ModeCount{Mode: m.Mode, N: m.N}
 	}
-	return Candidate{
+	out := Candidate{
 		Id:             c.ID,
 		SpanStart:      c.SpanStart,
 		SpanEnd:        c.SpanEnd,
@@ -248,7 +276,21 @@ func toAPICandidate(c store.CandidateRow) Candidate {
 		StartTruncated: c.StartTruncated,
 		EndTruncated:   c.EndTruncated,
 		Modes:          modes,
+		Score:          c.Score,
 	}
+	// Both stay absent (not zero, not empty) on rows from pre-scoring runs.
+	if c.ScoreBreakdown != nil {
+		comps := make([]ScoreComponent, len(c.ScoreBreakdown))
+		for i, sc := range c.ScoreBreakdown {
+			comps[i] = ScoreComponent{
+				Name: sc.Name, Present: sc.Present, Weight: sc.Weight,
+				Raw: sc.Raw, Unit: sc.Unit, Normalized: sc.Normalized,
+				Contribution: sc.Contribution,
+			}
+		}
+		out.ScoreBreakdown = &comps
+	}
+	return out
 }
 
 func toAPIDecision(d store.DecisionRow) Decision {

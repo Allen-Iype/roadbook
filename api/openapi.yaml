@@ -73,6 +73,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /candidates/{id}/name-suggestion:
+    get:
+      operationId: suggestCandidateName
+      summary: A proposed name for the candidate's adventure
+      description: >
+        One-shot lookup on the destination coordinate through the configured
+        Suggester (BRIEF §1.7) — the null implementation by default, a
+        reverse geocoder when enabled at serve time. The suggestion is
+        prefill for the confirm step's name input and is never applied
+        automatically. An absent name is a real answer: nothing to suggest.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Candidate id from the latest run.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: The suggestion, possibly empty.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NameSuggestion"
+        "404":
+          description: No such candidate in the latest run (stale id after re-detection).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: The configured suggester could not be reached.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /candidates/{id}/decision:
     post:
       operationId: decideCandidate
@@ -204,8 +242,64 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ModeCount"
+        score:
+          type: number
+          format: double
+          description: >
+            Confidence 0–100 from named weighted components (weights recorded
+            in the run's params). Ranking and decision support only — never a
+            filter, never auto-confirmation. Absent on candidates stored
+            before scoring existed: not scored is different information than
+            a low score.
+        score_breakdown:
+          type: array
+          description: The per-component arithmetic that reproduces `score`.
+          items:
+            $ref: "#/components/schemas/ScoreComponent"
         decision:
           $ref: "#/components/schemas/Decision"
+
+    ScoreComponent:
+      type: object
+      required: [name, present, weight, raw, unit, normalized, contribution]
+      properties:
+        name:
+          type: string
+          description: e.g. distance_from_home, destination_dwell.
+        present:
+          type: boolean
+          description: >
+            False when the component could not be computed; its weight was
+            redistributed across the rest, never scored as zero.
+        weight:
+          type: number
+          format: double
+          description: Configured weight, before any redistribution.
+        raw:
+          type: number
+          format: double
+          description: Measured value in `unit`; 0 when not present.
+        unit:
+          type: string
+        normalized:
+          type: number
+          format: double
+          description: Raw scaled against its saturation anchor, clamped to [0,1].
+        contribution:
+          type: number
+          format: double
+          description: Points contributed to the 0–100 score; contributions sum to it.
+
+    NameSuggestion:
+      type: object
+      required: [source]
+      properties:
+        name:
+          type: string
+          description: Absent when there is nothing to suggest.
+        source:
+          type: string
+          description: Which suggester answered — "none" for the null implementation.
 
     Decision:
       type: object

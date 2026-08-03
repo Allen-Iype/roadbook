@@ -40,3 +40,17 @@ export async function decideCandidate(
   revalidatePath("/");
   return { ok: true };
 }
+
+// Name suggestion for the confirm step (BRIEF §1.7). Best-effort by design:
+// the null suggester, a stale candidate, or an unreachable geocoder all
+// return no name, and the confirm flow proceeds with an empty input exactly
+// as it would without the seam. The suggestion is prefill — never applied
+// to a decision by itself.
+export async function suggestName(
+  candidateId: number,
+): Promise<{ name?: string }> {
+  const { data } = await api.GET("/candidates/{id}/name-suggestion", {
+    params: { path: { id: candidateId } },
+  });
+  return { name: data?.name };
+}

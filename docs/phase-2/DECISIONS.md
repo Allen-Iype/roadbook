@@ -140,3 +140,47 @@ with a reloaded polygon set); alphabetical order (journey order is
 information: "India · Nepal" says where it started).
 Would change our mind: the per-read query measurably dragging on real
 journeys — persistence then joins phase 3's routing-cache discussion.
+
+## 2026-08-03 — score is a weighted mean over present components
+
+Chosen: score = 100 × Σ(weight·normalized)/Σ(weight) over the components
+that could be measured — redistribution of a missing component's weight
+(BRIEF §1.6) falls out of the denominator instead of being a special case.
+Four components, each with a named linear saturation anchor: distance from
+home (full at 1000 km), dwell within 60 km of the destination (24 h),
+observation density (48 obs/day), span duration (7 days); weights
+0.35/0.30/0.20/0.15 because distance and dwell are the two halves of the
+detection rule itself. All recorded per run under params.SCORE.
+Rejected: scoring absent components zero (absence would read as low
+confidence — the lie invariant 8 forbids on the map, in numeric form);
+logarithmic normalization (harder to reproduce by hand, and the breakdown's
+whole point is hand-checkable arithmetic).
+Would change our mind on the anchors: measured score bunching on the full
+archive — the anchors are parameters precisely so retuning is a recorded
+run, not a code change.
+
+## 2026-08-03 — score columns are nullable; absence is not zero
+
+Chosen: `score`/`score_breakdown` on candidates are NULL for rows stored
+before scoring existed; the API omits them and the UI shows a dash ("not
+scored"), never 0.
+Rejected: backfilling old runs (their params carry no SCORE block — a
+backfilled score would claim parameters that run never had, violating
+invariant 3); NOT NULL DEFAULT 0 (reads as "no confidence", which is false).
+Would change our mind: nothing — old runs are comparison history, and
+re-running detection is the supported way to score current candidates.
+
+## 2026-08-03 — Suggester defaults to null; Nominatim is opt-in
+
+Chosen: `roadbook serve` wires the null suggester unless
+`-geocoder nominatim` (or ROADBOOK_GEOCODER) says otherwise, with the
+instance URL configurable for self-hosted Nominatim; the suggestion
+prefills the confirm input only while it is still empty — typed text always
+wins, and nothing is ever applied to a decision automatically.
+Rejected: geocoder-by-default (a self-hosted product must not make
+surprise network calls); suggesting at list-render time (18 lookups per
+page view against a policy that allows interactive use — one lookup per
+confirm click is the honest shape).
+Would change our mind on the default: a bundled offline gazetteer landing
+in some later phase — then suggestions can be on by default without a
+network dependency.

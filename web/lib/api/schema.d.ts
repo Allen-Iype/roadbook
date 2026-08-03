@@ -61,6 +61,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/{id}/name-suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A proposed name for the candidate's adventure
+         * @description One-shot lookup on the destination coordinate through the configured Suggester (BRIEF §1.7) — the null implementation by default, a reverse geocoder when enabled at serve time. The suggestion is prefill for the confirm step's name input and is never applied automatically. An absent name is a real answer: nothing to suggest.
+         */
+        get: operations["suggestCandidateName"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/candidates/{id}/decision": {
         parameters: {
             query?: never;
@@ -131,7 +151,47 @@ export interface components {
             start_truncated: boolean;
             end_truncated: boolean;
             modes: components["schemas"]["ModeCount"][];
+            /**
+             * Format: double
+             * @description Confidence 0–100 from named weighted components (weights recorded in the run's params). Ranking and decision support only — never a filter, never auto-confirmation. Absent on candidates stored before scoring existed: not scored is different information than a low score.
+             */
+            score?: number;
+            /** @description The per-component arithmetic that reproduces `score`. */
+            score_breakdown?: components["schemas"]["ScoreComponent"][];
             decision?: components["schemas"]["Decision"];
+        };
+        ScoreComponent: {
+            /** @description e.g. distance_from_home, destination_dwell. */
+            name: string;
+            /** @description False when the component could not be computed; its weight was redistributed across the rest, never scored as zero. */
+            present: boolean;
+            /**
+             * Format: double
+             * @description Configured weight, before any redistribution.
+             */
+            weight: number;
+            /**
+             * Format: double
+             * @description Measured value in `unit`; 0 when not present.
+             */
+            raw: number;
+            unit: string;
+            /**
+             * Format: double
+             * @description Raw scaled against its saturation anchor, clamped to [0,1].
+             */
+            normalized: number;
+            /**
+             * Format: double
+             * @description Points contributed to the 0–100 score; contributions sum to it.
+             */
+            contribution: number;
+        };
+        NameSuggestion: {
+            /** @description Absent when there is nothing to suggest. */
+            name?: string;
+            /** @description Which suggester answered — "none" for the null implementation. */
+            source: string;
         };
         Decision: {
             /** Format: int64 */
@@ -304,6 +364,47 @@ export interface operations {
             };
             /** @description No such candidate in the latest run (stale id after re-detection). */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    suggestCandidateName: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Candidate id from the latest run. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The suggestion, possibly empty. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NameSuggestion"];
+                };
+            };
+            /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The configured suggester could not be reached. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
