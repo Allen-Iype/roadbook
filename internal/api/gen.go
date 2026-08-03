@@ -122,6 +122,13 @@ type CandidateList struct {
 	Run               *Run       `json:"run,omitempty"`
 }
 
+// Country defines model for Country.
+type Country struct {
+	// IsoCode ISO 3166-1 alpha-2 where Natural Earth provides one (Kosovo's XK is user-assigned); territories without any alpha-2 carry Natural Earth's three-letter ADM0_A3 instead.
+	IsoCode string `json:"iso_code"`
+	Name    string `json:"name"`
+}
+
 // Decision defines model for Decision.
 type Decision struct {
 	Action DecisionAction `json:"action"`
@@ -159,6 +166,9 @@ type Health struct {
 
 // Journey defines model for Journey.
 type Journey struct {
+	// Countries Countries the route's points fall in, ordered by first appearance along the journey. Derived locally by point-in-polygon against bundled Natural Earth polygons — never a network lookup. Empty when `roadbook countries` has not been run. Border-adjacent points can misattribute at 1:110m resolution; the UI labels this line as derived.
+	Countries []Country `json:"countries"`
+
 	// GoogleKm Google's own distance figure summed over the window's activities — the independent check routed distance is validated against in phase 3. 0 when the window holds no activities.
 	GoogleKm     float64 `json:"google_km"`
 	InferredKm   float64 `json:"inferred_km"`

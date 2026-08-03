@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"roadbook/internal/api"
+	"roadbook/internal/countries"
 	"roadbook/internal/detect"
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
@@ -38,6 +39,8 @@ func main() {
 		err = runMigrate(os.Args[2:])
 	case "import":
 		err = runImport(os.Args[2:])
+	case "countries":
+		err = runCountries(os.Args[2:])
 	case "serve":
 		err = runServe(os.Args[2:])
 	default:
@@ -54,6 +57,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   roadbook migrate [-db url]
   roadbook import  -src <timeline export.json> [-db url] [-from date] [-to date] [-label name]
+  roadbook countries [-src <admin-0 geojson[.gz]>] [-db url]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
   roadbook journey -src <export.json> -from <RFC3339> -to <RFC3339> [threshold flags]
   roadbook serve   [-db url] [-addr :8080]
@@ -61,6 +65,9 @@ func usage() {
 
 'migrate' applies embedded schema migrations.
 'import' parses an export and stores observations idempotently.
+'countries' loads country polygons for point-in-polygon attribution: the
+bundled Natural Earth 1:110m set by default, or a higher-resolution admin-0
+file from disk via -src. Replaces the table wholesale; never fetches.
 'detect' finds adventure candidates: from a file (prints only) or from the
 database (persists a run and its candidates, then prints).
 'journey' assembles one window of observations into observed and gap legs and
@@ -208,6 +215,52 @@ func filterWindow(obs domain.Observations, from, to *time.Time) domain.Observati
 		}
 	}
 	return out
+}
+
+// runCountries loads country polygons for point-in-polygon attribution. The
+// default source is the file embedded in internal/countries — no network
+// fetch at any time (BRIEF §3E); -src accepts a higher-resolution Natural
+// Earth admin-0 file from disk, gzipped or plain.
+func runCountries(args []string) error {
+	fs := flag.NewFlagSet("countries", flag.ExitOnError)
+	src := fs.String("src", "", "Natural Earth admin-0 GeoJSON, .geojson or .gz (default: bundled 1:110m)")
+	db := dbFlag(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	var list []countries.Country
+	label := "bundled Natural Earth 1:110m"
+	if *src == "" {
+		var err error
+		list, err = countries.Bundled()
+		if err != nil {
+			return err
+		}
+	} else {
+		f, err := os.Open(*src)
+		if err != nil {
+			return err
+		}
+		list, err = countries.Parse(f)
+		f.Close()
+		if err != nil {
+			return fmt.Errorf("cannot load %s: %w", filepath.Base(*src), err)
+		}
+		label = filepath.Base(*src)
+	}
+
+	ctx := context.Background()
+	s, err := openStore(ctx, *db)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+	if err := s.ReplaceCountries(ctx, list); err != nil {
+		return err
+	}
+	fmt.Printf("loaded %d countries from %s\n", len(list), label)
+	return nil
 }
 
 func runServe(args []string) error {

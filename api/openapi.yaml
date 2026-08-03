@@ -318,11 +318,25 @@ components:
           format: double
           description: First-to-last straight line during the halt, not path sum.
 
+    Country:
+      type: object
+      required: [iso_code, name]
+      properties:
+        iso_code:
+          type: string
+          description: >
+            ISO 3166-1 alpha-2 where Natural Earth provides one (Kosovo's XK
+            is user-assigned); territories without any alpha-2 carry Natural
+            Earth's three-letter ADM0_A3 instead.
+        name:
+          type: string
+
     Journey:
       type: object
       required:
-        [window_start, window_end, params, legs, stops, total_km, observed_km,
-         inferred_km, google_km, merged_points, trace_points_kept, raw_points_kept]
+        [window_start, window_end, params, legs, stops, countries, total_km,
+         observed_km, inferred_km, google_km, merged_points, trace_points_kept,
+         raw_points_kept]
       properties:
         window_start:
           type: string
@@ -342,6 +356,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Stop"
+        countries:
+          type: array
+          description: >
+            Countries the route's points fall in, ordered by first
+            appearance along the journey. Derived locally by point-in-polygon
+            against bundled Natural Earth polygons — never a network lookup.
+            Empty when `roadbook countries` has not been run. Border-adjacent
+            points can misattribute at 1:110m resolution; the UI labels this
+            line as derived.
+          items:
+            $ref: "#/components/schemas/Country"
         total_km:
           type: number
           format: double

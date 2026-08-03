@@ -102,3 +102,41 @@ code that drifts on upgrade).
 Would change our mind: Turbopack gaining first-class support for
 dependency-internal workers, or MapLibre shipping a bundler-safe worker
 entry — then the copy script goes.
+
+## 2026-08-03 — country polygons committed verbatim, embedded, replaced wholesale
+
+Chosen: the upstream Natural Earth 1:110m admin-0 GeoJSON gzipped unchanged
+(209 KB — provenance is "this file, gzipped"), compiled in via `go:embed` so
+`roadbook countries` needs no arguments and no network ever; the loader
+replaces the table's contents in one transaction, and `-src` accepts a
+higher-resolution file from disk.
+Rejected: slimming properties before committing (saves ~100 KB but the
+committed file no longer byte-matches upstream); upserting by code (stale
+rows survive a switch to a source file with a different country set);
+fetching at build or install time (the phase 1 font lesson, and BRIEF §3E).
+Would change our mind: a wanted source file that tops 1 MB even gzipped —
+slimming then returns as the price of admission.
+
+## 2026-08-03 — ISO codes take the ISO_A2_EH → ISO_A2 → ADM0_A3 fallback
+
+Chosen: prefer Natural Earth's corrected `ISO_A2_EH` column, then `ISO_A2`,
+then the three-letter `ADM0_A3`; "-99" (Natural Earth's null) never passes.
+Measured on the bundled file: France, Norway, Kosovo recover via ISO_A2_EH;
+Northern Cyprus and Somaliland land on CYN/SOL; 177 features, zero collisions
+— pinned by internal/countries's offline test.
+Rejected: `ISO_A2` alone (France and Norway read "-99"); dropping features
+without an alpha-2 (a journey through them would silently lose a country).
+Would change our mind: upstream assigning real alpha-2 codes to the ADM0_A3
+holdouts — the fallback then simply stops firing.
+
+## 2026-08-03 — countries computed at read time, ordered by first appearance
+
+Chosen: attribution runs per journey read — one SQL query, every drawn leg
+point unnested against the GiST-indexed polygons, grouped per country,
+ordered by the first point that hit it, so the line reads in journey order.
+Nothing is persisted, matching legs (BRIEF §3B: derived data stays derived).
+Rejected: storing countries on the candidate row (a cache that can disagree
+with a reloaded polygon set); alphabetical order (journey order is
+information: "India · Nepal" says where it started).
+Would change our mind: the per-read query measurably dragging on real
+journeys — persistence then joins phase 3's routing-cache discussion.

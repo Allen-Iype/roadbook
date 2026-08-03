@@ -141,6 +141,17 @@ function Header({
           </span>
         )}
       </p>
+      {journey.countries.length > 0 && (
+        // Derived line (BRIEF §1.4): point-in-polygon against bundled Natural
+        // Earth polygons, computed locally — the label says so because border
+        // -adjacent points can misattribute at 1:110m resolution.
+        <p className="mt-1 text-sm text-neutral-300">
+          {journey.countries.map((c) => c.name).join(" · ")}{" "}
+          <span className="text-xs text-neutral-500">
+            — countries derived from route points
+          </span>
+        </p>
+      )}
     </header>
   );
 }

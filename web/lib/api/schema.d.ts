@@ -196,6 +196,11 @@ export interface components {
              */
             displacement_km: number;
         };
+        Country: {
+            /** @description ISO 3166-1 alpha-2 where Natural Earth provides one (Kosovo's XK is user-assigned); territories without any alpha-2 carry Natural Earth's three-letter ADM0_A3 instead. */
+            iso_code: string;
+            name: string;
+        };
         Journey: {
             /** Format: date-time */
             window_start: string;
@@ -207,6 +212,8 @@ export interface components {
             };
             legs: components["schemas"]["Leg"][];
             stops: components["schemas"]["Stop"][];
+            /** @description Countries the route's points fall in, ordered by first appearance along the journey. Derived locally by point-in-polygon against bundled Natural Earth polygons — never a network lookup. Empty when `roadbook countries` has not been run. Border-adjacent points can misattribute at 1:110m resolution; the UI labels this line as derived. */
+            countries: components["schemas"]["Country"][];
             /** Format: double */
             total_km: number;
             /** Format: double */

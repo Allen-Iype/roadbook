@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"roadbook/internal/detect"
+	"roadbook/internal/domain"
 	"roadbook/internal/journey"
 	"roadbook/internal/store"
 )
@@ -84,6 +85,24 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 	out, err := toAPIJourney(j)
 	if err != nil {
 		return nil, err
+	}
+
+	// Countries crossed: every point the route draws, against the loaded
+	// polygons, in one query (BRIEF §1.4). Gap-leg endpoints duplicate the
+	// neighbouring observed points; the query's GROUP BY absorbs that.
+	var pts []domain.LatLng
+	for _, l := range j.Legs {
+		for _, p := range l.Points {
+			pts = append(pts, p.Loc)
+		}
+	}
+	crossed, err := s.Store.CountriesForPoints(ctx, pts)
+	if err != nil {
+		return nil, err
+	}
+	out.Countries = make([]Country, 0, len(crossed))
+	for _, c := range crossed {
+		out.Countries = append(out.Countries, Country{IsoCode: c.ISOCode, Name: c.Name})
 	}
 	return GetCandidateJourney200JSONResponse(out), nil
 }
