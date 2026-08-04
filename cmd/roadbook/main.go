@@ -18,6 +18,7 @@ import (
 	"roadbook/internal/detect"
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
+	"roadbook/internal/route"
 	"roadbook/internal/store"
 	"roadbook/internal/suggest"
 	"roadbook/internal/timeline"
@@ -34,6 +35,8 @@ func main() {
 		err = runDetect(os.Args[2:])
 	case "journey":
 		err = runJourney(os.Args[2:])
+	case "route":
+		err = runRoute(os.Args[2:])
 	case "probe":
 		err = runProbe(os.Args[2:])
 	case "migrate":
@@ -60,7 +63,8 @@ func usage() {
   roadbook import  -src <timeline export.json> [-db url] [-from date] [-to date] [-label name]
   roadbook countries [-src <admin-0 geojson[.gz]>] [-db url]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
-  roadbook journey -src <export.json> -from <RFC3339> -to <RFC3339> [threshold flags]
+  roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
+  roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh]
   roadbook serve   [-db url] [-addr :8080]
   roadbook probe   -src <timeline export.json>
 
@@ -72,7 +76,13 @@ file from disk via -src. Replaces the table wholesale; never fetches.
 'detect' finds adventure candidates: from a file (prints only) or from the
 database (persists a run and its candidates, then prints).
 'journey' assembles one window of observations into observed and gap legs and
-prints the reconstruction — the command behind every journey figure.
+prints the reconstruction — the command behind every journey figure. With
+-candidate it reads the candidate's span from the database and applies the
+routing cache, exactly as the API does; with -src it is pure file-in.
+'route' fills unknown gaps from a router, in batch, into the route_cache
+table — the only network step in routing, and entirely optional: with the
+default null router it inventories the gaps and fills nothing. Scope
+defaults to confirmed adventures of the latest run.
 'serve' runs the HTTP API.
 'probe' reports every JSON key path in an export and its frequency; diff two
 probes to spot unannounced schema changes.
@@ -437,9 +447,11 @@ func runDetect(args []string) error {
 //	  -from 2026-07-27T19:46:35+05:30 -to 2026-07-28T07:12:22+05:30
 func runJourney(args []string) error {
 	fs := flag.NewFlagSet("journey", flag.ExitOnError)
-	src := fs.String("src", "", "path to a Timeline export (required)")
-	from := fs.String("from", "", "window start, RFC3339 (required)")
-	to := fs.String("to", "", "window end, RFC3339 (required)")
+	src := fs.String("src", "", "path to a Timeline export (file mode)")
+	from := fs.String("from", "", "window start, RFC3339 (file mode)")
+	to := fs.String("to", "", "window end, RFC3339 (file mode)")
+	candidateID := fs.Int64("candidate", 0, "assemble a candidate's span from the database, cache-applied (DB mode)")
+	db := dbFlag(fs)
 	p := journey.DefaultParams()
 	fs.Float64Var(&p.GapThresholdMinutes, "gap-min", p.GapThresholdMinutes,
 		"silence longer than this becomes a gap leg, minutes")
@@ -454,32 +466,62 @@ func runJourney(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if *src == "" || *from == "" || *to == "" {
+
+	var j journey.Journey
+	switch {
+	case *candidateID != 0:
+		// DB mode mirrors the API handler exactly — Assemble, then apply the
+		// routing cache — so CLI and page cannot disagree about the same
+		// candidate. The serve rule holds here too: the cache is read, no
+		// router is ever dialled.
+		ctx := context.Background()
+		s, err := openStore(ctx, *db)
+		if err != nil {
+			return err
+		}
+		defer s.Close()
+		cand, err := s.LatestCandidate(ctx, *candidateID)
+		if err != nil {
+			return err
+		}
+		if cand == nil {
+			return fmt.Errorf("candidate %d is not in the latest run", *candidateID)
+		}
+		obs, err := s.LoadJourneyInputs(ctx, cand.SpanStart, cand.SpanEnd)
+		if err != nil {
+			return err
+		}
+		j = journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, p)
+		lookup, err := s.LookupRoutes(ctx, route.UnknownKeys(j, api.RouteProfile))
+		if err != nil {
+			return err
+		}
+		j = route.Apply(j, api.RouteProfile, lookup)
+	case *src != "" && *from != "" && *to != "":
+		winStart, err := time.Parse(time.RFC3339, *from)
+		if err != nil {
+			return fmt.Errorf("-from: %w", err)
+		}
+		winEnd, err := time.Parse(time.RFC3339, *to)
+		if err != nil {
+			return fmt.Errorf("-to: %w", err)
+		}
+		f, err := os.Open(*src)
+		if err != nil {
+			return err
+		}
+		obs, st, err := timeline.Parse(f)
+		f.Close()
+		if err != nil {
+			return fmt.Errorf("cannot read %s: %w", filepath.Base(*src), err)
+		}
+		fmt.Printf("parsed %s: %d visits, %d activities, %d path points, %d raw positions\n",
+			filepath.Base(*src), st.Visits, st.Activities, st.Points, st.RawPositions)
+		j = journey.Assemble(obs, winStart, winEnd, p)
+	default:
 		fs.Usage()
-		return fmt.Errorf("-src, -from and -to are required")
+		return fmt.Errorf("either -candidate id, or -src with -from and -to")
 	}
-	winStart, err := time.Parse(time.RFC3339, *from)
-	if err != nil {
-		return fmt.Errorf("-from: %w", err)
-	}
-	winEnd, err := time.Parse(time.RFC3339, *to)
-	if err != nil {
-		return fmt.Errorf("-to: %w", err)
-	}
-
-	f, err := os.Open(*src)
-	if err != nil {
-		return err
-	}
-	obs, st, err := timeline.Parse(f)
-	f.Close()
-	if err != nil {
-		return fmt.Errorf("cannot read %s: %w", filepath.Base(*src), err)
-	}
-	fmt.Printf("parsed %s: %d visits, %d activities, %d path points, %d raw positions\n",
-		filepath.Base(*src), st.Visits, st.Activities, st.Points, st.RawPositions)
-
-	j := journey.Assemble(obs, winStart, winEnd, p)
 
 	fmt.Printf("\nwindow %s .. %s (%.1f h)\n",
 		j.WindowStart.Format(time.RFC3339), j.WindowEnd.Format(time.RFC3339),
@@ -496,6 +538,9 @@ func runJourney(args []string) error {
 		j.TotalKm, j.ObservedKm, obsPct, j.InferredKm, infPct)
 	if j.AirKm > 0 {
 		fmt.Printf("of the inferred, %.1f km is air (great-circle; excluded from road validation)\n", j.AirKm)
+	}
+	if j.RoutedKm > 0 {
+		fmt.Printf("routed roads cover %.1f km (cache); %.1f km of gaps stay unknown\n", j.RoutedKm, j.UnknownKm)
 	}
 	if j.GoogleDistanceKm > 0 {
 		fmt.Printf("google's own figure %.1f km (%+.1f%%)\n",
@@ -519,6 +564,237 @@ func runJourney(args []string) error {
 			s.End.Sub(s.Start).Minutes(), s.DisplacementKm, s.Points, s.Loc.Lat, s.Loc.Lon)
 	}
 	return nil
+}
+
+// runRoute is the batch routing step (phase 3 BRIEF §1.2, §3G): enumerate
+// journeys, collect their unknown gaps, consult the cache, ask the router
+// only what the cache cannot answer, persist every data answer, record the
+// run. The serve binary never routes — this command is the one place the
+// product touches a routing service, and with the default null router it
+// touches nothing at all.
+func runRoute(args []string) error {
+	fs := flag.NewFlagSet("route", flag.ExitOnError)
+	db := dbFlag(fs)
+	routerName := fs.String("router", envOr("ROADBOOK_ROUTER", "none"),
+		"router: none | osrm (default $ROADBOOK_ROUTER)")
+	routerURL := fs.String("router-url", envOr("ROADBOOK_ROUTER_URL", route.PublicOSRMURL),
+		"OSRM base URL (default $ROADBOOK_ROUTER_URL, else the public demo)")
+	profile := fs.String("profile", api.RouteProfile, "routing profile")
+	interval := fs.Duration("interval", time.Second,
+		"minimum spacing between router requests — courtesy for the public demo; 0 against localhost")
+	dataset := fs.String("dataset", "",
+		"OSM snapshot identity recorded with each answer (e.g. the extract filename)")
+	all := fs.Bool("all", false, "route every candidate of the latest run, not just confirmed ones")
+	candidateID := fs.Int64("candidate", 0, "route one candidate by id (any decision state)")
+	refresh := fs.Bool("refresh", false, "re-ask the router even for cached pairs and replace the rows")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	var router route.Router
+	switch *routerName {
+	case "none":
+		router = route.Null{}
+	case "osrm":
+		router = route.NewOSRM(*routerURL, *profile)
+	default:
+		return fmt.Errorf("unknown -router %q: use none or osrm", *routerName)
+	}
+
+	ctx := context.Background()
+	s, err := openStore(ctx, *db)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	run, cands, err := s.LatestRun(ctx)
+	if err != nil {
+		return err
+	}
+	if run == nil {
+		return fmt.Errorf("no detection run in the database — run 'roadbook detect' first")
+	}
+
+	// Scope: one candidate > all > confirmed (the default — confirmed
+	// adventures are the product; routing dismissable rows multiplies load).
+	decs, err := s.ListDecisions(ctx)
+	if err != nil {
+		return err
+	}
+	refs := make([]detect.SpanRef, len(cands))
+	for i, c := range cands {
+		refs[i] = detect.SpanRef{ID: c.ID, Start: c.SpanStart, End: c.SpanEnd, Dest: c.Dest}
+	}
+	anchors := make([]detect.Anchor, len(decs))
+	for i, d := range decs {
+		anchors[i] = detect.Anchor{ID: d.ID, Start: d.AnchorStart, End: d.AnchorEnd, Dest: d.AnchorDest, CreatedAt: d.CreatedAt}
+	}
+	matched := detect.Match(refs, anchors, detect.DefaultMatchParams())
+	decByID := make(map[int64]store.DecisionRow, len(decs))
+	for _, d := range decs {
+		decByID[d.ID] = d
+	}
+
+	type target struct {
+		cand store.CandidateRow
+		name string
+	}
+	var targets []target
+	for _, c := range cands {
+		name := ""
+		confirmed := false
+		if did, ok := matched[c.ID]; ok {
+			d := decByID[did]
+			confirmed = d.Action == "confirmed"
+			if d.Name != nil {
+				name = *d.Name
+			}
+		}
+		switch {
+		case *candidateID != 0:
+			if c.ID == *candidateID {
+				targets = append(targets, target{c, name})
+			}
+		case *all || confirmed:
+			targets = append(targets, target{c, name})
+		}
+	}
+	if *candidateID != 0 && len(targets) == 0 {
+		return fmt.Errorf("candidate %d is not in the latest run", *candidateID)
+	}
+	fmt.Printf("run %d: %d candidates, routing %d (scope: %s)\n",
+		run.ID, len(cands), len(targets), scopeName(*candidateID, *all))
+
+	// Collect every unknown-gap key across the scope, deduped in order; a
+	// pair routed once serves every journey that contains it.
+	params := journey.DefaultParams()
+	perTarget := make([][]route.Key, len(targets))
+	var keys []route.Key
+	seen := map[route.Key]bool{}
+	for i, tg := range targets {
+		obs, err := s.LoadJourneyInputs(ctx, tg.cand.SpanStart, tg.cand.SpanEnd)
+		if err != nil {
+			return err
+		}
+		j := journey.Assemble(obs, tg.cand.SpanStart, tg.cand.SpanEnd, params)
+		perTarget[i] = route.UnknownKeys(j, *profile)
+		for _, k := range perTarget[i] {
+			if !seen[k] {
+				seen[k] = true
+				keys = append(keys, k)
+			}
+		}
+	}
+
+	cached, err := s.LookupRoutes(ctx, keys)
+	if err != nil {
+		return err
+	}
+
+	var counts store.RouteRunCounts
+	counts.GapsFound = len(keys)
+	status := make(map[route.Key]string, len(keys))
+	var toAsk []route.Key
+	for _, k := range keys {
+		if c, ok := cached[k]; ok && !*refresh {
+			counts.CacheHits++
+			status[k] = c.Status + " (cached)"
+			continue
+		}
+		toAsk = append(toAsk, k)
+	}
+
+	if _, isNull := router.(route.Null); isNull && len(toAsk) > 0 {
+		fmt.Printf("null router: %d uncached pair(s) stay unknown — run with -router osrm to fill them\n", len(toAsk))
+	} else {
+		for i, k := range toAsk {
+			if i > 0 && *interval > 0 {
+				time.Sleep(*interval)
+			}
+			r, err := router.Route(ctx, k.From(), k.To())
+			switch {
+			case err == nil:
+				if err := s.SaveRoute(ctx, k, route.Cached{
+					Status: route.StatusRouted, Points: r.Points,
+					DistanceM: r.DistanceM, DurationS: r.DurationS,
+				}, *routerName+" "+*routerURL, *dataset); err != nil {
+					return err
+				}
+				counts.Routed++
+				status[k] = "routed"
+			case err == route.ErrNoRoute:
+				if err := s.SaveRoute(ctx, k, route.Cached{Status: route.StatusNoRoute},
+					*routerName+" "+*routerURL, *dataset); err != nil {
+					return err
+				}
+				counts.NoRoute++
+				status[k] = "no_route"
+			default:
+				// Operational, not a data answer: report, never cache.
+				counts.Failures++
+				status[k] = "failed"
+				fmt.Printf("  FAILED (%.4f,%.4f)->(%.4f,%.4f): %v\n",
+					k.From().Lat, k.From().Lon, k.To().Lat, k.To().Lon, err)
+			}
+		}
+	}
+
+	for i, tg := range targets {
+		tally := map[string]int{}
+		for _, k := range perTarget[i] {
+			st := status[k]
+			if st == "" {
+				st = "unknown"
+			}
+			tally[st]++
+		}
+		label := fmt.Sprintf("candidate %d", tg.cand.ID)
+		if tg.name != "" {
+			label += fmt.Sprintf(" %q", tg.name)
+		}
+		fmt.Printf("  %s: %d unknown gap(s) — %s\n", label, len(perTarget[i]), tallyString(tally))
+	}
+	fmt.Printf("totals: %d unique pair(s) | %d cached | %d routed | %d no_route | %d failed\n",
+		counts.GapsFound, counts.CacheHits, counts.Routed, counts.NoRoute, counts.Failures)
+
+	runID, err := s.InsertRouteRun(ctx, *routerName+" "+*routerURL, *dataset, map[string]any{
+		"profile": *profile, "interval": interval.String(), "refresh": *refresh,
+		"scope": scopeName(*candidateID, *all), "journey_params": params,
+	}, counts)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("recorded route run %d\n", runID)
+	return nil
+}
+
+func scopeName(candidateID int64, all bool) string {
+	switch {
+	case candidateID != 0:
+		return fmt.Sprintf("candidate %d", candidateID)
+	case all:
+		return "all"
+	default:
+		return "confirmed"
+	}
+}
+
+func tallyString(t map[string]int) string {
+	if len(t) == 0 {
+		return "none"
+	}
+	order := []string{"routed", "routed (cached)", "no_route", "no_route (cached)", "failed", "unknown"}
+	out := ""
+	for _, k := range order {
+		if t[k] > 0 {
+			if out != "" {
+				out += ", "
+			}
+			out += fmt.Sprintf("%d %s", t[k], k)
+		}
+	}
+	return out
 }
 
 func runProbe(args []string) error {

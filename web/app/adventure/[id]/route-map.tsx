@@ -101,6 +101,18 @@ export function RouteMap({
         },
       });
       map.addLayer({
+        id: "road-legs",
+        type: "line",
+        source: "route",
+        filter: ["==", ["get", "gap_kind"], "road"],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#38bdf8",
+          "line-width": 2.5,
+          "line-dasharray": [2, 3],
+        },
+      });
+      map.addLayer({
         id: "observed-legs",
         type: "line",
         source: "route",
@@ -157,11 +169,15 @@ function toGeoJSON(journey: Journey): GeoJSON.FeatureCollection {
       // The arc is generated here, client-side, because it is presentation:
       // the API reports exactly the two timestamped points it measured, and
       // fabricated intermediate coordinates must not enter a response that
-      // otherwise contains only measurements (phase 3 BRIEF §3F).
+      // otherwise contains only measurements (phase 3 BRIEF §3F). A road
+      // leg draws its cached routed geometry, which rides alongside the two
+      // timestamped endpoints in routed_points.
       coordinates:
         leg.gap_kind === "air"
           ? greatCircleArc(lngLat(leg.points[0]), lngLat(leg.points[1]))
-          : leg.points.map(lngLat),
+          : leg.gap_kind === "road" && leg.routed_points
+            ? leg.routed_points.map(lngLat)
+            : leg.points.map(lngLat),
     },
   }));
   for (const stop of journey.stops) {

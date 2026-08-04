@@ -389,6 +389,21 @@ components:
           type: number
           format: double
           description: Chord sum for observed legs; endpoint chord for gaps.
+        routed_points:
+          type: array
+          description: >
+            Road geometry from the routing cache — present only when
+            gap_kind is "road". Rides alongside points (which still holds
+            exactly the two timestamped endpoints): routed vertices have no
+            timestamps, and are inference, not measurement.
+          items:
+            $ref: "#/components/schemas/LatLng"
+        routed_km:
+          type: number
+          format: double
+          description: >
+            The routed road distance — present only when gap_kind is
+            "road". distance_km keeps its chord meaning regardless.
         start:
           type: string
           format: date-time
@@ -432,8 +447,8 @@ components:
       type: object
       required:
         [window_start, window_end, params, legs, stops, countries, total_km,
-         observed_km, inferred_km, air_km, google_km, merged_points,
-         trace_points_kept, raw_points_kept]
+         observed_km, inferred_km, air_km, unknown_km, routed_km, google_km,
+         merged_points, trace_points_kept, raw_points_kept]
       properties:
         window_start:
           type: string
@@ -481,6 +496,20 @@ components:
             The endpoint chord is the great-circle distance, so it is also
             the arc's length. Excluded from road-distance validation. 0 for
             a ground journey.
+        unknown_km:
+          type: number
+          format: double
+          description: >
+            Chord sum over gaps still unknown after the routing cache was
+            consulted — the visibly-unfilled remainder. A router that cannot
+            fill a gap leaves it here by design (patchy OSM coverage is the
+            expected case, not an error).
+        routed_km:
+          type: number
+          format: double
+          description: >
+            Routed road distance summed over road legs. 0 when nothing is
+            routed — the product is fully usable without a router.
         google_km:
           type: number
           format: double

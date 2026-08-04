@@ -238,6 +238,13 @@ export interface components {
              * @description Chord sum for observed legs; endpoint chord for gaps.
              */
             distance_km: number;
+            /** @description Road geometry from the routing cache — present only when gap_kind is "road". Rides alongside points (which still holds exactly the two timestamped endpoints): routed vertices have no timestamps, and are inference, not measurement. */
+            routed_points?: components["schemas"]["LatLng"][];
+            /**
+             * Format: double
+             * @description The routed road distance — present only when gap_kind is "road". distance_km keeps its chord meaning regardless.
+             */
+            routed_km?: number;
             /** Format: date-time */
             start: string;
             /** Format: date-time */
@@ -285,6 +292,16 @@ export interface components {
              * @description Chord sum over air-classified gaps — a subset of inferred_km. The endpoint chord is the great-circle distance, so it is also the arc's length. Excluded from road-distance validation. 0 for a ground journey.
              */
             air_km: number;
+            /**
+             * Format: double
+             * @description Chord sum over gaps still unknown after the routing cache was consulted — the visibly-unfilled remainder. A router that cannot fill a gap leaves it here by design (patchy OSM coverage is the expected case, not an error).
+             */
+            unknown_km: number;
+            /**
+             * Format: double
+             * @description Routed road distance summed over road legs. 0 when nothing is routed — the product is fully usable without a router.
+             */
+            routed_km: number;
             /**
              * Format: double
              * @description Google's own distance figure summed over the window's activities — the independent check routed distance is validated against in phase 3. 0 when the window holds no activities.

@@ -92,6 +92,16 @@ type Leg struct {
 	GapKind    GapKind
 	Points     []TimedPoint
 	DistanceKm float64
+
+	// RoutedPoints and RoutedKm are set only by routing application
+	// (internal/route.Apply, from the batch-filled cache) — never by
+	// Assemble, which stays routing-free so the golden fixtures pin the
+	// whole pure pipeline. The routed geometry rides alongside Points: a
+	// gap leg still carries exactly its two timestamped endpoints, because
+	// routed vertices have no timestamps and are inference, not
+	// measurement.
+	RoutedPoints []domain.LatLng
+	RoutedKm     float64
 }
 
 func (l Leg) Start() time.Time { return l.Points[0].Time }
@@ -136,6 +146,12 @@ type Journey struct {
 	// separate figure exists for the arc. Excluded from road-distance
 	// validation (phase 3 BRIEF §3E).
 	AirKm float64
+	// UnknownKm is the chord sum over gaps still unknown — from Assemble,
+	// InferredKm − AirKm; route.Apply recomputes it as cached road answers
+	// claim gaps. RoutedKm is the routed-road distance over road legs, set
+	// only by route.Apply — Assemble never routes.
+	UnknownKm float64
+	RoutedKm  float64
 
 	// GoogleDistanceKm sums Google's own distanceMeters over the activities
 	// intersecting the window — the independent figure routed distance is
@@ -232,6 +248,8 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 			j.InferredKm += l.DistanceKm
 			if l.GapKind == GapAir {
 				j.AirKm += l.DistanceKm
+			} else {
+				j.UnknownKm += l.DistanceKm
 			}
 		}
 	}

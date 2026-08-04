@@ -67,7 +67,7 @@ export default async function AdventurePage({
       {journey.legs.length > 0 && (
         <>
           <RouteMap journey={journey} styleUrl={MAP_STYLE_URL} />
-          <Legend hasAir={journey.air_km > 0} />
+          <Legend hasAir={journey.air_km > 0} hasRoad={journey.routed_km > 0} />
         </>
       )}
       <Provenance journey={journey} />
@@ -81,7 +81,7 @@ export default async function AdventurePage({
 // never hidden, and never left to interpretation). Entries for classes the
 // journey does not contain are omitted — a legend describing lines that are
 // not on the map would be noise, not honesty.
-function Legend({ hasAir }: { hasAir: boolean }) {
+function Legend({ hasAir, hasRoad }: { hasAir: boolean; hasRoad: boolean }) {
   return (
     <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-neutral-400">
       <span className="inline-flex items-center gap-2">
@@ -102,6 +102,22 @@ function Legend({ hasAir }: { hasAir: boolean }) {
         </svg>
         unknown gap — no observations; the straight line is not a route
       </span>
+      {hasRoad && (
+        <span className="inline-flex items-center gap-2">
+          <svg width="32" height="4" aria-hidden>
+            <line
+              x1="0"
+              y1="2"
+              x2="32"
+              y2="2"
+              stroke="#38bdf8"
+              strokeWidth="2.5"
+              strokeDasharray="4 5"
+            />
+          </svg>
+          routed road — inferred from the road network, not measured
+        </span>
+      )}
       {hasAir && (
         <span className="inline-flex items-center gap-2">
           <svg width="32" height="4" aria-hidden>
@@ -202,6 +218,19 @@ function Provenance({ journey }: { journey: Journey }) {
           </>
         )}
       </p>
+      {journey.routed_km > 0 && (
+        <p className="mt-1">
+          <span className="text-sky-400">
+            routed roads cover {journey.routed_km.toFixed(1)} km
+          </span>{" "}
+          <span className="text-neutral-400">
+            (from the routing cache);{" "}
+            {journey.unknown_km > 0
+              ? `${journey.unknown_km.toFixed(1)} km of gaps remain unknown`
+              : "no gaps remain unknown"}
+          </span>
+        </p>
+      )}
       <p className="mt-1 text-xs text-neutral-500">
         {journey.merged_points} points ({journey.trace_points_kept} trace +{" "}
         {journey.raw_points_kept} raw)
@@ -249,6 +278,8 @@ function LegTable({ legs }: { legs: Leg[] }) {
                     <span className="text-emerald-400">observed</span>
                   ) : l.gap_kind === "air" ? (
                     <span className="text-violet-400">gap · air</span>
+                  ) : l.gap_kind === "road" ? (
+                    <span className="text-sky-400">gap · road</span>
                   ) : (
                     <span className="text-neutral-400">
                       gap · {l.gap_kind}

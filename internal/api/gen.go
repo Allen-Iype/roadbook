@@ -186,13 +186,19 @@ type Journey struct {
 	ObservedKm   float64 `json:"observed_km"`
 
 	// Params Exactly the parameters that produced this assembly (invariant 3).
-	Params          map[string]interface{} `json:"params"`
-	RawPointsKept   int                    `json:"raw_points_kept"`
-	Stops           []Stop                 `json:"stops"`
-	TotalKm         float64                `json:"total_km"`
-	TracePointsKept int                    `json:"trace_points_kept"`
-	WindowEnd       time.Time              `json:"window_end"`
-	WindowStart     time.Time              `json:"window_start"`
+	Params        map[string]interface{} `json:"params"`
+	RawPointsKept int                    `json:"raw_points_kept"`
+
+	// RoutedKm Routed road distance summed over road legs. 0 when nothing is routed — the product is fully usable without a router.
+	RoutedKm        float64 `json:"routed_km"`
+	Stops           []Stop  `json:"stops"`
+	TotalKm         float64 `json:"total_km"`
+	TracePointsKept int     `json:"trace_points_kept"`
+
+	// UnknownKm Chord sum over gaps still unknown after the routing cache was consulted — the visibly-unfilled remainder. A router that cannot fill a gap leaves it here by design (patchy OSM coverage is the expected case, not an error).
+	UnknownKm   float64   `json:"unknown_km"`
+	WindowEnd   time.Time `json:"window_end"`
+	WindowStart time.Time `json:"window_start"`
 }
 
 // LatLng defines model for LatLng.
@@ -213,7 +219,13 @@ type Leg struct {
 
 	// Points An observed leg carries its full point run; a gap leg carries exactly its two endpoints.
 	Points []TimedPoint `json:"points"`
-	Start  time.Time    `json:"start"`
+
+	// RoutedKm The routed road distance — present only when gap_kind is "road". distance_km keeps its chord meaning regardless.
+	RoutedKm *float64 `json:"routed_km,omitempty"`
+
+	// RoutedPoints Road geometry from the routing cache — present only when gap_kind is "road". Rides alongside points (which still holds exactly the two timestamped endpoints): routed vertices have no timestamps, and are inference, not measurement.
+	RoutedPoints *[]LatLng `json:"routed_points,omitempty"`
+	Start        time.Time `json:"start"`
 }
 
 // LegGapKind Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.

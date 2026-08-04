@@ -12,9 +12,15 @@ import (
 	"roadbook/internal/detect"
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
+	"roadbook/internal/route"
 	"roadbook/internal/store"
 	"roadbook/internal/suggest"
 )
+
+// RouteProfile is the routing profile journeys are served with. One profile
+// today; the cache key carries it so a second (cycling, walking) is a new
+// key space, not a migration.
+const RouteProfile = "driving"
 
 type Server struct {
 	Store       *store.Store
@@ -84,6 +90,17 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 		return nil, err
 	}
 	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
+
+	// Routing application (phase 3 BRIEF §1.2): the serve binary never dials
+	// a router — it consults only the cache `roadbook route` filled. A gap
+	// with no cached answer stays unknown and renders as such; with an empty
+	// cache the journey is exactly the unrouted one.
+	lookup, err := s.Store.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
+	if err != nil {
+		return nil, err
+	}
+	j = route.Apply(j, RouteProfile, lookup)
+
 	out, err := toAPIJourney(j)
 	if err != nil {
 		return nil, err
@@ -131,6 +148,8 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 		ObservedKm:      j.ObservedKm,
 		InferredKm:      j.InferredKm,
 		AirKm:           j.AirKm,
+		UnknownKm:       j.UnknownKm,
+		RoutedKm:        j.RoutedKm,
 		GoogleKm:        j.GoogleDistanceKm,
 		MergedPoints:    j.MergedPoints(),
 		TracePointsKept: j.TracePointsKept,
@@ -147,6 +166,15 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 		if l.Kind == journey.LegGap {
 			gk := LegGapKind(l.GapKind)
 			al.GapKind = &gk
+		}
+		if l.GapKind == journey.GapRoad {
+			pts := make([]LatLng, len(l.RoutedPoints))
+			for i, p := range l.RoutedPoints {
+				pts[i] = LatLng{Lat: p.Lat, Lon: p.Lon}
+			}
+			al.RoutedPoints = &pts
+			rk := l.RoutedKm
+			al.RoutedKm = &rk
 		}
 		for i, pt := range l.Points {
 			al.Points[i] = TimedPoint{T: pt.Time, Lat: pt.Loc.Lat, Lon: pt.Loc.Lon}
