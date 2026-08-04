@@ -1,0 +1,34 @@
+{
+ "_comment": "Expected assembly of journey-30apr2026.anon.json over the stated window — the golden case for air-gap classification (phase 3 BRIEF §3D). Two flights, out and back; Google's own activities label only ONE of them FLYING, so a mode-based classifier would miss the return leg — the implied-speed rule catches both. Distances at 4 decimal places, haversine R=6371008.8 m (geo.HaversineM), same conventions as journey-27jul2026 (see its CONTRACT.md for pipeline semantics). Reproduce: roadbook journey -src testdata/journey-30apr2026.anon.json -from 2026-04-30T16:02:00+05:30 -to 2026-05-04T00:25:00+05:30",
+ "params": {
+  "gapThresholdMinutes": 20,
+  "thinSpacingSeconds": 30,
+  "airSpeedMinKmh": 250
+ },
+ "window": {
+  "startTime": "2026-04-30T16:02:00+05:30",
+  "endTime": "2026-05-04T00:25:00+05:30"
+ },
+ "join": {
+  "tracePointsInWindow": 385,
+  "mergedPoints": 383
+ },
+ "legs": {
+  "observed": 31,
+  "gap": 30
+ },
+ "stops": 22,
+ "distanceKm": {
+  "total": 2662.2324,
+  "observed": 201.6392,
+  "inferred": 2460.5933,
+  "air": 2453.9952,
+  "googleActivitySum": 1485.6234,
+  "googleFlyingSum": 1292.1075
+ },
+ "airLegs": [
+  { "index": 5, "distanceKm": 1206.6889, "seconds": 9660 },
+  { "index": 57, "distanceKm": 1247.3063, "seconds": 6480 }
+ ],
+ "googleFlyingActivities": 1
+}

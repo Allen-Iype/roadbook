@@ -178,4 +178,62 @@ func TestAssemble(t *testing.T) {
 			t.Error("Assemble reordered the caller's activity slice")
 		}
 	})
+
+	t.Run("a gap whose implied speed meets AirSpeedMinKmh classifies as air", func(t *testing.T) {
+		// One hour of silence covering ~5° of latitude ≈ 556 km → ~556 km/h.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(3600), Loc: loc(15, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if len(j.Legs) != 3 {
+			t.Fatalf("legs = %d, want 3 (observed, gap, observed)", len(j.Legs))
+		}
+		gap := j.Legs[1]
+		if gap.GapKind != journey.GapAir {
+			t.Errorf("gap kind = %q, want air", gap.GapKind)
+		}
+		if len(gap.Points) != 2 {
+			t.Errorf("air gap carries %d points, want exactly 2 (the arc is presentation, not data)", len(gap.Points))
+		}
+		if math.Abs(j.AirKm-gap.DistanceKm) > 1e-12 || math.Abs(j.AirKm-j.InferredKm) > 1e-12 {
+			t.Errorf("air km = %.4f, want the gap's %.4f and all of inferred %.4f",
+				j.AirKm, gap.DistanceKm, j.InferredKm)
+		}
+	})
+
+	t.Run("a ground-speed gap stays unknown", func(t *testing.T) {
+		// The same hour of silence over ~1° ≈ 111 km → ~111 km/h: fast ground
+		// transport, below the threshold.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(3600), Loc: loc(11, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if got := j.Legs[1].GapKind; got != journey.GapUnknown {
+			t.Errorf("gap kind = %q, want unknown", got)
+		}
+		if j.AirKm != 0 {
+			t.Errorf("air km = %.4f, want 0", j.AirKm)
+		}
+	})
+
+	t.Run("AirSpeedMinKmh 0 disables classification entirely", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(3600), Loc: loc(15, 70)}, // supersonic-fast gap
+			},
+		}
+		off := p
+		off.AirSpeedMinKmh = 0
+		j := journey.Assemble(obs, t0, at(3600), off)
+		if got := j.Legs[1].GapKind; got != journey.GapUnknown {
+			t.Errorf("gap kind = %q, want unknown with classification off", got)
+		}
+	})
 }

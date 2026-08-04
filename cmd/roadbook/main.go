@@ -449,6 +449,8 @@ func runJourney(args []string) error {
 		"minimum activity pause reported as a stop, seconds")
 	fs.Float64Var(&p.MaxAccuracyM, "max-acc-m", p.MaxAccuracyM,
 		"exclude raw positions with worse reported accuracy, metres (0 = off)")
+	fs.Float64Var(&p.AirSpeedMinKmh, "air-kmh", p.AirSpeedMinKmh,
+		"a gap implying at least this speed classifies as air (0 = off)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -492,6 +494,9 @@ func runJourney(args []string) error {
 	}
 	fmt.Printf("distance %.1f km: observed %.1f (%.1f%%) + inferred %.1f (%.1f%%)\n",
 		j.TotalKm, j.ObservedKm, obsPct, j.InferredKm, infPct)
+	if j.AirKm > 0 {
+		fmt.Printf("of the inferred, %.1f km is air (great-circle; excluded from road validation)\n", j.AirKm)
+	}
 	if j.GoogleDistanceKm > 0 {
 		fmt.Printf("google's own figure %.1f km (%+.1f%%)\n",
 			j.GoogleDistanceKm, (j.TotalKm-j.GoogleDistanceKm)/j.GoogleDistanceKm*100)

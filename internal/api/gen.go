@@ -172,6 +172,9 @@ type Health struct {
 
 // Journey defines model for Journey.
 type Journey struct {
+	// AirKm Chord sum over air-classified gaps — a subset of inferred_km. The endpoint chord is the great-circle distance, so it is also the arc's length. Excluded from road-distance validation. 0 for a ground journey.
+	AirKm float64 `json:"air_km"`
+
 	// Countries Countries the route's points fall in, ordered by first appearance along the journey. Derived locally by point-in-polygon against bundled Natural Earth polygons — never a network lookup. Empty when `roadbook countries` has not been run. Border-adjacent points can misattribute at 1:110m resolution; the UI labels this line as derived.
 	Countries []Country `json:"countries"`
 
@@ -204,7 +207,7 @@ type Leg struct {
 	DistanceKm float64   `json:"distance_km"`
 	End        time.Time `json:"end"`
 
-	// GapKind Present only when kind is "gap". Always "unknown" in phase 2; phase 3 classifies road gaps (routed) and air gaps (great-circle arcs) and consumes this field.
+	// GapKind Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
 	GapKind *LegGapKind `json:"gap_kind,omitempty"`
 	Kind    LegKind     `json:"kind"`
 
@@ -213,7 +216,7 @@ type Leg struct {
 	Start  time.Time    `json:"start"`
 }
 
-// LegGapKind Present only when kind is "gap". Always "unknown" in phase 2; phase 3 classifies road gaps (routed) and air gaps (great-circle arcs) and consumes this field.
+// LegGapKind Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
 type LegGapKind string
 
 // LegKind defines model for Leg.Kind.

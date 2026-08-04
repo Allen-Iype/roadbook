@@ -227,7 +227,7 @@ export interface components {
             /** @enum {string} */
             kind: "observed" | "gap";
             /**
-             * @description Present only when kind is "gap". Always "unknown" in phase 2; phase 3 classifies road gaps (routed) and air gaps (great-circle arcs) and consumes this field.
+             * @description Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
              * @enum {string}
              */
             gap_kind?: "unknown" | "road" | "air";
@@ -280,6 +280,11 @@ export interface components {
             observed_km: number;
             /** Format: double */
             inferred_km: number;
+            /**
+             * Format: double
+             * @description Chord sum over air-classified gaps — a subset of inferred_km. The endpoint chord is the great-circle distance, so it is also the arc's length. Excluded from road-distance validation. 0 for a ground journey.
+             */
+            air_km: number;
             /**
              * Format: double
              * @description Google's own distance figure summed over the window's activities — the independent check routed distance is validated against in phase 3. 0 when the window holds no activities.

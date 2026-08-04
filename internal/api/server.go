@@ -130,6 +130,7 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 		TotalKm:         j.TotalKm,
 		ObservedKm:      j.ObservedKm,
 		InferredKm:      j.InferredKm,
+		AirKm:           j.AirKm,
 		GoogleKm:        j.GoogleDistanceKm,
 		MergedPoints:    j.MergedPoints(),
 		TracePointsKept: j.TracePointsKept,

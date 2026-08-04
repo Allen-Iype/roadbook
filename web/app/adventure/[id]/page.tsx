@@ -67,7 +67,7 @@ export default async function AdventurePage({
       {journey.legs.length > 0 && (
         <>
           <RouteMap journey={journey} styleUrl={MAP_STYLE_URL} />
-          <Legend />
+          <Legend hasAir={journey.air_km > 0} />
         </>
       )}
       <Provenance journey={journey} />
@@ -78,8 +78,10 @@ export default async function AdventurePage({
 }
 
 // The legend states the visual channel in words (invariant 8: confidence is
-// never hidden, and never left to interpretation).
-function Legend() {
+// never hidden, and never left to interpretation). Entries for classes the
+// journey does not contain are omitted — a legend describing lines that are
+// not on the map would be noise, not honesty.
+function Legend({ hasAir }: { hasAir: boolean }) {
   return (
     <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-neutral-400">
       <span className="inline-flex items-center gap-2">
@@ -100,6 +102,23 @@ function Legend() {
         </svg>
         unknown gap — no observations; the straight line is not a route
       </span>
+      {hasAir && (
+        <span className="inline-flex items-center gap-2">
+          <svg width="32" height="4" aria-hidden>
+            <line
+              x1="0"
+              y1="2"
+              x2="32"
+              y2="2"
+              stroke="#a78bfa"
+              strokeWidth="2"
+              strokeDasharray="4 5"
+            />
+          </svg>
+          air — implied speed says flight; the arc is a great circle, not a
+          track
+        </span>
+      )}
       <span className="inline-flex items-center gap-2">
         <span className="inline-block h-2.5 w-2.5 rounded-full border border-neutral-900 bg-amber-400" />
         stop
@@ -173,6 +192,15 @@ function Provenance({ journey }: { journey: Journey }) {
         <span className="text-neutral-400">
           {journey.inferred_km.toFixed(1)} km inferred ({pct(journey.inferred_km)}%)
         </span>
+        {journey.air_km > 0 && (
+          <>
+            {" "}
+            —{" "}
+            <span className="text-violet-400">
+              of which {journey.air_km.toFixed(1)} km air (great-circle)
+            </span>
+          </>
+        )}
       </p>
       <p className="mt-1 text-xs text-neutral-500">
         {journey.merged_points} points ({journey.trace_points_kept} trace +{" "}
@@ -219,6 +247,8 @@ function LegTable({ legs }: { legs: Leg[] }) {
                 <td className="py-2 pr-4">
                   {l.kind === "observed" ? (
                     <span className="text-emerald-400">observed</span>
+                  ) : l.gap_kind === "air" ? (
+                    <span className="text-violet-400">gap · air</span>
                   ) : (
                     <span className="text-neutral-400">
                       gap · {l.gap_kind}

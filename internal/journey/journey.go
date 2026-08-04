@@ -34,10 +34,20 @@ type Params struct {
 	// the highway densification, not noise — see DECISIONS.md 2026-08-02.
 	// The rows themselves are untouched either way: flagging, never deleting.
 	MaxAccuracyM float64 `json:"max_accuracy_m"`
+	// AirSpeedMinKmh: a gap whose implied speed (endpoint chord over gap
+	// duration) meets this classifies as air — it renders as a great-circle
+	// arc, is never routed, and is excluded from road-distance validation
+	// (phase 3 BRIEF §3D). 0 disables classification. The default sits above
+	// any ground transport sustained over a ≥20-minute silence and below any
+	// flight long enough to matter, even diluted by airport dwell at the
+	// gap's edges; a short flight inside a long silence can dilute under it —
+	// a stated blind spot the divergence check exists to catch. Speed, not
+	// Google's activity mode: modes are guesses that fail at extremes.
+	AirSpeedMinKmh float64 `json:"air_speed_min_kmh"`
 }
 
 func DefaultParams() Params {
-	return Params{GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300, MaxAccuracyM: 0}
+	return Params{GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300, MaxAccuracyM: 0, AirSpeedMinKmh: 250}
 }
 
 type LegKind string
@@ -121,6 +131,11 @@ type Journey struct {
 	TotalKm    float64 // ObservedKm + InferredKm: the chord sum over all kept points
 	ObservedKm float64
 	InferredKm float64
+	// AirKm is the chord sum over air-classified gaps — a subset of
+	// InferredKm. The endpoint chord is the great-circle distance, so no
+	// separate figure exists for the arc. Excluded from road-distance
+	// validation (phase 3 BRIEF §3E).
+	AirKm float64
 
 	// GoogleDistanceKm sums Google's own distanceMeters over the activities
 	// intersecting the window — the independent figure routed distance is
@@ -202,7 +217,7 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 			prev := run[len(run)-1]
 			if pt.Time.Sub(prev.Time).Minutes() > p.GapThresholdMinutes {
 				j.Legs = append(j.Legs, observedLeg(run))
-				j.Legs = append(j.Legs, gapLeg(prev, pt))
+				j.Legs = append(j.Legs, gapLeg(prev, pt, p))
 				run = []TimedPoint{pt}
 			} else {
 				run = append(run, pt)
@@ -215,6 +230,9 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 			j.ObservedKm += l.DistanceKm
 		} else {
 			j.InferredKm += l.DistanceKm
+			if l.GapKind == GapAir {
+				j.AirKm += l.DistanceKm
+			}
 		}
 	}
 	j.TotalKm = j.ObservedKm + j.InferredKm
@@ -238,12 +256,23 @@ func observedLeg(run []TimedPoint) Leg {
 	return Leg{Kind: LegObserved, GapKind: GapNone, Points: pts, DistanceKm: km}
 }
 
-func gapLeg(from, to TimedPoint) Leg {
+// gapLeg emits a gap holding exactly its two endpoints, classified at
+// assembly time (pure arithmetic, so the batch router and the renderer can
+// never disagree about which gaps are flights): implied speed at or above
+// AirSpeedMinKmh is air, everything else stays unknown until the routing
+// cache supplies a road. Gap duration is always above GapThresholdMinutes,
+// so the division is safe.
+func gapLeg(from, to TimedPoint, p Params) Leg {
+	km := geo.HaversineM(from.Loc, to.Loc) / 1000
+	kind := GapUnknown
+	if p.AirSpeedMinKmh > 0 && km/to.Time.Sub(from.Time).Hours() >= p.AirSpeedMinKmh {
+		kind = GapAir
+	}
 	return Leg{
 		Kind:       LegGap,
-		GapKind:    GapUnknown,
+		GapKind:    kind,
 		Points:     []TimedPoint{from, to},
-		DistanceKm: geo.HaversineM(from.Loc, to.Loc) / 1000,
+		DistanceKm: km,
 	}
 }
 

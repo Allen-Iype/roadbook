@@ -124,6 +124,9 @@ func TestGoldenFixture(t *testing.T) {
 		(j.TotalKm-j.GoogleDistanceKm)/j.GoogleDistanceKm*100, exp.DistanceKm.DisagreementPct)
 	closeTo("inferred km", j.InferredKm, exp.Gaps.InferredKm)
 	closeTo("inferred pct", j.InferredKm/j.TotalKm*100, exp.Gaps.InferredPctOfDistance)
+	if j.AirKm != 0 {
+		t.Errorf("air km = %.4f, want 0 (ground journey; air classification ran at the default threshold)", j.AirKm)
+	}
 
 	// The trace-only chord is a property of the fixture, not a Journey field:
 	// recompute it here from the parsed points.
@@ -151,7 +154,7 @@ func TestGoldenFixture(t *testing.T) {
 			gaps++
 			gapSeconds = append(gapSeconds, int(l.End().Sub(l.Start()).Seconds()))
 			if l.GapKind != journey.GapUnknown {
-				t.Errorf("gap leg kind = %q, want unknown (phase 2 never classifies)", l.GapKind)
+				t.Errorf("gap leg kind = %q, want unknown (every gap in this bus journey implies a speed far below AirSpeedMinKmh)", l.GapKind)
 			}
 			if len(l.Points) != 2 {
 				t.Errorf("gap leg carries %d points, want exactly 2", len(l.Points))

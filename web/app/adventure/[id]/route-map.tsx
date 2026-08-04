@@ -47,12 +47,17 @@ export function RouteMap({
     const container = containerRef.current;
     if (!container) return;
 
+    // Built once per mount: the same FeatureCollection feeds both the source
+    // and the bounds, so an air leg's arc — which bulges away from the
+    // straight line between its endpoints — can never fall outside the view.
+    const data = toGeoJSON(journey);
+
     const map = new MapLibreMap({
       container,
       style: styleUrl,
       // Real position comes from fitBounds below; without a center MapLibre
       // would flash null island first.
-      bounds: boundsOf(journey),
+      bounds: boundsOf(data),
       fitBoundsOptions: { padding: 48 },
     });
     map.addControl(new NavigationControl({ showCompass: false }));
@@ -60,21 +65,37 @@ export function RouteMap({
     // Sources and layers only after the style has loaded — adding them
     // synchronously after the constructor is the classic first bug.
     map.on("load", () => {
-      map.addSource("route", { type: "geojson", data: toGeoJSON(journey) });
+      map.addSource("route", { type: "geojson", data });
 
-      // Layer order is paint order (BRIEF §1.2): gaps underneath, observed
-      // above them, stop markers on top. The visual channel (§3A): observed
-      // is solid, saturated, wide; a gap is dashed, thin, muted — sketched
-      // in, not asserted. Hue stays in reserve for phase 3's road and air
-      // classes. MapLibre 6 types line-dasharray as data-drivable, but
+      // Layer order is paint order (BRIEF §1.2): unknown gaps underneath,
+      // then air, then observed, stop markers on top (phase 3 BRIEF §3F).
+      // The visual channel: dashes are the one non-negotiable inference
+      // marker — every non-observed class is dashed — and hue, held in
+      // reserve through phase 2, now distinguishes *kinds* of inference.
+      // MapLibre 6 types line-dasharray as data-drivable, but
       // layer-per-class keeps the z-order between classes for free.
       map.addLayer({
         id: "gap-legs",
         type: "line",
         source: "route",
-        filter: ["==", ["get", "kind"], "gap"],
+        filter: [
+          "all",
+          ["==", ["get", "kind"], "gap"],
+          ["!=", ["get", "gap_kind"], "air"],
+        ],
         paint: {
           "line-color": "#a3a3a3",
+          "line-width": 2,
+          "line-dasharray": [2, 3],
+        },
+      });
+      map.addLayer({
+        id: "air-legs",
+        type: "line",
+        source: "route",
+        filter: ["==", ["get", "gap_kind"], "air"],
+        paint: {
+          "line-color": "#a78bfa",
           "line-width": 2,
           "line-dasharray": [2, 3],
         },
@@ -132,7 +153,15 @@ function toGeoJSON(journey: Journey): GeoJSON.FeatureCollection {
     properties: { kind: leg.kind, gap_kind: leg.gap_kind ?? null },
     geometry: {
       type: "LineString",
-      coordinates: leg.points.map(lngLat),
+      // An air leg draws as a great-circle arc between its two endpoints.
+      // The arc is generated here, client-side, because it is presentation:
+      // the API reports exactly the two timestamped points it measured, and
+      // fabricated intermediate coordinates must not enter a response that
+      // otherwise contains only measurements (phase 3 BRIEF §3F).
+      coordinates:
+        leg.gap_kind === "air"
+          ? greatCircleArc(lngLat(leg.points[0]), lngLat(leg.points[1]))
+          : leg.points.map(lngLat),
     },
   }));
   for (const stop of journey.stops) {
@@ -145,11 +174,56 @@ function toGeoJSON(journey: Journey): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features };
 }
 
-function boundsOf(journey: Journey): LngLatBounds {
+// greatCircleArc interpolates the shortest path on the sphere between two
+// [lon, lat] points ("slerp": treat each point as a unit vector from Earth's
+// centre, blend the two vectors so every intermediate stays on the sphere,
+// convert back). A straight line on the map is a straight line in projected
+// coordinates — visibly wrong for a flight; the arc is what the aircraft
+// approximately flew, and its length is the endpoint chord the API already
+// reports as the leg's distance.
+function greatCircleArc(
+  a: [number, number],
+  b: [number, number],
+  segments = 64,
+): [number, number][] {
+  const rad = Math.PI / 180;
+  const [λ1, φ1] = [a[0] * rad, a[1] * rad];
+  const [λ2, φ2] = [b[0] * rad, b[1] * rad];
+  // Angular distance between the endpoints (haversine, on the unit sphere).
+  const d =
+    2 *
+    Math.asin(
+      Math.sqrt(
+        Math.sin((φ2 - φ1) / 2) ** 2 +
+          Math.cos(φ1) * Math.cos(φ2) * Math.sin((λ2 - λ1) / 2) ** 2,
+      ),
+    );
+  if (d < 1e-9) return [a, b];
+  const coords: [number, number][] = [];
+  for (let i = 0; i <= segments; i++) {
+    const f = i / segments;
+    const A = Math.sin((1 - f) * d) / Math.sin(d);
+    const B = Math.sin(f * d) / Math.sin(d);
+    const x = A * Math.cos(φ1) * Math.cos(λ1) + B * Math.cos(φ2) * Math.cos(λ2);
+    const y = A * Math.cos(φ1) * Math.sin(λ1) + B * Math.cos(φ2) * Math.sin(λ2);
+    const z = A * Math.sin(φ1) + B * Math.sin(φ2);
+    coords.push([
+      Math.atan2(y, x) / rad,
+      Math.atan2(z, Math.sqrt(x * x + y * y)) / rad,
+    ]);
+  }
+  return coords;
+}
+
+function boundsOf(data: GeoJSON.FeatureCollection): LngLatBounds {
   const bounds = new LngLatBounds();
-  for (const leg of journey.legs) {
-    for (const p of leg.points) {
-      bounds.extend(lngLat(p));
+  for (const f of data.features) {
+    if (f.geometry.type === "LineString") {
+      for (const c of f.geometry.coordinates) {
+        bounds.extend(c as [number, number]);
+      }
+    } else if (f.geometry.type === "Point") {
+      bounds.extend(f.geometry.coordinates as [number, number]);
     }
   }
   return bounds;
