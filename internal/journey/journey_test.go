@@ -330,6 +330,77 @@ func TestAssemble(t *testing.T) {
 		}
 	})
 
+	t.Run("google ground excludes FLYING activities; divergence compares ground to ground", func(t *testing.T) {
+		obs := domain.Observations{
+			Activities: []domain.Activity{
+				{Start: at(0), End: at(1000), DistanceM: 100_000, Mode: "IN_PASSENGER_VEHICLE"},
+				{Start: at(1100), End: at(5000), DistanceM: 1_000_000, Mode: "FLYING"},
+			},
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(1000), Loc: loc(10.9, 70)}, // ~100 km observed
+			},
+		}
+		j := journey.Assemble(obs, t0, at(5000), p)
+		if math.Abs(j.GoogleDistanceKm-1100) > 1e-9 || math.Abs(j.GoogleGroundKm-100) > 1e-9 {
+			t.Fatalf("google = %.1f / ground %.1f, want 1100 / 100", j.GoogleDistanceKm, j.GoogleGroundKm)
+		}
+		// Ground reconstruction ~100.1 km vs Google ground 100: within the
+		// 15%% default, not flagged.
+		pct, ok := j.DivergencePct()
+		if !ok {
+			t.Fatal("divergence not computable despite ground activities")
+		}
+		if math.Abs(pct) > 1 || j.DivergenceFlagged() {
+			t.Errorf("divergence = %.2f%% flagged=%v, want ~0%% unflagged", pct, j.DivergenceFlagged())
+		}
+	})
+
+	t.Run("divergence beyond the named threshold is flagged, either direction", func(t *testing.T) {
+		obs := domain.Observations{
+			Activities: []domain.Activity{
+				{Start: at(0), End: at(1000), DistanceM: 200_000, Mode: "IN_BUS"},
+			},
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(1000), Loc: loc(10.9, 70)}, // ~100 km reconstructed vs 200 claimed
+			},
+		}
+		j := journey.Assemble(obs, t0, at(5000), p)
+		pct, ok := j.DivergencePct()
+		if !ok || pct > -49 || pct < -51 {
+			t.Fatalf("divergence = %.1f%% ok=%v, want ~-50%%", pct, ok)
+		}
+		if !j.DivergenceFlagged() {
+			t.Error("a 50%% shortfall must flag at the 15%% default")
+		}
+		off := p
+		off.DivergenceWarnPct = 0
+		j2 := journey.Assemble(obs, t0, at(5000), off)
+		if j2.DivergenceFlagged() {
+			t.Error("DivergenceWarnPct 0 disables the flag")
+		}
+	})
+
+	t.Run("no ground activities means nothing to compare, not zero divergence", func(t *testing.T) {
+		obs := domain.Observations{
+			Activities: []domain.Activity{
+				{Start: at(0), End: at(1000), DistanceM: 500_000, Mode: "FLYING"},
+			},
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(1000), Loc: loc(10.1, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(5000), p)
+		if _, ok := j.DivergencePct(); ok {
+			t.Error("divergence computable with zero google ground — absence must stay absent")
+		}
+		if j.DivergenceFlagged() {
+			t.Error("flag raised with nothing to compare")
+		}
+	})
+
 	t.Run("MaxSpeedKmh 0 disables teleport rejection", func(t *testing.T) {
 		obs := domain.Observations{
 			Points: []domain.PathPoint{

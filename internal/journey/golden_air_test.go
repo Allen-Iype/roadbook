@@ -110,6 +110,10 @@ func TestGoldenAirFixture(t *testing.T) {
 	closeTo("inferred km", j.InferredKm, exp.DistanceKm.Inferred)
 	closeTo("air km", j.AirKm, exp.DistanceKm.Air)
 	closeTo("google sum", j.GoogleDistanceKm, exp.DistanceKm.GoogleActivitySum)
+	// Google's ground figure is the activity sum minus its FLYING share —
+	// both already pinned by this file, so the assertion derives from them.
+	closeTo("google ground km", j.GoogleGroundKm,
+		exp.DistanceKm.GoogleActivitySum-exp.DistanceKm.GoogleFlyingSum)
 
 	// The air legs sit exactly where the measurement put them; every other
 	// gap in this journey is ground-speed and stays unknown.

@@ -178,8 +178,20 @@ type Journey struct {
 	// Countries Countries the route's points fall in, ordered by first appearance along the journey. Derived locally by point-in-polygon against bundled Natural Earth polygons — never a network lookup. Empty when `roadbook countries` has not been run. Border-adjacent points can misattribute at 1:110m resolution; the UI labels this line as derived.
 	Countries []Country `json:"countries"`
 
+	// DivergenceFlagged True when divergence_pct exceeds the divergence_warn_pct parameter (echoed in params) in either direction. Absent whenever divergence_pct is absent. Computed server-side so the frontend renders the flag without owning the threshold.
+	DivergenceFlagged *bool `json:"divergence_flagged,omitempty"`
+
+	// DivergencePct Signed percentage by which ground_km differs from google_ground_km. Absent when Google recorded no ground distance in the window — nothing to compare is not zero divergence. A conversation starter, never a gate: unroutable gaps under-count, OSM detours over-count, and both explain themselves on the map.
+	DivergencePct *float64 `json:"divergence_pct,omitempty"`
+
+	// GoogleGroundKm Google's own activity distances minus FLYING-mode activities — the comparable side of the road validation. Air must leave both sides or neither. Mode is a guess: a flight Google mislabelled as ground inflates this figure, and the divergence flag is the tripwire that surfaces it.
+	GoogleGroundKm float64 `json:"google_ground_km"`
+
 	// GoogleKm Google's own distance figure summed over the window's activities — the independent check routed distance is validated against in phase 3. 0 when the window holds no activities.
-	GoogleKm     float64 `json:"google_km"`
+	GoogleKm float64 `json:"google_km"`
+
+	// GroundKm The road-comparable reconstruction: observed + routed + unknown chords. Air legs are excluded by construction.
+	GroundKm     float64 `json:"ground_km"`
 	InferredKm   float64 `json:"inferred_km"`
 	Legs         []Leg   `json:"legs"`
 	MergedPoints int     `json:"merged_points"`

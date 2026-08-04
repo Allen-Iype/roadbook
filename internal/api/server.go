@@ -150,10 +150,19 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 		AirKm:           j.AirKm,
 		UnknownKm:       j.UnknownKm,
 		RoutedKm:        j.RoutedKm,
+		GroundKm:        j.GroundKm(),
+		GoogleGroundKm:  j.GoogleGroundKm,
 		GoogleKm:        j.GoogleDistanceKm,
 		MergedPoints:    j.MergedPoints(),
 		TracePointsKept: j.TracePointsKept,
 		RawPointsKept:   j.RawPointsKept,
+	}
+	// Both stay absent when Google recorded no ground distance — nothing to
+	// compare is not zero divergence.
+	if pct, ok := j.DivergencePct(); ok {
+		out.DivergencePct = &pct
+		flagged := j.DivergenceFlagged()
+		out.DivergenceFlagged = &flagged
 	}
 	for _, l := range j.Legs {
 		al := Leg{

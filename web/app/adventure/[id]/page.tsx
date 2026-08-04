@@ -231,19 +231,39 @@ function Provenance({ journey }: { journey: Journey }) {
           </span>
         </p>
       )}
+      {journey.divergence_pct !== undefined && (
+        // The phase 3 validation line (BRIEF §3E): the road-comparable
+        // reconstruction against Google's own ground figure — air excluded
+        // from both sides. The flag is computed server-side against the
+        // named divergence_warn_pct parameter; the frontend only renders
+        // it. Divergence is a conversation starter, never a gate: the
+        // unknown and routed legs explaining it are right there on the map.
+        <p className="mt-1">
+          <span className="text-neutral-300">
+            ground reconstruction{" "}
+            <span className="font-mono">{journey.ground_km.toFixed(1)} km</span>{" "}
+            · Google&apos;s ground figure{" "}
+            <span className="font-mono">
+              {journey.google_ground_km.toFixed(1)} km
+            </span>
+          </span>{" "}
+          <span
+            className={
+              journey.divergence_flagged ? "text-amber-400" : "text-neutral-400"
+            }
+          >
+            ({journey.divergence_pct >= 0 ? "+" : ""}
+            {journey.divergence_pct.toFixed(1)}%
+            {journey.divergence_flagged && " — diverges beyond the warning threshold"}
+            )
+          </span>
+        </p>
+      )}
       <p className="mt-1 text-xs text-neutral-500">
         {journey.merged_points} points ({journey.trace_points_kept} trace +{" "}
         {journey.raw_points_kept} raw)
         {journey.google_km > 0 && (
-          <>
-            {" "}
-            · Google&apos;s own figure {journey.google_km.toFixed(1)} km (
-            {(
-              ((journey.total_km - journey.google_km) / journey.google_km) *
-              100
-            ).toFixed(1)}
-            % apart)
-          </>
+          <> · Google&apos;s own figure {journey.google_km.toFixed(1)} km total</>
         )}
       </p>
     </section>

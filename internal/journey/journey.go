@@ -62,12 +62,23 @@ type Params struct {
 	// deleting: rows are untouched, RejectedSpeed counts.
 	MaxSpeedKmh    float64 `json:"max_speed_kmh"`
 	ClusterRadiusM float64 `json:"cluster_radius_m"`
+	// DivergenceWarnPct: the ground reconstruction (observed + routed +
+	// unknown chords — air excluded by construction) is compared against
+	// Google's own ground figure (activity distances minus FLYING ones —
+	// air must leave both sides or neither, else every flight adventure
+	// fails validation systematically); a divergence beyond this many
+	// percent, either direction, is flagged. A conversation starter, never
+	// a gate: unroutable gaps under-count and OSM detours over-count, and
+	// both are visible on the map explaining themselves (phase 3 BRIEF
+	// §3E).
+	DivergenceWarnPct float64 `json:"divergence_warn_pct"`
 }
 
 func DefaultParams() Params {
 	return Params{
 		GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300,
 		MaxAccuracyM: 0, AirSpeedMinKmh: 250, MaxSpeedKmh: 900, ClusterRadiusM: 1000,
+		DivergenceWarnPct: 15,
 	}
 }
 
@@ -180,8 +191,35 @@ type Journey struct {
 
 	// GoogleDistanceKm sums Google's own distanceMeters over the activities
 	// intersecting the window — the independent figure routed distance is
-	// validated against in phase 3.
+	// validated against in phase 3. GoogleGroundKm is the same sum minus
+	// FLYING-mode activities: the comparable side of the road validation
+	// (see Params.DivergenceWarnPct). Mode is a guess, so a flight Google
+	// mislabelled as ground inflates GoogleGroundKm — and the divergence
+	// flag is exactly the tripwire that surfaces it.
 	GoogleDistanceKm float64
+	GoogleGroundKm   float64
+}
+
+// GroundKm is the road-comparable reconstruction: observed + routed +
+// still-unknown chords. Air is excluded by construction. A method, not a
+// stored field, so it can never go stale across routing application.
+func (j Journey) GroundKm() float64 { return j.ObservedKm + j.RoutedKm + j.UnknownKm }
+
+// DivergencePct is the signed percentage by which the ground reconstruction
+// differs from Google's ground figure; ok is false when Google recorded no
+// ground distance in the window, in which case there is nothing to compare.
+func (j Journey) DivergencePct() (pct float64, ok bool) {
+	if j.GoogleGroundKm <= 0 {
+		return 0, false
+	}
+	return (j.GroundKm() - j.GoogleGroundKm) / j.GoogleGroundKm * 100, true
+}
+
+// DivergenceFlagged reports whether the divergence exceeds
+// Params.DivergenceWarnPct in either direction.
+func (j Journey) DivergenceFlagged() bool {
+	pct, ok := j.DivergencePct()
+	return ok && j.Params.DivergenceWarnPct > 0 && math.Abs(pct) > j.Params.DivergenceWarnPct
 }
 
 // MergedPoints is the size of the thinned point stream the legs are built on.
@@ -288,6 +326,9 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 	for _, a := range obs.Activities {
 		if intersectsWindow(a, winStart, winEnd) {
 			j.GoogleDistanceKm += a.DistanceM / 1000
+			if a.Mode != "FLYING" {
+				j.GoogleGroundKm += a.DistanceM / 1000
+			}
 		}
 	}
 	return j

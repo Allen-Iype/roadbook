@@ -551,8 +551,15 @@ func runJourney(args []string) error {
 		fmt.Printf("routed roads cover %.1f km (cache); %.1f km of gaps stay unknown\n", j.RoutedKm, j.UnknownKm)
 	}
 	if j.GoogleDistanceKm > 0 {
-		fmt.Printf("google's own figure %.1f km (%+.1f%%)\n",
-			j.GoogleDistanceKm, (j.TotalKm-j.GoogleDistanceKm)/j.GoogleDistanceKm*100)
+		fmt.Printf("google's own figure %.1f km total\n", j.GoogleDistanceKm)
+	}
+	if pct, ok := j.DivergencePct(); ok {
+		flag := ""
+		if j.DivergenceFlagged() {
+			flag = fmt.Sprintf("  FLAGGED (warn at %.0f%%)", j.Params.DivergenceWarnPct)
+		}
+		fmt.Printf("ground validation: %.1f km reconstructed vs %.1f km google ground (%+.1f%%)%s\n",
+			j.GroundKm(), j.GoogleGroundKm, pct, flag)
 	}
 
 	fmt.Printf("\n=== %d legs ===\n", len(j.Legs))

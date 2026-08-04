@@ -447,8 +447,9 @@ components:
       type: object
       required:
         [window_start, window_end, params, legs, stops, countries, total_km,
-         observed_km, inferred_km, air_km, unknown_km, routed_km, google_km,
-         merged_points, trace_points_kept, raw_points_kept]
+         observed_km, inferred_km, air_km, unknown_km, routed_km, ground_km,
+         google_km, google_ground_km, merged_points, trace_points_kept,
+         raw_points_kept]
       properties:
         window_start:
           type: string
@@ -510,6 +511,38 @@ components:
           description: >
             Routed road distance summed over road legs. 0 when nothing is
             routed — the product is fully usable without a router.
+        ground_km:
+          type: number
+          format: double
+          description: >
+            The road-comparable reconstruction: observed + routed + unknown
+            chords. Air legs are excluded by construction.
+        google_ground_km:
+          type: number
+          format: double
+          description: >
+            Google's own activity distances minus FLYING-mode activities —
+            the comparable side of the road validation. Air must leave both
+            sides or neither. Mode is a guess: a flight Google mislabelled
+            as ground inflates this figure, and the divergence flag is the
+            tripwire that surfaces it.
+        divergence_pct:
+          type: number
+          format: double
+          description: >
+            Signed percentage by which ground_km differs from
+            google_ground_km. Absent when Google recorded no ground
+            distance in the window — nothing to compare is not zero
+            divergence. A conversation starter, never a gate: unroutable
+            gaps under-count, OSM detours over-count, and both explain
+            themselves on the map.
+        divergence_flagged:
+          type: boolean
+          description: >
+            True when divergence_pct exceeds the divergence_warn_pct
+            parameter (echoed in params) in either direction. Absent
+            whenever divergence_pct is absent. Computed server-side so the
+            frontend renders the flag without owning the threshold.
         google_km:
           type: number
           format: double

@@ -304,6 +304,23 @@ export interface components {
             routed_km: number;
             /**
              * Format: double
+             * @description The road-comparable reconstruction: observed + routed + unknown chords. Air legs are excluded by construction.
+             */
+            ground_km: number;
+            /**
+             * Format: double
+             * @description Google's own activity distances minus FLYING-mode activities — the comparable side of the road validation. Air must leave both sides or neither. Mode is a guess: a flight Google mislabelled as ground inflates this figure, and the divergence flag is the tripwire that surfaces it.
+             */
+            google_ground_km: number;
+            /**
+             * Format: double
+             * @description Signed percentage by which ground_km differs from google_ground_km. Absent when Google recorded no ground distance in the window — nothing to compare is not zero divergence. A conversation starter, never a gate: unroutable gaps under-count, OSM detours over-count, and both explain themselves on the map.
+             */
+            divergence_pct?: number;
+            /** @description True when divergence_pct exceeds the divergence_warn_pct parameter (echoed in params) in either direction. Absent whenever divergence_pct is absent. Computed server-side so the frontend renders the flag without owning the threshold. */
+            divergence_flagged?: boolean;
+            /**
+             * Format: double
              * @description Google's own distance figure summed over the window's activities — the independent check routed distance is validated against in phase 3. 0 when the window holds no activities.
              */
             google_km: number;
