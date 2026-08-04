@@ -434,3 +434,9 @@ way.
 routing-cache discussion if the per-read query drags." Nothing has been
 measured to drag, routed geometry does not feed the query (§3H), so nothing
 changes: countries stay derived-on-read. Parked again, with the same trigger.
+
+**Routing setup on a hosted deployment.** Captured for phase 5 (PLAN, its
+features list): an optional OSRM compose profile plus an operator-run setup
+script, specified by `docs/phase-3/OSRM.md`. Not built in this phase — the
+serve binary reads only the cache, so a hosted deployment needs no OSRM; the
+batch can run from any machine that reaches the database.

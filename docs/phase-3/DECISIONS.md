@@ -19,3 +19,16 @@ the bytes for a weaker case), and classifying from the FLYING mode (this
 very fixture shows it missing half the flights).
 Would change our mind: needing cross-fixture geometry consistency (both
 fixtures in one frame) — nothing foreseeable wants that.
+
+## 2026-08-04 — OSRM setup automation is captured for phase 5, not built here
+
+Chosen: checkpoint 3 keeps extract acquisition and preprocessing as the
+maintainer's manual steps per the approved brief; the hosted-deployment
+want (an OSRM compose profile + an operator-run setup script, spec'd by
+docs/phase-3/OSRM.md) is recorded in PLAN's phase 5 features and BRIEF §7.
+Rejected: writing scripts/osrm-setup.sh now — it front-runs phase 5's
+compose file and contradicts the Gate 1 brief mid-checkpoint; also
+rejected: OSRM on the serve host as a requirement (serve reads only the
+cache; the batch runs wherever OSRM is, against any reachable database).
+Would change our mind: phase 5 arriving — the script lands there against
+the real compose file, explicitly invoked, never at build or install time.
