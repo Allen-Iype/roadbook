@@ -32,3 +32,26 @@ rejected: OSRM on the serve host as a requirement (serve reads only the
 cache; the batch runs wherever OSRM is, against any reachable database).
 Would change our mind: phase 5 arriving — the script lands there against
 the real compose file, explicitly invoked, never at build or install time.
+
+## 2026-08-04 — teleport rejection at assembly: cluster-level, bridge-conditioned
+
+Chosen: assembly rejects a cluster of consecutive points (within
+ClusterRadiusM, default 1000 m) iff an entry-or-exit implied speed exceeds
+MaxSpeedKmh (default 900, the detector's constant) AND bridging its
+neighbours directly is plausible; edge durations floor at
+ThinSpacingSeconds because trace timestamps are minute-truncated (a
+same-minute 130 m step is quantization, not teleportation — a false
+positive caught by the 30 Apr golden during implementation). Flagged as
+RejectedSpeed, rows untouched. Found because the maintainer spotted a
+straight green line on the map: a mislocated geolocation-database entry
+placed six fixes ~297 km away across three days (candidate 62), and
+assembly had no speed filter — only detection did.
+Rejected: the detector's point-wise both-neighbours rule and Dawarich's
+speed sandwich (a run's interior is self-consistent — both pass runs
+wholesale); speed-from-last-accepted anchoring (an overnight silence
+launders the run's entry speed); either-side point-level rejection (kills
+real flight endpoints).
+Would change our mind on the bridge condition: a real teleport whose
+neighbours are also implausibly far apart — the rule then keeps it,
+conservatively, and the map shows the contradiction rather than an
+invented resolution; that case appearing in practice reopens this entry.

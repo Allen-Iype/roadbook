@@ -9,6 +9,7 @@
 package journey
 
 import (
+	"math"
 	"sort"
 	"time"
 
@@ -44,10 +45,30 @@ type Params struct {
 	// a stated blind spot the divergence check exists to catch. Speed, not
 	// Google's activity mode: modes are guesses that fail at extremes.
 	AirSpeedMinKmh float64 `json:"air_speed_min_kmh"`
+	// MaxSpeedKmh and ClusterRadiusM drive teleport rejection: consecutive
+	// selected points within ClusterRadiusM of a cluster's first point form
+	// a cluster, and a cluster is rejected iff (its entry OR exit implied
+	// speed exceeds MaxSpeedKmh) AND bridging its neighbours directly is
+	// plausible (≤ MaxSpeedKmh). The bridge condition is what makes the rule
+	// safe: a real flight has no impossible edge (581 km/h HYD→TVM in the
+	// measured case) so it is never even evaluated, and a genuine relocation
+	// cannot be falsely killed because removing it would not restore
+	// plausibility. Cluster-level, not point-level, because the observed
+	// failure is a RUN of identical mislocated fixes (a wrong entry in the
+	// geolocation database recurring across days) whose interior looks
+	// self-consistent — the detector's point-wise both-neighbours rule and
+	// Dawarich's speed sandwich both pass runs. MaxSpeedKmh 0 disables the
+	// pass; the default is the detector's MAX_KMH constant. Flagging, never
+	// deleting: rows are untouched, RejectedSpeed counts.
+	MaxSpeedKmh    float64 `json:"max_speed_kmh"`
+	ClusterRadiusM float64 `json:"cluster_radius_m"`
 }
 
 func DefaultParams() Params {
-	return Params{GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300, MaxAccuracyM: 0, AirSpeedMinKmh: 250}
+	return Params{
+		GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300,
+		MaxAccuracyM: 0, AirSpeedMinKmh: 250, MaxSpeedKmh: 900, ClusterRadiusM: 1000,
+	}
 }
 
 type LegKind string
@@ -137,6 +158,10 @@ type Journey struct {
 	// assembly. The underlying rows are never modified (invariant 2).
 	RejectedNullIsland int // points at exactly (0, 0) — a known export defect
 	RejectedAccuracy   int // raw positions worse than MaxAccuracyM
+	// RejectedSpeed counts points in teleport clusters (see MaxSpeedKmh).
+	// Unlike the two above, these are rejected after selection — the test
+	// needs temporal context — so they are included in the InWindow counts.
+	RejectedSpeed int
 
 	TotalKm    float64 // ObservedKm + InferredKm: the chord sum over all kept points
 	ObservedKm float64
@@ -209,6 +234,10 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 		return pts[a].Source == SourceTrace && pts[b].Source == SourceRaw
 	})
 
+	// Teleport rejection runs on the full sorted stream, before thinning,
+	// so cluster edges see the finest temporal context available.
+	pts, j.RejectedSpeed = rejectTeleports(pts, p)
+
 	// Thinning: keep-earliest at ThinSpacingSeconds, no source preference.
 	var kept []TimedPoint
 	for _, pt := range pts {
@@ -262,6 +291,78 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 		}
 	}
 	return j
+}
+
+// rejectTeleports drops clusters of mislocated fixes from the sorted stream
+// (see Params.MaxSpeedKmh for the rule and its reasoning). It walks clusters
+// keeping an anchor at the last accepted cluster, so a rejected cluster's
+// neighbours are judged against each other, and consecutive bogus clusters
+// at one wrong location fall together.
+func rejectTeleports(pts []TimedPoint, p Params) ([]TimedPoint, int) {
+	if p.MaxSpeedKmh <= 0 || len(pts) < 3 {
+		return pts, 0
+	}
+
+	// Cluster: a maximal run of consecutive points within ClusterRadiusM of
+	// the run's first point.
+	type cluster struct{ start, end int } // half-open [start, end)
+	var clusters []cluster
+	cs := 0
+	for i := 1; i <= len(pts); i++ {
+		if i == len(pts) || geo.HaversineM(pts[cs].Loc, pts[i].Loc) > p.ClusterRadiusM {
+			clusters = append(clusters, cluster{cs, i})
+			cs = i
+		}
+	}
+
+	// Implied speed between two points. Trace timestamps are minute-
+	// truncated, so a same-minute displacement divides by zero without
+	// being a teleport — the duration is floored at ThinSpacingSeconds,
+	// the stream's own stated temporal resolution, so quantization noise
+	// (130 m in "no time") reads as walking pace while a genuine 300 km
+	// jump still reads as thousands of km/h.
+	minH := p.ThinSpacingSeconds / 3600
+	speed := func(a, b TimedPoint) float64 {
+		km := geo.HaversineM(a.Loc, b.Loc) / 1000
+		h := math.Max(b.Time.Sub(a.Time).Hours(), minH)
+		if h <= 0 {
+			if km == 0 {
+				return 0
+			}
+			return math.Inf(1)
+		}
+		return km / h
+	}
+
+	rejected := make([]bool, len(clusters))
+	prev := 0 // index of the last accepted cluster
+	for i := 1; i < len(clusters)-1; i++ {
+		entryFrom := pts[clusters[prev].end-1]
+		first := pts[clusters[i].start]
+		last := pts[clusters[i].end-1]
+		next := pts[clusters[i+1].start]
+		impossible := speed(entryFrom, first) > p.MaxSpeedKmh || speed(last, next) > p.MaxSpeedKmh
+		bridgeable := speed(entryFrom, next) <= p.MaxSpeedKmh
+		if impossible && bridgeable {
+			rejected[i] = true
+		} else {
+			prev = i
+		}
+	}
+
+	var kept []TimedPoint
+	dropped := 0
+	for i, c := range clusters {
+		if rejected[i] {
+			dropped += c.end - c.start
+			continue
+		}
+		kept = append(kept, pts[c.start:c.end]...)
+	}
+	if dropped == 0 {
+		return pts, 0
+	}
+	return kept, dropped
 }
 
 func observedLeg(run []TimedPoint) Leg {

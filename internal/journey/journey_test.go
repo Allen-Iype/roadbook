@@ -222,6 +222,131 @@ func TestAssemble(t *testing.T) {
 		}
 	})
 
+	t.Run("a run of mislocated fixes is rejected as a teleport cluster", func(t *testing.T) {
+		// The measured failure (candidate 62): the device in one place, a
+		// wrong geolocation-database entry repeatedly placing it ~300 km
+		// away. The run's interior is self-consistent, so point-wise speed
+		// rules pass it; the cluster rule kills it because both edges are
+		// impossible and bridging the neighbours is plausible.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(60), Loc: loc(10.001, 70)},
+				{Time: at(120), Loc: loc(10.002, 70)},
+				{Time: at(180), Loc: loc(12.7, 70)}, // ~300 km in 60 s
+				{Time: at(240), Loc: loc(12.7, 70)},
+				{Time: at(300), Loc: loc(12.7, 70)},
+				{Time: at(360), Loc: loc(10.003, 70)},
+				{Time: at(420), Loc: loc(10.004, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.RejectedSpeed != 3 {
+			t.Fatalf("rejected = %d, want the whole 3-point run", j.RejectedSpeed)
+		}
+		if len(j.Legs) != 1 || j.Legs[0].Kind != journey.LegObserved {
+			t.Fatalf("legs = %d, want 1 observed leg with the teleport gone", len(j.Legs))
+		}
+		if j.TotalKm > 1 {
+			t.Errorf("total = %.1f km, want < 1 (no 300 km fiction)", j.TotalKm)
+		}
+	})
+
+	t.Run("a long silence before the teleport does not launder it", func(t *testing.T) {
+		// Overnight silence makes the run's ENTRY speed plausible (300 km
+		// over 10 quiet hours); the exit is still impossible and the bridge
+		// still plausible — rejected. This is the case that defeats
+		// last-accepted-anchor speed rules.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(10 * 3600), Loc: loc(12.7, 70)},
+				{Time: at(10*3600 + 60), Loc: loc(12.7, 70)},
+				{Time: at(10*3600 + 120), Loc: loc(10.001, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(11*3600), p)
+		if j.RejectedSpeed != 2 {
+			t.Fatalf("rejected = %d, want 2", j.RejectedSpeed)
+		}
+		if j.TotalKm > 1 {
+			t.Errorf("total = %.1f km, want < 1", j.TotalKm)
+		}
+	})
+
+	t.Run("a real flight is never evaluated, let alone rejected", func(t *testing.T) {
+		// 1000 km in 2 h is 500 km/h — no impossible edge, so the rule
+		// does not fire and the gap classifies as air downstream.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(2 * 3600), Loc: loc(19, 70)},
+				{Time: at(2*3600 + 60), Loc: loc(19.001, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3*3600), p)
+		if j.RejectedSpeed != 0 {
+			t.Fatalf("rejected = %d, want 0", j.RejectedSpeed)
+		}
+		if got := j.Legs[1].GapKind; got != journey.GapAir {
+			t.Errorf("gap kind = %q, want air", got)
+		}
+	})
+
+	t.Run("an impossible edge without a plausible bridge is kept, conservatively", func(t *testing.T) {
+		// If removing the cluster would NOT restore plausibility, the data
+		// is contradictory and the rule declines to choose a side.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(60), Loc: loc(12.7, 70)},   // impossible hop
+				{Time: at(120), Loc: loc(12.75, 70)}, // stays there
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.RejectedSpeed != 0 {
+			t.Errorf("rejected = %d, want 0 (no bridge to judge by)", j.RejectedSpeed)
+		}
+	})
+
+	t.Run("same-minute quantization is not a teleport", func(t *testing.T) {
+		// Trace timestamps are minute-truncated: two points in the same
+		// minute 130 m apart divide to infinite speed without any
+		// mislocation. The edge duration is floored at ThinSpacingSeconds
+		// (the stream's stated resolution), so this must survive — the
+		// false positive found on the 30 Apr fixture during implementation.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10.0, 70.0)},
+				{Time: at(240), Loc: loc(10.018, 70.0)},  // ~2 km on, 30 km/h
+				{Time: at(360), Loc: loc(10.036, 70.0)},  // next cluster
+				{Time: at(360), Loc: loc(10.0372, 70.0)}, // same minute, ~130 m
+				{Time: at(600), Loc: loc(10.054, 70.0)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.RejectedSpeed != 0 {
+			t.Errorf("rejected = %d, want 0 (quantization noise, not teleportation)", j.RejectedSpeed)
+		}
+	})
+
+	t.Run("MaxSpeedKmh 0 disables teleport rejection", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(60), Loc: loc(10.001, 70)},
+				{Time: at(120), Loc: loc(12.7, 70)},
+				{Time: at(180), Loc: loc(10.002, 70)},
+			},
+		}
+		off := p
+		off.MaxSpeedKmh = 0
+		j := journey.Assemble(obs, t0, at(3600), off)
+		if j.RejectedSpeed != 0 {
+			t.Errorf("rejected = %d, want 0 with the filter off", j.RejectedSpeed)
+		}
+	})
+
 	t.Run("AirSpeedMinKmh 0 disables classification entirely", func(t *testing.T) {
 		obs := domain.Observations{
 			Points: []domain.PathPoint{

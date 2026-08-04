@@ -463,6 +463,10 @@ func runJourney(args []string) error {
 		"exclude raw positions with worse reported accuracy, metres (0 = off)")
 	fs.Float64Var(&p.AirSpeedMinKmh, "air-kmh", p.AirSpeedMinKmh,
 		"a gap implying at least this speed classifies as air (0 = off)")
+	fs.Float64Var(&p.MaxSpeedKmh, "max-kmh", p.MaxSpeedKmh,
+		"teleport rejection: cluster edge speed above this is impossible (0 = off)")
+	fs.Float64Var(&p.ClusterRadiusM, "cluster-m", p.ClusterRadiusM,
+		"teleport rejection: cluster radius, metres")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -529,6 +533,10 @@ func runJourney(args []string) error {
 	fmt.Printf("points: %d trace + %d raw in window -> %d kept (%d trace + %d raw)\n",
 		j.TracePointsInWindow, j.RawPointsInWindow, j.MergedPoints(),
 		j.TracePointsKept, j.RawPointsKept)
+	if j.RejectedNullIsland+j.RejectedAccuracy+j.RejectedSpeed > 0 {
+		fmt.Printf("anomalies excluded from assembly (rows untouched): %d null-island, %d accuracy, %d teleport\n",
+			j.RejectedNullIsland, j.RejectedAccuracy, j.RejectedSpeed)
+	}
 	obsPct, infPct := 0.0, 0.0
 	if j.TotalKm > 0 {
 		obsPct = j.ObservedKm / j.TotalKm * 100
