@@ -1,0 +1,10 @@
+{
+  "geoData": {
+    "latitude": 12.34,
+    "longitude": 45.67
+  },
+  "photoTakenTime": {
+    "timestamp": "1785124800"
+  },
+  "title": "wall_only.jpg"
+}

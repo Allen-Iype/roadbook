@@ -37,6 +37,8 @@ func main() {
 		err = runJourney(os.Args[2:])
 	case "route":
 		err = runRoute(os.Args[2:])
+	case "photo":
+		err = runPhoto(os.Args[2:])
 	case "probe":
 		err = runProbe(os.Args[2:])
 	case "migrate":
@@ -66,6 +68,7 @@ func usage() {
   roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
   roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh]
   roadbook serve   [-db url] [-addr :8080]
+  roadbook photo   -inspect <photo.jpg | sidecar.json>
   roadbook probe   -src <timeline export.json>
 
 'migrate' applies embedded schema migrations.
@@ -84,6 +87,10 @@ table — the only network step in routing, and entirely optional: with the
 default null router it inventories the gaps and fills nothing. Scope
 defaults to confirmed adventures of the latest run.
 'serve' runs the HTTP API.
+'photo' inspects one photo or Takeout sidecar: the format verdict, every
+metadata reading with its source, the resolved capture instant, and the
+thumbnail that would be produced. Writes nothing; a sidecar named beside the
+photo joins in automatically.
 'probe' reports every JSON key path in an export and its frequency; diff two
 probes to spot unannounced schema changes.
 

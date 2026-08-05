@@ -1,0 +1,15 @@
+{
+  "creationTime": {
+    "timestamp": "1785253503"
+  },
+  "geoData": {
+    "altitude": 0,
+    "latitude": 12.345,
+    "longitude": 45.678
+  },
+  "photoTakenTime": {
+    "formatted": "27 Jul 2026, 15:45:03 UTC",
+    "timestamp": "1785167103"
+  },
+  "title": "gps_full.jpg"
+}

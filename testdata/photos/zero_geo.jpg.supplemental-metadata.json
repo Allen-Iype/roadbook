@@ -1,0 +1,11 @@
+{
+  "geoData": {
+    "latitude": 0,
+    "longitude": 0
+  },
+  "geoDataExif": {
+    "latitude": 12.3456,
+    "longitude": 45.6789
+  },
+  "title": "zero_geo.jpg"
+}
