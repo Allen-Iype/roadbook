@@ -19,6 +19,11 @@ next-env.d.ts
 web/.env*
 .DS_Store
 
+# compose configuration — machine-local, may hold a database password.
+# unanchored on purpose (the root-anchored near-leak lesson); .env.example
+# is the committed documentation and does not match this pattern.
+.env
+
 # detector output — contains real destination coordinates
 fixture-candidates.json
 __pycache__/

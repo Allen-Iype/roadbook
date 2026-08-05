@@ -4,7 +4,11 @@
 # Nothing here runs in production; phase 5 owns the deploy compose file.
 services:
   testdb:
-    image: postgis/postgis:18-3.6
+    # Same image as compose.yaml's db: imresamu/postgis is the multi-arch
+    # build of the official postgis image — postgis/postgis publishes no
+    # arm64, so the previous image made this fallback fail on every ARM
+    # machine (unnoticed: the usual dev machine has local Postgres).
+    image: imresamu/postgis:18-3.6
     environment:
       POSTGRES_USER: roadbook
       POSTGRES_PASSWORD: roadbook

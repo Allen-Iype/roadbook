@@ -34,7 +34,39 @@ type Server struct {
 var _ StrictServerInterface = (*Server)(nil)
 
 func (s *Server) GetHealth(ctx context.Context, _ GetHealthRequestObject) (GetHealthResponseObject, error) {
+	// Readiness, not liveness: compose gates dependent services on this
+	// answer (phase 5 BRIEF §3A), so a listening socket with a dead database
+	// behind it must say 503, not ok.
+	if err := s.Store.Ping(ctx); err != nil {
+		return GetHealth503JSONResponse{Error: "database unreachable: " + err.Error()}, nil
+	}
 	return GetHealth200JSONResponse{Status: "ok"}, nil
+}
+
+func (s *Server) ListImports(ctx context.Context, _ ListImportsRequestObject) (ListImportsResponseObject, error) {
+	rows, err := s.Store.ListImports(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resp := ImportList{Imports: []Import{}}
+	for _, r := range rows {
+		resp.Imports = append(resp.Imports, Import{
+			Id:             r.ID,
+			SourceLabel:    r.SourceLabel,
+			ImportedAt:     r.ImportedAt,
+			WindowStart:    r.WindowStart,
+			WindowEnd:      r.WindowEnd,
+			Visits:         r.Visits,
+			Activities:     r.Activities,
+			Points:         r.Points,
+			RawPositions:   r.RawPositions,
+			Skipped:        r.Skipped,
+			Status:         ImportStatus(r.Status),
+			Error:          r.Error,
+			DetectedFormat: r.DetectedFormat,
+		})
+	}
+	return ListImports200JSONResponse(resp), nil
 }
 
 func (s *Server) ListCandidates(ctx context.Context, _ ListCandidatesRequestObject) (ListCandidatesResponseObject, error) {

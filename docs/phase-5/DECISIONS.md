@@ -77,3 +77,19 @@ recording the format only on failure (the label costs nothing on success
 and dates when each format was last seen working).
 Would change our mind: nothing foreseeable — it is one nullable column
 whose absence would make the phase's own scope cut unmeasurable.
+
+## 2026-08-06 — checkpoint 1: the Postgres image is imresamu/postgis:18-3.6, everywhere
+
+Chosen: `imresamu/postgis:18-3.6` for both compose.yaml's db and
+compose.test.yaml's testdb — the multi-arch (amd64+arm64) build of the
+official postgis image that the postgis/postgis README itself points ARM
+users at; same Postgres 18 + PostGIS 3.6 as the rest of the project, one
+image name across test and deploy.
+Rejected: `postgis/postgis:18-3.6` (publishes no arm64 — discovered when
+the pull failed on this Apple Silicon machine; it would exclude every ARM
+self-host and had silently broken the test-database fallback on ARM,
+unnoticed because the usual dev machine has local Postgres), and
+`ghcr.io/baosystems/postgis` (also multi-arch, but imresamu is the
+official README's own pointer and tracks the upstream Dockerfiles).
+Would change our mind: postgis/postgis publishing arm64 manifests — then
+the official image wins and this is a two-line revert.

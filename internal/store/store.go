@@ -34,6 +34,10 @@ func Open(ctx context.Context, dbURL string) (*Store, error) {
 
 func (s *Store) Close() { s.pool.Close() }
 
+// Ping answers whether the database is reachable — the readiness check behind
+// GET /healthz (phase 5 BRIEF §3A).
+func (s *Store) Ping(ctx context.Context) error { return s.pool.Ping(ctx) }
+
 // Migrate applies the embedded goose migrations. Go owns the schema; this is
 // the only place it changes.
 func Migrate(ctx context.Context, dbURL string) (int, error) {

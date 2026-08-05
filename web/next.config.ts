@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Output File Tracing (phase 5 BRIEF §3A): `next build` emits
+  // .next/standalone — server.js plus only the node_modules subset it
+  // traced — which is what the Docker image runs. public/ and .next/static
+  // are copied in by the Dockerfile after the build (the documented manual
+  // step; public/ must be copied after so the MapLibre worker files from
+  // the prebuild copy:maplibre hook are included). Dev (`next dev`) is
+  // unaffected.
+  output: "standalone",
   // A stray lockfile in the home directory makes Next mis-detect the
   // workspace root; web/ is a standalone npm project, so pin it here.
   turbopack: {

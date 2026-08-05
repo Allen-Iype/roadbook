@@ -22,14 +22,56 @@ type ImportResult struct {
 	Inserted int
 }
 
+// ImportRow is one imports-table row, the bookkeeping the UI surfaces
+// (phase 5 BRIEF §3B). Error and DetectedFormat are nil until known.
+type ImportRow struct {
+	ID             int64
+	SourceLabel    string
+	WindowStart    *time.Time
+	WindowEnd      *time.Time
+	ImportedAt     time.Time
+	Visits         int
+	Activities     int
+	Points         int
+	RawPositions   int
+	Skipped        int
+	Status         string
+	Error          *string
+	DetectedFormat *string
+}
+
 const batchSize = 2000
+
+// BeginImport records the attempt before anything is parsed, status 'running',
+// so a failure is visible in the product rather than only in a closed terminal
+// (phase 5 BRIEF §3B). Counters are zero until ImportObservations finalises the
+// row; FailImport finalises the other path.
+func (s *Store) BeginImport(ctx context.Context, label string, winStart, winEnd *time.Time) (int64, error) {
+	var id int64
+	err := s.pool.QueryRow(ctx, `INSERT INTO imports (source_label, window_start, window_end, visits, activities, points, raw_positions, skipped, status)
+		VALUES ($1,$2,$3,0,0,0,0,0,'running') RETURNING id`,
+		label, winStart, winEnd).Scan(&id)
+	return id, err
+}
+
+// FailImport finalises a failed attempt. detectedFormat is the sniffer's
+// stable slug when the input was recognised ("" stores NULL — the failure
+// happened before recognition); errMsg is the user-facing message, prose that
+// may be reworded and is therefore never the queryable evidence.
+func (s *Store) FailImport(ctx context.Context, importID int64, detectedFormat, errMsg string) error {
+	_, err := s.pool.Exec(ctx, `UPDATE imports SET status = 'failed', error = $2, detected_format = nullif($3, '')
+		WHERE id = $1`, importID, errMsg, detectedFormat)
+	return err
+}
 
 // ImportObservations writes observations idempotently: each row carries a
 // content hash with a unique index, and inserts are ON CONFLICT DO NOTHING, so
 // re-importing the same or an overlapping export accumulates instead of
 // duplicating (BRIEF §4 choice 3). Observations are never updated or deleted
-// (CLAUDE.md invariant 2).
-func (s *Store) ImportObservations(ctx context.Context, label string, winStart, winEnd *time.Time, obs domain.Observations, skipped int) (ImportResult, error) {
+// (CLAUDE.md invariant 2). The imports row created by BeginImport is finalised
+// to 'completed' in the same transaction, so counters and observations land
+// together or not at all.
+func (s *Store) ImportObservations(ctx context.Context, importID int64, detectedFormat string, obs domain.Observations, skipped int) (ImportResult, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return ImportResult{}, err
@@ -101,13 +143,40 @@ func (s *Store) ImportObservations(ctx context.Context, label string, winStart, 
 	}
 
 	res.Parsed = len(obs.Visits) + len(obs.Activities) + len(obs.Points) + len(obs.RawPositions)
-	err = tx.QueryRow(ctx, `INSERT INTO imports (source_label, window_start, window_end, visits, activities, points, raw_positions, skipped)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-		label, winStart, winEnd, len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions), skipped).Scan(&res.ImportID)
+	res.ImportID = importID
+	ct, err := tx.Exec(ctx, `UPDATE imports SET visits = $2, activities = $3, points = $4, raw_positions = $5, skipped = $6,
+		status = 'completed', detected_format = nullif($7, '')
+		WHERE id = $1 AND status = 'running'`,
+		importID, len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions), skipped, detectedFormat)
 	if err != nil {
 		return res, err
 	}
+	if ct.RowsAffected() != 1 {
+		return res, fmt.Errorf("import %d is not running — BeginImport must precede ImportObservations", importID)
+	}
 	return res, tx.Commit(ctx)
+}
+
+// ListImports returns every import attempt, newest first — the bookkeeping
+// view (phase 5 BRIEF §3B).
+func (s *Store) ListImports(ctx context.Context) ([]ImportRow, error) {
+	rows, err := s.pool.Query(ctx, `SELECT id, source_label, window_start, window_end, imported_at,
+		visits, activities, points, raw_positions, skipped, status, error, detected_format
+		FROM imports ORDER BY imported_at DESC, id DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []ImportRow
+	for rows.Next() {
+		var r ImportRow
+		if err := rows.Scan(&r.ID, &r.SourceLabel, &r.WindowStart, &r.WindowEnd, &r.ImportedAt,
+			&r.Visits, &r.Activities, &r.Points, &r.RawPositions, &r.Skipped, &r.Status, &r.Error, &r.DetectedFormat); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
 }
 
 // LoadObservations reads everything back in (start, id) order — chronological,

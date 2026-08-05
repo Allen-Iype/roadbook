@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -149,18 +150,6 @@ func runImport(args []string) error {
 		return fmt.Errorf("-src is required")
 	}
 
-	f, err := os.Open(*src)
-	if err != nil {
-		return err
-	}
-	obs, st, err := timeline.Parse(f)
-	f.Close()
-	if err != nil {
-		return fmt.Errorf("cannot import %s: %w", filepath.Base(*src), err)
-	}
-	fmt.Printf("parsed %s: %d visits, %d activities, %d path points, %d raw positions (%d skipped)\n",
-		filepath.Base(*src), st.Visits, st.Activities, st.Points, st.RawPositions, st.Skipped)
-
 	winStart, err := parseDateFlag(*from)
 	if err != nil {
 		return fmt.Errorf("-from: %w", err)
@@ -169,11 +158,17 @@ func runImport(args []string) error {
 	if err != nil {
 		return fmt.Errorf("-to: %w", err)
 	}
-	if winStart != nil || winEnd != nil {
-		obs = filterWindow(obs, winStart, winEnd)
-		fmt.Printf("window filter kept %d visits, %d activities, %d path points, %d raw positions\n",
-			len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions))
+
+	// The imports row is written before the parse (status 'running') and
+	// finalised after it, so a failed import is visible in the product, with
+	// the sniffer's format label recorded queryably beside the prose message
+	// (phase 5 BRIEF §3B). Only a file that cannot be opened at all fails
+	// before the row exists.
+	f, err := os.Open(*src)
+	if err != nil {
+		return err
 	}
+	defer f.Close()
 
 	ctx := context.Background()
 	s, err := openStore(ctx, *db)
@@ -186,8 +181,37 @@ func runImport(args []string) error {
 	if lbl == "" {
 		lbl = filepath.Base(*src)
 	}
-	res, err := s.ImportObservations(ctx, lbl, winStart, winEnd, obs, st.Skipped)
+	importID, err := s.BeginImport(ctx, lbl, winStart, winEnd)
 	if err != nil {
+		return err
+	}
+
+	obs, st, err := timeline.Parse(f)
+	if err != nil {
+		var ue *timeline.UnsupportedInputError
+		kind := ""
+		if errors.As(err, &ue) {
+			kind = ue.Kind
+		}
+		if ferr := s.FailImport(ctx, importID, kind, err.Error()); ferr != nil {
+			return fmt.Errorf("cannot import %s: %w (and recording the failure also failed: %v)", filepath.Base(*src), err, ferr)
+		}
+		return fmt.Errorf("cannot import %s: %w", filepath.Base(*src), err)
+	}
+	fmt.Printf("parsed %s: %d visits, %d activities, %d path points, %d raw positions (%d skipped)\n",
+		filepath.Base(*src), st.Visits, st.Activities, st.Points, st.RawPositions, st.Skipped)
+
+	if winStart != nil || winEnd != nil {
+		obs = filterWindow(obs, winStart, winEnd)
+		fmt.Printf("window filter kept %d visits, %d activities, %d path points, %d raw positions\n",
+			len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions))
+	}
+
+	res, err := s.ImportObservations(ctx, importID, st.Format, obs, st.Skipped)
+	if err != nil {
+		if ferr := s.FailImport(ctx, importID, st.Format, err.Error()); ferr != nil {
+			return fmt.Errorf("import failed: %w (and recording the failure also failed: %v)", err, ferr)
+		}
 		return err
 	}
 	fmt.Printf("import %d: %d observations, %d new (%d already present)\n",

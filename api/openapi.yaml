@@ -12,14 +12,43 @@ paths:
   /healthz:
     get:
       operationId: getHealth
-      summary: Liveness check
+      summary: Readiness check
+      description: >
+        Answers 200 only when a database round-trip succeeds — a listening
+        socket with a dead database behind it is exactly the not-ready state
+        the check exists to catch (phase 5 BRIEF §3A). The compose healthcheck
+        gates dependent services on this.
       responses:
         "200":
-          description: Service is up.
+          description: Service is up and the database answers.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Health"
+        "503":
+          description: The database is unreachable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /imports:
+    get:
+      operationId: listImports
+      summary: Every import attempt, newest first
+      description: >
+        Import bookkeeping (phase 5 BRIEF §3B): each attempt is recorded
+        before parsing and finalised as completed or failed, so a failure is
+        visible in the product. detected_format is the sniffer's stable
+        format label — evidence that stays queryable while user-facing error
+        prose gets reworded.
+      responses:
+        "200":
+          description: All import attempts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportList"
 
   /candidates:
     get:
@@ -309,6 +338,61 @@ components:
         status:
           type: string
           example: ok
+
+    Import:
+      type: object
+      required:
+        [id, source_label, imported_at, visits, activities, points,
+         raw_positions, skipped, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+        source_label:
+          type: string
+          description: Provenance label, defaulting to the source file name.
+        window_start:
+          type: string
+          format: date-time
+          description: Optional import date window (the -from flag). Absent means unbounded.
+        window_end:
+          type: string
+          format: date-time
+        imported_at:
+          type: string
+          format: date-time
+        visits:
+          type: integer
+        activities:
+          type: integer
+        points:
+          type: integer
+        raw_positions:
+          type: integer
+        skipped:
+          type: integer
+        status:
+          type: string
+          enum: [running, completed, failed]
+        error:
+          type: string
+          description: >
+            The user-facing failure message — prose, subject to rewording;
+            never the queryable evidence.
+        detected_format:
+          type: string
+          description: >
+            The sniffer's stable format label (phone-timeline, records-json,
+            semantic-history, …). Absent when the input was never recognised.
+
+    ImportList:
+      type: object
+      required: [imports]
+      properties:
+        imports:
+          type: array
+          items:
+            $ref: "#/components/schemas/Import"
 
     LatLng:
       type: object

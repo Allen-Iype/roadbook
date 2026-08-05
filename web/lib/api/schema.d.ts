@@ -11,8 +11,31 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Liveness check */
+        /**
+         * Readiness check
+         * @description Answers 200 only when a database round-trip succeeds — a listening socket with a dead database behind it is exactly the not-ready state the check exists to catch (phase 5 BRIEF §3A). The compose healthcheck gates dependent services on this.
+         */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every import attempt, newest first
+         * @description Import bookkeeping (phase 5 BRIEF §3B): each attempt is recorded before parsing and finalised as completed or failed, so a failure is visible in the product. detected_format is the sniffer's stable format label — evidence that stays queryable while user-facing error prose gets reworded.
+         */
+        get: operations["listImports"];
         put?: never;
         post?: never;
         delete?: never;
@@ -172,6 +195,35 @@ export interface components {
         Health: {
             /** @example ok */
             status: string;
+        };
+        Import: {
+            /** Format: int64 */
+            id: number;
+            /** @description Provenance label, defaulting to the source file name. */
+            source_label: string;
+            /**
+             * Format: date-time
+             * @description Optional import date window (the -from flag). Absent means unbounded.
+             */
+            window_start?: string;
+            /** Format: date-time */
+            window_end?: string;
+            /** Format: date-time */
+            imported_at: string;
+            visits: number;
+            activities: number;
+            points: number;
+            raw_positions: number;
+            skipped: number;
+            /** @enum {string} */
+            status: "running" | "completed" | "failed";
+            /** @description The user-facing failure message — prose, subject to rewording; never the queryable evidence. */
+            error?: string;
+            /** @description The sniffer's stable format label (phone-timeline, records-json, semantic-history, …). Absent when the input was never recognised. */
+            detected_format?: string;
+        };
+        ImportList: {
+            imports: components["schemas"]["Import"][];
         };
         LatLng: {
             /** Format: double */
@@ -481,13 +533,42 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Service is up. */
+            /** @description Service is up and the database answers. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+            /** @description The database is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listImports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All import attempts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportList"];
                 };
             };
         };

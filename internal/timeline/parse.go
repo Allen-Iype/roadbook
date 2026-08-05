@@ -20,14 +20,24 @@ import (
 	"roadbook/internal/domain"
 )
 
+// PhoneTimelineFormat is the stable slug for the supported input, the current
+// on-device phone export. It shares a namespace with UnsupportedInputError.Kind:
+// together they are the sniffer's format taxonomy, recorded per import in
+// imports.detected_format (phase 5 BRIEF §3B) so format populations are
+// queryable — the label is evidence, the Message is prose.
+const PhoneTimelineFormat = "phone-timeline"
+
 // Stats reports what one parse saw. Skipped counts segments or points that were
-// present but unusable (bad shape, missing/invalid timestamps).
+// present but unusable (bad shape, missing/invalid timestamps). Format is the
+// recognised input's stable slug (PhoneTimelineFormat on success — the only
+// format that parses today).
 type Stats struct {
 	Visits       int
 	Activities   int
 	Points       int
 	RawPositions int
 	Skipped      int
+	Format       string
 }
 
 // UnsupportedInputError is a recognised-but-wrong input. Message is written for
@@ -152,6 +162,7 @@ func Parse(r io.Reader) (domain.Observations, Stats, error) {
 				strings.Join(topKeys, ", "), exportHint),
 		}
 	}
+	st.Format = PhoneTimelineFormat
 	return obs, st, nil
 }
 
@@ -307,10 +318,10 @@ func sniff(head []byte) *UnsupportedInputError {
 		return nil // the supported phone export
 	case strings.Contains(s, `"timelineObjects"`):
 		return reject("semantic-history",
-			"this is Semantic Location History from an old Google Takeout (monthly timelineObjects files) — not supported yet, planned for a later release; for current data")
+			"this is Semantic Location History from an old Google Takeout (monthly timelineObjects files) — not supported; for current data")
 	case strings.Contains(s, `"latitudeE7"`), strings.Contains(s, `"longitudeE7"`):
 		return reject("records-json",
-			"this is Records.json from an old Google Takeout (raw location samples) — not supported yet, planned for a later release; for current data")
+			"this is Records.json from an old Google Takeout (raw location samples) — not supported; for current data")
 	case trimmed[0] == '[' && strings.Contains(s, `"titleUrl"`):
 		return reject("my-activity",
 			"this is a Google My Activity export — a different Takeout product with no location timeline in it")

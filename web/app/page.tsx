@@ -68,7 +68,13 @@ function Shell({ children }: { children: React.ReactNode }) {
       <h1 className="text-2xl font-semibold">Roadbook</h1>
       <p className="mt-1 text-sm text-neutral-400">
         Adventure candidates detected from your timeline. Confirm the real
-        ones; dismiss the rest.
+        ones; dismiss the rest.{" "}
+        <Link
+          href="/imports"
+          className="underline decoration-neutral-700 underline-offset-2 hover:text-neutral-100"
+        >
+          Imports
+        </Link>
       </p>
       {children}
     </main>

@@ -55,6 +55,27 @@ func (e DecisionRequestAction) Valid() bool {
 	}
 }
 
+// Defines values for ImportStatus.
+const (
+	Completed ImportStatus = "completed"
+	Failed    ImportStatus = "failed"
+	Running   ImportStatus = "running"
+)
+
+// Valid indicates whether the value is a known member of the ImportStatus enum.
+func (e ImportStatus) Valid() bool {
+	switch e {
+	case Completed:
+		return true
+	case Failed:
+		return true
+	case Running:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LegGapKind.
 const (
 	LegGapKindAir     LegGapKind = "air"
@@ -273,6 +294,39 @@ type Error struct {
 type Health struct {
 	// Status Example: ok
 	Status string `json:"status"`
+}
+
+// Import defines model for Import.
+type Import struct {
+	Activities int `json:"activities"`
+
+	// DetectedFormat The sniffer's stable format label (phone-timeline, records-json, semantic-history, …). Absent when the input was never recognised.
+	DetectedFormat *string `json:"detected_format,omitempty"`
+
+	// Error The user-facing failure message — prose, subject to rewording; never the queryable evidence.
+	Error        *string   `json:"error,omitempty"`
+	Id           int64     `json:"id"`
+	ImportedAt   time.Time `json:"imported_at"`
+	Points       int       `json:"points"`
+	RawPositions int       `json:"raw_positions"`
+	Skipped      int       `json:"skipped"`
+
+	// SourceLabel Provenance label, defaulting to the source file name.
+	SourceLabel string       `json:"source_label"`
+	Status      ImportStatus `json:"status"`
+	Visits      int          `json:"visits"`
+	WindowEnd   *time.Time   `json:"window_end,omitempty"`
+
+	// WindowStart Optional import date window (the -from flag). Absent means unbounded.
+	WindowStart *time.Time `json:"window_start,omitempty"`
+}
+
+// ImportStatus defines model for Import.Status.
+type ImportStatus string
+
+// ImportList defines model for ImportList.
+type ImportList struct {
+	Imports []Import `json:"imports"`
 }
 
 // Journey defines model for Journey.
@@ -525,9 +579,12 @@ type ServerInterface interface {
 	// UploadCandidatePhotos Upload photos (and Takeout sidecars) to a confirmed adventure
 	// (POST /candidates/{id}/photos)
 	UploadCandidatePhotos(w http.ResponseWriter, r *http.Request, id int64)
-	// GetHealth Liveness check
+	// GetHealth Readiness check
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// ListImports Every import attempt, newest first
+	// (GET /imports)
+	ListImports(w http.ResponseWriter, r *http.Request)
 	// DeletePhoto Delete one photo
 	// (DELETE /photos/{id})
 	DeletePhoto(w http.ResponseWriter, r *http.Request, id int64)
@@ -694,6 +751,20 @@ func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListImports operation middleware
+func (siw *ServerInterfaceWrapper) ListImports(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListImports(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -876,6 +947,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/healthz", wrapper.GetHealth)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/imports", wrapper.ListImports)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates", wrapper.ListCandidates)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/journey", wrapper.GetCandidateJourney)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/name-suggestion", wrapper.SuggestCandidateName)
@@ -1168,6 +1240,41 @@ func (response GetHealth200JSONResponse) VisitGetHealthResponse(w http.ResponseW
 	return err
 }
 
+type GetHealth503JSONResponse Error
+
+func (response GetHealth503JSONResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListImportsRequestObject struct {
+}
+
+type ListImportsResponseObject interface {
+	VisitListImportsResponse(w http.ResponseWriter) error
+}
+
+type ListImports200JSONResponse ImportList
+
+func (response ListImports200JSONResponse) VisitListImportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeletePhotoRequestObject struct {
 	Id int64 `json:"id"`
 }
@@ -1260,9 +1367,12 @@ type StrictServerInterface interface {
 	// UploadCandidatePhotos Upload photos (and Takeout sidecars) to a confirmed adventure
 	// (POST /candidates/{id}/photos)
 	UploadCandidatePhotos(ctx context.Context, request UploadCandidatePhotosRequestObject) (UploadCandidatePhotosResponseObject, error)
-	// GetHealth Liveness check
+	// GetHealth Readiness check
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
+	// ListImports Every import attempt, newest first
+	// (GET /imports)
+	ListImports(ctx context.Context, request ListImportsRequestObject) (ListImportsResponseObject, error)
 	// DeletePhoto Delete one photo
 	// (DELETE /photos/{id})
 	DeletePhoto(ctx context.Context, request DeletePhotoRequestObject) (DeletePhotoResponseObject, error)
@@ -1495,6 +1605,30 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHealthResponseObject); ok {
 		if err := validResponse.VisitGetHealthResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListImports operation middleware
+func (sh *strictHandler) ListImports(w http.ResponseWriter, r *http.Request) {
+	var request ListImportsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListImports(ctx, request.(ListImportsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListImports")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListImportsResponseObject); ok {
+		if err := validResponse.VisitListImportsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -167,7 +167,11 @@ func TestImportIdempotency(t *testing.T) {
 		},
 	}
 
-	first, err := s.ImportObservations(ctx, "test", nil, nil, obs, 0)
+	id1, err := s.BeginImport(ctx, "test", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := s.ImportObservations(ctx, id1, "phone-timeline", obs, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +179,11 @@ func TestImportIdempotency(t *testing.T) {
 		t.Errorf("first import parsed/inserted = %d/%d, want 6/6", first.Parsed, first.Inserted)
 	}
 
-	second, err := s.ImportObservations(ctx, "test-again", nil, nil, obs, 0)
+	id2, err := s.BeginImport(ctx, "test-again", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := s.ImportObservations(ctx, id2, "phone-timeline", obs, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,6 +198,71 @@ func TestImportIdempotency(t *testing.T) {
 	if len(back.Visits) != 2 || len(back.Activities) != 1 || len(back.Points) != 2 || len(back.RawPositions) != 1 {
 		t.Errorf("loaded %d/%d/%d/%d rows, want 2/1/2/1",
 			len(back.Visits), len(back.Activities), len(back.Points), len(back.RawPositions))
+	}
+}
+
+// TestImportBookkeeping pins the phase 5 lifecycle (BRIEF §3B): the row exists
+// as 'running' before observations land, finalises to 'completed' with the
+// sniffer's format label, and a failure records the label queryably beside the
+// prose message — the label, not the message, is the legacy-trigger evidence.
+func TestImportBookkeeping(t *testing.T) {
+	s := storetest.Open(t)
+	ctx := context.Background()
+
+	okID, err := s.BeginImport(ctx, "good.json", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ImportObservations(ctx, okID, "phone-timeline", domain.Observations{
+		Visits: []domain.Visit{{Start: at(2026, 3, 1, 9), End: at(2026, 3, 1, 10)}},
+	}, 2); err != nil {
+		t.Fatal(err)
+	}
+
+	failID, err := s.BeginImport(ctx, "old-takeout.json", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.FailImport(ctx, failID, "records-json", "this is Records.json — not supported"); err != nil {
+		t.Fatal(err)
+	}
+
+	// A failure before the input was recognised stores NULL, not "".
+	blindID, err := s.BeginImport(ctx, "garbage.bin", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.FailImport(ctx, blindID, "", "not JSON"); err != nil {
+		t.Fatal(err)
+	}
+
+	rows, err := s.ListImports(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("ListImports returned %d rows, want 3", len(rows))
+	}
+	byID := map[int64]store.ImportRow{}
+	for _, r := range rows {
+		byID[r.ID] = r
+	}
+	ok := byID[okID]
+	if ok.Status != "completed" || ok.DetectedFormat == nil || *ok.DetectedFormat != "phone-timeline" || ok.Visits != 1 || ok.Skipped != 2 {
+		t.Errorf("completed row = %+v, want completed/phone-timeline with counters 1 visit, 2 skipped", ok)
+	}
+	fl := byID[failID]
+	if fl.Status != "failed" || fl.DetectedFormat == nil || *fl.DetectedFormat != "records-json" || fl.Error == nil {
+		t.Errorf("failed row = %+v, want failed/records-json with an error message", fl)
+	}
+	bl := byID[blindID]
+	if bl.Status != "failed" || bl.DetectedFormat != nil {
+		t.Errorf("unrecognised-input row = %+v, want failed with NULL detected_format", bl)
+	}
+
+	// Finalising a row that is not running is a loud error, not a silent no-op.
+	if _, err := s.ImportObservations(ctx, failID, "phone-timeline", domain.Observations{}, 0); err == nil {
+		t.Error("ImportObservations on a failed row succeeded — want an error")
 	}
 }
 

@@ -1,0 +1,17 @@
+# Build context for the Go image. First rule of the phase (BRIEF §4): the
+# context must be provably free of private data — nothing here can be COPY'd
+# even by a careless future Dockerfile edit.
+data/
+docs/private/
+.env
+*.tar.gz
+
+# Not needed to build the binary; web/ alone (node_modules) is most of the
+# repository by bytes.
+web/
+bin/
+.git/
+.next/
+prototype/
+docs/
+*.md

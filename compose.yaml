@@ -1,0 +1,82 @@
+# The deploy topology (phase 5 BRIEF §3A): three services matching the three
+# runtimes. Only web is published to the host, and only on loopback — an
+# authless product must not be internet-exposed by default; widening the
+# binding is a deliberate edit, done behind a reverse proxy with auth.
+# The dev setup (brew Postgres + `roadbook serve` + `npm run dev`) is
+# untouched by this file; compose.test.yaml remains the test-database
+# fallback. Configuration comes from .env (see .env.example).
+#
+# First run:   docker compose up -d --build
+# Import:      docker compose run --rm api roadbook import -src /data/Timeline.json
+# Detect:      docker compose run --rm api roadbook detect -from-db
+# Browse:      http://127.0.0.1:3000
+
+services:
+  db:
+    # imresamu/postgis is the multi-arch build of the official postgis image
+    # (the postgis/postgis README's own pointer for arm64) — same Postgres 18
+    # + PostGIS 3.6 as everywhere else in this project; postgis/postgis
+    # itself publishes no arm64, which would exclude every ARM self-host
+    # (Raspberry Pi, ARM VPS, Apple Silicon).
+    image: imresamu/postgis:18-3.6
+    environment:
+      POSTGRES_USER: roadbook
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-roadbook}
+      POSTGRES_DB: roadbook
+    volumes:
+      # postgres:18 images moved the data directory; /var/lib/postgresql is
+      # the image's declared volume (PGDATA sits beneath it). Mounting the
+      # old /var/lib/postgresql/data path would silently leave data outside
+      # the volume.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roadbook -d roadbook"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: .
+    # Migrate-then-serve lives here, in the compose command, not in the
+    # binary: goose is idempotent and embedded, so a version upgrade cannot
+    # forget its migration — while dev `roadbook serve` keeps no implicit
+    # migration side effect (BRIEF §3A).
+    command: sh -c "roadbook migrate && exec roadbook serve"
+    environment:
+      DATABASE_URL: postgres://roadbook:${POSTGRES_PASSWORD:-roadbook}@db:5432/roadbook
+      ROADBOOK_PHOTOS_DIR: /photos
+      ROADBOOK_GEOCODER: ${ROADBOOK_GEOCODER:-none}
+      ROADBOOK_NOMINATIM_URL: ${ROADBOOK_NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+    volumes:
+      # Thumbnails are irreplaceable user data (originals are discarded at
+      # upload) — a named volume, covered by `roadbook backup`.
+      - photos:/photos
+      # Export files enter read-only: the container can read the user's
+      # export and structurally cannot modify it — the never-modify-data/
+      # rule as a mount flag.
+      - ./data:/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # Readiness, not liveness: /healthz answers 200 only when a database
+      # round-trip succeeds, so web is gated on a genuinely serving API.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/healthz"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  web:
+    build: ./web
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      ROADBOOK_API_URL: http://api:8080
+      ROADBOOK_MAP_STYLE: ${ROADBOOK_MAP_STYLE:-https://tiles.openfreemap.org/styles/liberty}
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  photos:
