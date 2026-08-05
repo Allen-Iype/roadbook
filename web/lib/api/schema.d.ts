@@ -101,6 +101,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/{id}/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The photos of a candidate's confirmed adventure
+         * @description Photos attached to the decision matched to this candidate. An empty list for a confirmed adventure with no uploads; 409 when the candidate has no confirmed decision.
+         */
+        get: operations["listCandidatePhotos"];
+        put?: never;
+        /**
+         * Upload photos (and Takeout sidecars) to a confirmed adventure
+         * @description Multipart upload through the one API boundary (BRIEF §1.3): images and optional Google Photos Takeout JSON sidecars in a single request. Only the thumbnail and extracted metadata are stored; original bytes are discarded after extraction and never written to disk. Results are per-file — one unsupported file never fails the batch. Re-upload of identical bytes reports "duplicate" and stores nothing (content- hash idempotency, the imports precedent). Sidecars pair with their image by filename, falling back to their title field.
+         */
+        post: operations["uploadCandidatePhotos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/photos/{id}/thumbnail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The stored thumbnail image
+         * @description JPEG bytes, re-encoded pixels only — the thumbnailer strips all embedded metadata, so this file carries no position or timestamp (BRIEF §1.2). The browser reaches this through the Next.js proxy route handler, never directly.
+         */
+        get: operations["getPhotoThumbnail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/photos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete one photo
+         * @description Removes the row, then the thumbnail file — in that order, so a mid-failure leaves unreachable garbage rather than a broken image (BRIEF §3B). User-initiated only; nothing automated deletes photos.
+         */
+        delete: operations["deletePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -328,6 +392,54 @@ export interface components {
             trace_points_kept: number;
             raw_points_kept: number;
         };
+        Photo: {
+            /** Format: int64 */
+            id: number;
+            original_name: string;
+            /**
+             * Format: date-time
+             * @description The resolved capture instant. Absent when no rung of the time ladder resolved (time_source "none") — the photo is stored and shown, but unplaced on map and timeline.
+             */
+            taken_at?: string;
+            /** @description Civil offset for display, seconds east of UTC. Present exactly when taken_at is. */
+            taken_offset_sec?: number;
+            /**
+             * @description Which rung of the resolution ladder produced taken_at (BRIEF §3E), strongest first — the GPS receiver's own UTC clock, the explicit EXIF offset tag, the Takeout sidecar's epoch, or the wall clock interpreted in the adventure's own offset (stated as the weakest rung; wrong by the zone difference on multi-zone adventures).
+             * @enum {string}
+             */
+            time_source: "gps" | "exif_offset" | "sidecar" | "exif_local" | "none";
+            pos?: components["schemas"]["LatLng"];
+            /**
+             * @description Which reading produced pos (BRIEF §3D) — the camera's own GPS block, or Google's copy from the Takeout sidecar. "none": no position; the photo appears in the strip but not on the map.
+             * @enum {string}
+             */
+            pos_source: "exif" | "sidecar" | "none";
+            /** @description Thumbnail pixel width, post-orientation. */
+            thumb_w: number;
+            thumb_h: number;
+            /** Format: date-time */
+            uploaded_at: string;
+        };
+        PhotoUploadResult: {
+            /** @description The uploaded filename this result is about. */
+            file: string;
+            /**
+             * @description accepted — stored, thumbnail written. duplicate — identical bytes already stored (the existing photo is returned). rejected — not a supported photo; reason says what it actually is and what to do. sidecar_paired — a Takeout JSON consumed as metadata for paired_with. sidecar_unpaired — a sidecar naming no image in this upload; nothing stored.
+             * @enum {string}
+             */
+            status: "accepted" | "duplicate" | "rejected" | "sidecar_paired" | "sidecar_unpaired";
+            /** @description The actionable rejection message. Present when rejected. */
+            reason?: string;
+            /** @description The image filename a sidecar was applied to. */
+            paired_with?: string;
+            photo?: components["schemas"]["Photo"];
+        };
+        PhotoUploadResults: {
+            results: components["schemas"]["PhotoUploadResult"][];
+        };
+        PhotoList: {
+            photos: components["schemas"]["Photo"][];
+        };
         Error: {
             error: string;
         };
@@ -488,6 +600,154 @@ export interface operations {
                 };
             };
             /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listCandidatePhotos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Candidate id from the latest run. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photos, in upload order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoList"];
+                };
+            };
+            /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The candidate has no confirmed decision. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    uploadCandidatePhotos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Candidate id from the latest run. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    files?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description One result per uploaded file, in upload order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoUploadResults"];
+                };
+            };
+            /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The candidate has no confirmed decision. Photos attach to adventures — confirmed candidates — because they are user data and must not attach to disposable rows (BRIEF §3A). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPhotoThumbnail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The thumbnail. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description No such photo. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deletePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such photo. */
             404: {
                 headers: {
                     [name: string]: unknown;

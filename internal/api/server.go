@@ -26,6 +26,9 @@ type Server struct {
 	Store       *store.Store
 	MatchParams detect.MatchParams
 	Suggester   suggest.Suggester
+	// Photos is the thumbnail directory — the filesystem half of the photos
+	// stratum, reachable only through this process (phase 4 BRIEF §1.3).
+	Photos store.PhotoFiles
 }
 
 var _ StrictServerInterface = (*Server)(nil)

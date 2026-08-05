@@ -296,6 +296,8 @@ func runServe(args []string) error {
 		"name suggester: none | nominatim (default $ROADBOOK_GEOCODER)")
 	nominatimURL := fs.String("nominatim-url", envOr("ROADBOOK_NOMINATIM_URL", "https://nominatim.openstreetmap.org"),
 		"Nominatim base URL (default $ROADBOOK_NOMINATIM_URL)")
+	photosDir := fs.String("photos-dir", envOr("ROADBOOK_PHOTOS_DIR", "data/photos"),
+		"thumbnail directory (default $ROADBOOK_PHOTOS_DIR) — under gitignored data/ by default; photos are user data")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -319,7 +321,12 @@ func runServe(args []string) error {
 	}
 	defer s.Close()
 
-	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Suggester: sug}
+	photos := store.PhotoFiles{Dir: *photosDir}
+	if err := photos.Init(); err != nil {
+		return fmt.Errorf("photos directory: %w", err)
+	}
+
+	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Suggester: sug, Photos: photos}
 	handler := api.HandlerFromMux(api.NewStrictHandler(srv, nil), http.NewServeMux())
 	fmt.Printf("roadbook API listening on %s\n", *addr)
 	return http.ListenAndServe(*addr, handler)

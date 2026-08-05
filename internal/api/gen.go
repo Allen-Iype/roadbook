@@ -10,10 +10,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for DecisionAction.
@@ -85,6 +88,81 @@ func (e LegKind) Valid() bool {
 	case Gap:
 		return true
 	case Observed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PhotoPosSource.
+const (
+	PhotoPosSourceExif    PhotoPosSource = "exif"
+	PhotoPosSourceNone    PhotoPosSource = "none"
+	PhotoPosSourceSidecar PhotoPosSource = "sidecar"
+)
+
+// Valid indicates whether the value is a known member of the PhotoPosSource enum.
+func (e PhotoPosSource) Valid() bool {
+	switch e {
+	case PhotoPosSourceExif:
+		return true
+	case PhotoPosSourceNone:
+		return true
+	case PhotoPosSourceSidecar:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PhotoTimeSource.
+const (
+	PhotoTimeSourceExifLocal  PhotoTimeSource = "exif_local"
+	PhotoTimeSourceExifOffset PhotoTimeSource = "exif_offset"
+	PhotoTimeSourceGps        PhotoTimeSource = "gps"
+	PhotoTimeSourceNone       PhotoTimeSource = "none"
+	PhotoTimeSourceSidecar    PhotoTimeSource = "sidecar"
+)
+
+// Valid indicates whether the value is a known member of the PhotoTimeSource enum.
+func (e PhotoTimeSource) Valid() bool {
+	switch e {
+	case PhotoTimeSourceExifLocal:
+		return true
+	case PhotoTimeSourceExifOffset:
+		return true
+	case PhotoTimeSourceGps:
+		return true
+	case PhotoTimeSourceNone:
+		return true
+	case PhotoTimeSourceSidecar:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PhotoUploadResultStatus.
+const (
+	Accepted        PhotoUploadResultStatus = "accepted"
+	Duplicate       PhotoUploadResultStatus = "duplicate"
+	Rejected        PhotoUploadResultStatus = "rejected"
+	SidecarPaired   PhotoUploadResultStatus = "sidecar_paired"
+	SidecarUnpaired PhotoUploadResultStatus = "sidecar_unpaired"
+)
+
+// Valid indicates whether the value is a known member of the PhotoUploadResultStatus enum.
+func (e PhotoUploadResultStatus) Valid() bool {
+	switch e {
+	case Accepted:
+		return true
+	case Duplicate:
+		return true
+	case Rejected:
+		return true
+	case SidecarPaired:
+		return true
+	case SidecarUnpaired:
 		return true
 	default:
 		return false
@@ -262,6 +340,65 @@ type NameSuggestion struct {
 	Source string `json:"source"`
 }
 
+// Photo defines model for Photo.
+type Photo struct {
+	Id           int64   `json:"id"`
+	OriginalName string  `json:"original_name"`
+	Pos          *LatLng `json:"pos,omitempty"`
+
+	// PosSource Which reading produced pos (BRIEF §3D) — the camera's own GPS block, or Google's copy from the Takeout sidecar. "none": no position; the photo appears in the strip but not on the map.
+	PosSource PhotoPosSource `json:"pos_source"`
+
+	// TakenAt The resolved capture instant. Absent when no rung of the time ladder resolved (time_source "none") — the photo is stored and shown, but unplaced on map and timeline.
+	TakenAt *time.Time `json:"taken_at,omitempty"`
+
+	// TakenOffsetSec Civil offset for display, seconds east of UTC. Present exactly when taken_at is.
+	TakenOffsetSec *int `json:"taken_offset_sec,omitempty"`
+	ThumbH         int  `json:"thumb_h"`
+
+	// ThumbW Thumbnail pixel width, post-orientation.
+	ThumbW int `json:"thumb_w"`
+
+	// TimeSource Which rung of the resolution ladder produced taken_at (BRIEF §3E), strongest first — the GPS receiver's own UTC clock, the explicit EXIF offset tag, the Takeout sidecar's epoch, or the wall clock interpreted in the adventure's own offset (stated as the weakest rung; wrong by the zone difference on multi-zone adventures).
+	TimeSource PhotoTimeSource `json:"time_source"`
+	UploadedAt time.Time       `json:"uploaded_at"`
+}
+
+// PhotoPosSource Which reading produced pos (BRIEF §3D) — the camera's own GPS block, or Google's copy from the Takeout sidecar. "none": no position; the photo appears in the strip but not on the map.
+type PhotoPosSource string
+
+// PhotoTimeSource Which rung of the resolution ladder produced taken_at (BRIEF §3E), strongest first — the GPS receiver's own UTC clock, the explicit EXIF offset tag, the Takeout sidecar's epoch, or the wall clock interpreted in the adventure's own offset (stated as the weakest rung; wrong by the zone difference on multi-zone adventures).
+type PhotoTimeSource string
+
+// PhotoList defines model for PhotoList.
+type PhotoList struct {
+	Photos []Photo `json:"photos"`
+}
+
+// PhotoUploadResult defines model for PhotoUploadResult.
+type PhotoUploadResult struct {
+	// File The uploaded filename this result is about.
+	File string `json:"file"`
+
+	// PairedWith The image filename a sidecar was applied to.
+	PairedWith *string `json:"paired_with,omitempty"`
+	Photo      *Photo  `json:"photo,omitempty"`
+
+	// Reason The actionable rejection message. Present when rejected.
+	Reason *string `json:"reason,omitempty"`
+
+	// Status accepted — stored, thumbnail written. duplicate — identical bytes already stored (the existing photo is returned). rejected — not a supported photo; reason says what it actually is and what to do. sidecar_paired — a Takeout JSON consumed as metadata for paired_with. sidecar_unpaired — a sidecar naming no image in this upload; nothing stored.
+	Status PhotoUploadResultStatus `json:"status"`
+}
+
+// PhotoUploadResultStatus accepted — stored, thumbnail written. duplicate — identical bytes already stored (the existing photo is returned). rejected — not a supported photo; reason says what it actually is and what to do. sidecar_paired — a Takeout JSON consumed as metadata for paired_with. sidecar_unpaired — a sidecar naming no image in this upload; nothing stored.
+type PhotoUploadResultStatus string
+
+// PhotoUploadResults defines model for PhotoUploadResults.
+type PhotoUploadResults struct {
+	Results []PhotoUploadResult `json:"results"`
+}
+
 // Run defines model for Run.
 type Run struct {
 	Id              int64 `json:"id"`
@@ -311,8 +448,16 @@ type TimedPoint struct {
 	T   time.Time `json:"t"`
 }
 
+// UploadCandidatePhotosMultipartBody defines parameters for UploadCandidatePhotos.
+type UploadCandidatePhotosMultipartBody struct {
+	Files *[]openapi_types.File `json:"files,omitempty"`
+}
+
 // DecideCandidateJSONRequestBody defines body for DecideCandidate for application/json ContentType.
 type DecideCandidateJSONRequestBody = DecisionRequest
+
+// UploadCandidatePhotosMultipartRequestBody defines body for UploadCandidatePhotos for multipart/form-data ContentType.
+type UploadCandidatePhotosMultipartRequestBody UploadCandidatePhotosMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -328,9 +473,21 @@ type ServerInterface interface {
 	// SuggestCandidateName A proposed name for the candidate's adventure
 	// (GET /candidates/{id}/name-suggestion)
 	SuggestCandidateName(w http.ResponseWriter, r *http.Request, id int64)
+	// ListCandidatePhotos The photos of a candidate's confirmed adventure
+	// (GET /candidates/{id}/photos)
+	ListCandidatePhotos(w http.ResponseWriter, r *http.Request, id int64)
+	// UploadCandidatePhotos Upload photos (and Takeout sidecars) to a confirmed adventure
+	// (POST /candidates/{id}/photos)
+	UploadCandidatePhotos(w http.ResponseWriter, r *http.Request, id int64)
 	// GetHealth Liveness check
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// DeletePhoto Delete one photo
+	// (DELETE /photos/{id})
+	DeletePhoto(w http.ResponseWriter, r *http.Request, id int64)
+	// GetPhotoThumbnail The stored thumbnail image
+	// (GET /photos/{id}/thumbnail)
+	GetPhotoThumbnail(w http.ResponseWriter, r *http.Request, id int64)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -434,11 +591,115 @@ func (siw *ServerInterfaceWrapper) SuggestCandidateName(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// ListCandidatePhotos operation middleware
+func (siw *ServerInterfaceWrapper) ListCandidatePhotos(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCandidatePhotos(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadCandidatePhotos operation middleware
+func (siw *ServerInterfaceWrapper) UploadCandidatePhotos(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadCandidatePhotos(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePhoto operation middleware
+func (siw *ServerInterfaceWrapper) DeletePhoto(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePhoto(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPhotoThumbnail operation middleware
+func (siw *ServerInterfaceWrapper) GetPhotoThumbnail(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPhotoThumbnail(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -573,6 +834,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/journey", wrapper.GetCandidateJourney)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/name-suggestion", wrapper.SuggestCandidateName)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/decision", wrapper.DecideCandidate)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/photos", wrapper.ListCandidatePhotos)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/photos", wrapper.UploadCandidatePhotos)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/photos/{id}/thumbnail", wrapper.GetPhotoThumbnail)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/photos/{id}", wrapper.DeletePhoto)
 
 	return m
 }
@@ -735,6 +1000,107 @@ func (response SuggestCandidateName502JSONResponse) VisitSuggestCandidateNameRes
 	return err
 }
 
+type ListCandidatePhotosRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type ListCandidatePhotosResponseObject interface {
+	VisitListCandidatePhotosResponse(w http.ResponseWriter) error
+}
+
+type ListCandidatePhotos200JSONResponse PhotoList
+
+func (response ListCandidatePhotos200JSONResponse) VisitListCandidatePhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCandidatePhotos404JSONResponse Error
+
+func (response ListCandidatePhotos404JSONResponse) VisitListCandidatePhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCandidatePhotos409JSONResponse Error
+
+func (response ListCandidatePhotos409JSONResponse) VisitListCandidatePhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadCandidatePhotosRequestObject struct {
+	Id   int64 `json:"id"`
+	Body *multipart.Reader
+}
+
+type UploadCandidatePhotosResponseObject interface {
+	VisitUploadCandidatePhotosResponse(w http.ResponseWriter) error
+}
+
+type UploadCandidatePhotos200JSONResponse PhotoUploadResults
+
+func (response UploadCandidatePhotos200JSONResponse) VisitUploadCandidatePhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadCandidatePhotos404JSONResponse Error
+
+func (response UploadCandidatePhotos404JSONResponse) VisitUploadCandidatePhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadCandidatePhotos409JSONResponse Error
+
+func (response UploadCandidatePhotos409JSONResponse) VisitUploadCandidatePhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetHealthRequestObject struct {
 }
 
@@ -756,6 +1122,78 @@ func (response GetHealth200JSONResponse) VisitGetHealthResponse(w http.ResponseW
 	return err
 }
 
+type DeletePhotoRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type DeletePhotoResponseObject interface {
+	VisitDeletePhotoResponse(w http.ResponseWriter) error
+}
+
+type DeletePhoto204Response struct {
+}
+
+func (response DeletePhoto204Response) VisitDeletePhotoResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeletePhoto404JSONResponse Error
+
+func (response DeletePhoto404JSONResponse) VisitDeletePhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetPhotoThumbnailRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type GetPhotoThumbnailResponseObject interface {
+	VisitGetPhotoThumbnailResponse(w http.ResponseWriter) error
+}
+
+type GetPhotoThumbnail200ImagejpegResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response GetPhotoThumbnail200ImagejpegResponse) VisitGetPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetPhotoThumbnail404JSONResponse Error
+
+func (response GetPhotoThumbnail404JSONResponse) VisitGetPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListCandidates The latest detection run's candidates, with decision state attached
@@ -770,9 +1208,21 @@ type StrictServerInterface interface {
 	// SuggestCandidateName A proposed name for the candidate's adventure
 	// (GET /candidates/{id}/name-suggestion)
 	SuggestCandidateName(ctx context.Context, request SuggestCandidateNameRequestObject) (SuggestCandidateNameResponseObject, error)
+	// ListCandidatePhotos The photos of a candidate's confirmed adventure
+	// (GET /candidates/{id}/photos)
+	ListCandidatePhotos(ctx context.Context, request ListCandidatePhotosRequestObject) (ListCandidatePhotosResponseObject, error)
+	// UploadCandidatePhotos Upload photos (and Takeout sidecars) to a confirmed adventure
+	// (POST /candidates/{id}/photos)
+	UploadCandidatePhotos(ctx context.Context, request UploadCandidatePhotosRequestObject) (UploadCandidatePhotosResponseObject, error)
 	// GetHealth Liveness check
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
+	// DeletePhoto Delete one photo
+	// (DELETE /photos/{id})
+	DeletePhoto(ctx context.Context, request DeletePhotoRequestObject) (DeletePhotoResponseObject, error)
+	// GetPhotoThumbnail The stored thumbnail image
+	// (GET /photos/{id}/thumbnail)
+	GetPhotoThumbnail(ctx context.Context, request GetPhotoThumbnailRequestObject) (GetPhotoThumbnailResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -923,6 +1373,65 @@ func (sh *strictHandler) SuggestCandidateName(w http.ResponseWriter, r *http.Req
 	}
 }
 
+// ListCandidatePhotos operation middleware
+func (sh *strictHandler) ListCandidatePhotos(w http.ResponseWriter, r *http.Request, id int64) {
+	var request ListCandidatePhotosRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCandidatePhotos(ctx, request.(ListCandidatePhotosRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCandidatePhotos")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCandidatePhotosResponseObject); ok {
+		if err := validResponse.VisitListCandidatePhotosResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadCandidatePhotos operation middleware
+func (sh *strictHandler) UploadCandidatePhotos(w http.ResponseWriter, r *http.Request, id int64) {
+	var request UploadCandidatePhotosRequestObject
+
+	request.Id = id
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadCandidatePhotos(ctx, request.(UploadCandidatePhotosRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadCandidatePhotos")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadCandidatePhotosResponseObject); ok {
+		if err := validResponse.VisitUploadCandidatePhotosResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetHealth operation middleware
 func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	var request GetHealthRequestObject
@@ -940,6 +1449,58 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHealthResponseObject); ok {
 		if err := validResponse.VisitGetHealthResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeletePhoto operation middleware
+func (sh *strictHandler) DeletePhoto(w http.ResponseWriter, r *http.Request, id int64) {
+	var request DeletePhotoRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeletePhoto(ctx, request.(DeletePhotoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeletePhoto")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeletePhotoResponseObject); ok {
+		if err := validResponse.VisitDeletePhotoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetPhotoThumbnail operation middleware
+func (sh *strictHandler) GetPhotoThumbnail(w http.ResponseWriter, r *http.Request, id int64) {
+	var request GetPhotoThumbnailRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPhotoThumbnail(ctx, request.(GetPhotoThumbnailRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPhotoThumbnail")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetPhotoThumbnailResponseObject); ok {
+		if err := validResponse.VisitGetPhotoThumbnailResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

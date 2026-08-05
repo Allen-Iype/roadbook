@@ -154,6 +154,152 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /candidates/{id}/photos:
+    post:
+      operationId: uploadCandidatePhotos
+      summary: Upload photos (and Takeout sidecars) to a confirmed adventure
+      description: >
+        Multipart upload through the one API boundary (BRIEF §1.3): images
+        and optional Google Photos Takeout JSON sidecars in a single request.
+        Only the thumbnail and extracted metadata are stored; original bytes
+        are discarded after extraction and never written to disk. Results
+        are per-file — one unsupported file never fails the batch. Re-upload
+        of identical bytes reports "duplicate" and stores nothing (content-
+        hash idempotency, the imports precedent). Sidecars pair with their
+        image by filename, falling back to their title field.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Candidate id from the latest run.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: One result per uploaded file, in upload order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoUploadResults"
+        "404":
+          description: No such candidate in the latest run (stale id after re-detection).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: >
+            The candidate has no confirmed decision. Photos attach to
+            adventures — confirmed candidates — because they are user data
+            and must not attach to disposable rows (BRIEF §3A).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: listCandidatePhotos
+      summary: The photos of a candidate's confirmed adventure
+      description: >
+        Photos attached to the decision matched to this candidate. An empty
+        list for a confirmed adventure with no uploads; 409 when the
+        candidate has no confirmed decision.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Candidate id from the latest run.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: The photos, in upload order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoList"
+        "404":
+          description: No such candidate in the latest run (stale id after re-detection).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: The candidate has no confirmed decision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /photos/{id}/thumbnail:
+    get:
+      operationId: getPhotoThumbnail
+      summary: The stored thumbnail image
+      description: >
+        JPEG bytes, re-encoded pixels only — the thumbnailer strips all
+        embedded metadata, so this file carries no position or timestamp
+        (BRIEF §1.2). The browser reaches this through the Next.js proxy
+        route handler, never directly.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: The thumbnail.
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: No such photo.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /photos/{id}:
+    delete:
+      operationId: deletePhoto
+      summary: Delete one photo
+      description: >
+        Removes the row, then the thumbnail file — in that order, so a
+        mid-failure leaves unreachable garbage rather than a broken image
+        (BRIEF §3B). User-initiated only; nothing automated deletes photos.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Deleted.
+        "404":
+          description: No such photo.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   schemas:
     Health:
@@ -556,6 +702,101 @@ components:
           type: integer
         raw_points_kept:
           type: integer
+
+    Photo:
+      type: object
+      required:
+        [id, original_name, time_source, pos_source, thumb_w, thumb_h,
+         uploaded_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        original_name:
+          type: string
+        taken_at:
+          type: string
+          format: date-time
+          description: >
+            The resolved capture instant. Absent when no rung of the time
+            ladder resolved (time_source "none") — the photo is stored and
+            shown, but unplaced on map and timeline.
+        taken_offset_sec:
+          type: integer
+          description: >
+            Civil offset for display, seconds east of UTC. Present exactly
+            when taken_at is.
+        time_source:
+          type: string
+          enum: [gps, exif_offset, sidecar, exif_local, none]
+          description: >
+            Which rung of the resolution ladder produced taken_at (BRIEF
+            §3E), strongest first — the GPS receiver's own UTC clock, the
+            explicit EXIF offset tag, the Takeout sidecar's epoch, or the
+            wall clock interpreted in the adventure's own offset (stated as
+            the weakest rung; wrong by the zone difference on multi-zone
+            adventures).
+        pos:
+          $ref: "#/components/schemas/LatLng"
+        pos_source:
+          type: string
+          enum: [exif, sidecar, none]
+          description: >
+            Which reading produced pos (BRIEF §3D) — the camera's own GPS
+            block, or Google's copy from the Takeout sidecar. "none": no
+            position; the photo appears in the strip but not on the map.
+        thumb_w:
+          type: integer
+          description: Thumbnail pixel width, post-orientation.
+        thumb_h:
+          type: integer
+        uploaded_at:
+          type: string
+          format: date-time
+
+    PhotoUploadResult:
+      type: object
+      required: [file, status]
+      properties:
+        file:
+          type: string
+          description: The uploaded filename this result is about.
+        status:
+          type: string
+          enum: [accepted, duplicate, rejected, sidecar_paired, sidecar_unpaired]
+          description: >
+            accepted — stored, thumbnail written. duplicate — identical
+            bytes already stored (the existing photo is returned).
+            rejected — not a supported photo; reason says what it actually
+            is and what to do. sidecar_paired — a Takeout JSON consumed as
+            metadata for paired_with. sidecar_unpaired — a sidecar naming
+            no image in this upload; nothing stored.
+        reason:
+          type: string
+          description: The actionable rejection message. Present when rejected.
+        paired_with:
+          type: string
+          description: The image filename a sidecar was applied to.
+        photo:
+          $ref: "#/components/schemas/Photo"
+
+    PhotoUploadResults:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhotoUploadResult"
+
+    PhotoList:
+      type: object
+      required: [photos]
+      properties:
+        photos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Photo"
 
     Error:
       type: object
