@@ -312,7 +312,9 @@ handling, optimistic UI for slow operations.
 - A demo dataset, so Roadbook can be evaluated without handing over a real export
 - Configurable map tile provider — the viewport request is the one thing that leaks
   to a third party; self-hosters can point at their own tiles
-- Backup/restore of the one thing users cannot regenerate: their decisions
+- Backup/restore of what users cannot regenerate: their decisions, and — since
+  phase 4 — their photos (the `photos` table and the thumbnail directory
+  together; originals are discarded at upload, so the thumbnail is the copy)
 - Optional routing setup for self-hosters who want it on their server: an OSRM
   compose profile plus an operator-run script automating the extract download and
   preprocessing (specification: `docs/phase-3/OSRM.md`). Explicitly invoked only —
