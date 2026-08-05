@@ -38,3 +38,37 @@ carried by `exif` vs `sidecar`).
 Would change our mind: a real sidecar whose `geoDataExif` disagrees with the
 photo's own EXIF block — would demote `geoDataExif` entirely, since the
 embedded EXIF is then authoritative and the copy is provably drifted.
+
+## 2026-08-05 — store gains DB-backed tests: real SQL, running by default
+
+Chosen: integration tests against a real scratch Postgres (created, migrated
+with the embedded migrations, and dropped per test by
+`internal/store/storetest`), run by default — `make test` resolves a
+database itself (env var → local Postgres → Docker `compose.test.yaml` →
+visible skip), so skipping is the exception, not the norm; scope is the
+load-bearing behaviours (decision re-attachment across re-detection, import
+idempotency, the photo round-trip and its conflict path) plus temp-dir unit
+tests for `PhotoFiles`, while the pure core keeps the test weight.
+Rejected: mock-based unit tests (the store's risk is the SQL against real
+Postgres; mocking pgx tests the mock), an opt-in env-var gate (a suite
+behind an unset variable never runs), and a coverage crusade over every
+query (thin CRUD that live checkpoint proofs already exercise).
+Would change our mind: nothing foreseeable removes the harness; hosting for
+other people would instead *raise* its importance — every store query would
+gain a user filter, a missed one is a cross-user data leak, and this
+harness is what makes that change safe to attempt.
+
+## 2026-08-05 — photo delete is row first, file second
+
+Chosen: `DELETE /photos/{id}` removes the database row, then the thumbnail
+file, and a file-step failure surfaces as an error after the row is already
+gone — asserted by a failure-injection test, not just the happy path.
+Rejected: file first (a crash between steps leaves a row pointing at a
+missing file — a permanently broken image on every page render), and
+wrapping both in a pretend-transaction (the filesystem cannot join a
+database transaction; pretending it can hides the failure mode instead of
+choosing it).
+Would change our mind: nothing — the asymmetry is inherent: an orphaned
+file is unreachable garbage, detectable and sweepable by comparing the
+photos directory against content hashes; a broken page is user-visible
+damage with no sweep.

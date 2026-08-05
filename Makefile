@@ -12,9 +12,11 @@ build:
 	go build -o bin/roadbook ./cmd/roadbook
 
 # Scoped to our packages: web/node_modules ships a stray Go package that
-# ./... would otherwise pick up.
+# ./... would otherwise pick up. The script resolves a test database (env →
+# local Postgres → Docker compose → visible skip) so the store's DB-backed
+# tests run by default; skipping is the exception.
 test:
-	go test ./cmd/... ./internal/... ./migrations/...
+	sh scripts/test.sh
 
 vet:
 	go vet ./cmd/... ./internal/... ./migrations/...
