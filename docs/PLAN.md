@@ -128,8 +128,8 @@ built on top of it.
 Deliberately deferred out of this phase: candidate confidence scoring (live with the
 plain ranked list first — see phase 2), PostGIS (enters with phase 2's countries
 table; leg segmentation stays in pure Go), and parsing the legacy Takeout variants
-(phase 5 — they serve other users' old archives and need visit synthesis, not just a
-parser).
+(backlog, behind an evidence trigger — they serve other users' old archives and need
+visit synthesis, not just a parser).
 
 **Done when.** Every candidate the reference detector finds in the fixture appears on
 a page. Each can be confirmed with a name or dismissed. Re-running import and
@@ -302,11 +302,6 @@ handling, optimistic UI for slow operations.
 - Import date range as a parameter
 - Configuration via environment, no coordinates anywhere in it
 - A README that states only what the repository can demonstrate
-- Legacy Timeline variants: `Records.json` (E7 integer coordinates, raw samples — no
-  visit segments, so it needs stay-point visit synthesis and a home-derivation pass)
-  and Semantic History `timelineObjects` (monthly files). Other users' past
-  adventures exist only in old archives; the current phone export is the only format
-  needed until then
 - Import bookkeeping in the UI: per-import status, error message, and counters
   surfaced (two additive columns on `imports`)
 - A demo dataset, so Roadbook can be evaluated without handing over a real export
@@ -330,8 +325,26 @@ specific user or region surfaces the first time someone else's export is importe
 
 ## After phase 5 — backlog, unordered
 
-Adopted into the backlog from the Dawarich comparison; none is scheduled:
+Adopted into the backlog from the Dawarich comparison or moved here from a phase;
+none is scheduled:
 
+- Legacy Timeline variants — `Records.json` (E7 integer coordinates, raw samples;
+  no visit segments, so it needs stay-point visit synthesis and a home-derivation
+  pass) and Semantic History `timelineObjects` (monthly files). Cut from phase 5 at
+  its Gate 1 as speculative work for users not yet observed — the same evidence
+  standard as HEIC. Trigger: a real export that fails to import. The population is
+  real but invisible until then: the current phone export carries full history, so
+  only users whose past survives solely in old Takeout archives (the 2024 on-device
+  migration purged server-side data for those who missed it) need these parsers,
+  and the sniffer already names both formats in its rejection; phase 5 records the
+  sniff's format label per import (`imports.detected_format`), so the trigger is a
+  queryable count of failed imports by format, not an anecdote. Design conclusions
+  to restart from (phase 5 Gate 1 review):
+  both variants parse inside the existing sniff seam to existing domain types
+  (invariant 4; Records samples are raw positions, not trace points); synthesis is
+  a pure derived pass at detection time, parameterised and never persisted
+  (invariants 2 and 3); home derivation generalises to "home evidence" with strict
+  semantic precedence, so fixture and archive outputs stay byte-identical
 - GPX ingestion (Garmin/Strava/Komoot/OsmAnd) — the enthusiast tier. GPX tracks are
   dense, so these adventures arrive nearly gap-free: Timeline is the sparse case,
   GPX the dense case, one observed/inferred model covers both
