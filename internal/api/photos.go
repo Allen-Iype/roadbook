@@ -10,6 +10,8 @@ import (
 	"mime/multipart"
 	"time"
 
+	"roadbook/internal/domain"
+	"roadbook/internal/journey"
 	"roadbook/internal/photo"
 	"roadbook/internal/store"
 )
@@ -207,9 +209,48 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 	if err != nil {
 		return nil, err
 	}
-	out := PhotoList{Photos: make([]Photo, len(rows))}
+
+	// Placement (BRIEF §3G): derived here at read time against the same
+	// assembled, route-applied journey the page draws — never stored. The
+	// assembly is skipped when no photo could place anyway.
+	var j journey.Journey
+	var haveJourney bool
+	for _, r := range rows {
+		if r.TakenAt != nil && r.Lat != nil {
+			jv, err := s.assembledJourney(ctx, cand)
+			if err != nil {
+				return nil, err
+			}
+			j, haveJourney = jv, true
+			break
+		}
+	}
+
+	out := PhotoList{
+		Photos: make([]Photo, len(rows)),
+		Params: map[string]any{"photo_far_warn_m": journey.DefaultPhotoFarWarnM},
+	}
 	for i, r := range rows {
-		out.Photos[i] = toAPIPhoto(r)
+		ap := toAPIPhoto(r)
+		if haveJourney && r.TakenAt != nil && r.Lat != nil && r.Lon != nil {
+			pos := domain.LatLng{Lat: *r.Lat, Lon: *r.Lon}
+			if p, ok := journey.PlacePhoto(j, *r.TakenAt, pos, journey.DefaultPhotoFarWarnM); ok {
+				pk := PhotoPlaceKind(p.Kind)
+				ap.PlaceKind = &pk
+				if p.Kind == journey.PlaceStop {
+					ap.StopIndex = &p.StopIndex
+				} else {
+					ap.LegIndex = &p.LegIndex
+				}
+				if p.HasDistance {
+					d := p.DistanceM
+					ap.DistanceFromRouteM = &d
+					flagged := p.Flagged
+					ap.FarFlagged = &flagged
+				}
+			}
+		}
+		out.Photos[i] = ap
 	}
 	return ListCandidatePhotos200JSONResponse(out), nil
 }

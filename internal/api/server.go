@@ -88,21 +88,10 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 	if cand == nil {
 		return GetCandidateJourney404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
 	}
-	obs, err := s.Store.LoadJourneyInputs(ctx, cand.SpanStart, cand.SpanEnd)
+	j, err := s.assembledJourney(ctx, cand)
 	if err != nil {
 		return nil, err
 	}
-	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
-
-	// Routing application (phase 3 BRIEF §1.2): the serve binary never dials
-	// a router — it consults only the cache `roadbook route` filled. A gap
-	// with no cached answer stays unknown and renders as such; with an empty
-	// cache the journey is exactly the unrouted one.
-	lookup, err := s.Store.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
-	if err != nil {
-		return nil, err
-	}
-	j = route.Apply(j, RouteProfile, lookup)
 
 	out, err := toAPIJourney(j)
 	if err != nil {
@@ -127,6 +116,25 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 		out.Countries = append(out.Countries, Country{IsoCode: c.ISOCode, Name: c.Name})
 	}
 	return GetCandidateJourney200JSONResponse(out), nil
+}
+
+// assembledJourney is the one journey pipeline both consumers run —
+// GetCandidateJourney for the page, photo placement for the strip and map —
+// so a photo's distance and the drawn route can never disagree: they read
+// the same assembly and the same routing cache (phase 3 BRIEF §1.2: the
+// serve binary never dials a router; a gap with no cached answer stays
+// unknown and renders as such).
+func (s *Server) assembledJourney(ctx context.Context, cand *store.CandidateRow) (journey.Journey, error) {
+	obs, err := s.Store.LoadJourneyInputs(ctx, cand.SpanStart, cand.SpanEnd)
+	if err != nil {
+		return journey.Journey{}, err
+	}
+	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
+	lookup, err := s.Store.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
+	if err != nil {
+		return journey.Journey{}, err
+	}
+	return route.Apply(j, RouteProfile, lookup), nil
 }
 
 func toAPIJourney(j journey.Journey) (Journey, error) {

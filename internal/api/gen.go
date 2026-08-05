@@ -57,19 +57,19 @@ func (e DecisionRequestAction) Valid() bool {
 
 // Defines values for LegGapKind.
 const (
-	Air     LegGapKind = "air"
-	Road    LegGapKind = "road"
-	Unknown LegGapKind = "unknown"
+	LegGapKindAir     LegGapKind = "air"
+	LegGapKindRoad    LegGapKind = "road"
+	LegGapKindUnknown LegGapKind = "unknown"
 )
 
 // Valid indicates whether the value is a known member of the LegGapKind enum.
 func (e LegGapKind) Valid() bool {
 	switch e {
-	case Air:
+	case LegGapKindAir:
 		return true
-	case Road:
+	case LegGapKindRoad:
 		return true
-	case Unknown:
+	case LegGapKindUnknown:
 		return true
 	default:
 		return false
@@ -78,16 +78,43 @@ func (e LegGapKind) Valid() bool {
 
 // Defines values for LegKind.
 const (
-	Gap      LegKind = "gap"
-	Observed LegKind = "observed"
+	LegKindGap      LegKind = "gap"
+	LegKindObserved LegKind = "observed"
 )
 
 // Valid indicates whether the value is a known member of the LegKind enum.
 func (e LegKind) Valid() bool {
 	switch e {
-	case Gap:
+	case LegKindGap:
 		return true
-	case Observed:
+	case LegKindObserved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PhotoPlaceKind.
+const (
+	PhotoPlaceKindAir      PhotoPlaceKind = "air"
+	PhotoPlaceKindObserved PhotoPlaceKind = "observed"
+	PhotoPlaceKindRoad     PhotoPlaceKind = "road"
+	PhotoPlaceKindStop     PhotoPlaceKind = "stop"
+	PhotoPlaceKindUnknown  PhotoPlaceKind = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the PhotoPlaceKind enum.
+func (e PhotoPlaceKind) Valid() bool {
+	switch e {
+	case PhotoPlaceKindAir:
+		return true
+	case PhotoPlaceKindObserved:
+		return true
+	case PhotoPlaceKindRoad:
+		return true
+	case PhotoPlaceKindStop:
+		return true
+	case PhotoPlaceKindUnknown:
 		return true
 	default:
 		return false
@@ -342,12 +369,26 @@ type NameSuggestion struct {
 
 // Photo defines model for Photo.
 type Photo struct {
-	Id           int64   `json:"id"`
-	OriginalName string  `json:"original_name"`
-	Pos          *LatLng `json:"pos,omitempty"`
+	// DistanceFromRouteM Point-to-polyline distance from the photo's position to the placed element's drawn geometry. Absent for place_kind "air": the arc is presentation between two endpoints, not a claimed path, so "far from it" asserts nothing.
+	DistanceFromRouteM *float64 `json:"distance_from_route_m,omitempty"`
+
+	// FarFlagged True when distance_from_route_m exceeds the photo_far_warn_m parameter (echoed in the list's params). The photo's position is a measurement — the most accurate in the project — so the flag marks a disagreement between the photo and the inferred route, not a doubt about the photo. A conversation starter, never a gate.
+	FarFlagged *bool `json:"far_flagged,omitempty"`
+	Id         int64 `json:"id"`
+
+	// LegIndex Index into the journey's legs. Present for leg place kinds.
+	LegIndex     *int   `json:"leg_index,omitempty"`
+	OriginalName string `json:"original_name"`
+
+	// PlaceKind Which element of the journey held this photo's instant — and therefore which drawn geometry distance_from_route_m was measured against (BRIEF §3G) - an observed leg's measured points, a road gap's routed polyline, an unknown gap's chord, or a stop's location. Absent when the photo is unplaced: no position, no resolved instant, or an instant outside every leg and stop. Derived at read time, never stored — re-detection re-places photos automatically.
+	PlaceKind *PhotoPlaceKind `json:"place_kind,omitempty"`
+	Pos       *LatLng         `json:"pos,omitempty"`
 
 	// PosSource Which reading produced pos (BRIEF §3D) — the camera's own GPS block, or Google's copy from the Takeout sidecar. "none": no position; the photo appears in the strip but not on the map.
 	PosSource PhotoPosSource `json:"pos_source"`
+
+	// StopIndex Index into the journey's stops. Present when place_kind is "stop".
+	StopIndex *int `json:"stop_index,omitempty"`
 
 	// TakenAt The resolved capture instant. Absent when no rung of the time ladder resolved (time_source "none") — the photo is stored and shown, but unplaced on map and timeline.
 	TakenAt *time.Time `json:"taken_at,omitempty"`
@@ -364,6 +405,9 @@ type Photo struct {
 	UploadedAt time.Time       `json:"uploaded_at"`
 }
 
+// PhotoPlaceKind Which element of the journey held this photo's instant — and therefore which drawn geometry distance_from_route_m was measured against (BRIEF §3G) - an observed leg's measured points, a road gap's routed polyline, an unknown gap's chord, or a stop's location. Absent when the photo is unplaced: no position, no resolved instant, or an instant outside every leg and stop. Derived at read time, never stored — re-detection re-places photos automatically.
+type PhotoPlaceKind string
+
 // PhotoPosSource Which reading produced pos (BRIEF §3D) — the camera's own GPS block, or Google's copy from the Takeout sidecar. "none": no position; the photo appears in the strip but not on the map.
 type PhotoPosSource string
 
@@ -372,7 +416,9 @@ type PhotoTimeSource string
 
 // PhotoList defines model for PhotoList.
 type PhotoList struct {
-	Photos []Photo `json:"photos"`
+	// Params The placement parameters that produced the derived fields (invariant 3) — photo_far_warn_m today.
+	Params map[string]interface{} `json:"params"`
+	Photos []Photo                `json:"photos"`
 }
 
 // PhotoUploadResult defines model for PhotoUploadResult.

@@ -23,6 +23,7 @@ export const dynamic = "force-dynamic";
 type Journey = components["schemas"]["Journey"];
 type Leg = components["schemas"]["Leg"];
 type Candidate = components["schemas"]["Candidate"];
+type Photo = components["schemas"]["Photo"];
 
 export default async function AdventurePage({
   params,
@@ -76,16 +77,25 @@ export default async function AdventurePage({
       <Header journey={journey} candidate={candidate} />
       {journey.legs.length > 0 && (
         <>
-          <RouteMap journey={journey} styleUrl={MAP_STYLE_URL} />
-          <Legend hasAir={journey.air_km > 0} hasRoad={journey.routed_km > 0} />
+          <RouteMap
+            journey={journey}
+            styleUrl={MAP_STYLE_URL}
+            photos={photos ?? undefined}
+          />
+          <Legend
+            hasAir={journey.air_km > 0}
+            hasRoad={journey.routed_km > 0}
+            hasPhotos={(photos ?? []).some((p) => p.place_kind)}
+            hasFlagged={(photos ?? []).some((p) => p.far_flagged)}
+          />
         </>
       )}
       <Provenance journey={journey} />
       {photos !== null && (
         <PhotosSection candidateId={id} photos={photos} />
       )}
-      <LegTable legs={journey.legs} />
-      <Stops journey={journey} />
+      <LegTable legs={journey.legs} photos={photos ?? []} />
+      <Stops journey={journey} photos={photos ?? []} />
     </main>
   );
 }
@@ -94,7 +104,17 @@ export default async function AdventurePage({
 // never hidden, and never left to interpretation). Entries for classes the
 // journey does not contain are omitted — a legend describing lines that are
 // not on the map would be noise, not honesty.
-function Legend({ hasAir, hasRoad }: { hasAir: boolean; hasRoad: boolean }) {
+function Legend({
+  hasAir,
+  hasRoad,
+  hasPhotos,
+  hasFlagged,
+}: {
+  hasAir: boolean;
+  hasRoad: boolean;
+  hasPhotos: boolean;
+  hasFlagged: boolean;
+}) {
   return (
     <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-neutral-400">
       <span className="inline-flex items-center gap-2">
@@ -152,6 +172,18 @@ function Legend({ hasAir, hasRoad }: { hasAir: boolean; hasRoad: boolean }) {
         <span className="inline-block h-2.5 w-2.5 rounded-full border border-neutral-900 bg-amber-400" />
         stop
       </span>
+      {hasPhotos && (
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded border border-neutral-300 bg-neutral-600" />
+          photo — positioned by its own metadata, a measurement
+        </span>
+      )}
+      {hasFlagged && (
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded border-2 border-amber-400 bg-neutral-600" />
+          flagged photo — sits far from the route drawn for its time
+        </span>
+      )}
     </p>
   );
 }
@@ -283,7 +315,36 @@ function Provenance({ journey }: { journey: Journey }) {
   );
 }
 
-function LegTable({ legs }: { legs: Leg[] }) {
+// Photos slot into the timeline by placement (BRIEF §3G): each placed photo
+// appears inline on the leg or stop whose span held its instant — thumbnails
+// where the journey says they happened.
+function photoThumbs(photos: Photo[], flagged?: boolean) {
+  if (photos.length === 0) return null;
+  return (
+    <span className="inline-flex gap-1 align-middle">
+      {photos.map((p) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={p.id}
+          src={`/api/photos/${p.id}/thumb`}
+          alt={p.original_name}
+          title={p.original_name}
+          className={`h-6 w-6 rounded object-cover ${
+            flagged || p.far_flagged ? "ring-1 ring-amber-400" : ""
+          }`}
+        />
+      ))}
+    </span>
+  );
+}
+
+function LegTable({ legs, photos }: { legs: Leg[]; photos: Photo[] }) {
+  const byLeg = new Map<number, Photo[]>();
+  for (const p of photos) {
+    if (p.leg_index !== undefined) {
+      byLeg.set(p.leg_index, [...(byLeg.get(p.leg_index) ?? []), p]);
+    }
+  }
   return (
     <section className="mt-6">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
@@ -300,6 +361,7 @@ function LegTable({ legs }: { legs: Leg[] }) {
               <th className="py-2 pr-4 text-right">Minutes</th>
               <th className="py-2 pr-4 text-right">km</th>
               <th className="py-2 pr-4 text-right">Points</th>
+              <th className="py-2">Photos</th>
             </tr>
           </thead>
           <tbody>
@@ -326,6 +388,7 @@ function LegTable({ legs }: { legs: Leg[] }) {
                 </td>
                 <td className="py-2 pr-4 text-right">{l.distance_km.toFixed(1)}</td>
                 <td className="py-2 pr-4 text-right">{l.points.length}</td>
+                <td className="py-2">{photoThumbs(byLeg.get(i) ?? [])}</td>
               </tr>
             ))}
           </tbody>
@@ -335,8 +398,14 @@ function LegTable({ legs }: { legs: Leg[] }) {
   );
 }
 
-function Stops({ journey }: { journey: Journey }) {
+function Stops({ journey, photos }: { journey: Journey; photos: Photo[] }) {
   if (journey.stops.length === 0) return null;
+  const byStop = new Map<number, Photo[]>();
+  for (const p of photos) {
+    if (p.stop_index !== undefined) {
+      byStop.set(p.stop_index, [...(byStop.get(p.stop_index) ?? []), p]);
+    }
+  }
   return (
     <section className="mt-6">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
@@ -351,7 +420,8 @@ function Stops({ journey }: { journey: Journey }) {
             <span className="text-neutral-400">
               ({((Date.parse(s.end) - Date.parse(s.start)) / 60_000).toFixed(0)}{" "}
               min, moved {s.displacement_km.toFixed(2)} km)
-            </span>
+            </span>{" "}
+            {photoThumbs(byStop.get(i) ?? [])}
           </li>
         ))}
       </ul>

@@ -419,6 +419,22 @@ export interface components {
             thumb_h: number;
             /** Format: date-time */
             uploaded_at: string;
+            /**
+             * @description Which element of the journey held this photo's instant — and therefore which drawn geometry distance_from_route_m was measured against (BRIEF §3G) - an observed leg's measured points, a road gap's routed polyline, an unknown gap's chord, or a stop's location. Absent when the photo is unplaced: no position, no resolved instant, or an instant outside every leg and stop. Derived at read time, never stored — re-detection re-places photos automatically.
+             * @enum {string}
+             */
+            place_kind?: "observed" | "road" | "unknown" | "air" | "stop";
+            /** @description Index into the journey's legs. Present for leg place kinds. */
+            leg_index?: number;
+            /** @description Index into the journey's stops. Present when place_kind is "stop". */
+            stop_index?: number;
+            /**
+             * Format: double
+             * @description Point-to-polyline distance from the photo's position to the placed element's drawn geometry. Absent for place_kind "air": the arc is presentation between two endpoints, not a claimed path, so "far from it" asserts nothing.
+             */
+            distance_from_route_m?: number;
+            /** @description True when distance_from_route_m exceeds the photo_far_warn_m parameter (echoed in the list's params). The photo's position is a measurement — the most accurate in the project — so the flag marks a disagreement between the photo and the inferred route, not a doubt about the photo. A conversation starter, never a gate. */
+            far_flagged?: boolean;
         };
         PhotoUploadResult: {
             /** @description The uploaded filename this result is about. */
@@ -439,6 +455,10 @@ export interface components {
         };
         PhotoList: {
             photos: components["schemas"]["Photo"][];
+            /** @description The placement parameters that produced the derived fields (invariant 3) — photo_far_warn_m today. */
+            params: {
+                [key: string]: unknown;
+            };
         };
         Error: {
             error: string;

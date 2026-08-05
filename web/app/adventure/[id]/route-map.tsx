@@ -14,11 +14,14 @@ import { useEffect, useRef } from "react";
 import {
   LngLatBounds,
   MapLibreMap,
+  Marker,
   NavigationControl,
+  Popup,
   setWorkerUrl,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
+import { fmtDistanceM, placeStatement } from "@/lib/format";
 import type { components } from "@/lib/api/schema";
 
 // MapLibre parses tiles in a Web Worker whose URL it derives from its own
@@ -31,13 +34,16 @@ import type { components } from "@/lib/api/schema";
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 type Journey = components["schemas"]["Journey"];
+type Photo = components["schemas"]["Photo"];
 
 export function RouteMap({
   journey,
   styleUrl,
+  photos = [],
 }: {
   journey: Journey;
   styleUrl: string;
+  photos?: Photo[];
 }) {
   // A ref, not state: the container node and the map instance are not
   // renderable data, and mutating a ref does not schedule a re-render.
@@ -52,15 +58,65 @@ export function RouteMap({
     // straight line between its endpoints — can never fall outside the view.
     const data = toGeoJSON(journey);
 
+    // Placed photos join the map (BRIEF §3G). Only placed ones: a photo
+    // with a position but no placeable instant stays in the strip, marked
+    // unplaced — absence rendered as absence.
+    const placed = photos.filter((p) => p.pos && p.place_kind);
+
+    const bounds = boundsOf(data);
+    // A flagged photo can sit far off the route; the bounds include it
+    // because a disagreement pushed off-screen is a disagreement hidden.
+    for (const p of placed) bounds.extend(lngLat(p.pos!));
+
     const map = new MapLibreMap({
       container,
       style: styleUrl,
       // Real position comes from fitBounds below; without a center MapLibre
       // would flash null island first.
-      bounds: boundsOf(data),
+      bounds,
       fitBoundsOptions: { padding: 48 },
     });
     map.addControl(new NavigationControl({ showCompass: false }));
+
+    // Photo markers are DOM overlays (Marker), not style layers: there are
+    // tens of them at most, each is a thumbnail image, and DOM markers need
+    // no sprite loading. The marker is the measurement — solid, confident;
+    // the amber ring is the far flag: the photo disagreeing with the drawn
+    // route, not a doubt about the photo (invariants 5 and 8).
+    const markers = placed.map((p) => {
+      const el = document.createElement("img");
+      el.src = `/api/photos/${p.id}/thumb`;
+      el.alt = p.original_name;
+      el.style.cssText =
+        "width:34px;height:34px;object-fit:cover;border-radius:6px;cursor:pointer;" +
+        (p.far_flagged
+          ? "border:2.5px solid #fbbf24;box-shadow:0 0 0 2px #171717;"
+          : "border:1.5px solid #e5e5e5;box-shadow:0 0 0 1px #171717;");
+
+      const popup = new Popup({ offset: 20, closeButton: false });
+      const body = document.createElement("div");
+      body.style.cssText = "font-size:12px;color:#171717;max-width:220px;";
+      const title = document.createElement("strong");
+      title.textContent = p.original_name; // textContent: filenames are user input
+      body.appendChild(title);
+      const line = document.createElement("div");
+      line.textContent = p.taken_at
+        ? `${p.taken_at.slice(0, 10)} ${p.taken_at.slice(11, 16)} (${p.time_source})`
+        : "no capture time";
+      body.appendChild(line);
+      if (p.distance_from_route_m !== undefined && p.place_kind) {
+        const dist = document.createElement("div");
+        dist.textContent = `${fmtDistanceM(p.distance_from_route_m)} ${placeStatement(p.place_kind)}`;
+        if (p.far_flagged) dist.style.color = "#b45309";
+        body.appendChild(dist);
+      }
+      popup.setDOMContent(body);
+
+      return new Marker({ element: el })
+        .setLngLat(lngLat(p.pos!))
+        .setPopup(popup)
+        .addTo(map);
+    });
 
     // Sources and layers only after the style has loaded — adding them
     // synchronously after the constructor is the classic first bug.
@@ -138,11 +194,13 @@ export function RouteMap({
     });
 
     // The cleanup releases the WebGL context; browsers cap live contexts,
-    // and a leaked map only surfaces navigations later.
+    // and a leaked map only surfaces navigations later. Markers are removed
+    // first — map.remove() would orphan their DOM elements otherwise.
     return () => {
+      markers.forEach((m) => m.remove());
       map.remove();
     };
-  }, [journey, styleUrl]);
+  }, [journey, styleUrl, photos]);
 
   return (
     <div

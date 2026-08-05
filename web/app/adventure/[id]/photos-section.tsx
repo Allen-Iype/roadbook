@@ -16,6 +16,7 @@
 
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { deletePhoto, uploadPhotos } from "@/app/actions";
+import { fmtDistanceM, placeStatement } from "@/lib/format";
 import type { components } from "@/lib/api/schema";
 
 type Photo = components["schemas"]["Photo"];
@@ -167,14 +168,17 @@ function PhotoTile({
   return (
     <figure className="group relative w-36">
       {/* The src points at the Next proxy route handler — the browser never
-          talks to the Go API (BRIEF §1.3). */}
+          talks to the Go API (BRIEF §1.3). The amber ring is the far flag:
+          the photo (a measurement) disagreeing with the drawn route. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/api/photos/${photo.id}/thumb`}
         alt={photo.original_name}
         width={photo.thumb_w}
         height={photo.thumb_h}
-        className="h-28 w-36 rounded object-cover"
+        className={`h-28 w-36 rounded object-cover ${
+          photo.far_flagged ? "ring-2 ring-amber-400" : ""
+        }`}
       />
       <button
         onClick={() => onDelete(photo.id)}
@@ -207,6 +211,25 @@ function PhotoTile({
             <span className="text-amber-500/80">no position — strip only</span>
           )}
         </span>
+        {/* Placement (BRIEF §3G): where the journey held this instant, and
+            how far the photo sits from that claim. Derived server-side
+            against the same geometry the map draws. */}
+        {photo.place_kind &&
+          (photo.distance_from_route_m !== undefined ? (
+            <span
+              className={`block ${photo.far_flagged ? "text-amber-400" : ""}`}
+            >
+              {fmtDistanceM(photo.distance_from_route_m)}{" "}
+              {placeStatement(photo.place_kind)}
+            </span>
+          ) : (
+            <span className="block">{placeStatement(photo.place_kind)}</span>
+          ))}
+        {!photo.place_kind && photo.pos && photo.taken_at && (
+          <span className="block text-amber-500/80">
+            outside this journey&apos;s timeline
+          </span>
+        )}
       </figcaption>
     </figure>
   );

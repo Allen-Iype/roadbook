@@ -20,3 +20,44 @@ func HaversineM(a, b domain.LatLng) float64 {
 	h := math.Sin(dp/2)*math.Sin(dp/2) + math.Cos(p1)*math.Cos(p2)*math.Sin(dl/2)*math.Sin(dl/2)
 	return 2 * meanEarthRadiusM * math.Asin(math.Sqrt(h))
 }
+
+// PointToPolylineM returns the distance in metres from p to the nearest point
+// on the polyline, which may be a single point (distance to it) — never an
+// empty slice by contract.
+//
+// Segments are measured in a local equirectangular frame centred on p:
+// exact enough for the kilometre scales the far-from-route flag cares about
+// (the error is second-order in span/Earth-radius), and honest about what it
+// is — a flag threshold, not a survey.
+func PointToPolylineM(p domain.LatLng, line []domain.LatLng) float64 {
+	if len(line) == 1 {
+		return HaversineM(p, line[0])
+	}
+	min := math.Inf(1)
+	for i := 0; i+1 < len(line); i++ {
+		if d := pointToSegmentM(p, line[i], line[i+1]); d < min {
+			min = d
+		}
+	}
+	return min
+}
+
+func pointToSegmentM(p, a, b domain.LatLng) float64 {
+	// Project into metres around p; p sits at the origin.
+	const rad = math.Pi / 180
+	cos := math.Cos(p.Lat * rad)
+	ax := (a.Lon - p.Lon) * rad * cos * meanEarthRadiusM
+	ay := (a.Lat - p.Lat) * rad * meanEarthRadiusM
+	bx := (b.Lon - p.Lon) * rad * cos * meanEarthRadiusM
+	by := (b.Lat - p.Lat) * rad * meanEarthRadiusM
+
+	dx, dy := bx-ax, by-ay
+	lenSq := dx*dx + dy*dy
+	if lenSq == 0 {
+		return math.Hypot(ax, ay) // degenerate segment: a point
+	}
+	// t is the projection of the origin onto the segment, clamped to it.
+	t := -(ax*dx + ay*dy) / lenSq
+	t = math.Max(0, math.Min(1, t))
+	return math.Hypot(ax+t*dx, ay+t*dy)
+}

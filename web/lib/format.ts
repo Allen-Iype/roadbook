@@ -1,0 +1,27 @@
+// Shared display formatting for photo placement — used by the map popup and
+// the strip caption, so the two can never phrase the same fact differently.
+
+import type { components } from "@/lib/api/schema";
+
+type PlaceKind = NonNullable<components["schemas"]["Photo"]["place_kind"]>;
+
+export function fmtDistanceM(m: number): string {
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
+// The distance statement names which drawn geometry it was measured against
+// (BRIEF §3G): the flag and the map must read as one claim.
+export function placeStatement(kind: PlaceKind): string {
+  switch (kind) {
+    case "observed":
+      return "from the observed track at this time";
+    case "road":
+      return "from the routed road at this time";
+    case "unknown":
+      return "from the straight-line gap at this time";
+    case "stop":
+      return "from the stop at this time";
+    case "air":
+      return "over an air leg — not checked against the arc";
+  }
+}
