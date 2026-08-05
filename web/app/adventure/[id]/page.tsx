@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
+import { PhotosSection } from "./photos-section";
 import { RouteMap } from "./route-map";
 
 // The basemap style URL is server-side config passed down as a prop — the
@@ -56,6 +57,15 @@ export default async function AdventurePage({
   const journey = journeyRes.data;
   const candidate = listRes.data?.candidates.find((c) => c.id === id);
 
+  // Photos exist only for confirmed adventures (BRIEF §3A) — the list call
+  // is skipped otherwise rather than made to 409.
+  const confirmed = candidate?.decision?.action === "confirmed";
+  const photos = confirmed
+    ? (
+        await api.GET("/candidates/{id}/photos", { params: { path: { id } } })
+      ).data?.photos ?? []
+    : null;
+
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-10">
       <p className="text-sm">
@@ -71,6 +81,9 @@ export default async function AdventurePage({
         </>
       )}
       <Provenance journey={journey} />
+      {photos !== null && (
+        <PhotosSection candidateId={id} photos={photos} />
+      )}
       <LegTable legs={journey.legs} />
       <Stops journey={journey} />
     </main>

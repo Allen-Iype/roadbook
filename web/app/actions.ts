@@ -54,3 +54,54 @@ export async function suggestName(
   });
   return { name: data?.name };
 }
+
+type PhotoUploadResults = components["schemas"]["PhotoUploadResults"];
+
+export type UploadPhotosResult =
+  | { ok: true; results: PhotoUploadResults["results"] }
+  | { ok: false; error: string };
+
+// Photo upload: the browser hands the action a FormData of files; the action
+// forwards it to the Go API as multipart. The generated client still types
+// the path and the response — only the body serialisation is custom, because
+// multipart bytes pass through rather than being JSON-encoded. Original
+// bytes exist here transiently in memory; the Go side stores a thumbnail and
+// discards them (phase 4 BRIEF §1.3, §3B).
+export async function uploadPhotos(
+  candidateId: number,
+  formData: FormData,
+): Promise<UploadPhotosResult> {
+  const { data, error, response } = await api.POST("/candidates/{id}/photos", {
+    params: { path: { id: candidateId } },
+    body: {},
+    bodySerializer: () => formData,
+  });
+  if (error || !data) {
+    // 404 (stale candidate) and 409 (not confirmed) both carry { error }.
+    return {
+      ok: false,
+      error: error?.error ?? `upload failed (HTTP ${response.status})`,
+    };
+  }
+  revalidatePath(`/adventure/${candidateId}`);
+  return { ok: true, results: data.results };
+}
+
+export type DeletePhotoResult = { ok: true } | { ok: false; error: string };
+
+export async function deletePhoto(
+  photoId: number,
+  candidateId: number,
+): Promise<DeletePhotoResult> {
+  const { error, response } = await api.DELETE("/photos/{id}", {
+    params: { path: { id: photoId } },
+  });
+  if (error) {
+    return {
+      ok: false,
+      error: error.error ?? `delete failed (HTTP ${response.status})`,
+    };
+  }
+  revalidatePath(`/adventure/${candidateId}`);
+  return { ok: true };
+}
