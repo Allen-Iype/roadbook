@@ -1,0 +1,7392 @@
+{
+ "semanticSegments": [
+  {
+   "endTime": "2026-04-01T08:10:00Z",
+   "startTime": "2026-04-01T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-01T08:35:00Z",
+   "startTime": "2026-04-01T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-01T08:30:00Z",
+   "startTime": "2026-04-01T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-01T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-01T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-01T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-01T17:05:00Z",
+   "startTime": "2026-04-01T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-01T17:30:00Z",
+   "startTime": "2026-04-01T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-01T23:59:00Z",
+   "startTime": "2026-04-01T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-02T08:10:00Z",
+   "startTime": "2026-04-02T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-02T08:35:00Z",
+   "startTime": "2026-04-02T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-02T08:30:00Z",
+   "startTime": "2026-04-02T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-02T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-02T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-02T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-02T17:05:00Z",
+   "startTime": "2026-04-02T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-02T17:30:00Z",
+   "startTime": "2026-04-02T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-02T23:59:00Z",
+   "startTime": "2026-04-02T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-03T08:10:00Z",
+   "startTime": "2026-04-03T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-03T08:35:00Z",
+   "startTime": "2026-04-03T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-03T08:30:00Z",
+   "startTime": "2026-04-03T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-03T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-03T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-03T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-03T17:05:00Z",
+   "startTime": "2026-04-03T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-03T17:30:00Z",
+   "startTime": "2026-04-03T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-03T23:59:00Z",
+   "startTime": "2026-04-03T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-04T23:59:00Z",
+   "startTime": "2026-04-04T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-05T10:55:00Z",
+   "startTime": "2026-04-05T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-05T11:05:00Z",
+   "startTime": "2026-04-05T10:55:00Z"
+  },
+  {
+   "endTime": "2026-04-05T12:30:00Z",
+   "startTime": "2026-04-05T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-05T12:40:00Z",
+   "startTime": "2026-04-05T12:30:00Z"
+  },
+  {
+   "endTime": "2026-04-05T23:59:00Z",
+   "startTime": "2026-04-05T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-06T08:10:00Z",
+   "startTime": "2026-04-06T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-06T08:35:00Z",
+   "startTime": "2026-04-06T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-06T08:30:00Z",
+   "startTime": "2026-04-06T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-06T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-06T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-06T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-06T17:05:00Z",
+   "startTime": "2026-04-06T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-06T17:30:00Z",
+   "startTime": "2026-04-06T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-06T23:59:00Z",
+   "startTime": "2026-04-06T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-07T08:10:00Z",
+   "startTime": "2026-04-07T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-07T08:35:00Z",
+   "startTime": "2026-04-07T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-07T08:30:00Z",
+   "startTime": "2026-04-07T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-07T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-07T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-07T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-07T17:05:00Z",
+   "startTime": "2026-04-07T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-07T17:30:00Z",
+   "startTime": "2026-04-07T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-07T23:59:00Z",
+   "startTime": "2026-04-07T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-08T08:10:00Z",
+   "startTime": "2026-04-08T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-08T08:35:00Z",
+   "startTime": "2026-04-08T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-08T08:30:00Z",
+   "startTime": "2026-04-08T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-08T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-08T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-08T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-08T17:05:00Z",
+   "startTime": "2026-04-08T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-08T17:30:00Z",
+   "startTime": "2026-04-08T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-08T23:59:00Z",
+   "startTime": "2026-04-08T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-09T08:10:00Z",
+   "startTime": "2026-04-09T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-09T08:35:00Z",
+   "startTime": "2026-04-09T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-09T08:30:00Z",
+   "startTime": "2026-04-09T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-09T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-09T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-09T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-09T17:05:00Z",
+   "startTime": "2026-04-09T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-09T17:30:00Z",
+   "startTime": "2026-04-09T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-09T23:59:00Z",
+   "startTime": "2026-04-09T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-10T08:10:00Z",
+   "startTime": "2026-04-10T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-10T08:35:00Z",
+   "startTime": "2026-04-10T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-10T08:30:00Z",
+   "startTime": "2026-04-10T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-10T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-10T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-10T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-10T17:05:00Z",
+   "startTime": "2026-04-10T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-10T17:30:00Z",
+   "startTime": "2026-04-10T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-10T23:59:00Z",
+   "startTime": "2026-04-10T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-11T23:59:00Z",
+   "startTime": "2026-04-11T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-12T10:55:00Z",
+   "startTime": "2026-04-12T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-12T11:05:00Z",
+   "startTime": "2026-04-12T10:55:00Z"
+  },
+  {
+   "endTime": "2026-04-12T12:30:00Z",
+   "startTime": "2026-04-12T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-12T12:40:00Z",
+   "startTime": "2026-04-12T12:30:00Z"
+  },
+  {
+   "endTime": "2026-04-12T23:59:00Z",
+   "startTime": "2026-04-12T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-13T08:10:00Z",
+   "startTime": "2026-04-13T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-13T08:35:00Z",
+   "startTime": "2026-04-13T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-13T08:30:00Z",
+   "startTime": "2026-04-13T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-13T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-13T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-13T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-13T17:05:00Z",
+   "startTime": "2026-04-13T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-13T17:30:00Z",
+   "startTime": "2026-04-13T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-13T23:59:00Z",
+   "startTime": "2026-04-13T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-14T08:10:00Z",
+   "startTime": "2026-04-14T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-14T08:35:00Z",
+   "startTime": "2026-04-14T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-14T08:30:00Z",
+   "startTime": "2026-04-14T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-14T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-14T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-14T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-14T17:05:00Z",
+   "startTime": "2026-04-14T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-14T17:30:00Z",
+   "startTime": "2026-04-14T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-14T23:59:00Z",
+   "startTime": "2026-04-14T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-15T08:10:00Z",
+   "startTime": "2026-04-15T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-15T08:35:00Z",
+   "startTime": "2026-04-15T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-15T08:30:00Z",
+   "startTime": "2026-04-15T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-15T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-15T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-15T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-15T17:05:00Z",
+   "startTime": "2026-04-15T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-15T17:30:00Z",
+   "startTime": "2026-04-15T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-15T23:59:00Z",
+   "startTime": "2026-04-15T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-16T08:10:00Z",
+   "startTime": "2026-04-16T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-16T08:35:00Z",
+   "startTime": "2026-04-16T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-16T08:30:00Z",
+   "startTime": "2026-04-16T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-16T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-16T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-16T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-16T17:05:00Z",
+   "startTime": "2026-04-16T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-16T17:30:00Z",
+   "startTime": "2026-04-16T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-16T23:59:00Z",
+   "startTime": "2026-04-16T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-17T08:10:00Z",
+   "startTime": "2026-04-17T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-17T08:35:00Z",
+   "startTime": "2026-04-17T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-17T08:30:00Z",
+   "startTime": "2026-04-17T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-17T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-17T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-17T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-17T17:05:00Z",
+   "startTime": "2026-04-17T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-17T17:30:00Z",
+   "startTime": "2026-04-17T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-17T23:59:00Z",
+   "startTime": "2026-04-17T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-18T09:30:00Z",
+   "startTime": "2026-04-18T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 74000,
+    "end": {
+     "latLng": "64.5390000°, -21.9210000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-18T10:30:00Z",
+   "startTime": "2026-04-18T09:30:00Z"
+  },
+  {
+   "endTime": "2026-04-18T10:25:00Z",
+   "startTime": "2026-04-18T09:35:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-18T09:35:00Z"
+    },
+    {
+     "point": "64.2214000°, -21.9258000°",
+     "time": "2026-04-18T09:45:00Z"
+    },
+    {
+     "point": "64.3008000°, -21.9246000°",
+     "time": "2026-04-18T09:55:00Z"
+    },
+    {
+     "point": "64.3802000°, -21.9234000°",
+     "time": "2026-04-18T10:05:00Z"
+    },
+    {
+     "point": "64.4596000°, -21.9222000°",
+     "time": "2026-04-18T10:15:00Z"
+    },
+    {
+     "point": "64.5390000°, -21.9210000°",
+     "time": "2026-04-18T10:25:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-18T14:00:00Z",
+   "startTime": "2026-04-18T10:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.5390000°, -21.9210000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 74000,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.5390000°, -21.9210000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-18T15:00:00Z",
+   "startTime": "2026-04-18T14:00:00Z"
+  },
+  {
+   "endTime": "2026-04-18T14:55:00Z",
+   "startTime": "2026-04-18T14:05:00Z",
+   "timelinePath": [
+    {
+     "point": "64.5390000°, -21.9210000°",
+     "time": "2026-04-18T14:05:00Z"
+    },
+    {
+     "point": "64.4596000°, -21.9222000°",
+     "time": "2026-04-18T14:15:00Z"
+    },
+    {
+     "point": "64.3802000°, -21.9234000°",
+     "time": "2026-04-18T14:25:00Z"
+    },
+    {
+     "point": "64.3008000°, -21.9246000°",
+     "time": "2026-04-18T14:35:00Z"
+    },
+    {
+     "point": "64.2214000°, -21.9258000°",
+     "time": "2026-04-18T14:45:00Z"
+    },
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-18T14:55:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-18T23:59:00Z",
+   "startTime": "2026-04-18T15:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-19T10:55:00Z",
+   "startTime": "2026-04-19T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-19T11:05:00Z",
+   "startTime": "2026-04-19T10:55:00Z"
+  },
+  {
+   "endTime": "2026-04-19T12:30:00Z",
+   "startTime": "2026-04-19T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-19T12:40:00Z",
+   "startTime": "2026-04-19T12:30:00Z"
+  },
+  {
+   "endTime": "2026-04-19T23:59:00Z",
+   "startTime": "2026-04-19T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-20T08:10:00Z",
+   "startTime": "2026-04-20T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-20T08:35:00Z",
+   "startTime": "2026-04-20T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-20T08:30:00Z",
+   "startTime": "2026-04-20T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-20T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-20T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-20T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-20T17:05:00Z",
+   "startTime": "2026-04-20T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-20T17:30:00Z",
+   "startTime": "2026-04-20T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-20T23:59:00Z",
+   "startTime": "2026-04-20T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-21T08:10:00Z",
+   "startTime": "2026-04-21T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-21T08:35:00Z",
+   "startTime": "2026-04-21T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-21T08:30:00Z",
+   "startTime": "2026-04-21T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-21T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-21T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-21T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-21T17:05:00Z",
+   "startTime": "2026-04-21T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-21T17:30:00Z",
+   "startTime": "2026-04-21T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-21T23:59:00Z",
+   "startTime": "2026-04-21T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-22T08:10:00Z",
+   "startTime": "2026-04-22T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-22T08:35:00Z",
+   "startTime": "2026-04-22T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-22T08:30:00Z",
+   "startTime": "2026-04-22T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-22T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-22T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-22T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-22T17:05:00Z",
+   "startTime": "2026-04-22T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-22T17:30:00Z",
+   "startTime": "2026-04-22T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-22T23:59:00Z",
+   "startTime": "2026-04-22T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-23T08:10:00Z",
+   "startTime": "2026-04-23T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-23T08:35:00Z",
+   "startTime": "2026-04-23T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-23T08:30:00Z",
+   "startTime": "2026-04-23T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-23T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-23T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-23T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-23T17:05:00Z",
+   "startTime": "2026-04-23T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-23T17:30:00Z",
+   "startTime": "2026-04-23T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-23T23:59:00Z",
+   "startTime": "2026-04-23T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-24T09:00:00Z",
+   "startTime": "2026-04-24T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 128000,
+    "end": {
+     "latLng": "63.6156000°, -19.9886000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-24T12:10:00Z",
+   "startTime": "2026-04-24T09:00:00Z"
+  },
+  {
+   "endTime": "2026-04-24T12:05:00Z",
+   "startTime": "2026-04-24T09:05:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-24T09:05:00Z"
+    },
+    {
+     "point": "64.1040000°, -21.7579091°",
+     "time": "2026-04-24T09:21:21Z"
+    },
+    {
+     "point": "64.0660000°, -21.5888182°",
+     "time": "2026-04-24T09:37:43Z"
+    },
+    {
+     "point": "64.0280000°, -21.4197273°",
+     "time": "2026-04-24T09:54:05Z"
+    },
+    {
+     "point": "63.9900000°, -21.2506364°",
+     "time": "2026-04-24T10:10:27Z"
+    },
+    {
+     "point": "63.9520000°, -21.0815455°",
+     "time": "2026-04-24T10:26:49Z"
+    },
+    {
+     "point": "63.9041455°, -20.9053273°",
+     "time": "2026-04-24T10:43:10Z"
+    },
+    {
+     "point": "63.8464364°, -20.7219818°",
+     "time": "2026-04-24T10:59:32Z"
+    },
+    {
+     "point": "63.7887273°, -20.5386364°",
+     "time": "2026-04-24T11:15:54Z"
+    },
+    {
+     "point": "63.7310182°, -20.3552909°",
+     "time": "2026-04-24T11:32:16Z"
+    },
+    {
+     "point": "63.6733091°, -20.1719455°",
+     "time": "2026-04-24T11:48:38Z"
+    },
+    {
+     "point": "63.6156000°, -19.9886000°",
+     "time": "2026-04-24T12:05:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-24T13:00:00Z",
+   "startTime": "2026-04-24T12:10:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "63.6156000°, -19.9886000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 29000,
+    "end": {
+     "latLng": "63.5321000°, -19.5114000°"
+    },
+    "start": {
+     "latLng": "63.6156000°, -19.9886000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-24T13:30:00Z",
+   "startTime": "2026-04-24T13:00:00Z"
+  },
+  {
+   "endTime": "2026-04-24T13:28:00Z",
+   "startTime": "2026-04-24T13:02:00Z",
+   "timelinePath": [
+    {
+     "point": "63.6156000°, -19.9886000°",
+     "time": "2026-04-24T13:02:00Z"
+    },
+    {
+     "point": "63.5877667°, -19.8295333°",
+     "time": "2026-04-24T13:10:40Z"
+    },
+    {
+     "point": "63.5599333°, -19.6704667°",
+     "time": "2026-04-24T13:19:20Z"
+    },
+    {
+     "point": "63.5321000°, -19.5114000°",
+     "time": "2026-04-24T13:28:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-24T14:10:00Z",
+   "startTime": "2026-04-24T13:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "63.5321000°, -19.5114000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 34000,
+    "end": {
+     "latLng": "63.4187000°, -19.0060000°"
+    },
+    "start": {
+     "latLng": "63.5321000°, -19.5114000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-24T14:50:00Z",
+   "startTime": "2026-04-24T14:10:00Z"
+  },
+  {
+   "endTime": "2026-04-24T14:48:00Z",
+   "startTime": "2026-04-24T14:12:00Z",
+   "timelinePath": [
+    {
+     "point": "63.5321000°, -19.5114000°",
+     "time": "2026-04-24T14:12:00Z"
+    },
+    {
+     "point": "63.5037500°, -19.3850500°",
+     "time": "2026-04-24T14:21:00Z"
+    },
+    {
+     "point": "63.4754000°, -19.2587000°",
+     "time": "2026-04-24T14:30:00Z"
+    },
+    {
+     "point": "63.4470500°, -19.1323500°",
+     "time": "2026-04-24T14:39:00Z"
+    },
+    {
+     "point": "63.4187000°, -19.0060000°",
+     "time": "2026-04-24T14:48:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-25T09:00:00Z",
+   "startTime": "2026-04-24T14:50:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "63.4187000°, -19.0060000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 141000,
+    "end": {
+     "latLng": "64.0166000°, -16.9662000°"
+    },
+    "start": {
+     "latLng": "63.4187000°, -19.0060000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-25T11:40:00Z",
+   "startTime": "2026-04-25T09:00:00Z"
+  },
+  {
+   "endTime": "2026-04-25T11:35:00Z",
+   "startTime": "2026-04-25T09:05:00Z",
+   "timelinePath": [
+    {
+     "point": "63.4187000°, -19.0060000°",
+     "time": "2026-04-25T09:05:00Z"
+    },
+    {
+     "point": "63.4856091°, -18.8343636°",
+     "time": "2026-04-25T09:18:38Z"
+    },
+    {
+     "point": "63.5525182°, -18.6627273°",
+     "time": "2026-04-25T09:32:16Z"
+    },
+    {
+     "point": "63.6194273°, -18.4910909°",
+     "time": "2026-04-25T09:45:54Z"
+    },
+    {
+     "point": "63.6863364°, -18.3194545°",
+     "time": "2026-04-25T09:59:32Z"
+    },
+    {
+     "point": "63.7532455°, -18.1478182°",
+     "time": "2026-04-25T10:13:10Z"
+    },
+    {
+     "point": "63.8076000°, -17.9623818°",
+     "time": "2026-04-25T10:26:49Z"
+    },
+    {
+     "point": "63.8494000°, -17.7631455°",
+     "time": "2026-04-25T10:40:27Z"
+    },
+    {
+     "point": "63.8912000°, -17.5639091°",
+     "time": "2026-04-25T10:54:05Z"
+    },
+    {
+     "point": "63.9330000°, -17.3646727°",
+     "time": "2026-04-25T11:07:43Z"
+    },
+    {
+     "point": "63.9748000°, -17.1654364°",
+     "time": "2026-04-25T11:21:21Z"
+    },
+    {
+     "point": "64.0166000°, -16.9662000°",
+     "time": "2026-04-25T11:35:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-25T14:00:00Z",
+   "startTime": "2026-04-25T11:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.0166000°, -16.9662000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 57000,
+    "end": {
+     "latLng": "64.0479000°, -16.1794000°"
+    },
+    "start": {
+     "latLng": "64.0166000°, -16.9662000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-25T14:50:00Z",
+   "startTime": "2026-04-25T14:00:00Z"
+  },
+  {
+   "endTime": "2026-04-25T14:48:00Z",
+   "startTime": "2026-04-25T14:02:00Z",
+   "timelinePath": [
+    {
+     "point": "64.0166000°, -16.9662000°",
+     "time": "2026-04-25T14:02:00Z"
+    },
+    {
+     "point": "64.0228600°, -16.8088400°",
+     "time": "2026-04-25T14:11:12Z"
+    },
+    {
+     "point": "64.0291200°, -16.6514800°",
+     "time": "2026-04-25T14:20:24Z"
+    },
+    {
+     "point": "64.0353800°, -16.4941200°",
+     "time": "2026-04-25T14:29:36Z"
+    },
+    {
+     "point": "64.0416400°, -16.3367600°",
+     "time": "2026-04-25T14:38:48Z"
+    },
+    {
+     "point": "64.0479000°, -16.1794000°",
+     "time": "2026-04-25T14:48:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-25T16:20:00Z",
+   "startTime": "2026-04-25T14:50:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.0479000°, -16.1794000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 80000,
+    "end": {
+     "latLng": "64.2539000°, -15.2101000°"
+    },
+    "start": {
+     "latLng": "64.0479000°, -16.1794000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-25T17:30:00Z",
+   "startTime": "2026-04-25T16:20:00Z"
+  },
+  {
+   "endTime": "2026-04-25T17:28:00Z",
+   "startTime": "2026-04-25T16:22:00Z",
+   "timelinePath": [
+    {
+     "point": "64.0479000°, -16.1794000°",
+     "time": "2026-04-25T16:22:00Z"
+    },
+    {
+     "point": "64.0822333°, -16.0178500°",
+     "time": "2026-04-25T16:33:00Z"
+    },
+    {
+     "point": "64.1165667°, -15.8563000°",
+     "time": "2026-04-25T16:44:00Z"
+    },
+    {
+     "point": "64.1509000°, -15.6947500°",
+     "time": "2026-04-25T16:55:00Z"
+    },
+    {
+     "point": "64.1852333°, -15.5332000°",
+     "time": "2026-04-25T17:06:00Z"
+    },
+    {
+     "point": "64.2195667°, -15.3716500°",
+     "time": "2026-04-25T17:17:00Z"
+    },
+    {
+     "point": "64.2539000°, -15.2101000°",
+     "time": "2026-04-25T17:28:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-26T10:00:00Z",
+   "startTime": "2026-04-25T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.2539000°, -15.2101000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 396000,
+    "end": {
+     "latLng": "63.9330000°, -20.9970000°"
+    },
+    "start": {
+     "latLng": "64.2539000°, -15.2101000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-26T16:30:00Z",
+   "startTime": "2026-04-26T10:00:00Z"
+  },
+  {
+   "endTime": "2026-04-26T16:25:00Z",
+   "startTime": "2026-04-26T10:05:00Z",
+   "timelinePath": [
+    {
+     "point": "64.2539000°, -15.2101000°",
+     "time": "2026-04-26T10:05:00Z"
+    },
+    {
+     "point": "64.1912043°, -15.5051043°",
+     "time": "2026-04-26T10:21:31Z"
+    },
+    {
+     "point": "64.1285087°, -15.8001087°",
+     "time": "2026-04-26T10:38:02Z"
+    },
+    {
+     "point": "64.0658130°, -16.0951130°",
+     "time": "2026-04-26T10:54:33Z"
+    },
+    {
+     "point": "64.0410957°, -16.3504435°",
+     "time": "2026-04-26T11:11:05Z"
+    },
+    {
+     "point": "64.0315696°, -16.5899043°",
+     "time": "2026-04-26T11:27:36Z"
+    },
+    {
+     "point": "64.0220435°, -16.8293652°",
+     "time": "2026-04-26T11:44:07Z"
+    },
+    {
+     "point": "63.9866130°, -17.1091304°",
+     "time": "2026-04-26T12:00:39Z"
+    },
+    {
+     "point": "63.9166435°, -17.4426348°",
+     "time": "2026-04-26T12:17:10Z"
+    },
+    {
+     "point": "63.8466739°, -17.7761391°",
+     "time": "2026-04-26T12:33:41Z"
+    },
+    {
+     "point": "63.7707000°, -18.1030435°",
+     "time": "2026-04-26T12:50:13Z"
+    },
+    {
+     "point": "63.6587000°, -18.3903478°",
+     "time": "2026-04-26T13:06:44Z"
+    },
+    {
+     "point": "63.5467000°, -18.6776522°",
+     "time": "2026-04-26T13:23:15Z"
+    },
+    {
+     "point": "63.4347000°, -18.9649565°",
+     "time": "2026-04-26T13:39:46Z"
+    },
+    {
+     "point": "63.4482826°, -19.1378435°",
+     "time": "2026-04-26T13:56:18Z"
+    },
+    {
+     "point": "63.4827957°, -19.2916609°",
+     "time": "2026-04-26T14:12:49Z"
+    },
+    {
+     "point": "63.5173087°, -19.4454783°",
+     "time": "2026-04-26T14:29:20Z"
+    },
+    {
+     "point": "63.5466217°, -19.5943913°",
+     "time": "2026-04-26T14:45:52Z"
+    },
+    {
+     "point": "63.5720348°, -19.7396261°",
+     "time": "2026-04-26T15:02:23Z"
+    },
+    {
+     "point": "63.5974478°, -19.8848609°",
+     "time": "2026-04-26T15:18:54Z"
+    },
+    {
+     "point": "63.6432000°, -20.0762870°",
+     "time": "2026-04-26T15:35:26Z"
+    },
+    {
+     "point": "63.7398000°, -20.3831913°",
+     "time": "2026-04-26T15:51:57Z"
+    },
+    {
+     "point": "63.8364000°, -20.6900957°",
+     "time": "2026-04-26T16:08:28Z"
+    },
+    {
+     "point": "63.9330000°, -20.9970000°",
+     "time": "2026-04-26T16:25:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-26T17:10:00Z",
+   "startTime": "2026-04-26T16:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "63.9330000°, -20.9970000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 57000,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "63.9330000°, -20.9970000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-26T18:10:00Z",
+   "startTime": "2026-04-26T17:10:00Z"
+  },
+  {
+   "endTime": "2026-04-26T18:08:00Z",
+   "startTime": "2026-04-26T17:12:00Z",
+   "timelinePath": [
+    {
+     "point": "63.9330000°, -20.9970000°",
+     "time": "2026-04-26T17:12:00Z"
+    },
+    {
+     "point": "63.9852500°, -21.2295000°",
+     "time": "2026-04-26T17:26:00Z"
+    },
+    {
+     "point": "64.0375000°, -21.4620000°",
+     "time": "2026-04-26T17:40:00Z"
+    },
+    {
+     "point": "64.0897500°, -21.6945000°",
+     "time": "2026-04-26T17:54:00Z"
+    },
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-26T18:08:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-26T23:59:00Z",
+   "startTime": "2026-04-26T18:10:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-27T08:10:00Z",
+   "startTime": "2026-04-27T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-27T08:35:00Z",
+   "startTime": "2026-04-27T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-27T08:30:00Z",
+   "startTime": "2026-04-27T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-27T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-27T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-27T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-27T17:05:00Z",
+   "startTime": "2026-04-27T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-27T17:30:00Z",
+   "startTime": "2026-04-27T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-27T23:59:00Z",
+   "startTime": "2026-04-27T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-28T08:10:00Z",
+   "startTime": "2026-04-28T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-28T08:35:00Z",
+   "startTime": "2026-04-28T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-28T08:30:00Z",
+   "startTime": "2026-04-28T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-28T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-28T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-28T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-28T17:05:00Z",
+   "startTime": "2026-04-28T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-28T17:30:00Z",
+   "startTime": "2026-04-28T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-28T23:59:00Z",
+   "startTime": "2026-04-28T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-29T08:10:00Z",
+   "startTime": "2026-04-29T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-29T08:35:00Z",
+   "startTime": "2026-04-29T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-29T08:30:00Z",
+   "startTime": "2026-04-29T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-29T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-29T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-29T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-29T17:05:00Z",
+   "startTime": "2026-04-29T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-29T17:30:00Z",
+   "startTime": "2026-04-29T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-29T23:59:00Z",
+   "startTime": "2026-04-29T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-04-30T08:10:00Z",
+   "startTime": "2026-04-30T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-30T08:35:00Z",
+   "startTime": "2026-04-30T08:10:00Z"
+  },
+  {
+   "endTime": "2026-04-30T08:30:00Z",
+   "startTime": "2026-04-30T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-04-30T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-04-30T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-04-30T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-04-30T17:05:00Z",
+   "startTime": "2026-04-30T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-04-30T17:30:00Z",
+   "startTime": "2026-04-30T17:05:00Z"
+  },
+  {
+   "endTime": "2026-04-30T23:59:00Z",
+   "startTime": "2026-04-30T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-01T08:10:00Z",
+   "startTime": "2026-05-01T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-01T08:35:00Z",
+   "startTime": "2026-05-01T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-01T08:30:00Z",
+   "startTime": "2026-05-01T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-01T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-01T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-01T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-01T17:05:00Z",
+   "startTime": "2026-05-01T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-01T17:30:00Z",
+   "startTime": "2026-05-01T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-01T23:59:00Z",
+   "startTime": "2026-05-01T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-02T23:59:00Z",
+   "startTime": "2026-05-02T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-03T10:55:00Z",
+   "startTime": "2026-05-03T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-03T11:05:00Z",
+   "startTime": "2026-05-03T10:55:00Z"
+  },
+  {
+   "endTime": "2026-05-03T12:30:00Z",
+   "startTime": "2026-05-03T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-03T12:40:00Z",
+   "startTime": "2026-05-03T12:30:00Z"
+  },
+  {
+   "endTime": "2026-05-03T23:59:00Z",
+   "startTime": "2026-05-03T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-04T08:10:00Z",
+   "startTime": "2026-05-04T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-04T08:35:00Z",
+   "startTime": "2026-05-04T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-04T08:30:00Z",
+   "startTime": "2026-05-04T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-04T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-04T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-04T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-04T17:05:00Z",
+   "startTime": "2026-05-04T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-04T17:30:00Z",
+   "startTime": "2026-05-04T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-04T23:59:00Z",
+   "startTime": "2026-05-04T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-05T08:10:00Z",
+   "startTime": "2026-05-05T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-05T08:35:00Z",
+   "startTime": "2026-05-05T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-05T08:30:00Z",
+   "startTime": "2026-05-05T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-05T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-05T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-05T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-05T17:05:00Z",
+   "startTime": "2026-05-05T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-05T17:30:00Z",
+   "startTime": "2026-05-05T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-05T23:59:00Z",
+   "startTime": "2026-05-05T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-06T08:10:00Z",
+   "startTime": "2026-05-06T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-06T08:35:00Z",
+   "startTime": "2026-05-06T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-06T08:30:00Z",
+   "startTime": "2026-05-06T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-06T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-06T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-06T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-06T17:05:00Z",
+   "startTime": "2026-05-06T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-06T17:30:00Z",
+   "startTime": "2026-05-06T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-06T23:59:00Z",
+   "startTime": "2026-05-06T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-07T08:10:00Z",
+   "startTime": "2026-05-07T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-07T08:35:00Z",
+   "startTime": "2026-05-07T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-07T08:30:00Z",
+   "startTime": "2026-05-07T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-07T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-07T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-07T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-07T17:05:00Z",
+   "startTime": "2026-05-07T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-07T17:30:00Z",
+   "startTime": "2026-05-07T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-07T23:59:00Z",
+   "startTime": "2026-05-07T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-08T08:10:00Z",
+   "startTime": "2026-05-08T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-08T08:35:00Z",
+   "startTime": "2026-05-08T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-08T08:30:00Z",
+   "startTime": "2026-05-08T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-08T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-08T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-08T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-08T17:05:00Z",
+   "startTime": "2026-05-08T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-08T17:30:00Z",
+   "startTime": "2026-05-08T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-08T23:59:00Z",
+   "startTime": "2026-05-08T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-09T23:59:00Z",
+   "startTime": "2026-05-09T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-10T10:55:00Z",
+   "startTime": "2026-05-10T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-10T11:05:00Z",
+   "startTime": "2026-05-10T10:55:00Z"
+  },
+  {
+   "endTime": "2026-05-10T12:30:00Z",
+   "startTime": "2026-05-10T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-10T12:40:00Z",
+   "startTime": "2026-05-10T12:30:00Z"
+  },
+  {
+   "endTime": "2026-05-10T23:59:00Z",
+   "startTime": "2026-05-10T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-11T08:10:00Z",
+   "startTime": "2026-05-11T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-11T08:35:00Z",
+   "startTime": "2026-05-11T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-11T08:30:00Z",
+   "startTime": "2026-05-11T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-11T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-11T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-11T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-11T17:05:00Z",
+   "startTime": "2026-05-11T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-11T17:30:00Z",
+   "startTime": "2026-05-11T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-11T23:59:00Z",
+   "startTime": "2026-05-11T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-12T08:10:00Z",
+   "startTime": "2026-05-12T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-12T08:35:00Z",
+   "startTime": "2026-05-12T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-12T08:30:00Z",
+   "startTime": "2026-05-12T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-12T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-12T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-12T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-12T17:05:00Z",
+   "startTime": "2026-05-12T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-12T17:30:00Z",
+   "startTime": "2026-05-12T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-12T23:59:00Z",
+   "startTime": "2026-05-12T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-13T08:10:00Z",
+   "startTime": "2026-05-13T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-13T08:35:00Z",
+   "startTime": "2026-05-13T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-13T08:30:00Z",
+   "startTime": "2026-05-13T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-13T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-13T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-13T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-13T17:05:00Z",
+   "startTime": "2026-05-13T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-13T17:30:00Z",
+   "startTime": "2026-05-13T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-13T23:59:00Z",
+   "startTime": "2026-05-13T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-14T08:10:00Z",
+   "startTime": "2026-05-14T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-14T08:35:00Z",
+   "startTime": "2026-05-14T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-14T08:30:00Z",
+   "startTime": "2026-05-14T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-14T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-14T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-14T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-14T17:05:00Z",
+   "startTime": "2026-05-14T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-14T17:30:00Z",
+   "startTime": "2026-05-14T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-14T23:59:00Z",
+   "startTime": "2026-05-14T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-15T08:10:00Z",
+   "startTime": "2026-05-15T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-15T08:35:00Z",
+   "startTime": "2026-05-15T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-15T08:30:00Z",
+   "startTime": "2026-05-15T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-15T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-15T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-15T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-15T17:05:00Z",
+   "startTime": "2026-05-15T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-15T17:30:00Z",
+   "startTime": "2026-05-15T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-15T23:59:00Z",
+   "startTime": "2026-05-15T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-16T23:59:00Z",
+   "startTime": "2026-05-16T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-17T10:55:00Z",
+   "startTime": "2026-05-17T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-17T11:05:00Z",
+   "startTime": "2026-05-17T10:55:00Z"
+  },
+  {
+   "endTime": "2026-05-17T12:30:00Z",
+   "startTime": "2026-05-17T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-17T12:40:00Z",
+   "startTime": "2026-05-17T12:30:00Z"
+  },
+  {
+   "endTime": "2026-05-17T23:59:00Z",
+   "startTime": "2026-05-17T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-18T08:10:00Z",
+   "startTime": "2026-05-18T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-18T08:35:00Z",
+   "startTime": "2026-05-18T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-18T08:30:00Z",
+   "startTime": "2026-05-18T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-18T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-18T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-18T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-18T17:05:00Z",
+   "startTime": "2026-05-18T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-18T17:30:00Z",
+   "startTime": "2026-05-18T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-18T23:59:00Z",
+   "startTime": "2026-05-18T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-19T08:10:00Z",
+   "startTime": "2026-05-19T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-19T08:35:00Z",
+   "startTime": "2026-05-19T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-19T08:30:00Z",
+   "startTime": "2026-05-19T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-19T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-19T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-19T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-19T17:05:00Z",
+   "startTime": "2026-05-19T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-19T17:30:00Z",
+   "startTime": "2026-05-19T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-19T23:59:00Z",
+   "startTime": "2026-05-19T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-20T08:10:00Z",
+   "startTime": "2026-05-20T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-20T08:35:00Z",
+   "startTime": "2026-05-20T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-20T08:30:00Z",
+   "startTime": "2026-05-20T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-20T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-20T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-20T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-20T17:05:00Z",
+   "startTime": "2026-05-20T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-20T17:30:00Z",
+   "startTime": "2026-05-20T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-20T23:59:00Z",
+   "startTime": "2026-05-20T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-21T08:10:00Z",
+   "startTime": "2026-05-21T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-21T08:35:00Z",
+   "startTime": "2026-05-21T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-21T08:30:00Z",
+   "startTime": "2026-05-21T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-21T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-21T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-21T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-21T17:05:00Z",
+   "startTime": "2026-05-21T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-21T17:30:00Z",
+   "startTime": "2026-05-21T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-21T23:59:00Z",
+   "startTime": "2026-05-21T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-22T08:10:00Z",
+   "startTime": "2026-05-22T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-22T08:35:00Z",
+   "startTime": "2026-05-22T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-22T13:30:00Z",
+   "startTime": "2026-05-22T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-22T13:50:00Z",
+   "startTime": "2026-05-22T13:30:00Z"
+  },
+  {
+   "endTime": "2026-05-22T14:10:00Z",
+   "startTime": "2026-05-22T13:50:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 455000,
+    "end": {
+     "latLng": "66.0749000°, -23.1240000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-22T20:00:00Z",
+   "startTime": "2026-05-22T14:10:00Z"
+  },
+  {
+   "endTime": "2026-05-22T17:30:00Z",
+   "startTime": "2026-05-22T15:10:00Z",
+   "timelinePath": [
+    {
+     "point": "64.5390000°, -21.9210000°",
+     "time": "2026-05-22T15:10:00Z"
+    },
+    {
+     "point": "65.7060000°, -21.6700000°",
+     "time": "2026-05-22T17:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-23T10:30:00Z",
+   "startTime": "2026-05-22T20:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "66.0749000°, -23.1240000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-23T13:00:00Z",
+   "startTime": "2026-05-23T11:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "66.0705000°, -23.1180000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-24T10:00:00Z",
+   "startTime": "2026-05-23T13:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "66.0749000°, -23.1240000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 455000,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "66.0749000°, -23.1240000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-24T16:00:00Z",
+   "startTime": "2026-05-24T10:00:00Z"
+  },
+  {
+   "endTime": "2026-05-24T13:01:00Z",
+   "startTime": "2026-05-24T13:00:00Z",
+   "timelinePath": [
+    {
+     "point": "65.1060000°, -21.7700000°",
+     "time": "2026-05-24T13:00:00Z"
+    },
+    {
+     "point": "65.1060000°, -21.7700000°",
+     "time": "2026-05-24T13:01:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-24T23:59:00Z",
+   "startTime": "2026-05-24T16:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-25T08:10:00Z",
+   "startTime": "2026-05-25T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-25T08:35:00Z",
+   "startTime": "2026-05-25T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-25T08:30:00Z",
+   "startTime": "2026-05-25T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-25T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-25T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-25T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-25T17:05:00Z",
+   "startTime": "2026-05-25T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-25T17:30:00Z",
+   "startTime": "2026-05-25T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-25T23:59:00Z",
+   "startTime": "2026-05-25T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-26T08:10:00Z",
+   "startTime": "2026-05-26T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-26T08:35:00Z",
+   "startTime": "2026-05-26T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-26T08:30:00Z",
+   "startTime": "2026-05-26T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-26T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-26T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-26T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-26T17:05:00Z",
+   "startTime": "2026-05-26T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-26T17:30:00Z",
+   "startTime": "2026-05-26T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-26T23:59:00Z",
+   "startTime": "2026-05-26T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-27T08:10:00Z",
+   "startTime": "2026-05-27T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-27T08:35:00Z",
+   "startTime": "2026-05-27T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-27T08:30:00Z",
+   "startTime": "2026-05-27T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-27T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-27T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-27T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-27T17:05:00Z",
+   "startTime": "2026-05-27T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-27T17:30:00Z",
+   "startTime": "2026-05-27T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-27T23:59:00Z",
+   "startTime": "2026-05-27T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-28T08:10:00Z",
+   "startTime": "2026-05-28T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-28T08:35:00Z",
+   "startTime": "2026-05-28T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-28T08:30:00Z",
+   "startTime": "2026-05-28T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-28T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-28T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-28T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-28T17:05:00Z",
+   "startTime": "2026-05-28T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-28T17:30:00Z",
+   "startTime": "2026-05-28T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-28T23:59:00Z",
+   "startTime": "2026-05-28T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-29T08:10:00Z",
+   "startTime": "2026-05-29T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-29T08:35:00Z",
+   "startTime": "2026-05-29T08:10:00Z"
+  },
+  {
+   "endTime": "2026-05-29T08:30:00Z",
+   "startTime": "2026-05-29T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-05-29T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-05-29T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-05-29T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-05-29T17:05:00Z",
+   "startTime": "2026-05-29T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-29T17:30:00Z",
+   "startTime": "2026-05-29T17:05:00Z"
+  },
+  {
+   "endTime": "2026-05-29T23:59:00Z",
+   "startTime": "2026-05-29T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-30T23:59:00Z",
+   "startTime": "2026-05-30T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-05-31T10:55:00Z",
+   "startTime": "2026-05-31T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-31T11:05:00Z",
+   "startTime": "2026-05-31T10:55:00Z"
+  },
+  {
+   "endTime": "2026-05-31T12:30:00Z",
+   "startTime": "2026-05-31T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-05-31T12:40:00Z",
+   "startTime": "2026-05-31T12:30:00Z"
+  },
+  {
+   "endTime": "2026-05-31T23:59:00Z",
+   "startTime": "2026-05-31T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-01T08:10:00Z",
+   "startTime": "2026-06-01T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-01T08:35:00Z",
+   "startTime": "2026-06-01T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-01T08:30:00Z",
+   "startTime": "2026-06-01T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-01T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-01T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-01T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-01T17:05:00Z",
+   "startTime": "2026-06-01T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-01T17:30:00Z",
+   "startTime": "2026-06-01T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-01T23:59:00Z",
+   "startTime": "2026-06-01T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-02T08:10:00Z",
+   "startTime": "2026-06-02T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-02T08:35:00Z",
+   "startTime": "2026-06-02T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-02T08:30:00Z",
+   "startTime": "2026-06-02T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-02T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-02T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-02T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-02T17:05:00Z",
+   "startTime": "2026-06-02T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-02T17:30:00Z",
+   "startTime": "2026-06-02T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-02T23:59:00Z",
+   "startTime": "2026-06-02T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-03T08:10:00Z",
+   "startTime": "2026-06-03T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-03T08:35:00Z",
+   "startTime": "2026-06-03T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-03T08:30:00Z",
+   "startTime": "2026-06-03T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-03T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-03T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-03T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-03T17:05:00Z",
+   "startTime": "2026-06-03T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-03T17:30:00Z",
+   "startTime": "2026-06-03T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-03T23:59:00Z",
+   "startTime": "2026-06-03T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-04T08:10:00Z",
+   "startTime": "2026-06-04T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-04T08:35:00Z",
+   "startTime": "2026-06-04T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-04T08:30:00Z",
+   "startTime": "2026-06-04T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-04T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-04T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-04T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-04T17:05:00Z",
+   "startTime": "2026-06-04T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-04T17:30:00Z",
+   "startTime": "2026-06-04T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-04T23:59:00Z",
+   "startTime": "2026-06-04T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-05T08:10:00Z",
+   "startTime": "2026-06-05T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-05T08:35:00Z",
+   "startTime": "2026-06-05T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-05T08:30:00Z",
+   "startTime": "2026-06-05T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-05T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-05T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-05T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-05T17:05:00Z",
+   "startTime": "2026-06-05T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-05T17:30:00Z",
+   "startTime": "2026-06-05T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-05T23:59:00Z",
+   "startTime": "2026-06-05T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-06T23:59:00Z",
+   "startTime": "2026-06-06T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-07T10:55:00Z",
+   "startTime": "2026-06-07T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-07T11:05:00Z",
+   "startTime": "2026-06-07T10:55:00Z"
+  },
+  {
+   "endTime": "2026-06-07T12:30:00Z",
+   "startTime": "2026-06-07T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-07T12:40:00Z",
+   "startTime": "2026-06-07T12:30:00Z"
+  },
+  {
+   "endTime": "2026-06-07T23:59:00Z",
+   "startTime": "2026-06-07T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-08T08:10:00Z",
+   "startTime": "2026-06-08T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-08T08:35:00Z",
+   "startTime": "2026-06-08T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-08T08:30:00Z",
+   "startTime": "2026-06-08T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-08T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-08T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-08T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-08T17:05:00Z",
+   "startTime": "2026-06-08T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-08T17:30:00Z",
+   "startTime": "2026-06-08T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-08T23:59:00Z",
+   "startTime": "2026-06-08T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-09T08:10:00Z",
+   "startTime": "2026-06-09T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-09T08:35:00Z",
+   "startTime": "2026-06-09T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-09T08:30:00Z",
+   "startTime": "2026-06-09T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-09T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-09T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-09T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-09T17:05:00Z",
+   "startTime": "2026-06-09T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-09T17:30:00Z",
+   "startTime": "2026-06-09T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-09T23:59:00Z",
+   "startTime": "2026-06-09T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-10T08:10:00Z",
+   "startTime": "2026-06-10T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-10T08:35:00Z",
+   "startTime": "2026-06-10T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-10T08:30:00Z",
+   "startTime": "2026-06-10T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-10T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-10T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-10T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-10T17:05:00Z",
+   "startTime": "2026-06-10T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-10T17:30:00Z",
+   "startTime": "2026-06-10T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-10T23:59:00Z",
+   "startTime": "2026-06-10T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-11T08:10:00Z",
+   "startTime": "2026-06-11T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-11T08:35:00Z",
+   "startTime": "2026-06-11T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-11T08:30:00Z",
+   "startTime": "2026-06-11T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-11T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-11T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-11T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-11T17:05:00Z",
+   "startTime": "2026-06-11T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-11T17:30:00Z",
+   "startTime": "2026-06-11T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-11T23:59:00Z",
+   "startTime": "2026-06-11T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-12T06:45:00Z",
+   "startTime": "2026-06-12T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 47000,
+    "end": {
+     "latLng": "63.9850000°, -22.6056000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-12T07:35:00Z",
+   "startTime": "2026-06-12T06:45:00Z"
+  },
+  {
+   "endTime": "2026-06-12T07:30:00Z",
+   "startTime": "2026-06-12T06:50:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-12T06:50:00Z"
+    },
+    {
+     "point": "64.0896667°, -22.1532000°",
+     "time": "2026-06-12T07:03:20Z"
+    },
+    {
+     "point": "64.0373333°, -22.3794000°",
+     "time": "2026-06-12T07:16:40Z"
+    },
+    {
+     "point": "63.9850000°, -22.6056000°",
+     "time": "2026-06-12T07:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-12T08:40:00Z",
+   "startTime": "2026-06-12T07:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "63.9850000°, -22.6056000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-12T08:35:00Z",
+   "startTime": "2026-06-12T08:34:00Z",
+   "timelinePath": [
+    {
+     "point": "63.9850000°, -22.6056000°",
+     "time": "2026-06-12T08:34:00Z"
+    },
+    {
+     "point": "63.9850000°, -22.6056000°",
+     "time": "2026-06-12T08:35:00Z"
+    }
+   ]
+  },
+  {
+   "activity": {
+    "distanceMeters": 283000,
+    "end": {
+     "latLng": "65.6600000°, -18.0727000°"
+    },
+    "start": {
+     "latLng": "63.9850000°, -22.6056000°"
+    },
+    "topCandidate": {
+     "type": "FLYING"
+    }
+   },
+   "endTime": "2026-06-12T09:30:00Z",
+   "startTime": "2026-06-12T08:40:00Z"
+  },
+  {
+   "endTime": "2026-06-12T09:45:00Z",
+   "startTime": "2026-06-12T09:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "65.6600000°, -18.0727000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-12T09:33:00Z",
+   "startTime": "2026-06-12T09:32:00Z",
+   "timelinePath": [
+    {
+     "point": "65.6600000°, -18.0727000°",
+     "time": "2026-06-12T09:32:00Z"
+    },
+    {
+     "point": "65.6600000°, -18.0727000°",
+     "time": "2026-06-12T09:33:00Z"
+    }
+   ]
+  },
+  {
+   "activity": {
+    "distanceMeters": 4000,
+    "end": {
+     "latLng": "65.6885000°, -18.1262000°"
+    },
+    "start": {
+     "latLng": "65.6600000°, -18.0727000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-12T10:00:00Z",
+   "startTime": "2026-06-12T09:45:00Z"
+  },
+  {
+   "endTime": "2026-06-13T10:30:00Z",
+   "startTime": "2026-06-12T10:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "65.6885000°, -18.1262000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-13T12:30:00Z",
+   "startTime": "2026-06-13T11:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "65.6800000°, -18.0910000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 35000,
+    "end": {
+     "latLng": "65.6828000°, -17.5503000°"
+    },
+    "start": {
+     "latLng": "65.6885000°, -18.1262000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-13T14:40:00Z",
+   "startTime": "2026-06-13T14:00:00Z"
+  },
+  {
+   "endTime": "2026-06-13T14:35:00Z",
+   "startTime": "2026-06-13T14:05:00Z",
+   "timelinePath": [
+    {
+     "point": "65.6885000°, -18.1262000°",
+     "time": "2026-06-13T14:05:00Z"
+    },
+    {
+     "point": "65.6866000°, -17.9342333°",
+     "time": "2026-06-13T14:15:00Z"
+    },
+    {
+     "point": "65.6847000°, -17.7422667°",
+     "time": "2026-06-13T14:25:00Z"
+    },
+    {
+     "point": "65.6828000°, -17.5503000°",
+     "time": "2026-06-13T14:35:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-13T15:30:00Z",
+   "startTime": "2026-06-13T14:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "65.6828000°, -17.5503000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 35000,
+    "end": {
+     "latLng": "65.6885000°, -18.1262000°"
+    },
+    "start": {
+     "latLng": "65.6828000°, -17.5503000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-13T16:10:00Z",
+   "startTime": "2026-06-13T15:30:00Z"
+  },
+  {
+   "endTime": "2026-06-13T16:08:00Z",
+   "startTime": "2026-06-13T15:32:00Z",
+   "timelinePath": [
+    {
+     "point": "65.6828000°, -17.5503000°",
+     "time": "2026-06-13T15:32:00Z"
+    },
+    {
+     "point": "65.6847000°, -17.7422667°",
+     "time": "2026-06-13T15:44:00Z"
+    },
+    {
+     "point": "65.6866000°, -17.9342333°",
+     "time": "2026-06-13T15:56:00Z"
+    },
+    {
+     "point": "65.6885000°, -18.1262000°",
+     "time": "2026-06-13T16:08:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-14T15:00:00Z",
+   "startTime": "2026-06-13T16:10:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "65.6885000°, -18.1262000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 4000,
+    "end": {
+     "latLng": "65.6600000°, -18.0727000°"
+    },
+    "start": {
+     "latLng": "65.6885000°, -18.1262000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-14T14:45:00Z",
+   "startTime": "2026-06-14T14:30:00Z"
+  },
+  {
+   "endTime": "2026-06-14T15:30:00Z",
+   "startTime": "2026-06-14T14:45:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "65.6600000°, -18.0727000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-14T15:25:00Z",
+   "startTime": "2026-06-14T15:24:00Z",
+   "timelinePath": [
+    {
+     "point": "65.6600000°, -18.0727000°",
+     "time": "2026-06-14T15:24:00Z"
+    },
+    {
+     "point": "65.6600000°, -18.0727000°",
+     "time": "2026-06-14T15:25:00Z"
+    }
+   ]
+  },
+  {
+   "activity": {
+    "distanceMeters": 283000,
+    "end": {
+     "latLng": "63.9850000°, -22.6056000°"
+    },
+    "start": {
+     "latLng": "65.6600000°, -18.0727000°"
+    },
+    "topCandidate": {
+     "type": "FLYING"
+    }
+   },
+   "endTime": "2026-06-14T16:20:00Z",
+   "startTime": "2026-06-14T15:30:00Z"
+  },
+  {
+   "endTime": "2026-06-14T16:23:00Z",
+   "startTime": "2026-06-14T16:22:00Z",
+   "timelinePath": [
+    {
+     "point": "63.9850000°, -22.6056000°",
+     "time": "2026-06-14T16:22:00Z"
+    },
+    {
+     "point": "63.9850000°, -22.6056000°",
+     "time": "2026-06-14T16:23:00Z"
+    }
+   ]
+  },
+  {
+   "activity": {
+    "distanceMeters": 47000,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "63.9850000°, -22.6056000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-14T17:20:00Z",
+   "startTime": "2026-06-14T16:30:00Z"
+  },
+  {
+   "endTime": "2026-06-14T17:15:00Z",
+   "startTime": "2026-06-14T16:35:00Z",
+   "timelinePath": [
+    {
+     "point": "63.9850000°, -22.6056000°",
+     "time": "2026-06-14T16:35:00Z"
+    },
+    {
+     "point": "64.0373333°, -22.3794000°",
+     "time": "2026-06-14T16:48:20Z"
+    },
+    {
+     "point": "64.0896667°, -22.1532000°",
+     "time": "2026-06-14T17:01:40Z"
+    },
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-14T17:15:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-14T23:59:00Z",
+   "startTime": "2026-06-14T17:20:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-15T08:10:00Z",
+   "startTime": "2026-06-15T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-15T08:35:00Z",
+   "startTime": "2026-06-15T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-15T08:30:00Z",
+   "startTime": "2026-06-15T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-15T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-15T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-15T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-15T17:05:00Z",
+   "startTime": "2026-06-15T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-15T17:30:00Z",
+   "startTime": "2026-06-15T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-15T23:59:00Z",
+   "startTime": "2026-06-15T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-16T08:10:00Z",
+   "startTime": "2026-06-16T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-16T08:35:00Z",
+   "startTime": "2026-06-16T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-16T08:30:00Z",
+   "startTime": "2026-06-16T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-16T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-16T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-16T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-16T17:05:00Z",
+   "startTime": "2026-06-16T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-16T17:30:00Z",
+   "startTime": "2026-06-16T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-16T23:59:00Z",
+   "startTime": "2026-06-16T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-17T08:10:00Z",
+   "startTime": "2026-06-17T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-17T08:35:00Z",
+   "startTime": "2026-06-17T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-17T08:30:00Z",
+   "startTime": "2026-06-17T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-17T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-17T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-17T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-17T17:05:00Z",
+   "startTime": "2026-06-17T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-17T17:30:00Z",
+   "startTime": "2026-06-17T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-17T23:59:00Z",
+   "startTime": "2026-06-17T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-18T08:10:00Z",
+   "startTime": "2026-06-18T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-18T08:35:00Z",
+   "startTime": "2026-06-18T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-18T08:30:00Z",
+   "startTime": "2026-06-18T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-18T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-18T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-18T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-18T17:05:00Z",
+   "startTime": "2026-06-18T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-18T17:30:00Z",
+   "startTime": "2026-06-18T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-18T23:59:00Z",
+   "startTime": "2026-06-18T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-19T08:10:00Z",
+   "startTime": "2026-06-19T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-19T08:35:00Z",
+   "startTime": "2026-06-19T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-19T08:30:00Z",
+   "startTime": "2026-06-19T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-19T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-19T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-19T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-19T17:05:00Z",
+   "startTime": "2026-06-19T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-19T17:30:00Z",
+   "startTime": "2026-06-19T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-19T23:59:00Z",
+   "startTime": "2026-06-19T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-20T23:59:00Z",
+   "startTime": "2026-06-20T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-21T10:55:00Z",
+   "startTime": "2026-06-21T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-21T11:05:00Z",
+   "startTime": "2026-06-21T10:55:00Z"
+  },
+  {
+   "endTime": "2026-06-21T12:30:00Z",
+   "startTime": "2026-06-21T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-21T12:40:00Z",
+   "startTime": "2026-06-21T12:30:00Z"
+  },
+  {
+   "endTime": "2026-06-21T23:59:00Z",
+   "startTime": "2026-06-21T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-22T08:10:00Z",
+   "startTime": "2026-06-22T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-22T08:35:00Z",
+   "startTime": "2026-06-22T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-22T08:30:00Z",
+   "startTime": "2026-06-22T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-22T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-22T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-22T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-22T17:05:00Z",
+   "startTime": "2026-06-22T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-22T17:30:00Z",
+   "startTime": "2026-06-22T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-22T23:59:00Z",
+   "startTime": "2026-06-22T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-23T08:10:00Z",
+   "startTime": "2026-06-23T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-23T08:35:00Z",
+   "startTime": "2026-06-23T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-23T08:30:00Z",
+   "startTime": "2026-06-23T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-23T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-23T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-23T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-23T17:05:00Z",
+   "startTime": "2026-06-23T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-23T17:30:00Z",
+   "startTime": "2026-06-23T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-23T23:59:00Z",
+   "startTime": "2026-06-23T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-24T08:10:00Z",
+   "startTime": "2026-06-24T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-24T08:35:00Z",
+   "startTime": "2026-06-24T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-24T08:30:00Z",
+   "startTime": "2026-06-24T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-24T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-24T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-24T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-24T17:05:00Z",
+   "startTime": "2026-06-24T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-24T17:30:00Z",
+   "startTime": "2026-06-24T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-24T23:59:00Z",
+   "startTime": "2026-06-24T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-25T08:10:00Z",
+   "startTime": "2026-06-25T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-25T08:35:00Z",
+   "startTime": "2026-06-25T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-25T08:30:00Z",
+   "startTime": "2026-06-25T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-25T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-25T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-25T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-25T17:05:00Z",
+   "startTime": "2026-06-25T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-25T17:30:00Z",
+   "startTime": "2026-06-25T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-25T23:59:00Z",
+   "startTime": "2026-06-25T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-26T08:10:00Z",
+   "startTime": "2026-06-26T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-26T08:35:00Z",
+   "startTime": "2026-06-26T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-26T08:30:00Z",
+   "startTime": "2026-06-26T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-26T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-26T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-26T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-26T17:05:00Z",
+   "startTime": "2026-06-26T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-26T17:30:00Z",
+   "startTime": "2026-06-26T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-26T23:59:00Z",
+   "startTime": "2026-06-26T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-27T23:59:00Z",
+   "startTime": "2026-06-27T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-28T10:55:00Z",
+   "startTime": "2026-06-28T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-28T11:05:00Z",
+   "startTime": "2026-06-28T10:55:00Z"
+  },
+  {
+   "endTime": "2026-06-28T12:30:00Z",
+   "startTime": "2026-06-28T11:05:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1520000°, -21.8950000°"
+     },
+     "semanticType": "UNKNOWN"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 3200,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1520000°, -21.8950000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-28T12:40:00Z",
+   "startTime": "2026-06-28T12:30:00Z"
+  },
+  {
+   "endTime": "2026-06-28T23:59:00Z",
+   "startTime": "2026-06-28T12:40:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-29T08:10:00Z",
+   "startTime": "2026-06-29T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-29T08:35:00Z",
+   "startTime": "2026-06-29T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-29T08:30:00Z",
+   "startTime": "2026-06-29T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-29T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-29T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-29T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-29T17:05:00Z",
+   "startTime": "2026-06-29T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-29T17:30:00Z",
+   "startTime": "2026-06-29T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-29T23:59:00Z",
+   "startTime": "2026-06-29T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "endTime": "2026-06-30T08:10:00Z",
+   "startTime": "2026-06-30T00:00:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "start": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-30T08:35:00Z",
+   "startTime": "2026-06-30T08:10:00Z"
+  },
+  {
+   "endTime": "2026-06-30T08:30:00Z",
+   "startTime": "2026-06-30T08:15:00Z",
+   "timelinePath": [
+    {
+     "point": "64.1420000°, -21.9270000°",
+     "time": "2026-06-30T08:15:00Z"
+    },
+    {
+     "point": "64.1300000°, -21.8915000°",
+     "time": "2026-06-30T08:22:30Z"
+    },
+    {
+     "point": "64.1180000°, -21.8560000°",
+     "time": "2026-06-30T08:30:00Z"
+    }
+   ]
+  },
+  {
+   "endTime": "2026-06-30T17:05:00Z",
+   "startTime": "2026-06-30T08:35:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1180000°, -21.8560000°"
+     },
+     "semanticType": "INFERRED_WORK"
+    }
+   }
+  },
+  {
+   "activity": {
+    "distanceMeters": 6800,
+    "end": {
+     "latLng": "64.1420000°, -21.9270000°"
+    },
+    "start": {
+     "latLng": "64.1180000°, -21.8560000°"
+    },
+    "topCandidate": {
+     "type": "IN_PASSENGER_VEHICLE"
+    }
+   },
+   "endTime": "2026-06-30T17:30:00Z",
+   "startTime": "2026-06-30T17:05:00Z"
+  },
+  {
+   "endTime": "2026-06-30T23:59:00Z",
+   "startTime": "2026-06-30T17:30:00Z",
+   "visit": {
+    "topCandidate": {
+     "placeLocation": {
+      "latLng": "64.1420000°, -21.9270000°"
+     },
+     "semanticType": "INFERRED_HOME"
+    }
+   }
+  }
+ ]
+}

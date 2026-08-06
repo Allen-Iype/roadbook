@@ -93,3 +93,36 @@ unnoticed because the usual dev machine has local Postgres), and
 official README's own pointer and tracks the upstream Dockerfiles).
 Would change our mind: postgis/postgis publishing arm64 manifests — then
 the official image wins and this is a two-line revert.
+
+## 2026-08-06 — checkpoint 2: the demo file is testdata/demo/demo.json, not *.timeline.json
+
+Chosen: the committed demo output is named `demo.json`, diverging from the
+BRIEF's illustrative `demo.timeline.json`, because the root `.gitignore`
+carries a belt-and-braces `*.timeline.json` pattern that would swallow the
+committed file.
+Rejected: a `!testdata/demo/demo.timeline.json` negation — it punches a
+hole in the pattern that exists because anchored-pattern subtleties caused
+one of the two data near-leaks; the safety pattern stays intact and the
+file is named around it.
+Would change our mind: nothing — the name communicates less than the
+pattern protects.
+
+## 2026-08-06 — checkpoint 2: demo composition is pinned by what the pipeline actually consumes
+
+Chosen: Iceland (one small Geofabrik extract covers everything, per the
+brief); the flights route through Keflavík, not the Reykjavík city
+airport — the city airport sits inside NEAR, so its flights fall outside
+the away-span and the journey window, and no arc would ever render; each
+flight is bracketed by a stationary trace-point pair at the airports,
+because journey assembly draws legs from trace points and raw positions,
+not visits or activity endpoints — without a gate fix the flight is a
+30-hour slow silence, not an air-speed gap. All of it is pinned by the
+ungated `internal/detect/demo_test.go` (3 candidates / 1 base / 0
+outliers, parse counts, per-candidate destinations), which is what makes
+the README's numbers regression-held rather than aspirational.
+Rejected: relocating the persona's home to keep the city airport (breaks
+commute realism for one flight), and stating README numbers without a
+pinning test (invariant 13 by promise instead of by test).
+Would change our mind on the gate fixes: journey assembly learning to use
+activity endpoints as observations — a core change no demo should force;
+the demo then simplifies to match.
