@@ -138,6 +138,34 @@ classified as flights and drawn as arcs either way.
 Setting up OSRM (getting a regional OSM extract, preprocessing it, running
 the batch) is documented in `docs/phase-3/OSRM.md`.
 
+## Backup and restore
+
+Two things in a Roadbook instance cannot be regenerated: your decisions
+(which candidates you confirmed or dismissed, and the names you gave them)
+and your photos (only a thumbnail is kept, and the original was never
+stored). `roadbook backup` writes exactly that set as one archive:
+
+```
+docker compose run --rm -v "$PWD/backups:/backups" api \
+  roadbook backup -out /backups/roadbook-$(date +%F).tar.gz
+```
+
+Everything else — candidates, routes, journeys — regenerates from your
+export files, which are yours to keep (see Data safety).
+
+`roadbook restore -src <archive>` merges a backup into any instance, empty
+or not: decisions and photos are matched by durable identity, overlap is
+skipped and reported, and nothing existing is modified. Restored into a
+fresh instance, decisions first appear as orphans; import your export and
+run detection, and they attach to their adventures — the same matching that
+preserves decisions across every re-detection. Restoring the same archive
+twice is a reported no-op.
+
+The archive is inspectable: a gzipped tar of `manifest.json`,
+`decisions.json`, `photos.json`, and the thumbnail files. Treat backups
+like the exports they complement — they contain your real place names and
+photo metadata, so store them privately.
+
 ## Development without Docker
 
 Go 1.25, Node 24, and a local Postgres 18 with PostGIS:

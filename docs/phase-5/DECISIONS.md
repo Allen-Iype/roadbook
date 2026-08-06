@@ -126,3 +126,35 @@ pinning test (invariant 13 by promise instead of by test).
 Would change our mind on the gate fixes: journey assembly learning to use
 activity endpoints as observations — a core change no demo should force;
 the demo then simplifies to match.
+
+## 2026-08-07 — checkpoint 3: migration 00008 makes the decision anchor structurally unique
+
+Chosen: a unique index on (user_id, anchor_span_start, anchor_span_end,
+anchor_dest_lat, anchor_dest_lon) — restore merges archives by anchor with
+ON CONFLICT, which needs uniqueness the database enforces; it already held
+in practice because the decide flow updates in place rather than inserting
+twins (verified duplicate-free on the live data before writing the
+migration).
+Rejected: select-then-insert inside restore without an index (identity by
+convention — the same anchor accidentally inserted twice by future code
+would corrupt matching silently), and a synthetic decision UUID (a second
+identity beside the anchor that already is one).
+Would change our mind: anchors deliberately becoming non-unique — no
+current or planned feature does that; multi-user hosting is already
+covered by user_id leading the index.
+
+## 2026-08-07 — checkpoint 3: no photo row without its thumbnail, in either direction
+
+Chosen: backup excludes (with a warning) a photo row whose thumbnail file
+is missing on disk, and restore writes each thumbnail file before its row
+and skips (with a warning) rows for which no thumbnail is available in the
+archive or on disk; `backup -out` refuses to overwrite an existing file
+and deletes its own partial output on failure.
+Rejected: archiving or restoring the row alone (a row without its file is
+a permanently broken image — the phase 4 delete-order reasoning applied to
+the copy path), row-before-file restore ordering (a crash then leaves the
+broken-image state; file-first fails toward a sweepable orphan file), and
+silent overwrite of an existing archive (a backup can be the last copy of
+irreplaceable data).
+Would change our mind: nothing foreseeable; if orphan files ever
+accumulate the sweep command carried since phase 4 covers both sources.

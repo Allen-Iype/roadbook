@@ -50,6 +50,10 @@ func main() {
 		err = runCountries(os.Args[2:])
 	case "serve":
 		err = runServe(os.Args[2:])
+	case "backup":
+		err = runBackup(os.Args[2:])
+	case "restore":
+		err = runRestore(os.Args[2:])
 	default:
 		usage()
 		os.Exit(2)
@@ -69,6 +73,8 @@ func usage() {
   roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
   roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh]
   roadbook serve   [-db url] [-addr :8080]
+  roadbook backup  -out <file.tar.gz> [-db url] [-photos-dir dir]
+  roadbook restore -src <file.tar.gz> [-db url] [-photos-dir dir]
   roadbook photo   -inspect <photo.jpg | sidecar.json>
   roadbook probe   -src <timeline export.json>
 
@@ -88,6 +94,11 @@ table — the only network step in routing, and entirely optional: with the
 default null router it inventories the gaps and fills nothing. Scope
 defaults to confirmed adventures of the latest run.
 'serve' runs the HTTP API.
+'backup' writes the irreplaceable set — decisions, photo rows, thumbnail
+files — as one archive. Everything else regenerates from your export files.
+'restore' merges an archive into the connected instance by durable identity
+(decision anchor, photo content hash); overlap is skipped and reported.
+Restored decisions attach to candidates at the next import + detection.
 'photo' inspects one photo or Takeout sidecar: the format verdict, every
 metadata reading with its source, the resolved capture instant, and the
 thumbnail that would be produced. Writes nothing; a sidecar named beside the
