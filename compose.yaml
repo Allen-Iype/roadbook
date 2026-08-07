@@ -77,6 +77,26 @@ services:
       api:
         condition: service_healthy
 
+  # Optional routing (phase 5 BRIEF §3E; spec: docs/phase-3/OSRM.md).
+  # Behind a profile: absent from `docker compose up` unless explicitly
+  # requested. The operator prepares data/osrm/ first with
+  # scripts/osrm-setup.sh (explicitly invoked, never at build or install
+  # time), then:
+  #
+  #   OSRM_DATA=<base> docker compose --profile routing up -d osrm
+  #   docker compose run --rm api roadbook route -router osrm \
+  #     -router-url http://osrm:5000 -interval 0 -dataset <base>-YYYYMMDD
+  #   docker compose --profile routing down osrm    # cache holds the answers
+  #
+  # The port is not published to the host: only the api container's batch
+  # step talks to it, and serve never does — serve reads only the cache.
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend
+    profiles: ["routing"]
+    command: osrm-routed --algorithm mld /data/${OSRM_DATA:-unset-see-env-example}.osrm
+    volumes:
+      - ./data/osrm:/data:ro
+
 volumes:
   pgdata:
   photos:

@@ -158,3 +158,20 @@ silent overwrite of an existing archive (a backup can be the last copy of
 irreplaceable data).
 Would change our mind: nothing foreseeable; if orphan files ever
 accumulate the sweep command carried since phase 4 covers both sources.
+
+## 2026-08-07 — checkpoint 4: the osrm service is parameterised by OSRM_DATA; the script stamps the snapshot from the pbf's own date
+
+Chosen: the compose `osrm` service takes its dataset base name from the
+`OSRM_DATA` env var (documented in .env.example, ignored by the default
+stack), so one service definition serves any region the operator prepared;
+`osrm-setup.sh` derives the dataset name (`region-YYYYMMDD`) from the
+downloaded pbf file's modification date and skips download and
+preprocessing when their outputs already exist, telling the operator what
+to delete for a fresh snapshot.
+Rejected: hardcoding a dataset filename in compose (the one place a
+region name would leak into configuration — invariant 9), a `latest`
+symlink scheme (hides which snapshot is being served — the dataset name
+exists to answer exactly that), and re-downloading on every run (a
+multi-GB fetch as a side effect of re-running a setup script).
+Would change our mind: multiple concurrent regions wanted at once — the
+profile would grow a second parameterised service, not a redesign.

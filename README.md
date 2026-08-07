@@ -135,8 +135,30 @@ say what they are. That degraded state is designed, not an error: the
 product is fully usable with no routing at all. Air-speed gaps are
 classified as flights and drawn as arcs either way.
 
-Setting up OSRM (getting a regional OSM extract, preprocessing it, running
-the batch) is documented in `docs/phase-3/OSRM.md`.
+The compose stack carries an optional `routing` profile for exactly this.
+One script prepares a regional extract (run it yourself, from the
+repository root — nothing in the build or install path ever invokes it, and
+it requires you to name your region because the product assumes nothing
+about where you live):
+
+```
+scripts/osrm-setup.sh europe/iceland
+```
+
+It downloads the Geofabrik extract into `data/osrm/`, preprocesses it with
+the same OSRM image the profile serves with, and prints the three commands
+that follow: start the profile (`OSRM_DATA=iceland-latest docker compose
+--profile routing up -d osrm`), run the batch (`docker compose run --rm api
+roadbook route -router osrm -router-url http://osrm:5000 -interval 0
+-dataset iceland-YYYYMMDD`), and stop the profile again. The answers are
+cached in Postgres with the dataset name recorded against every one; the
+running application reads only that cache, so OSRM does not need to exist
+again until you want a fresh batch. Run against the demo, the Westfjords
+adventure's straight chords become road-following routes; gaps the road
+network cannot connect stay visibly unknown, which is the road network
+being incomplete, not the product failing. Pick the smallest Geofabrik
+region that covers your adventures; the manual (non-Docker) path and the
+operational details are in `docs/phase-3/OSRM.md`.
 
 ## Backup and restore
 
