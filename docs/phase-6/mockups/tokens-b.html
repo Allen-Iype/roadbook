@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction B · Night expedition — token sheet</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+.map-svg .sea{fill:#0B1216}
+.map-svg .land{fill:#16222A;stroke:#2C3E48;stroke-width:.8}
+.map-svg .grat{stroke:#E8E4DA;opacity:.05}
+.map-svg .grat-label{font:9px ui-monospace,'SF Mono',Menlo,Consolas,monospace;fill:#92A0A8;opacity:.7}
+.leg,.casing{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.casing{display:none}
+.k-observed{stroke:#FFC96B;stroke-width:2.4;filter:drop-shadow(0 0 3.5px rgba(255,201,107,.7))}
+.k-routed{stroke:#56B8D8;stroke-width:2}
+.k-unknown{stroke:#6B7A85;stroke-width:1.8;stroke-dasharray:6 5}
+.k-air{stroke:#C09BF2;stroke-width:1.9;stroke-dasharray:.1 5.5}
+.plane path{fill:#C09BF2}
+.fix{fill:#FFC96B;stroke:#0D151A;stroke-width:1.2}
+.map-svg .scalebar line{stroke:#92A0A8;stroke-width:1}
+.map-svg .scalebar-label{font:10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;fill:#92A0A8}
+.map-svg .dim{opacity:.16}
+.t2 .leg.k-observed,.t2 .leg.k-routed{stroke:#E8E4DA;stroke-width:2.1;filter:none}
+.t2 .fix{fill:#E8E4DA}
+
+.provbar{display:flex;height:4px;width:100%;background:#22313A;border-radius:2px;overflow:hidden}
+.provbar span{display:block;height:100%}
+.pv-observed{background:#FFC96B}.pv-routed{background:#56B8D8}
+.pv-unknown{background:#6B7A85}.pv-air{background:#C09BF2}
+
+body{background:#080E12;color:#E8E4DA;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px}
+.sheet{max-width:880px;margin:0 auto;padding:44px 36px 30px}
+h1{font-size:32px;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+.sub{color:#92A0A8;margin:8px 0 30px}
+h2{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:.3em;border-top:1px solid #22313A;padding-top:12px;margin:30px 0 14px;color:#92A0A8}
+.sw{display:grid;grid-template-columns:120px 26px 110px 90px 1fr;gap:14px;align-items:center;padding:8px 0;border-bottom:1px solid #22313A}
+.swbed{background:#0D151A;padding:2px}
+.sw-line{width:120px;height:12px;display:block}
+.sw-chip{width:22px;height:22px;border-radius:3px;display:block}
+.sw-name{font-weight:600}
+.sw-hex{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12.5px;color:#92A0A8}
+.sw-desc{font-size:13px;color:#92A0A8}
+.gr{display:flex;gap:14px;flex-wrap:wrap}
+.gr .g{width:150px}
+.gr .box{height:52px;border:1px solid #22313A;border-radius:3px}
+.gr .lab{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;margin-top:6px;color:#92A0A8}
+.type-d{font-size:30px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin:4px 0}
+.type-b{font-size:15px;max-width:60ch;margin:6px 0}
+.type-m{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:13px;color:#92A0A8;margin:6px 0}
+.spec{font-size:13.5px;line-height:1.6;max-width:70ch;color:#92A0A8}
+.provdemo{max-width:340px;margin:10px 0 6px}
+.mocknote{max-width:880px;margin:0 auto;padding:14px 36px 30px;font-size:11px;color:#92A0A8;opacity:.8}
+
+</style>
+</head>
+<body>
+
+<div class="sheet">
+<h1>Direction B — Night expedition</h1>
+<p class="sub">Token sheet. The map room at night. Light is evidence: the brighter a line, the more it was actually measured.</p>
+
+<h2>LEG-KIND LIGHTS — RESERVED FIRST</h2>
+<p class="spec" style="margin-bottom:12px">The glow is the thesis and it belongs to observed alone.
+Routed is lit but cold. Unknown is dim and dashed — visible, never luminous; its dimness is its
+honesty. Air is a violet dotted arc. Kind is never hue alone: glow, dash, and arc geometry are the
+redundant channels.</p>
+<div class="sw">
+  <span class="swbed"><svg class="sw-line" viewBox="0 0 120 12" aria-hidden="true"><path class="leg k-observed" d="M4 6 L116 6"/></svg></span>
+  <span class="sw-chip" style="background:#FFC96B"></span>
+  <span class="sw-name">Observed</span><span class="sw-hex">#FFC96B</span>
+  <span class="sw-desc">incandescent amber with a soft glow — the only glow on the page</span>
+</div>
+<div class="sw">
+  <span class="swbed"><svg class="sw-line" viewBox="0 0 120 12" aria-hidden="true"><path class="leg k-routed" d="M4 6 L116 6"/></svg></span>
+  <span class="sw-chip" style="background:#56B8D8"></span>
+  <span class="sw-name">Routed</span><span class="sw-hex">#56B8D8</span>
+  <span class="sw-desc">cold cyan, solid, unglowing — computed light</span>
+</div>
+<div class="sw">
+  <span class="swbed"><svg class="sw-line" viewBox="0 0 120 12" aria-hidden="true"><path class="leg k-unknown" d="M4 6 L116 6"/></svg></span>
+  <span class="sw-chip" style="background:#6B7A85"></span>
+  <span class="sw-name">Unknown</span><span class="sw-hex">#6B7A85</span>
+  <span class="sw-desc">dim slate, dashed — ~4:1 on the ground, honest and quiet</span>
+</div>
+<div class="sw">
+  <span class="swbed"><svg class="sw-line" viewBox="0 0 120 12" aria-hidden="true"><path class="leg k-air" d="M4 6 L116 6"/></svg></span>
+  <span class="sw-chip" style="background:#C09BF2"></span>
+  <span class="sw-name">Air</span><span class="sw-hex">#C09BF2</span>
+  <span class="sw-desc">violet, round-dotted great-circle arc</span>
+</div>
+
+<h2>GROUND</h2>
+<div class="gr">
+  <div class="g"><div class="box" style="background:#0D151A"></div><div class="lab">#0D151A ground</div></div>
+  <div class="g"><div class="box" style="background:#16222A"></div><div class="lab">#16222A land</div></div>
+  <div class="g"><div class="box" style="background:#0B1216"></div><div class="lab">#0B1216 sea</div></div>
+  <div class="g"><div class="box" style="background:#E8E4DA"></div><div class="lab">#E8E4DA text</div></div>
+  <div class="g"><div class="box" style="background:#F07850"></div><div class="lab">#F07850 flag coral</div></div>
+</div>
+<p class="spec" style="margin-top:12px">Flag coral marks honesty warnings only. It is never amber —
+amber belongs to observed.</p>
+
+<h2>TYPE</h2>
+<p class="type-d">Westfjords, drawn honestly</p>
+<p class="type-m">display — heavy grotesk, tight tracking, uppercase · adventure names, day headings</p>
+<p class="type-b">Body text stays sentence-case and quiet; the instruments do the talking.</p>
+<p class="type-m">data — ui-monospace · every figure reads as an instrument</p>
+<p class="spec">Mockups use system stacks so the files open anywhere offline. Implementation candidates,
+self-hosted: display “Space Grotesk” or “Archivo”; data “IBM Plex Mono”. Stage C decision.</p>
+
+<h2>SIGNATURE — LIGHT AS EVIDENCE</h2>
+<p class="spec">The glow on observed geometry is the one bold element; everything else is a quiet
+instrument. Stat tiles, the light-key legend, and day headings are set in mono with hairline rules.
+Photos, when present, are lit windows on the dark field.</p>
+
+<h2>PROVENANCE BAR</h2>
+<div class="provdemo"><span class="provbar " aria-hidden="true"><span class="pv-observed" style="width:8.4%"></span><span class="pv-routed" style="width:1.6%"></span><span class="pv-air" style="width:90.1%"></span></span></div>
+<p class="spec">Every headline distance carries a bar of its kind-composition (here: Akureyri by air —
+53 km observed, 10 routed, 568 air). Invariant 8 applied to numbers, not just geometry.</p>
+
+<h2>LEGEND WORDING — IDENTICAL EVERYWHERE</h2>
+<p class="type-m">Observed — recorded fixes · Routed — inferred along roads · Unknown — straight line, nothing inferred · Air — great-circle arc</p>
+
+<h2>BASEMAP NOTE</h2>
+<p class="spec">Upstream dark styles are incomplete (RESEARCH §4), so this direction implies a
+Roadbook-tuned dark style JSON built in Maputnik and served via ROADBOOK_MAP_STYLE — an editable
+document, not a new dependency. The base recedes; only the legs emit light.</p>
+</div>
+<footer class="mocknote">Stage B mockup · fictional demo dataset · geometry captured from the committed demo instance (see README.md) · not a product screenshot</footer>
+
+</body>
+</html>

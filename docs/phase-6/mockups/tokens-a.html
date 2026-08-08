@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction A · Atlas plate — token sheet</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+.map-svg .sea{fill:#D9E2E4}
+.map-svg .land{fill:#EFECE2;stroke:#A8B6BA;stroke-width:.8}
+.map-svg .grat{stroke:#26251F;opacity:.07}
+.map-svg .grat-label{font:9px ui-monospace,'SF Mono',Menlo,Consolas,monospace;fill:#6E6A5E}
+.leg,.casing{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.casing{stroke:#F5F2E8;stroke-width:4.6}
+.k-observed{stroke:#A81E22;stroke-width:2.4}
+.k-routed{stroke:#2A5DA8;stroke-width:2}
+.k-unknown{stroke:#8A8375;stroke-width:1.8;stroke-dasharray:6 4}
+.k-air{stroke:#3F7069;stroke-width:1.9;stroke-dasharray:.1 5.5}
+.plane path{fill:#3F7069}
+.fix{fill:#A81E22;stroke:#F5F2E8;stroke-width:1.2}
+.map-svg .scalebar line{stroke:#26251F;stroke-width:1}
+.map-svg .scalebar-label{font:10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;fill:#26251F}
+.map-svg .dim{opacity:.18}
+.t2 .leg.k-observed,.t2 .leg.k-routed{stroke:#3A3A34;stroke-width:2.1}
+.t2 .casing{display:none}
+.t2 .fix{fill:#3A3A34}
+
+.provbar{display:flex;height:4px;width:100%;background:#C9C3B2;overflow:hidden}
+.provbar span{display:block;height:100%}
+.pv-observed{background:#A81E22}.pv-routed{background:#2A5DA8}
+.pv-unknown{background:#8A8375}.pv-air{background:#3F7069}
+
+body{background:#F5F2E8;color:#26251F;font-family:'Avenir Next',Avenir,'Segoe UI',system-ui,sans-serif;font-size:15px}
+.sheet{max-width:880px;margin:0 auto;padding:44px 36px 30px}
+h1{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;font-size:34px;font-weight:600}
+.sub{color:#6E6A5E;margin:6px 0 30px}
+h2{font-size:12px;letter-spacing:.26em;border-top:1px solid #26251F;padding-top:12px;margin:30px 0 14px}
+.sw{display:grid;grid-template-columns:120px 26px 110px 90px 1fr;gap:14px;align-items:center;padding:8px 0;border-bottom:1px solid #C9C3B2}
+.sw-line{width:120px;height:12px}
+.sw-chip{width:22px;height:22px;border:1px solid #26251F;display:block}
+.sw-name{font-weight:600}
+.sw-hex{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12.5px;color:#6E6A5E}
+.sw-desc{font-size:13px;color:#6E6A5E}
+.gr{display:flex;gap:14px;flex-wrap:wrap}
+.gr .g{width:150px}
+.gr .box{height:52px;border:1px solid #26251F}
+.gr .lab{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;margin-top:6px;color:#6E6A5E}
+.type-d{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;font-size:34px;font-weight:600;margin:4px 0}
+.type-b{font-size:15px;max-width:60ch;margin:6px 0}
+.type-m{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:13px;color:#6E6A5E;margin:6px 0}
+.spec{font-size:13.5px;line-height:1.6;max-width:70ch;color:#3B3A33}
+.provdemo{max-width:340px;margin:10px 0 6px}
+.mocknote{max-width:880px;margin:0 auto;padding:14px 36px 30px;font-size:11px;color:#6E6A5E;border-top:1px dashed #C9C3B2}
+
+</style>
+</head>
+<body>
+
+<div class="sheet">
+<h1>Direction A — Atlas plate</h1>
+<p class="sub">Token sheet. The printed road atlas and the rally roadbook as ancestors; the page reads as plates in a travel atlas of one life.</p>
+
+<h2>LEG-KIND INKS — RESERVED FIRST</h2>
+<p class="spec" style="margin-bottom:12px">The four kinds own the loudest channel on every surface.
+Nothing else on the page may use these hues at line weight. Kind is never hue alone: routed carries a
+paper casing (printed-road symbology), unknown is dashed, air is a dotted arc with a plane mark.</p>
+<div class="sw">
+  <svg class="sw-line" viewBox="0 0 120 12" aria-hidden="true"><path class="leg k-observed" d="M4 6 L116 6"/></svg>
+  <span class="sw-chip" style="background:#A81E22"></span>
+  <span class="sw-name">Observed</span><span class="sw-hex">#A81E22</span>
+  <span class="sw-desc">the traveller’s own red ink — solid, widest, uncased</span>
+</div>
+<div class="sw">
+  <svg class="sw-line" viewBox="0 0 120 12" aria-hidden="true"><path class="leg k-routed" d="M4 6 L116 6"/></svg>
+  <span class="sw-chip" style="background:#2A5DA8"></span>
+  <span class="sw-name">Routed</span><span class="sw-hex">#2A5DA8</span>
+  <span class="sw-desc">the printed road — solid blue over a paper casing</span>
+</div>
+<div class="sw">
+  <svg class="sw-line" viewBox="0 0 120 12" aria-hidden="true"><path class="leg k-unknown" d="M4 6 L116 6"/></svg>
+  <span class="sw-chip" style="background:#8A8375"></span>
+  <span class="sw-name">Unknown</span><span class="sw-hex">#8A8375</span>
+  <span class="sw-desc">warm grey, dashed — drawn, never asserted</span>
+</div>
+<div class="sw">
+  <svg class="sw-line" viewBox="0 0 120 12" aria-hidden="true"><path class="leg k-air" d="M4 6 L116 6"/></svg>
+  <span class="sw-chip" style="background:#3F7069"></span>
+  <span class="sw-name">Air</span><span class="sw-hex">#3F7069</span>
+  <span class="sw-desc">petrol, round-dotted great-circle arc</span>
+</div>
+
+<h2>GROUND</h2>
+<div class="gr">
+  <div class="g"><div class="box" style="background:#F5F2E8"></div><div class="lab">#F5F2E8 paper</div></div>
+  <div class="g"><div class="box" style="background:#EFECE2"></div><div class="lab">#EFECE2 land</div></div>
+  <div class="g"><div class="box" style="background:#D9E2E4"></div><div class="lab">#D9E2E4 sea</div></div>
+  <div class="g"><div class="box" style="background:#26251F"></div><div class="lab">#26251F ink</div></div>
+  <div class="g"><div class="box" style="background:#B97F10"></div><div class="lab">#B97F10 flag amber</div></div>
+</div>
+<p class="spec" style="margin-top:12px">Flag amber marks honesty warnings only (divergence, far-from-route
+photos). It never decorates.</p>
+
+<h2>TYPE</h2>
+<p class="type-d">Westfjords, drawn honestly</p>
+<p class="type-m">display — Iowan Old Style / Palatino stack · adventure names, plate labels (letterspaced small caps)</p>
+<p class="type-b">Body and interface text set in a quiet humanist sans; it explains and never performs.</p>
+<p class="type-m">data — ui-monospace · every distance, coordinate, time, and score</p>
+<p class="spec">Mockups use system stacks so the files open anywhere offline. Implementation candidates,
+self-hosted: display “Source Serif 4” or “Newsreader”; data “IBM Plex Mono”. Stage C decision.</p>
+
+<h2>SIGNATURE — THE PLATE MARGIN</h2>
+<p class="spec">Every map is framed by a double rule with its marginalia set into the margin: plate
+number, graticule ticks, scale bar, and the leg-kind legend. The legend is printed marginalia, not a
+floating widget — treatment T3 made structural. Days are numbered stages, after the rally roadbook.</p>
+
+<h2>PROVENANCE BAR</h2>
+<div class="provdemo"><span class="provbar " aria-hidden="true"><span class="pv-observed" style="width:8.4%"></span><span class="pv-routed" style="width:1.6%"></span><span class="pv-air" style="width:90.1%"></span></span></div>
+<p class="spec">Every headline distance carries a hairline bar of its kind-composition (here: Akureyri
+by air — 53 km observed, 10 routed, 568 air). Invariant 8 applied to numbers, not just geometry.</p>
+
+<h2>LEGEND WORDING — IDENTICAL EVERYWHERE</h2>
+<p class="type-m">Observed — recorded fixes · Routed — inferred along roads · Unknown — straight line, nothing inferred · Air — great-circle arc</p>
+
+<h2>BASEMAP NOTE</h2>
+<p class="spec">Terrain-muted light base: Positron-class or a Roadbook-tuned Maputnik style served via
+ROADBOOK_MAP_STYLE. The basemap’s job is to recede; nothing on it may compete with the leg-kind inks.</p>
+</div>
+<footer class="mocknote">Stage B mockup · fictional demo dataset · geometry captured from the committed demo instance (see README.md) · not a product screenshot</footer>
+
+</body>
+</html>

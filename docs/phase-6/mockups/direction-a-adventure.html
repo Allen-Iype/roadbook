@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction A · Atlas plate — Westfjords</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+.map-svg .sea{fill:#D9E2E4}
+.map-svg .land{fill:#EFECE2;stroke:#A8B6BA;stroke-width:.8}
+.map-svg .grat{stroke:#26251F;opacity:.07}
+.map-svg .grat-label{font:9px ui-monospace,'SF Mono',Menlo,Consolas,monospace;fill:#6E6A5E}
+.leg,.casing{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.casing{stroke:#F5F2E8;stroke-width:4.6}
+.k-observed{stroke:#A81E22;stroke-width:2.4}
+.k-routed{stroke:#2A5DA8;stroke-width:2}
+.k-unknown{stroke:#8A8375;stroke-width:1.8;stroke-dasharray:6 4}
+.k-air{stroke:#3F7069;stroke-width:1.9;stroke-dasharray:.1 5.5}
+.plane path{fill:#3F7069}
+.fix{fill:#A81E22;stroke:#F5F2E8;stroke-width:1.2}
+.map-svg .scalebar line{stroke:#26251F;stroke-width:1}
+.map-svg .scalebar-label{font:10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;fill:#26251F}
+.map-svg .dim{opacity:.18}
+.t2 .leg.k-observed,.t2 .leg.k-routed{stroke:#3A3A34;stroke-width:2.1}
+.t2 .casing{display:none}
+.t2 .fix{fill:#3A3A34}
+
+.provbar{display:flex;height:4px;width:100%;background:#C9C3B2;overflow:hidden}
+.provbar span{display:block;height:100%}
+.pv-observed{background:#A81E22}.pv-routed{background:#2A5DA8}
+.pv-unknown{background:#8A8375}.pv-air{background:#3F7069}
+
+body{background:#F5F2E8;color:#26251F;font-family:'Avenir Next',Avenir,'Segoe UI',system-ui,sans-serif;font-size:15px}
+a{color:inherit}
+.masthead{display:flex;justify-content:space-between;align-items:baseline;max-width:1460px;margin:0 auto;padding:24px 36px 6px}
+.crumb{font-size:13px;color:#6E6A5E}.crumb a{text-decoration:none;border-bottom:1px solid #C9C3B2}
+.brandmini{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;font-size:15px;letter-spacing:.28em}
+.layout{display:grid;grid-template-columns:minmax(420px,520px) minmax(0,1fr);gap:40px;
+  max-width:1460px;margin:0 auto;padding:18px 36px 30px;align-items:start}
+.eyebrow{font-size:11.5px;letter-spacing:.24em;color:#6E6A5E;margin-bottom:10px}
+h1{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;font-size:52px;font-weight:600;line-height:1.02;margin-bottom:10px}
+.dateline{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:13px;color:#6E6A5E;margin-bottom:26px}
+.hero{border-top:1px solid #26251F;border-bottom:1px solid #C9C3B2;padding:18px 0 16px;margin-bottom:14px}
+.hero .big{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;font-size:40px;font-weight:600;line-height:1}
+.hero .big small{font-size:16px;font-family:'Avenir Next',Avenir,'Segoe UI',system-ui,sans-serif;color:#6E6A5E;margin-left:8px}
+.hero .provbar{margin:12px 0 7px}
+.hero .parts{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12px;color:#6E6A5E}
+.flagnote{display:flex;gap:9px;font-size:13px;color:#26251F;background:#F0E9D4;
+  border-left:3px solid #B97F10;padding:10px 12px;margin-bottom:14px}
+.flagnote .fmark{color:#B97F10;font-weight:700}
+.marginalia{font-size:11.5px;letter-spacing:.18em;color:#6E6A5E;margin-bottom:30px}
+.stage{border-top:1px solid #C9C3B2;padding:16px 0 6px}
+.stage.active{border-top:2px solid #26251F}
+.stage h2{display:flex;align-items:baseline;gap:14px;margin-bottom:12px}
+.stg{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;font-size:13px;letter-spacing:.22em;font-weight:600}
+.stage.active .stg{border-bottom:2px solid #26251F;padding-bottom:2px}
+.date{font-size:14px;color:#6E6A5E}
+.skm{margin-left:auto;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:13px}
+.events{list-style:none;margin-bottom:10px}
+.events li{display:flex;gap:10px;align-items:baseline;padding:5px 0;font-size:14px}
+.events .t{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12px;color:#6E6A5E;min-width:86px}
+.etext .muted{color:#6E6A5E}
+.chip{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:1.5px 7px;border:1px solid}
+.chip-observed{color:#A81E22;border-color:#A81E22}
+.chip-routed{color:#2A5DA8;border-color:#2A5DA8}
+.chip-dwell{color:#6E6A5E;border-color:#C9C3B2}
+.chip-plain{color:#6E6A5E;border-color:#C9C3B2}
+.stagenote{font-size:13.5px;color:#6E6A5E;font-style:italic;margin:2px 0 10px;max-width:44ch}
+.photoline{border-top:1px solid #C9C3B2;margin-top:8px;padding:14px 0;font-size:13px;color:#6E6A5E}
+.mapcol{position:sticky;top:20px}
+.plate{border:1px solid #26251F;outline:1px solid #26251F;outline-offset:3px;background:#D9E2E4}
+.plate .map-svg{display:block;width:100%;height:auto;max-height:82vh}
+.plate-margin{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+  border:1px solid #26251F;border-top:0;outline:1px solid #26251F;outline-offset:3px;
+  background:#F5F2E8;padding:9px 14px}
+.plate-no{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;font-size:11.5px;letter-spacing:.22em}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px}
+.lg-row{display:inline-flex;align-items:center;gap:6px}
+.lg-sample{width:36px;height:8px;display:block}
+.lg-name{letter-spacing:.05em;font-weight:600}
+.lg-desc{display:none}
+.mocknote{max-width:1460px;margin:0 auto;padding:16px 36px 26px;font-size:11px;color:#6E6A5E;
+  border-top:1px dashed #C9C3B2}
+@media (max-width:1000px){.layout{grid-template-columns:1fr}.mapcol{position:static}}
+
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <span class="crumb"><a href="#">← Life map</a></span>
+  <span class="brandmini">ROADBOOK</span>
+</header>
+<main class="layout">
+  <article>
+    <p class="eyebrow">CONFIRMED ADVENTURE · PLATE II</p>
+    <h1>Westfjords</h1>
+    <p class="dateline">22–24 May 2026 · Iceland · 3 stages · 4 fixes</p>
+    <div class="hero">
+      <div class="big">240 km<small>drawn — every metre of it inferred along roads</small></div>
+      <span class="provbar " aria-hidden="true"><span class="pv-routed" style="width:100.0%"></span></span>
+      <div class="parts">observed 0 km · routed 240 km · unknown 0 km · air 0 km</div>
+    </div>
+    <div class="flagnote"><span class="fmark">⚑</span><span>Distance check flagged: Google’s own figure
+      for this span is 910 km; the window draws 240 km (−74%).
+      The detection window cuts at the home boundary; Google’s figure is door to door.</span></div>
+    <p class="marginalia">SCORE 43.8 · CONFIRMED 6 AUG 2026</p>
+    
+<section class="stage" aria-current="false">
+  <h2><span class="stg">STAGE 1</span><span class="date">Friday 22 May</span><span class="skm">160 km</span></h2>
+  <ol class="events"><li><span class="t">15:10</span><span class="chip chip-observed">fix</span><span class="etext">Departure fix — 64.54°N 21.92°W</span></li><li><span class="t">15:10–17:30</span><span class="chip chip-routed">routed</span><span class="etext">Routed transit — <b>160.0 km</b> along roads <span class='muted'>(straight line 130.3 km)</span></span></li><li><span class="t">17:30</span><span class="chip chip-observed">fix</span><span class="etext">Arrival fix — 65.71°N 21.67°W</span></li><li><span class="t">20:00</span><span class="chip chip-dwell">dwell</span><span class="etext">Dwell begins</span></li></ol>
+  
+</section>
+<section class="stage" aria-current="false">
+  <h2><span class="stg">STAGE 2</span><span class="date">Saturday 23 May</span><span class="skm">no movement observed</span></h2>
+  <ol class="events"><li><span class="t">all day</span><span class="chip chip-dwell">dwell</span><span class="etext">Dwelling; no movement observed</span></li></ol>
+  <p class="stagenote">Dwelling near 65.71°N 21.67°W. No fixes between Friday 20:00 and Sunday 10:00 — 38 hours the record cannot describe, so this page does not try.</p>
+</section>
+<section class="stage active" aria-current="true">
+  <h2><span class="stg">STAGE 3</span><span class="date">Sunday 24 May</span><span class="skm">80 km</span></h2>
+  <ol class="events"><li><span class="t">10:00</span><span class="chip chip-dwell">dwell</span><span class="etext">Dwell ends (37 h 59 min)</span></li><li><span class="t">10:00–13:00</span><span class="chip chip-routed">routed</span><span class="etext">Routed transit — <b>80.3 km</b> along roads <span class='muted'>(straight line 66.9 km)</span></span></li><li><span class="t">13:00</span><span class="chip chip-observed">fix</span><span class="etext">Fix — 65.11°N 21.77°W</span></li><li><span class="t">13:01</span><span class="chip chip-plain">window</span><span class="etext">Window ends — back inside home range</span></li></ol>
+  
+</section>
+    <p class="photoline">PHOTOGRAPHS — none attached to this adventure.</p>
+  </article>
+  <aside class="mapcol">
+    <div class="plate">
+      <svg class="map-svg " viewBox="0 0 760 980" role="img" aria-label="Westfjords route, stage 3 highlighted" preserveAspectRatio="xMidYMid meet">
+<rect class="sea" x="0" y="0" width="760" height="980"/>
+<path class="land" d="M2396.4 -374.4 L2286.6 -240.0 L2251.6 -139.7 L2384.8 -80.2 L2318.1 44.1 L2450.3 74.2 L2401.6 216.4 L2488.9 133.6 L2608.3 196.2 L2654.3 214.7 L2648.7 322.0 L2603.0 376.2 L2554.8 449.0 L2627.3 484.2 L2670.9 493.3 L2666.0 552.8 L2585.3 544.8 L2590.6 587.3 L2620.6 668.1 L2547.7 713.4 L2432.7 712.9 L2456.0 781.5 L2394.0 843.8 L2424.0 884.7 L2402.9 967.5 L2345.2 973.2 L2295.6 1018.0 L2274.4 1062.7 L2216.2 1059.5 L2193.7 1041.4 L2162.7 992.9 L2135.6 1062.7 L2066.0 1116.8 L1936.0 1197.3 L1871.2 1272.6 L1774.0 1332.7 L1736.7 1326.6 L1728.8 1361.2 L1724.8 1298.5 L1706.6 1350.3 L1554.4 1382.5 L1523.4 1396.2 L1472.5 1400.5 L1448.5 1444.7 L1437.9 1473.7 L1375.5 1545.5 L1342.5 1545.2 L1118.9 1604.0 L936.6 1529.8 L842.1 1521.5 L764.4 1478.1 L724.9 1421.1 L738.3 1382.0 L735.9 1353.2 L660.9 1377.6 L657.9 1373.2 L629.0 1373.2 L530.3 1260.0 L474.2 1314.0 L200.0 1320.7 L107.2 1351.6 L98.7 1272.9 L92.3 1192.5 L182.9 1245.8 L283.6 1199.8 L305.4 1157.1 L333.2 1131.7 L353.6 1119.0 L349.7 1083.8 L324.9 1059.2 L342.2 1046.9 L350.7 1037.2 L356.9 1026.1 L361.7 1012.7 L364.4 1008.9 L369.2 1005.9 L375.4 1004.4 L393.2 1006.3 L387.6 1003.8 L385.1 1001.4 L382.9 1001.4 L394.4 991.7 L400.5 988.7 L407.2 987.6 L446.1 998.0 L452.7 996.5 L460.6 983.5 L447.9 990.8 L441.1 987.6 L441.1 983.5 L446.1 982.6 L450.6 979.1 L450.8 976.1 L448.9 974.6 L450.6 974.6 L399.3 971.3 L375.1 977.1 L353.8 996.5 L350.4 1006.7 L348.0 1010.3 L345.6 1012.2 L333.0 1016.1 L320.2 1025.5 L316.2 1030.5 L305.6 1040.1 L292.2 1038.3 L266.8 1028.5 L266.8 1023.7 L278.7 1016.6 L289.9 1005.9 L299.3 992.5 L305.4 988.7 L311.5 992.5 L316.7 986.9 L329.2 982.8 L334.7 979.1 L309.5 976.3 L301.7 979.1 L296.3 982.9 L291.8 984.3 L287.5 980.8 L282.2 969.7 L286.0 963.6 L286.8 946.5 L289.0 936.4 L290.9 935.6 L295.1 937.8 L296.5 926.4 L301.7 912.0 L302.1 905.1 L309.2 898.4 L341.0 881.9 L357.8 880.2 L356.5 874.4 L353.8 871.1 L350.3 870.0 L346.3 870.8 L346.3 866.7 L351.4 861.8 L362.2 847.0 L371.7 842.7 L379.0 834.9 L382.8 834.0 L394.7 834.9 L393.5 846.7 L399.2 848.6 L406.5 848.8 L413.8 860.3 L437.3 861.8 L432.6 858.1 L422.8 859.1 L417.8 857.7 L413.7 853.2 L407.5 843.1 L402.4 839.8 L414.0 834.9 L414.0 830.8 L384.8 830.8 L384.8 825.8 L401.0 815.9 L406.2 810.3 L410.9 809.1 L433.3 812.8 L433.3 807.9 L411.3 803.1 L404.3 803.3 L386.2 820.3 L379.0 821.3 L379.0 816.8 L386.4 809.7 L389.2 804.9 L390.8 798.4 L373.7 816.2 L371.8 831.4 L353.8 848.3 L339.1 854.0 L334.7 857.7 L336.4 866.7 L328.1 863.8 L320.1 866.0 L303.6 880.2 L296.9 888.3 L292.5 891.1 L288.0 889.2 L285.0 882.8 L285.4 876.3 L289.9 861.8 L284.1 863.8 L281.3 871.1 L280.5 891.4 L272.6 907.1 L271.0 921.5 L268.7 925.4 L258.6 925.3 L256.0 930.1 L248.5 934.0 L243.9 931.8 L238.8 926.0 L234.4 917.4 L231.9 907.1 L227.3 913.5 L222.2 916.1 L229.7 897.5 L230.9 887.6 L228.0 880.2 L231.9 875.7 L227.4 871.5 L222.2 870.8 L226.3 861.8 L226.3 857.7 L213.3 867.5 L205.3 871.4 L199.1 870.8 L194.0 862.8 L192.0 852.0 L193.0 841.6 L197.0 834.9 L197.0 830.8 L192.1 829.8 L184.6 816.8 L180.9 814.9 L176.8 810.2 L170.0 798.4 L177.0 801.6 L184.4 809.1 L191.9 813.7 L199.1 807.9 L193.1 807.9 L194.8 800.4 L197.5 795.4 L204.7 789.8 L200.8 785.3 L200.8 780.8 L233.6 764.2 L241.7 753.7 L241.7 749.2 L224.2 764.5 L214.9 769.5 L205.8 771.3 L198.1 776.3 L189.4 785.7 L181.4 791.4 L175.8 785.3 L179.5 782.6 L196.4 760.5 L199.1 753.7 L197.0 749.2 L199.5 748.0 L204.7 740.1 L198.4 732.7 L189.9 730.3 L171.7 731.1 L175.8 722.0 L170.0 722.0 L179.6 694.4 L176.7 695.2 L174.1 697.9 L170.0 708.0 L168.2 701.8 L165.9 699.3 L163.2 700.1 L160.3 703.5 L160.3 708.0 L144.7 703.5 L140.3 705.7 L132.0 715.1 L127.4 717.1 L127.4 722.0 L135.1 726.5 L109.1 731.6 L102.3 726.5 L112.3 726.9 L114.7 724.3 L111.0 715.1 L105.0 708.0 L75.1 708.0 L79.5 712.9 L94.4 722.0 L94.4 726.5 L86.8 726.2 L73.5 714.4 L65.4 712.9 L67.4 712.9 L31.9 709.7 L-1.8 709.7 L-40.7 706.8 L-57.1 689.3 L-72.8 688.1 L-143.2 699.0 L-254.9 735.5 L-167.8 644.0 L-83.5 601.3 L-79.4 611.9 L-77.2 607.4 L-74.0 607.6 L-72.9 623.4 L-71.5 628.2 L-66.3 621.3 L-61.9 625.5 L-56.8 623.0 L-52.6 616.7 L-50.8 610.1 L-55.5 585.1 L-54.7 575.7 L-46.9 565.0 L-35.2 562.9 L-12.1 566.5 L-14.2 574.2 L-17.7 579.4 L-25.8 585.2 L-23.6 594.4 L-27.0 595.1 L-29.3 597.6 L-33.5 607.6 L-17.9 630.8 L-19.8 612.3 L-18.5 605.1 L-15.7 598.5 L-6.3 594.4 L-1.4 578.0 L6.4 567.6 L14.5 566.8 L22.2 573.4 L28.6 585.2 L33.1 578.3 L39.0 574.0 L56.3 569.7 L73.2 557.8 L68.7 554.9 L48.1 557.8 L48.1 552.8 L60.0 550.1 L81.1 528.1 L92.3 525.4 L88.6 530.0 L93.6 531.4 L98.4 534.6 L98.4 543.3 L94.5 549.1 L85.9 553.9 L82.8 557.8 L86.5 558.9 L91.3 558.5 L96.1 556.6 L100.2 552.8 L102.1 565.8 L104.5 571.2 L113.9 575.7 L126.5 587.4 L131.2 589.4 L131.2 585.2 L127.7 583.1 L124.5 578.9 L117.5 566.5 L125.2 556.2 L129.4 553.0 L135.1 552.8 L135.6 544.0 L140.9 541.4 L164.5 542.5 L187.7 536.9 L225.9 544.7 L251.2 557.8 L254.1 556.1 L258.4 550.1 L261.0 548.3 L282.2 548.3 L288.0 550.9 L294.0 555.7 L300.0 557.9 L305.4 552.8 L312.8 557.9 L344.1 552.8 L351.7 546.4 L351.9 538.1 L346.9 531.5 L338.4 530.0 L341.2 521.1 L344.6 518.2 L348.7 516.5 L353.8 511.7 L357.4 503.9 L369.2 469.6 L370.2 446.2 L361.1 436.7 L348.9 437.9 L340.1 447.0 L340.1 451.6 L342.2 451.6 L342.2 456.6 L299.6 493.3 L285.5 499.3 L204.9 483.5 L184.6 466.8 L181.6 465.4 L176.2 468.8 L150.4 472.9 L142.8 469.6 L137.5 463.0 L141.8 460.1 L150.1 457.5 L156.5 451.6 L160.7 456.5 L165.9 456.6 L165.9 451.6 L159.7 446.9 L152.5 446.2 L138.9 451.6 L141.8 441.6 L147.0 432.0 L156.5 419.4 L169.6 413.1 L174.6 407.4 L173.9 396.4 L178.0 394.5 L188.2 396.4 L190.7 393.7 L199.1 377.5 L206.6 371.6 L238.2 362.6 L264.8 341.9 L275.0 328.9 L293.1 319.5 L299.6 312.3 L297.8 311.1 L297.8 308.1 L302.1 308.6 L309.0 316.4 L313.3 316.9 L309.4 303.0 L327.0 292.7 L363.6 281.1 L381.1 270.6 L354.0 279.6 L344.1 279.8 L324.0 275.2 L307.2 280.2 L301.7 279.8 L307.3 269.3 L313.3 261.3 L303.1 251.1 L299.3 243.7 L297.8 233.3 L290.3 237.8 L282.2 238.0 L283.8 247.6 L281.3 250.6 L277.3 249.7 L274.4 247.3 L266.5 224.9 L262.8 219.4 L264.2 230.9 L263.6 240.5 L261.1 249.0 L257.0 256.6 L252.0 262.9 L246.5 266.3 L241.5 282.0 L238.8 284.9 L228.1 285.9 L223.3 283.9 L215.7 271.9 L199.1 256.6 L187.2 250.5 L185.6 244.5 L191.2 233.3 L197.3 228.8 L228.6 221.9 L241.7 212.6 L248.5 210.5 L251.6 207.5 L253.1 186.3 L258.7 177.8 L264.9 172.8 L256.5 175.1 L235.8 205.4 L226.1 213.5 L216.9 217.9 L197.0 219.4 L197.0 214.7 L209.0 206.0 L212.6 201.2 L212.6 196.1 L206.7 196.5 L195.2 210.5 L189.4 212.8 L182.5 206.2 L177.5 205.4 L177.5 210.5 L181.0 215.7 L179.5 221.9 L175.4 227.0 L159.8 233.3 L155.6 231.2 L152.6 219.4 L153.3 191.3 L149.6 179.7 L144.2 155.6 L140.8 147.2 L137.3 153.6 L137.7 172.0 L142.2 186.5 L142.2 192.1 L140.6 197.4 L132.1 214.1 L128.6 214.5 L124.4 208.0 L119.0 195.0 L116.6 193.9 L114.8 211.7 L112.7 217.1 L109.6 219.7 L106.0 219.4 L103.8 216.4 L95.1 189.5 L93.9 178.4 L95.9 166.9 L102.3 154.0 L99.7 150.3 L96.9 153.6 L94.4 154.0 L86.8 148.9 L82.1 148.9 L80.5 150.1 L79.1 154.0 L79.3 158.0 L81.8 172.8 L84.6 181.2 L92.3 233.3 L88.3 237.6 L78.3 233.9 L73.2 233.3 L74.8 223.4 L73.4 218.8 L70.2 215.8 L66.4 214.7 L57.0 217.8 L53.9 216.9 L53.7 210.5 L44.2 210.5 L44.2 205.4 L51.1 198.5 L63.7 181.1 L71.2 177.4 L68.4 169.9 L63.7 164.7 L53.7 158.3 L52.1 173.5 L46.4 186.6 L39.2 193.2 L33.4 188.9 L28.6 166.2 L25.6 163.4 L22.6 196.1 L16.6 203.9 L-0.3 208.1 L-8.3 212.6 L-23.9 204.9 L-32.2 196.4 L-31.4 182.0 L-39.3 186.7 L-44.1 200.2 L-44.4 215.1 L-39.1 224.0 L-39.1 229.1 L-52.9 247.3 L-57.5 248.7 L-76.3 246.5 L-92.9 240.0 L-174.4 267.4 L-261.0 262.7 L-375.0 180.8 L-248.3 219.4 L-252.0 144.3 L-308.3 40.7 L-127.1 143.0 L-76.5 121.0 L-72.1 120.4 L-68.2 116.2 L-101.7 119.0 L-75.0 68.8 L-62.7 73.6 L-56.6 74.2 L-50.8 68.8 L-56.2 64.1 L-58.6 64.1 L-58.6 59.9 L-45.2 50.5 L-41.2 45.3 L-56.7 47.6 L-65.6 51.7 L-77.7 62.8 L-200.9 40.8 L-87.7 -11.2 L-67.5 3.7 L-56.6 8.3 L-46.8 3.4 L-70.2 -4.2 L-77.6 -13.7 L-203.2 -91.3 L-93.5 -101.1 L-106.0 -179.5 L-73.5 -234.8 L17.1 -146.6 L32.5 -139.5 L38.0 -74.9 L28.6 -68.3 L40.0 -69.1 L45.1 -71.8 L49.8 -77.8 L64.6 -70.4 L62.0 -54.1 L63.5 -44.3 L73.2 -77.8 L83.0 -145.9 L130.6 -71.5 L127.7 -57.1 L125.4 -53.7 L127.4 -49.4 L112.8 -8.6 L109.8 4.1 L111.9 10.0 L115.6 8.9 L122.2 -17.8 L140.9 -68.4 L156.0 -72.0 L160.3 -63.2 L162.4 -62.7 L164.0 -64.3 L165.8 -64.3 L168.1 -58.4 L166.1 -42.8 L170.0 -39.5 L173.7 -55.2 L175.8 -53.7 L173.9 -25.3 L171.5 -17.6 L162.3 3.4 L162.3 7.7 L173.1 1.5 L184.1 -37.0 L193.1 -44.3 L193.1 -49.4 L187.3 -55.8 L164.0 -151.0 L32.0 -277.2 L151.0 -278.6 L162.3 -326.7 L123.3 -365.2 L36.3 -324.1 L-25.8 -408.5 L49.7 -414.6 L132.7 -431.9 L226.3 -355.1 L237.7 -297.0 L300.9 -297.3 L339.2 -239.9 L373.3 -162.4 L421.1 -132.5 L410.4 -77.7 L406.2 -77.8 L411.4 -68.0 L419.3 -69.1 L435.3 -77.8 L461.8 -82.6 L470.1 -77.8 L466.7 -71.9 L454.5 -63.2 L454.5 -58.4 L484.9 -67.2 L492.4 -60.8 L496.5 -46.8 L497.4 -34.9 L494.0 -25.9 L485.5 -20.6 L499.0 -11.2 L499.0 -6.1 L485.0 27.0 L479.9 35.9 L471.6 43.6 L442.9 54.8 L442.9 59.9 L449.0 60.4 L459.5 58.3 L464.3 59.9 L479.3 69.6 L483.8 74.0 L460.6 102.1 L452.3 108.5 L414.0 106.8 L405.3 92.8 L399.8 88.7 L394.7 79.6 L391.3 70.0 L390.8 64.1 L383.8 54.2 L375.1 49.4 L366.0 49.7 L357.8 54.8 L363.3 55.6 L376.6 64.4 L381.1 68.8 L388.9 82.9 L389.6 91.2 L388.7 96.7 L382.9 106.8 L389.8 114.9 L392.3 127.6 L395.5 132.8 L405.3 142.1 L452.4 140.8 L460.6 145.1 L464.3 154.0 L461.4 161.8 L446.8 185.2 L441.1 191.4 L441.1 196.1 L454.8 188.4 L472.1 172.6 L486.9 169.2 L493.2 198.6 L487.3 223.6 L473.1 247.6 L456.5 265.0 L442.9 270.6 L442.9 275.2 L471.4 264.1 L482.4 254.2 L488.5 251.9 L494.8 253.3 L498.9 257.0 L506.9 270.6 L517.7 280.9 L520.6 287.5 L518.5 298.8 L522.5 301.3 L523.1 306.4 L522.5 322.0 L524.3 347.4 L523.1 367.7 L534.1 403.2 L538.0 410.2 L535.9 414.3 L541.5 420.4 L547.2 431.6 L550.2 444.8 L547.6 460.8 L552.2 464.8 L556.9 460.9 L559.1 451.6 L555.0 435.2 L553.4 419.4 L543.7 396.4 L549.5 386.7 L548.5 380.8 L555.3 368.6 L556.8 358.2 L556.7 348.8 L550.8 297.5 L549.7 275.9 L553.3 266.3 L562.0 271.3 L568.1 283.4 L576.7 312.3 L585.0 328.9 L588.1 338.5 L597.7 341.6 L601.6 345.1 L603.7 340.0 L596.4 324.4 L589.7 303.6 L584.7 281.3 L582.3 261.3 L581.2 234.2 L582.3 224.0 L588.3 210.5 L592.2 186.3 L600.8 169.6 L632.7 144.3 L650.0 120.9 L660.7 116.4 L664.7 113.5 L665.6 106.8 L669.4 106.2 L672.1 108.3 L677.4 116.2 L683.2 116.2 L684.0 122.1 L681.1 126.0 L679.1 153.4 L678.9 167.2 L681.1 177.4 L677.7 188.9 L677.5 200.8 L680.6 208.0 L686.9 205.4 L684.0 192.9 L684.5 181.9 L688.1 176.7 L694.8 182.0 L697.2 186.5 L698.5 201.2 L696.7 214.7 L697.7 214.5 L704.6 219.4 L709.0 233.8 L712.1 238.0 L718.7 242.2 L725.8 242.2 L732.1 237.8 L734.5 230.5 L739.3 205.4 L736.1 202.5 L731.7 193.4 L728.5 191.4 L718.8 192.3 L714.1 190.9 L710.2 186.3 L719.6 182.7 L728.5 182.0 L732.3 180.6 L740.1 174.2 L744.1 172.8 L747.7 179.2 L746.6 209.6 L750.7 219.4 L749.7 208.4 L754.1 192.3 L750.7 182.0 L753.9 173.0 L767.4 151.5 L768.8 135.3 L770.2 130.2 L772.8 127.6 L778.0 127.7 L783.9 126.0 L777.6 124.7 L773.7 116.2 L773.2 106.7 L780.7 99.4 L783.5 92.4 L785.8 71.4 L783.6 53.7 L778.1 37.6 L771.1 24.8 L764.4 17.5 L764.4 12.4 L771.9 5.3 L769.1 -14.8 L761.7 -37.2 L749.0 -68.1 L738.3 -119.6 L803.5 -193.7 L873.0 -106.2 L929.2 -24.6 L965.1 65.7 L1013.9 82.1 L1005.6 -92.0 L1091.2 -162.9 L1116.9 -173.2 L1170.8 -213.6 L1242.4 -206.1 L1276.5 -136.5 L1350.9 -19.1 L1386.2 92.8 L1396.8 72.7 L1395.3 -34.9 L1363.6 -73.0 L1374.4 -228.2 L1460.9 -185.4 L1553.8 -57.4 L1592.7 -82.7 L1608.4 -172.8 L1702.7 -249.6 L1734.7 -187.6 L1800.5 -198.3 L1846.9 -244.3 L1866.2 -268.7 L1846.9 -403.7 L1864.5 -470.4 L1894.7 -457.8 L1929.7 -457.6 L2010.5 -428.0 L2063.7 -389.2 L2079.0 -285.9 L2136.9 -242.2 L2179.5 -287.8 L2335.9 -368.3 Z"/>
+<line class="grat" x1="12.5" y1="0" x2="12.5" y2="980"/>
+<text class="grat-label" x="16.5" y="974">23°W</text>
+<line class="grat" x1="153.8" y1="0" x2="153.8" y2="980"/>
+<text class="grat-label" x="157.8" y="974">22.5°W</text>
+<line class="grat" x1="295.0" y1="0" x2="295.0" y2="980"/>
+<text class="grat-label" x="299.0" y="974">22°W</text>
+<line class="grat" x1="436.3" y1="0" x2="436.3" y2="980"/>
+<text class="grat-label" x="440.3" y="974">21.5°W</text>
+<line class="grat" x1="577.6" y1="0" x2="577.6" y2="980"/>
+<text class="grat-label" x="581.6" y="974">21°W</text>
+<line class="grat" x1="718.9" y1="0" x2="718.9" y2="980"/>
+<text class="grat-label" x="722.9" y="974">20.5°W</text>
+<line class="grat" x1="0" y1="907.5" x2="760" y2="907.5"/>
+<text class="grat-label" x="6" y="903.5">64.5°N</text>
+<line class="grat" x1="0" y1="576.3" x2="760" y2="576.3"/>
+<text class="grat-label" x="6" y="572.3">65°N</text>
+<line class="grat" x1="0" y1="238.8" x2="760" y2="238.8"/>
+<text class="grat-label" x="6" y="234.8">65.5°N</text>
+<path class="casing dim" d="M317.5 882.0 L320.4 878.1 L320.4 875.3 L328.2 858.0 L343.1 843.9 L345.8 836.6 L354.2 829.7 L359.2 822.8 L362.2 813.3 L366.1 811.5 L371.3 804.2 L376.1 802.9 L379.8 797.6 L388.8 793.3 L399.1 776.7 L401.8 769.4 L406.3 764.0 L414.4 743.8 L420.4 736.6 L421.7 732.7 L426.6 729.9 L434.0 722.7 L435.2 717.7 L437.9 714.9 L446.2 708.9 L443.6 706.8 L444.7 699.4 L438.5 686.1 L439.2 681.9 L437.0 676.6 L433.6 673.8 L430.7 667.9 L431.6 664.5 L430.4 661.5 L432.3 658.3 L432.6 651.4 L431.4 647.5 L432.5 639.6 L428.3 633.1 L426.8 626.6 L423.1 621.3 L421.6 612.2 L422.7 597.8 L417.8 592.4 L411.5 589.1 L401.5 578.7 L394.2 564.4 L382.0 550.3 L379.6 540.6 L361.5 533.6 L358.3 526.8 L358.7 525.0 L367.1 516.6 L361.5 504.8 L372.0 487.0 L372.1 479.2 L377.7 471.1 L379.2 463.6 L375.2 455.8 L376.5 446.0 L375.0 438.1 L362.5 423.3 L360.2 418.5 L360.3 406.4 L364.9 394.6 L368.4 370.3 L366.7 349.9 L359.8 337.0 L341.6 330.2 L335.5 326.7 L331.4 322.4 L328.1 311.5 L328.7 299.3 L325.4 292.3 L325.9 279.3 L323.5 275.0 L316.8 271.2 L316.7 269.3 L319.5 264.8 L319.1 260.2 L317.9 257.3 L313.8 253.5 L321.2 249.0 L324.5 245.3 L330.9 230.6 L331.4 226.6 L337.0 220.0 L340.1 211.3 L342.6 208.1 L342.9 201.4 L350.4 195.4 L351.4 190.8 L363.0 172.8 L370.1 154.3 L374.2 150.2 L376.4 144.5 L386.3 135.0 L388.5 129.8 L389.5 117.4 L386.3 113.2 L381.4 109.8 L380.5 107.2 L381.2 100.9 L384.6 100.9 L388.3 98.0"/>
+<path class="casing" d="M388.3 98.0 L384.6 100.9 L381.2 100.9 L380.5 107.2 L381.4 109.8 L386.3 113.2 L389.5 117.4 L388.5 129.8 L386.3 135.0 L376.4 144.5 L374.2 150.2 L370.1 154.3 L363.0 172.8 L351.4 190.8 L350.4 195.4 L342.9 201.4 L342.6 208.1 L340.1 211.3 L337.0 220.0 L331.4 226.6 L330.9 230.6 L324.5 245.3 L321.2 249.0 L313.8 253.5 L317.9 257.3 L319.1 260.2 L319.5 264.8 L316.7 269.3 L316.8 271.2 L323.5 275.0 L325.9 279.3 L325.4 292.3 L328.7 299.3 L328.1 311.5 L331.4 322.4 L335.5 326.7 L341.6 330.2 L359.8 337.0 L366.7 349.6 L368.4 370.3 L364.9 394.6 L360.3 406.4 L360.2 418.5 L362.5 423.3 L375.0 438.1 L376.5 446.0 L375.2 455.8 L379.2 463.6 L377.7 471.1 L372.1 479.2 L372.0 487.0 L361.4 505.3 L360.0 505.3"/>
+<path class="leg k-routed dim" d="M317.5 882.0 L320.4 878.1 L320.4 875.3 L328.2 858.0 L343.1 843.9 L345.8 836.6 L354.2 829.7 L359.2 822.8 L362.2 813.3 L366.1 811.5 L371.3 804.2 L376.1 802.9 L379.8 797.6 L388.8 793.3 L399.1 776.7 L401.8 769.4 L406.3 764.0 L414.4 743.8 L420.4 736.6 L421.7 732.7 L426.6 729.9 L434.0 722.7 L435.2 717.7 L437.9 714.9 L446.2 708.9 L443.6 706.8 L444.7 699.4 L438.5 686.1 L439.2 681.9 L437.0 676.6 L433.6 673.8 L430.7 667.9 L431.6 664.5 L430.4 661.5 L432.3 658.3 L432.6 651.4 L431.4 647.5 L432.5 639.6 L428.3 633.1 L426.8 626.6 L423.1 621.3 L421.6 612.2 L422.7 597.8 L417.8 592.4 L411.5 589.1 L401.5 578.7 L394.2 564.4 L382.0 550.3 L379.6 540.6 L361.5 533.6 L358.3 526.8 L358.7 525.0 L367.1 516.6 L361.5 504.8 L372.0 487.0 L372.1 479.2 L377.7 471.1 L379.2 463.6 L375.2 455.8 L376.5 446.0 L375.0 438.1 L362.5 423.3 L360.2 418.5 L360.3 406.4 L364.9 394.6 L368.4 370.3 L366.7 349.9 L359.8 337.0 L341.6 330.2 L335.5 326.7 L331.4 322.4 L328.1 311.5 L328.7 299.3 L325.4 292.3 L325.9 279.3 L323.5 275.0 L316.8 271.2 L316.7 269.3 L319.5 264.8 L319.1 260.2 L317.9 257.3 L313.8 253.5 L321.2 249.0 L324.5 245.3 L330.9 230.6 L331.4 226.6 L337.0 220.0 L340.1 211.3 L342.6 208.1 L342.9 201.4 L350.4 195.4 L351.4 190.8 L363.0 172.8 L370.1 154.3 L374.2 150.2 L376.4 144.5 L386.3 135.0 L388.5 129.8 L389.5 117.4 L386.3 113.2 L381.4 109.8 L380.5 107.2 L381.2 100.9 L384.6 100.9 L388.3 98.0"/>
+<path class="leg k-routed" d="M388.3 98.0 L384.6 100.9 L381.2 100.9 L380.5 107.2 L381.4 109.8 L386.3 113.2 L389.5 117.4 L388.5 129.8 L386.3 135.0 L376.4 144.5 L374.2 150.2 L370.1 154.3 L363.0 172.8 L351.4 190.8 L350.4 195.4 L342.9 201.4 L342.6 208.1 L340.1 211.3 L337.0 220.0 L331.4 226.6 L330.9 230.6 L324.5 245.3 L321.2 249.0 L313.8 253.5 L317.9 257.3 L319.1 260.2 L319.5 264.8 L316.7 269.3 L316.8 271.2 L323.5 275.0 L325.9 279.3 L325.4 292.3 L328.7 299.3 L328.1 311.5 L331.4 322.4 L335.5 326.7 L341.6 330.2 L359.8 337.0 L366.7 349.6 L368.4 370.3 L364.9 394.6 L360.3 406.4 L360.2 418.5 L362.5 423.3 L375.0 438.1 L376.5 446.0 L375.2 455.8 L379.2 463.6 L377.7 471.1 L372.1 479.2 L372.0 487.0 L361.4 505.3 L360.0 505.3"/>
+<circle class="fix" cx="317.4" cy="881.9" r="3.2"/>
+<circle class="fix" cx="388.3" cy="97.9" r="3.2"/>
+<circle class="fix" cx="360.0" cy="505.3" r="3.2"/>
+<circle class="fix" cx="360.0" cy="505.3" r="3.2"/>
+<g class="scalebar"><line x1="18" y1="964" x2="138.8" y2="964"/><line x1="18" y1="960" x2="18" y2="968"/><line x1="138.8" y1="960" x2="138.8" y2="968"/><text class="scalebar-label" x="78.4" y="957" text-anchor="middle">20 km</text></g>
+</svg>
+    </div>
+    <div class="plate-margin">
+      <span class="plate-no">STAGE 3 HIGHLIGHTED</span>
+      <div class="legend "><span class="lg-row"><span class="lg-swatch"><svg class="lg-sample" viewBox="0 0 44 8" aria-hidden="true"><path class="leg k-observed" d="M2 4 L42 4"/></svg></span><span class="lg-name">Observed</span></span><span class="lg-row"><span class="lg-swatch"><svg class="lg-sample" viewBox="0 0 44 8" aria-hidden="true"><path class="leg k-routed" d="M2 4 L42 4"/></svg></span><span class="lg-name">Routed</span></span><span class="lg-row"><span class="lg-swatch"><svg class="lg-sample" viewBox="0 0 44 8" aria-hidden="true"><path class="leg k-unknown" d="M2 4 L42 4"/></svg></span><span class="lg-name">Unknown</span></span><span class="lg-row"><span class="lg-swatch"><svg class="lg-sample" viewBox="0 0 44 8" aria-hidden="true"><path class="leg k-air" d="M2 4 L42 4"/></svg></span><span class="lg-name">Air</span></span></div>
+    </div>
+  </aside>
+</main>
+<footer class="mocknote">Stage B mockup · fictional demo dataset · geometry captured from the committed demo instance (see README.md) · not a product screenshot · stage 3 shown selected: its transit is drawn full strength, the rest of the route dims</footer>
+
+</body>
+</html>
