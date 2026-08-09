@@ -239,6 +239,13 @@ function toGeoJSON(journey: Journey): GeoJSON.FeatureCollection {
     },
   }));
   for (const stop of journey.stops) {
+    // A dwell with no observed points has no location; the API's zero value
+    // means "absent" ((0,0) = absent, the same convention as photo
+    // positions). Drawing it would put a confident dot on null island off
+    // West Africa — and, worse, drag the fitted bounds out until the real
+    // route is a speck. The stop still exists in the page's stop list; only
+    // the map marker is omitted, because there is nothing measured to mark.
+    if (stop.loc.lat === 0 && stop.loc.lon === 0) continue;
     features.push({
       type: "Feature",
       properties: { kind: "stop" },
