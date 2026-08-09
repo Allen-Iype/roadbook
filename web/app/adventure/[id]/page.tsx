@@ -5,6 +5,8 @@ import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { PhotosSection } from "./photos-section";
 import { RouteMap } from "./route-map";
+import { ProvenanceBar } from "@/components/provenance-bar";
+import { SiteHeader } from "@/components/site-header";
 
 // The basemap style URL is server-side config passed down as a prop — the
 // phase 5 "configurable tile provider" seam, done cheap now (BRIEF §1.2).
@@ -48,7 +50,7 @@ export default async function AdventurePage({
     if (journeyRes.response?.status === 404) notFound();
     return (
       <main className="mx-auto w-full max-w-5xl px-6 py-10">
-        <p className="text-red-400">
+        <p className="text-red-700">
           The Roadbook API is not reachable. Start it with{" "}
           <code className="font-mono">roadbook serve</code> and reload.
         </p>
@@ -68,9 +70,10 @@ export default async function AdventurePage({
     : null;
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-10">
-      <p className="text-sm">
-        <Link href="/" className="text-neutral-400 hover:text-neutral-200">
+    <main className="mx-auto w-full max-w-5xl px-6 py-8">
+      <SiteHeader />
+      <p className="mt-6 text-sm">
+        <Link href="/candidates" className="text-ink-2 hover:text-ink">
           ← All candidates
         </Link>
       </p>
@@ -116,9 +119,9 @@ function Legend({
   hasFlagged: boolean;
 }) {
   return (
-    <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-neutral-400">
+    <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2">
       <span className="inline-flex items-center gap-2">
-        <span className="inline-block h-1 w-8 rounded bg-emerald-500" />
+        <span className="inline-block h-1 w-8 rounded bg-observed" />
         observed — positions recorded along the way
       </span>
       <span className="inline-flex items-center gap-2">
@@ -128,7 +131,7 @@ function Legend({
             y1="2"
             x2="32"
             y2="2"
-            stroke="#a3a3a3"
+            stroke="#8a8375"
             strokeWidth="2"
             strokeDasharray="4 5"
           />
@@ -143,7 +146,7 @@ function Legend({
               y1="2"
               x2="32"
               y2="2"
-              stroke="#38bdf8"
+              stroke="#2a5da8"
               strokeWidth="2.5"
               strokeDasharray="4 5"
             />
@@ -159,7 +162,7 @@ function Legend({
               y1="2"
               x2="32"
               y2="2"
-              stroke="#a78bfa"
+              stroke="#3f7069"
               strokeWidth="2"
               strokeDasharray="4 5"
             />
@@ -169,18 +172,18 @@ function Legend({
         </span>
       )}
       <span className="inline-flex items-center gap-2">
-        <span className="inline-block h-2.5 w-2.5 rounded-full border border-neutral-900 bg-amber-400" />
+        <span className="inline-block h-2.5 w-2.5 rounded-full border border-paper bg-ink" />
         stop
       </span>
       {hasPhotos && (
         <span className="inline-flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded border border-neutral-300 bg-neutral-600" />
+          <span className="inline-block h-3 w-3 rounded border border-rule bg-land" />
           photo — positioned by its own metadata, a measurement
         </span>
       )}
       {hasFlagged && (
         <span className="inline-flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded border-2 border-amber-400 bg-neutral-600" />
+          <span className="inline-block h-3 w-3 rounded border-2 border-flag bg-land" />
           flagged photo — sits far from the route drawn for its time
         </span>
       )}
@@ -205,18 +208,18 @@ function Header({
   ).toFixed(1);
   return (
     <header className="mt-4">
-      <h1 className="text-2xl font-semibold">{name}</h1>
-      <p className="mt-1 text-sm text-neutral-400">
+      <h1 className="font-display text-3xl font-semibold">{name}</h1>
+      <p className="mt-1 text-sm text-ink-2">
         {journey.window_start.slice(0, 10)} → {journey.window_end.slice(0, 10)}{" "}
         · {days} days
         {candidate && <> · {candidate.dest_km} km from home</>}
         {candidate?.start_truncated && (
-          <span className="ml-1 text-amber-400" title="Began before the imported window.">
+          <span className="ml-1 text-flag" title="Began before the imported window.">
             ◂ truncated
           </span>
         )}
         {candidate?.end_truncated && (
-          <span className="ml-1 text-amber-400" title="Still in progress at the window edge.">
+          <span className="ml-1 text-flag" title="Still in progress at the window edge.">
             truncated ▸
           </span>
         )}
@@ -225,9 +228,9 @@ function Header({
         // Derived line (BRIEF §1.4): point-in-polygon against bundled Natural
         // Earth polygons, computed locally — the label says so because border
         // -adjacent points can misattribute at 1:110m resolution.
-        <p className="mt-1 text-sm text-neutral-300">
+        <p className="mt-1 text-sm text-ink">
           {journey.countries.map((c) => c.name).join(" · ")}{" "}
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-ink-2">
             — countries derived from route points
           </span>
         </p>
@@ -243,21 +246,28 @@ function Provenance({ journey }: { journey: Journey }) {
     journey.total_km > 0 ? ((part / journey.total_km) * 100).toFixed(1) : "0";
   return (
     <section className="mt-6 text-sm">
+      <ProvenanceBar
+        observed={journey.observed_km}
+        routed={journey.routed_km}
+        unknown={journey.unknown_km}
+        air={journey.air_km}
+        className="mb-2 max-w-md"
+      />
       <p>
         <span className="font-mono">{journey.total_km.toFixed(1)} km</span>{" "}
         reconstructed —{" "}
-        <span className="text-emerald-400">
+        <span className="text-observed">
           {journey.observed_km.toFixed(1)} km observed ({pct(journey.observed_km)}%)
         </span>{" "}
         +{" "}
-        <span className="text-neutral-400">
+        <span className="text-ink-2">
           {journey.inferred_km.toFixed(1)} km inferred ({pct(journey.inferred_km)}%)
         </span>
         {journey.air_km > 0 && (
           <>
             {" "}
             —{" "}
-            <span className="text-violet-400">
+            <span className="text-air">
               of which {journey.air_km.toFixed(1)} km air (great-circle)
             </span>
           </>
@@ -265,10 +275,10 @@ function Provenance({ journey }: { journey: Journey }) {
       </p>
       {journey.routed_km > 0 && (
         <p className="mt-1">
-          <span className="text-sky-400">
+          <span className="text-routed">
             routed roads cover {journey.routed_km.toFixed(1)} km
           </span>{" "}
-          <span className="text-neutral-400">
+          <span className="text-ink-2">
             (from the routing cache);{" "}
             {journey.unknown_km > 0
               ? `${journey.unknown_km.toFixed(1)} km of gaps remain unknown`
@@ -284,7 +294,7 @@ function Provenance({ journey }: { journey: Journey }) {
         // it. Divergence is a conversation starter, never a gate: the
         // unknown and routed legs explaining it are right there on the map.
         <p className="mt-1">
-          <span className="text-neutral-300">
+          <span className="text-ink">
             ground reconstruction{" "}
             <span className="font-mono">{journey.ground_km.toFixed(1)} km</span>{" "}
             · Google&apos;s ground figure{" "}
@@ -294,7 +304,7 @@ function Provenance({ journey }: { journey: Journey }) {
           </span>{" "}
           <span
             className={
-              journey.divergence_flagged ? "text-amber-400" : "text-neutral-400"
+              journey.divergence_flagged ? "text-flag" : "text-ink-2"
             }
           >
             ({journey.divergence_pct >= 0 ? "+" : ""}
@@ -304,7 +314,7 @@ function Provenance({ journey }: { journey: Journey }) {
           </span>
         </p>
       )}
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="mt-1 text-xs text-ink-2">
         {journey.merged_points} points ({journey.trace_points_kept} trace +{" "}
         {journey.raw_points_kept} raw)
         {journey.google_km > 0 && (
@@ -330,7 +340,7 @@ function photoThumbs(photos: Photo[], flagged?: boolean) {
           alt={p.original_name}
           title={p.original_name}
           className={`h-6 w-6 rounded object-cover ${
-            flagged || p.far_flagged ? "ring-1 ring-amber-400" : ""
+            flagged || p.far_flagged ? "ring-1 ring-flag" : ""
           }`}
         />
       ))}
@@ -347,13 +357,13 @@ function LegTable({ legs, photos }: { legs: Leg[]; photos: Photo[] }) {
   }
   return (
     <section className="mt-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-2">
         Legs
       </h2>
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-neutral-800 text-left text-xs uppercase tracking-wide text-neutral-500">
+            <tr className="border-b border-ink/40 text-left text-xs uppercase tracking-wide text-ink-2">
               <th className="py-2 pr-4">#</th>
               <th className="py-2 pr-4">Kind</th>
               <th className="py-2 pr-4">From</th>
@@ -366,17 +376,17 @@ function LegTable({ legs, photos }: { legs: Leg[]; photos: Photo[] }) {
           </thead>
           <tbody>
             {legs.map((l, i) => (
-              <tr key={i} className="border-b border-neutral-900">
-                <td className="py-2 pr-4 font-mono text-neutral-500">{i + 1}</td>
+              <tr key={i} className="border-b border-rule">
+                <td className="py-2 pr-4 font-mono text-ink-2">{i + 1}</td>
                 <td className="py-2 pr-4">
                   {l.kind === "observed" ? (
-                    <span className="text-emerald-400">observed</span>
+                    <span className="text-observed">observed</span>
                   ) : l.gap_kind === "air" ? (
-                    <span className="text-violet-400">gap · air</span>
+                    <span className="text-air">gap · air</span>
                   ) : l.gap_kind === "road" ? (
-                    <span className="text-sky-400">gap · road</span>
+                    <span className="text-routed">gap · road</span>
                   ) : (
-                    <span className="text-neutral-400">
+                    <span className="text-ink-2">
                       gap · {l.gap_kind}
                     </span>
                   )}
@@ -408,7 +418,7 @@ function Stops({ journey, photos }: { journey: Journey; photos: Photo[] }) {
   }
   return (
     <section className="mt-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-2">
         Stops
       </h2>
       <ul className="mt-2 text-sm">
@@ -417,7 +427,7 @@ function Stops({ journey, photos }: { journey: Journey; photos: Photo[] }) {
             <span className="font-mono">
               {clock(s.start)} – {clock(s.end)}
             </span>{" "}
-            <span className="text-neutral-400">
+            <span className="text-ink-2">
               ({((Date.parse(s.end) - Date.parse(s.start)) / 60_000).toFixed(0)}{" "}
               min, moved {s.displacement_km.toFixed(2)} km)
             </span>{" "}

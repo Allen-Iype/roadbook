@@ -91,18 +91,18 @@ export function DecideCell({
               if (e.key === "Escape") setEditing("closed");
             }}
             placeholder="Name this adventure"
-            className="w-40 rounded border border-neutral-700 bg-neutral-900 px-2 py-0.5 text-sm outline-none focus:border-neutral-400"
+            className="w-40 rounded border border-rule bg-paper px-2 py-0.5 text-sm outline-none focus:border-ink"
           />
           <button
             disabled={trimmed === ""}
             onClick={() => submit({ status: "confirmed", name: trimmed })}
-            className="text-emerald-400 disabled:text-neutral-600"
+            className="text-emerald-700 disabled:text-rule"
           >
             save
           </button>
           <button
             onClick={() => setEditing("closed")}
-            className="text-neutral-500 hover:text-neutral-300"
+            className="text-ink-2 hover:text-ink"
           >
             cancel
           </button>
@@ -126,13 +126,13 @@ export function DecideCell({
             if (suggested) setName((cur) => (cur === "" ? suggested : cur));
           });
         }}
-        className="text-emerald-400 hover:underline"
+        className="text-emerald-700 hover:underline"
       >
         confirm
       </button>
       <button
         onClick={() => submit({ status: "dismissed" })}
-        className="text-neutral-400 hover:underline"
+        className="text-ink-2 hover:underline"
       >
         dismiss
       </button>
@@ -146,14 +146,14 @@ export function DecideCell({
       {shown.status === "undecided" || editing === "redeciding" ? (
         undecidedControls
       ) : shown.status === "confirmed" ? (
-        <span className="text-emerald-400">{shown.name}</span>
+        <span className="text-emerald-700">{shown.name}</span>
       ) : (
-        <span className="text-neutral-600 line-through">dismissed</span>
+        <span className="text-ink-2 line-through">dismissed</span>
       )}
       {shown.status !== "undecided" && editing !== "redeciding" && (
         <button
           onClick={() => setEditing("redeciding")}
-          className="text-xs text-neutral-600 hover:text-neutral-400"
+          className="text-xs text-ink-2 hover:text-ink"
         >
           change
         </button>
@@ -161,12 +161,12 @@ export function DecideCell({
       {editing === "redeciding" && (
         <button
           onClick={() => setEditing("closed")}
-          className="text-xs text-neutral-600 hover:text-neutral-400"
+          className="text-xs text-ink-2 hover:text-ink"
         >
           keep as is
         </button>
       )}
-      {error && <span className="text-xs text-red-400">{error}</span>}
+      {error && <span className="text-xs text-red-700">{error}</span>}
     </span>
   );
 }
@@ -186,8 +186,8 @@ function ScoreBreakdownBox({
     return null;
   }
   return (
-    <span className="w-max rounded border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-xs text-neutral-400">
-      <span className="block pb-1 text-neutral-300">
+    <span className="w-max rounded border border-rule bg-land px-2.5 py-1.5 text-xs text-ink-2">
+      <span className="block pb-1 text-ink">
         confidence {score.toFixed(1)} / 100
       </span>
       {components.map((c) => (
@@ -198,12 +198,12 @@ function ScoreBreakdownBox({
               <span className="w-24 text-right font-mono">
                 {c.raw} {c.unit}
               </span>
-              <span className="w-14 text-right font-mono text-neutral-300">
+              <span className="w-14 text-right font-mono text-ink">
                 +{c.contribution.toFixed(1)}
               </span>
             </>
           ) : (
-            <span className="text-neutral-600">
+            <span className="text-ink-2/80">
               not measurable — weight redistributed
             </span>
           )}

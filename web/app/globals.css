@@ -1,24 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* The Atlas plate token system (docs/phase-6/DESIGN.md §6). Tailwind 4 is
+   configured here, in CSS: every name declared under @theme becomes both a
+   CSS custom property and a utility class (bg-paper, text-ink, stroke-air…),
+   so these values exist exactly once and every surface reads from them.
+
+   The leg-kind inks come first — they own the loudest channel on every page,
+   and nothing else may use these hues at line weight. Kind is never hue
+   alone: routed is cased, unknown is dashed, air is a dotted arc. */
+@theme {
+  /* leg-kind inks — reserved */
+  --color-observed: #a81e22; /* the traveller's own red ink: solid, uncased */
+  --color-routed: #2a5da8; /* the printed road: solid over a paper casing */
+  --color-unknown: #8a8375; /* drawn, never asserted: dashed */
+  --color-air: #3f7069; /* great-circle arc: round-dotted */
+  --color-known: #3a3a34; /* T2 overview only: observed+routed merged */
+
+  /* ground */
+  --color-paper: #f5f2e8;
+  --color-land: #efece2;
+  --color-sea: #d9e2e4;
+  --color-ink: #26251f;
+  --color-ink-2: #6e6a5e;
+  --color-rule: #c9c3b2;
+
+  /* honesty warnings only (divergence, far-from-route photos) — never
+     decoration, and never a leg ink */
+  --color-flag: #b97f10;
 }
 
+/* Font tokens reference the CSS variables that next/font/local defines on
+   <html> at runtime, so they must be declared `inline` (resolved at use
+   sites, not inlined at build). --font-sans and --font-mono replace
+   Tailwind's defaults; --font-display is the new display role. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --font-display: var(--font-display-face), "Palatino Linotype", Palatino,
+    Georgia, serif;
+  --font-mono: var(--font-mono-face), ui-monospace, "SF Mono", Menlo, Consolas,
+    monospace;
+  --font-sans: "Avenir Next", Avenir, "Segoe UI", system-ui, -apple-system,
+    sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* One theme, deliberately (DESIGN §1): the prefers-color-scheme switch the
+   scaffold shipped is gone. A dark theme is a parked backlog option built on
+   direction B's token sheet, not a media query. */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
 }

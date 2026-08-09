@@ -113,3 +113,47 @@ DESIGN.md; recorded here at the moment of decision.
 - **Would change our mind:** evidence the summoned list hides adventures
   from real users (self-hoster feedback), since the map remains the
   primary path either way.
+
+## Life-map data path: server-component fan-out, no new endpoint
+
+- **Chosen:** the home server component calls GET /candidates then the
+  confirmed journeys in parallel; openapi.yaml is untouched this phase.
+- **Rejected:** a GET /adventures/geometry aggregate — measured on the demo
+  instance at ~1.6 ms/request and ~28 KB gzipped for all three journeys,
+  the fan-out needs nothing from a new API surface at charter scale.
+- **Would change our mind:** a real instance whose home payload exceeds
+  ~1 MB gzipped or blocks render >500 ms on the fan-out (trigger recorded
+  in BRIEF §2).
+
+---
+
+Stage C brief choices (maintainer approved recommendations, 2026-08-08).
+
+## Midnight rule: events belong to the day they start in
+
+- **Chosen:** a transit crossing midnight appears once under its start day
+  with an "overnight" note; per-day km sums by start day; the map highlight
+  uses the same assignment (one sliceDays function feeds both).
+- **Rejected:** splitting legs at midnight — it manufactures a synthetic
+  position and a proportional km split inside inferred geometry.
+- **Would change our mind:** a real journey where start-day assignment
+  makes a day's total actively misleading; none in the corpus.
+
+## Basemap: Roadbook-tuned light style JSON as default
+
+- **Chosen:** Maputnik edit of OpenFreeMap Liberty muted to the token
+  grounds, committed under web/public/, ROADBOOK_MAP_STYLE still overrides;
+  tiles/glyphs keep pointing at OpenFreeMap.
+- **Rejected:** raw Liberty (palette competes with the leg inks) and
+  Positron (upstream-abandoned).
+- **Would change our mind:** timebox risk in BRIEF §5 — if style work
+  drags, ship Liberty and land the custom style later in the phase.
+
+## Fonts: Source Serif 4 display + IBM Plex Mono data, system body
+
+- **Chosen:** OFL woff2 files committed, loaded via next/font/local; body
+  text stays a system sans stack.
+- **Rejected:** Google Fonts at runtime (network + privacy), Iowan Old
+  Style (not redistributable), a third committed face for body.
+- **Would change our mind:** nothing foreseen; faces are swappable behind
+  the two font tokens.

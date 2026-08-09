@@ -13,12 +13,12 @@ export default function ErrorBoundary({
 }) {
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-10">
-      <h1 className="text-2xl font-semibold">Roadbook</h1>
-      <p className="mt-6 text-red-400">Something failed while rendering.</p>
-      <p className="mt-1 font-mono text-xs text-neutral-500">{error.message}</p>
+      <h1 className="font-display text-2xl font-semibold">Roadbook</h1>
+      <p className="mt-6 text-red-700">Something failed while rendering.</p>
+      <p className="mt-1 font-mono text-xs text-ink-2">{error.message}</p>
       <button
         onClick={reset}
-        className="mt-4 rounded border border-neutral-700 px-3 py-1 text-sm hover:bg-neutral-900"
+        className="mt-4 rounded border border-rule px-3 py-1 text-sm hover:bg-land"
       >
         Try again
       </button>

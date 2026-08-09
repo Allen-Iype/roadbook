@@ -105,14 +105,14 @@ export function PhotosSection({
   return (
     <section className="mt-6">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-2">
           Photos
         </h2>
         <label
-          className={`cursor-pointer rounded border border-neutral-700 px-3 py-1 text-xs ${
+          className={`cursor-pointer rounded border border-rule px-3 py-1 text-xs ${
             isPending
-              ? "cursor-wait text-neutral-600"
-              : "text-neutral-300 hover:border-neutral-500"
+              ? "cursor-wait text-ink-2/70"
+              : "text-ink hover:border-ink-2"
           }`}
         >
           {isPending ? "Uploading…" : "Add photos"}
@@ -132,10 +132,10 @@ export function PhotosSection({
         </label>
       </div>
 
-      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
 
       {shown.length === 0 && pending.length === 0 && (
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-2 text-sm text-ink-2">
           None yet. Photos carry the most accurate positions in the project —
           EXIF stays on camera originals; WhatsApp and most messengers strip
           it.
@@ -177,18 +177,18 @@ function PhotoTile({
         width={photo.thumb_w}
         height={photo.thumb_h}
         className={`h-28 w-36 rounded object-cover ${
-          photo.far_flagged ? "ring-2 ring-amber-400" : ""
+          photo.far_flagged ? "ring-2 ring-flag" : ""
         }`}
       />
       <button
         onClick={() => onDelete(photo.id)}
         disabled={busy}
         title="Delete this photo"
-        className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-neutral-950/80 text-xs text-neutral-300 hover:text-red-400 group-hover:flex"
+        className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-land/80 text-xs text-ink hover:text-red-700 group-hover:flex"
       >
         ×
       </button>
-      <figcaption className="mt-1 text-[11px] leading-tight text-neutral-500">
+      <figcaption className="mt-1 text-[11px] leading-tight text-ink-2">
         <span className="block truncate" title={photo.original_name}>
           {photo.original_name}
         </span>
@@ -197,7 +197,7 @@ function PhotoTile({
           // traveller-local time (the page-wide convention).
           <span title={`capture time from ${photo.time_source}`}>
             {photo.taken_at.slice(0, 10)} {photo.taken_at.slice(11, 16)}
-            <span className="text-neutral-600"> · {photo.time_source}</span>
+            <span className="text-ink-2/80"> · {photo.time_source}</span>
           </span>
         ) : (
           <span className="text-amber-500/80">no capture time</span>
@@ -217,7 +217,7 @@ function PhotoTile({
         {photo.place_kind &&
           (photo.distance_from_route_m !== undefined ? (
             <span
-              className={`block ${photo.far_flagged ? "text-amber-400" : ""}`}
+              className={`block ${photo.far_flagged ? "text-flag" : ""}`}
             >
               {fmtDistanceM(photo.distance_from_route_m)}{" "}
               {placeStatement(photo.place_kind)}
@@ -246,11 +246,11 @@ function PendingTile({ pending }: { pending: Pending }) {
           className="h-28 w-36 animate-pulse rounded object-cover"
         />
       ) : (
-        <div className="flex h-28 w-36 animate-pulse items-center justify-center rounded bg-neutral-900 text-xs text-neutral-500">
+        <div className="flex h-28 w-36 animate-pulse items-center justify-center rounded bg-land text-xs text-ink-2">
           sidecar
         </div>
       )}
-      <figcaption className="mt-1 truncate text-[11px] text-neutral-600">
+      <figcaption className="mt-1 truncate text-[11px] text-ink-2">
         {pending.name}
       </figcaption>
     </figure>
@@ -263,21 +263,21 @@ function PendingTile({ pending }: { pending: Pending }) {
 function ResultsPanel({ results }: { results: UploadResult[] }) {
   const label: Record<UploadResult["status"], { text: string; cls: string }> = {
     accepted: { text: "added", cls: "text-emerald-400" },
-    duplicate: { text: "already uploaded", cls: "text-neutral-400" },
-    rejected: { text: "rejected", cls: "text-red-400" },
+    duplicate: { text: "already uploaded", cls: "text-ink-2" },
+    rejected: { text: "rejected", cls: "text-red-700" },
     sidecar_paired: { text: "metadata applied", cls: "text-emerald-400" },
-    sidecar_unpaired: { text: "unpaired sidecar", cls: "text-amber-400" },
+    sidecar_unpaired: { text: "unpaired sidecar", cls: "text-flag" },
   };
   return (
     <ul className="mt-3 space-y-1 text-xs">
       {results.map((r, i) => (
         <li key={i}>
-          <span className="font-mono text-neutral-300">{r.file}</span>{" "}
+          <span className="font-mono text-ink">{r.file}</span>{" "}
           <span className={label[r.status].cls}>{label[r.status].text}</span>
           {r.paired_with && (
-            <span className="text-neutral-500"> → {r.paired_with}</span>
+            <span className="text-ink-2"> → {r.paired_with}</span>
           )}
-          {r.reason && <span className="text-neutral-400"> — {r.reason}</span>}
+          {r.reason && <span className="text-ink-2"> — {r.reason}</span>}
         </li>
       ))}
     </ul>

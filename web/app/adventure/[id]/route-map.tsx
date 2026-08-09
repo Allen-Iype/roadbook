@@ -90,12 +90,12 @@ export function RouteMap({
       el.style.cssText =
         "width:34px;height:34px;object-fit:cover;border-radius:6px;cursor:pointer;" +
         (p.far_flagged
-          ? "border:2.5px solid #fbbf24;box-shadow:0 0 0 2px #171717;"
-          : "border:1.5px solid #e5e5e5;box-shadow:0 0 0 1px #171717;");
+          ? "border:2.5px solid #b97f10;box-shadow:0 0 0 2px #f5f2e8;"
+          : "border:1.5px solid #f5f2e8;box-shadow:0 0 0 1px #26251f;");
 
       const popup = new Popup({ offset: 20, closeButton: false });
       const body = document.createElement("div");
-      body.style.cssText = "font-size:12px;color:#171717;max-width:220px;";
+      body.style.cssText = "font-size:12px;color:#26251f;max-width:220px;";
       const title = document.createElement("strong");
       title.textContent = p.original_name; // textContent: filenames are user input
       body.appendChild(title);
@@ -107,7 +107,7 @@ export function RouteMap({
       if (p.distance_from_route_m !== undefined && p.place_kind) {
         const dist = document.createElement("div");
         dist.textContent = `${fmtDistanceM(p.distance_from_route_m)} ${placeStatement(p.place_kind)}`;
-        if (p.far_flagged) dist.style.color = "#b45309";
+        if (p.far_flagged) dist.style.color = "#b97f10";
         body.appendChild(dist);
       }
       popup.setDOMContent(body);
@@ -140,7 +140,7 @@ export function RouteMap({
           ["!=", ["get", "gap_kind"], "air"],
         ],
         paint: {
-          "line-color": "#a3a3a3",
+          "line-color": "#8a8375",
           "line-width": 2,
           "line-dasharray": [2, 3],
         },
@@ -151,7 +151,7 @@ export function RouteMap({
         source: "route",
         filter: ["==", ["get", "gap_kind"], "air"],
         paint: {
-          "line-color": "#a78bfa",
+          "line-color": "#3f7069",
           "line-width": 2,
           "line-dasharray": [2, 3],
         },
@@ -163,7 +163,7 @@ export function RouteMap({
         filter: ["==", ["get", "gap_kind"], "road"],
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": "#38bdf8",
+          "line-color": "#2a5da8",
           "line-width": 2.5,
           "line-dasharray": [2, 3],
         },
@@ -175,7 +175,7 @@ export function RouteMap({
         filter: ["==", ["get", "kind"], "observed"],
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": "#10b981",
+          "line-color": "#a81e22",
           "line-width": 3.5,
         },
       });
@@ -186,8 +186,8 @@ export function RouteMap({
         filter: ["==", ["get", "kind"], "stop"],
         paint: {
           "circle-radius": 5,
-          "circle-color": "#fbbf24",
-          "circle-stroke-color": "#171717",
+          "circle-color": "#26251f",
+          "circle-stroke-color": "#f5f2e8",
           "circle-stroke-width": 1.5,
         },
       });
@@ -205,7 +205,7 @@ export function RouteMap({
   return (
     <div
       ref={containerRef}
-      className="mt-6 h-[28rem] w-full rounded-md border border-neutral-800"
+      className="mt-6 h-[28rem] w-full rounded-md border border-rule"
     />
   );
 }

@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
+import { SiteHeader } from "@/components/site-header";
 
 // Server component, same shape as the home page: runs per request on the
 // server, calls the Go API, ships HTML. Nothing here is interactive, so no
@@ -17,7 +16,7 @@ export default async function ImportsPage() {
   if (error || !data) {
     return (
       <Shell>
-        <p className="mt-6 text-red-400">
+        <p className="mt-6 text-red-700">
           The Roadbook API is not reachable. Start it with{" "}
           <code className="font-mono">roadbook serve</code> and reload.
         </p>
@@ -28,7 +27,7 @@ export default async function ImportsPage() {
   return (
     <Shell>
       {data.imports.length === 0 ? (
-        <p className="mt-6 text-neutral-400">
+        <p className="mt-6 text-ink-2">
           No imports yet. Run{" "}
           <code className="font-mono">roadbook import -src Timeline.json</code>.
         </p>
@@ -41,17 +40,12 @@ export default async function ImportsPage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-10">
-      <h1 className="text-2xl font-semibold">Imports</h1>
-      <p className="mt-1 text-sm text-neutral-400">
+    <main className="mx-auto w-full max-w-5xl px-6 py-8">
+      <SiteHeader />
+      <h1 className="mt-8 font-display text-2xl font-semibold">Imports</h1>
+      <p className="mt-1 text-sm text-ink-2">
         Every import attempt, newest first — including the failed ones, with
-        what the file turned out to be.{" "}
-        <Link
-          href="/"
-          className="underline decoration-neutral-700 underline-offset-2 hover:text-neutral-100"
-        >
-          Back to candidates
-        </Link>
+        what the file turned out to be.
       </p>
       {children}
     </main>
@@ -63,7 +57,7 @@ function ImportTable({ imports }: { imports: Import[] }) {
     <div className="mt-6 overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-neutral-800 text-left text-xs uppercase tracking-wide text-neutral-500">
+          <tr className="border-b border-ink/40 text-left text-xs uppercase tracking-wide text-ink-2">
             <th className="py-2 pr-4">When</th>
             <th className="py-2 pr-4">Source</th>
             <th className="py-2 pr-4">Format</th>
@@ -78,17 +72,17 @@ function ImportTable({ imports }: { imports: Import[] }) {
         </thead>
         <tbody>
           {imports.map((imp) => (
-            <tr key={imp.id} className="border-b border-neutral-900 align-top">
+            <tr key={imp.id} className="border-b border-rule align-top">
               <td className="py-2 pr-4 font-mono whitespace-nowrap">
                 {imp.imported_at.slice(0, 10)}
               </td>
               <td className="py-2 pr-4">{imp.source_label}</td>
-              <td className="py-2 pr-4 font-mono text-neutral-400">
+              <td className="py-2 pr-4 font-mono text-ink-2">
                 {/* Absent means the input was never recognised (not JSON,
                     unreadable) — different information than a known format. */}
                 {imp.detected_format ?? "—"}
               </td>
-              <td className="py-2 pr-4 font-mono whitespace-nowrap text-neutral-400">
+              <td className="py-2 pr-4 font-mono whitespace-nowrap text-ink-2">
                 {windowLabel(imp)}
               </td>
               <td className="py-2 pr-4 text-right">{imp.visits}</td>
@@ -111,9 +105,9 @@ function StatusCell({ imp }: { imp: Import }) {
   if (imp.status === "failed") {
     return (
       <div>
-        <span className="text-red-400">failed</span>
+        <span className="text-red-700">failed</span>
         {imp.error && (
-          <p className="mt-1 max-w-md text-xs text-neutral-400">{imp.error}</p>
+          <p className="mt-1 max-w-md text-xs text-ink-2">{imp.error}</p>
         )}
       </div>
     );
@@ -121,9 +115,9 @@ function StatusCell({ imp }: { imp: Import }) {
   if (imp.status === "running") {
     // Either genuinely in progress, or a crash left the row unfinalised —
     // both are worth seeing as-is rather than dressing up.
-    return <span className="text-amber-400">running</span>;
+    return <span className="text-flag">running</span>;
   }
-  return <span className="text-neutral-400">completed</span>;
+  return <span className="text-ink-2">completed</span>;
 }
 
 // Window bounds are dates the operator typed (-from/-to), so the date part is

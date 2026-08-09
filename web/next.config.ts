@@ -14,6 +14,19 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Next 16 blocks dev-runtime resources (/_next/webpack-hmr and friends)
+  // for any origin other than the one the dev server binds — and it treats
+  // 127.0.0.1 and localhost as DIFFERENT origins. Browsing `next dev` via
+  // 127.0.0.1 then loads a page that silently never hydrates: no console
+  // error, dead islands, blank map. Allowing the loopback IP makes the two
+  // spellings equivalent in dev; production is unaffected.
+  allowedDevOrigins: ["127.0.0.1"],
+  logging: {
+    // Forward browser console output to the dev-server terminal — this is
+    // how the silent-hydration failure above was finally diagnosed, and it
+    // stays: client errors belong in the terminal where they are seen.
+    browserToTerminal: true,
+  },
   experimental: {
     serverActions: {
       // Photo uploads travel through a server action as multipart FormData;
