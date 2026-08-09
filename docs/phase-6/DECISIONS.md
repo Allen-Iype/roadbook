@@ -149,6 +149,23 @@ Stage C brief choices (maintainer approved recommendations, 2026-08-08).
 - **Would change our mind:** timebox risk in BRIEF §5 — if style work
   drags, ship Liberty and land the custom style later in the phase.
 
+## UI screenshots committed per checkpoint, demo instance only
+
+- **Chosen:** a committed visual record of the UI under `docs/screens/`,
+  phase-prefixed sets (`phase6-baseline`, `phase6-cp2`, …) so the practice
+  outlives this phase — captured exclusively from the compose demo
+  instance (fictional data) by the committed `capture.js`, each file
+  under 1 MB.
+- **Rejected:** screenshots from the real-data dev server (data safety —
+  they show real places and cannot enter git); no record at all (the
+  pre-phase-6 look becomes unrecoverable from any running instance once
+  the web image is rebuilt at CP2 acceptance); a phase-scoped
+  `docs/phase-6/screens/` (maintainer: a permanent top-level home whose
+  old sets can simply be deleted if the repo gets heavy — they stay
+  regenerable from the era's commit).
+- **Would change our mind:** repository weight — the remedy is deleting
+  old sets, recorded in `docs/screens/README.md`.
+
 ## Fonts: Source Serif 4 display + IBM Plex Mono data, system body
 
 - **Chosen:** OFL woff2 files committed, loaded via next/font/local; body
