@@ -1,5 +1,6 @@
-// Shared display formatting for photo placement — used by the map popup and
-// the strip caption, so the two can never phrase the same fact differently.
+// Shared display formatting — used by the map popup, the photo strip, and
+// the day narrative, so no two surfaces can phrase the same fact
+// differently.
 
 import type { components } from "@/lib/api/schema";
 
@@ -7,6 +8,22 @@ type PlaceKind = NonNullable<components["schemas"]["Photo"]["place_kind"]>;
 
 export function fmtDistanceM(m: number): string {
   return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
+/** "45 min" · "38 h" · "2 h 30 min" — elapsed time, never clock time. */
+export function fmtDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
+}
+
+/** "65.71°N 21.67°W" — the atlas-margin coordinate style. */
+export function fmtLatLon(lat: number, lon: number): string {
+  const ns = lat < 0 ? "S" : "N";
+  const ew = lon < 0 ? "W" : "E";
+  return `${Math.abs(lat).toFixed(2)}°${ns} ${Math.abs(lon).toFixed(2)}°${ew}`;
 }
 
 // The distance statement names which drawn geometry it was measured against

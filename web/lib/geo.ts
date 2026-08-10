@@ -55,14 +55,26 @@ export function legFeatures(
 // API's zero value means "absent" ((0,0) = absent, the same convention as
 // photo positions). Drawing one would put a confident dot on null island off
 // West Africa — and drag fitted bounds out until the real route is a speck.
-export function stopFeatures(stops: Stop[]): GeoJSON.Feature[] {
-  return stops
-    .filter((s) => !(s.loc.lat === 0 && s.loc.lon === 0))
-    .map((s) => ({
-      type: "Feature",
-      properties: { kind: "stop" },
-      geometry: { type: "Point", coordinates: lngLat(s.loc) },
-    }));
+// `propsFor` receives the stop's original index (filtering must not renumber
+// it — indices are how photos and day slices address stops).
+export function stopFeatures(
+  stops: Stop[],
+  propsFor?: (stop: Stop, index: number) => Record<string, unknown>,
+): GeoJSON.Feature[] {
+  return stops.flatMap((s, i) =>
+    s.loc.lat === 0 && s.loc.lon === 0
+      ? []
+      : [
+          {
+            type: "Feature" as const,
+            properties: { kind: "stop", ...(propsFor?.(s, i) ?? {}) },
+            geometry: {
+              type: "Point" as const,
+              coordinates: lngLat(s.loc),
+            },
+          },
+        ],
+  );
 }
 
 // greatCircleArc interpolates the shortest path on the sphere between two

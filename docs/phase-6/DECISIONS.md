@@ -190,3 +190,22 @@ Stage C brief choices (maintainer approved recommendations, 2026-08-08).
   Style (not redistributable), a third committed face for body.
 - **Would change our mind:** nothing foreseen; faces are swappable behind
   the two font tokens.
+
+## Narrative events derive structurally from legs and stops (CP3, 2026-08-10)
+
+- **Chosen:** sliceDays classifies by structure the API already carries —
+  a "fix" is a stationary observed leg (one point, or exactly 0 km); a
+  moving leg is a transit; a gap and the dwell riding inside it are both
+  shown (the Westfjords 80 km road gap spans its 38 h dwell — listing both
+  is what the pipeline actually claims); a blank day fully inside a
+  multi-day leg states "still under way"; window edges are events framing
+  the first and last day.
+- **Rejected:** synthesizing fix events from gap-leg endpoints (the
+  demo data showed the assembler already emits single-point observed legs
+  as its own fix representation — duplicating them from gap endpoints
+  would double every sparse journey's fixes); display thresholds like
+  "under 5 minutes is a fix" (an invented parameter where an exact
+  structural test exists).
+- **Would change our mind:** an assembler change that stops emitting
+  stationary observed legs; a real journey where a 0 km observed leg is
+  genuinely a moving transit.

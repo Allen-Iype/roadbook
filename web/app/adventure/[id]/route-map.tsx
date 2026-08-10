@@ -4,9 +4,12 @@
 // library and steps back (BRIEF §1.1). MapLibre owns the div below and its
 // WebGL context; React owns everything around it. The journey and style URL
 // arrive as server-component props and never change while the map is mounted,
-// so the lifecycle is create-once/destroy-once: the effect builds the map,
-// the cleanup releases it, and StrictMode's dev-mode double-mount
-// (create → destroy → create) is the framework proving the cleanup correct.
+// so the map itself is create-once/destroy-once — but the *selected day* is
+// live client state, and rebuilding a WebGL map per click would flash and
+// refetch tiles. Hence two effects: the main one builds the map; a second,
+// cheap one repaints opacity when the selection changes, addressing the map
+// through a ref. This is the standard split for imperative libraries under
+// React: reconstruction for identity changes, mutation for style changes.
 import { useEffect, useRef } from "react";
 // MapLibre 6 is ESM-only with named exports (no default export); MapLibreMap
 // is the library's own alias for its Map class, avoiding the clash with the
@@ -17,8 +20,10 @@ import {
   Marker,
   NavigationControl,
   Popup,
+  ScaleControl,
   setWorkerUrl,
 } from "maplibre-gl";
+import type { ExpressionSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { fmtDistanceM, placeStatement } from "@/lib/format";
@@ -26,6 +31,7 @@ import { fmtDistanceM, placeStatement } from "@/lib/format";
 // one implementation of leg→GeoJSON, arcs, and bounds for every map.
 import { bboxOf, legFeatures, lngLat, stopFeatures } from "@/lib/geo";
 import { INK } from "@/lib/tokens";
+import type { Day } from "@/lib/slice-days";
 import type { components } from "@/lib/api/schema";
 
 // MapLibre parses tiles in a Web Worker whose URL it derives from its own
@@ -40,29 +46,100 @@ setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 type Journey = components["schemas"]["Journey"];
 type Photo = components["schemas"]["Photo"];
 
+// Everything outside the selected day fades to this opacity — dimmed, never
+// hidden: geometry that vanished would misstate what the journey contains.
+const DIM_OPACITY = 0.15;
+
+const LINE_LAYERS = [
+  "unknown-legs",
+  "air-legs",
+  "road-casing",
+  "road-legs",
+  "observed-legs",
+] as const;
+
+// Day-highlight opacity: legs carry their start day (`day`), stops the list
+// of civil days they overlap (`days`) — both stamped from the same sliceDays
+// output that drives the narrative, so the two cannot disagree.
+const legOpacity = (sel: number | null): number | ExpressionSpecification =>
+  sel === null ? 1 : ["case", ["==", ["get", "day"], sel], 1, DIM_OPACITY];
+const stopOpacity = (sel: number | null): number | ExpressionSpecification =>
+  sel === null ? 1 : ["case", ["in", sel, ["get", "days"]], 1, DIM_OPACITY];
+
+type MarkerInfo = { el: HTMLElement; days: number[] };
+
+function applyHighlight(
+  map: MapLibreMap,
+  markers: MarkerInfo[],
+  sel: number | null,
+) {
+  for (const id of LINE_LAYERS) {
+    if (map.getLayer(id)) map.setPaintProperty(id, "line-opacity", legOpacity(sel));
+  }
+  if (map.getLayer("stops")) {
+    map.setPaintProperty("stops", "circle-opacity", stopOpacity(sel));
+    map.setPaintProperty("stops", "circle-stroke-opacity", stopOpacity(sel));
+  }
+  for (const m of markers) {
+    m.el.style.opacity =
+      sel === null || m.days.includes(sel) ? "1" : String(DIM_OPACITY);
+  }
+}
+
 export function RouteMap({
   journey,
   styleUrl,
   photos = [],
+  days = [],
+  selectedDay = null,
+  className = "h-[28rem] w-full",
 }: {
   journey: Journey;
   styleUrl: string;
   photos?: Photo[];
+  /** sliceDays output; when present, features carry day assignments. */
+  days?: Day[];
+  /** 1-based day to highlight; null shows the whole route full-strength. */
+  selectedDay?: number | null;
+  className?: string;
 }) {
-  // A ref, not state: the container node and the map instance are not
-  // renderable data, and mutating a ref does not schedule a re-render.
+  // Refs, not state: the container node, the map instance, and the marker
+  // elements are not renderable data, and mutating a ref does not schedule
+  // a re-render.
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markersRef = useRef<MarkerInfo[]>([]);
+  // The selection the load handler reads — the style may still be loading
+  // when the user first clicks a day.
+  const selectedRef = useRef<number | null>(selectedDay);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    // Day assignment lookups from the sliceDays output.
+    const legDay = new Map<number, number>();
+    const stopDays = new Map<number, number[]>();
+    for (const d of days) {
+      for (const li of d.legIndices) legDay.set(li, d.index);
+      for (const si of d.stopIndices)
+        stopDays.set(si, [...(stopDays.get(si) ?? []), d.index]);
+    }
+
     // Built once per mount: the same FeatureCollection feeds both the source
     // and the bounds, so an air leg's arc — which bulges away from the
     // straight line between its endpoints — can never fall outside the view.
+    // Legs are converted one at a time because each carries its own day.
     const data: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
-      features: [...legFeatures(journey.legs), ...stopFeatures(journey.stops)],
+      features: [
+        ...journey.legs.flatMap((leg, i) =>
+          legFeatures([leg], { day: legDay.get(i) ?? 0 }),
+        ),
+        ...stopFeatures(journey.stops, (_s, i) => ({
+          days: stopDays.get(i) ?? [],
+        })),
+      ],
     };
 
     // Placed photos join the map (BRIEF §3G). Only placed ones: a photo
@@ -88,6 +165,10 @@ export function RouteMap({
       fitBoundsOptions: { padding: 48 },
     });
     map.addControl(new NavigationControl({ showCompass: false }));
+    // The scale bar is plate marginalia the atlas frame promised (DESIGN
+    // §6); MapLibre keeps it honest across zoom and latitude.
+    map.addControl(new ScaleControl({ maxWidth: 120 }), "bottom-left");
+    mapRef.current = map;
 
     // Photo markers are DOM overlays (Marker), not style layers: there are
     // tens of them at most, each is a thumbnail image, and DOM markers need
@@ -100,6 +181,7 @@ export function RouteMap({
       el.alt = p.original_name;
       el.style.cssText =
         "width:34px;height:34px;object-fit:cover;border-radius:6px;cursor:pointer;" +
+        "transition:opacity .3s;" +
         (p.far_flagged
           ? "border:2.5px solid #b97f10;box-shadow:0 0 0 2px #f5f2e8;"
           : "border:1.5px solid #f5f2e8;box-shadow:0 0 0 1px #26251f;");
@@ -123,32 +205,47 @@ export function RouteMap({
       }
       popup.setDOMContent(body);
 
-      return new Marker({ element: el })
+      const marker = new Marker({ element: el })
         .setLngLat(lngLat(p.pos!))
         .setPopup(popup)
         .addTo(map);
+
+      // The photo dims with the day its placement belongs to: a leg photo
+      // follows the leg's start day, a stop photo every day its dwell spans.
+      const photoDays =
+        p.leg_index !== undefined
+          ? legDay.has(p.leg_index)
+            ? [legDay.get(p.leg_index)!]
+            : []
+          : p.stop_index !== undefined
+            ? (stopDays.get(p.stop_index) ?? [])
+            : [];
+      return { marker, info: { el, days: photoDays } };
     });
+    markersRef.current = markers.map((m) => m.info);
 
     // Sources and layers only after the style has loaded — adding them
     // synchronously after the constructor is the classic first bug.
     map.on("load", () => {
       map.addSource("route", { type: "geojson", data });
 
-      // Layer order is paint order (BRIEF §1.2): unknown gaps underneath,
-      // then air, then observed, stop markers on top (phase 3 BRIEF §3F).
-      // The visual channel: dashes are the one non-negotiable inference
-      // marker — every non-observed class is dashed — and hue, held in
-      // reserve through phase 2, now distinguishes *kinds* of inference.
-      // MapLibre 6 types line-dasharray as data-drivable, but
-      // layer-per-class keeps the z-order between classes for free.
+      // Layer order is paint order, bottom to top: unknown gaps underneath
+      // (a dashed grey guess never covers a measurement), then air, then
+      // routed over its paper casing, observed on top, stop markers above
+      // all. The channel is the Atlas plate encoding (DESIGN §6): kind is
+      // never hue alone — observed is solid and widest and uncased, routed
+      // is solid over its casing, unknown is dashed, air is round-dotted.
+      // Unlike the life map there is no zoom graduation here: the detail
+      // plate keeps the full four-way split at every zoom (DESIGN §2).
       map.addLayer({
-        id: "gap-legs",
+        id: "unknown-legs",
         type: "line",
         source: "route",
         filter: [
           "all",
           ["==", ["get", "kind"], "gap"],
           ["!=", ["get", "gap_kind"], "air"],
+          ["!=", ["get", "gap_kind"], "road"],
         ],
         paint: {
           "line-color": INK.unknown,
@@ -161,10 +258,22 @@ export function RouteMap({
         type: "line",
         source: "route",
         filter: ["==", ["get", "gap_kind"], "air"],
+        layout: { "line-cap": "round" },
         paint: {
           "line-color": INK.air,
-          "line-width": 2,
-          "line-dasharray": [2, 3],
+          "line-width": 2.2,
+          "line-dasharray": [0.1, 2],
+        },
+      });
+      map.addLayer({
+        id: "road-casing",
+        type: "line",
+        source: "route",
+        filter: ["==", ["get", "gap_kind"], "road"],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": INK.paper,
+          "line-width": 5.5,
         },
       });
       map.addLayer({
@@ -176,7 +285,6 @@ export function RouteMap({
         paint: {
           "line-color": INK.routed,
           "line-width": 2.5,
-          "line-dasharray": [2, 3],
         },
       });
       map.addLayer({
@@ -202,22 +310,28 @@ export function RouteMap({
           "circle-stroke-width": 1.5,
         },
       });
+
+      // A day may already be selected while the style was loading.
+      applyHighlight(map, markersRef.current, selectedRef.current);
     });
 
     // The cleanup releases the WebGL context; browsers cap live contexts,
     // and a leaked map only surfaces navigations later. Markers are removed
     // first — map.remove() would orphan their DOM elements otherwise.
     return () => {
-      markers.forEach((m) => m.remove());
+      markers.forEach((m) => m.marker.remove());
+      markersRef.current = [];
+      mapRef.current = null;
       map.remove();
     };
-  }, [journey, styleUrl, photos]);
+  }, [journey, styleUrl, photos, days]);
 
-  return (
-    <div
-      ref={containerRef}
-      className="mt-6 h-[28rem] w-full rounded-md border border-rule"
-    />
-  );
+  // Selection changes repaint opacity in place — never rebuild the map.
+  useEffect(() => {
+    selectedRef.current = selectedDay;
+    const map = mapRef.current;
+    if (map) applyHighlight(map, markersRef.current, selectedDay);
+  }, [selectedDay]);
+
+  return <div ref={containerRef} className={className} />;
 }
-
