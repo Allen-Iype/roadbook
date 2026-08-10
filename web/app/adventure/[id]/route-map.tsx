@@ -199,8 +199,19 @@ export function RouteMap({
       body.appendChild(line);
       if (p.distance_from_route_m !== undefined && p.place_kind) {
         const dist = document.createElement("div");
-        dist.textContent = `${fmtDistanceM(p.distance_from_route_m)} ${placeStatement(p.place_kind)}`;
-        if (p.far_flagged) dist.style.color = "#b97f10";
+        if (p.far_flagged) {
+          // Amber on the glyph only — the flag token fails contrast as
+          // running text (CP4 a11y pass); the words stay ink.
+          const flag = document.createElement("span");
+          flag.textContent = "⚑ ";
+          flag.style.cssText = "color:#b97f10;font-weight:700;";
+          dist.appendChild(flag);
+        }
+        dist.appendChild(
+          document.createTextNode(
+            `${fmtDistanceM(p.distance_from_route_m)} ${placeStatement(p.place_kind)}`,
+          ),
+        );
         body.appendChild(dist);
       }
       popup.setDOMContent(body);

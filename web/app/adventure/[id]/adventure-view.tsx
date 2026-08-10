@@ -145,8 +145,13 @@ function Cover({
         fixes
       </p>
       {(candidate?.start_truncated || candidate?.end_truncated) && (
-        // Truncation as words (bug 4 made visible), not markers.
-        <p className="mt-2 max-w-[52ch] text-[13px] text-flag">
+        // Truncation as words (bug 4 made visible), not markers. The amber
+        // stays on the flag glyph: the token passes contrast as a mark but
+        // not as sentence text (the CP4 a11y pass), so words are ink.
+        <p className="mt-2 max-w-[52ch] text-[13px]">
+          <span className="font-bold text-flag" aria-hidden>
+            ⚑
+          </span>{" "}
           {candidate.start_truncated &&
             "The record starts mid-journey — it began before the imported window. "}
           {candidate.end_truncated &&

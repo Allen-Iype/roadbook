@@ -51,7 +51,10 @@ export default async function CandidatesPage() {
         <CandidateTable candidates={data.candidates} />
       )}
       {data.orphaned_decisions.length > 0 && (
-        <p className="mt-4 text-sm text-flag">
+        <p className="mt-4 text-sm">
+          <span className="font-bold text-flag" aria-hidden>
+            ⚑
+          </span>{" "}
           {data.orphaned_decisions.length} decision
           {data.orphaned_decisions.length === 1 ? "" : "s"} no longer match a
           candidate under the current parameters. They are preserved and will

@@ -41,15 +41,26 @@ docker compose run --rm api roadbook countries
 docker compose run --rm api roadbook detect -from-db
 ```
 
-Then open **http://127.0.0.1:3000**. The list shows 3 adventure candidates:
-a dense south-coast drive to Höfn, a sparse Westfjords trip to Ísafjörður,
-and an Akureyri weekend by air. The daily commute noise and a 44 km day trip
-are correctly absent — near-home movement and trips without a far destination
-are not adventures. Confirm a candidate with a name and open it: the Höfn
-drive renders mostly observed legs; the Ísafjörður trip is dominated by
-honestly unknown gaps (a handful of fixes across 455 road-km); the Akureyri
-weekend draws its two flights as arcs, excluded from road-distance
-validation.
+Then open **http://127.0.0.1:3000**. The home page is the life map: one map
+holding every confirmed adventure's route. Nothing is confirmed yet, so it
+points you at the **Candidates** page, which lists the 3 detected
+candidates: a dense south-coast drive to Höfn, a sparse Westfjords trip to
+Ísafjörður, and an Akureyri weekend by air. The daily commute noise and a
+44 km day trip are correctly absent — near-home movement and trips without a
+far destination are not adventures. Confirm a candidate with a name and it
+joins the life map; click its route (or use the List control — everything on
+the map is equally reachable by keyboard) to open the adventure page: a
+cover of honest figures — distance with its measured/inferred composition,
+dates, countries, and any warnings in words — and the journey sliced into
+civil days, each with its fixes, transits, and dwells. Days the record
+cannot describe say so: the Westfjords trip's middle day reads "no movement
+observed" rather than inventing one. The Höfn drive renders mostly observed
+legs; the Ísafjörður trip is dominated by honestly unknown gaps (a handful
+of fixes across 455 road-km); the Akureyri weekend draws its two flights as
+arcs, excluded from road-distance validation.
+
+A visual record of these screens, captured from this demo dataset, lives in
+`docs/screens/`.
 
 Every number above reproduces from the repository:
 

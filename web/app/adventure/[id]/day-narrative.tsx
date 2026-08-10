@@ -160,7 +160,9 @@ const CHIP: Record<string, { label: string; cls: string }> = {
   fix: { label: "fix", cls: "text-observed border-observed" },
   observed: { label: "observed", cls: "text-observed border-observed" },
   road: { label: "routed", cls: "text-routed border-routed" },
-  unknown: { label: "unknown", cls: "text-unknown border-unknown" },
+  // unknown's ink fails AA as 10px text (3.36:1, CP4 a11y pass): the words
+  // go ink-2, the border keeps the leg-ink pairing.
+  unknown: { label: "unknown", cls: "text-ink-2 border-unknown" },
   air: { label: "air", cls: "text-air border-air" },
   dwell: { label: "dwell", cls: "text-ink-2 border-rule" },
   window: { label: "window", cls: "text-ink-2 border-rule" },

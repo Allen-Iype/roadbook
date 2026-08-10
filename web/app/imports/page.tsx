@@ -115,7 +115,14 @@ function StatusCell({ imp }: { imp: Import }) {
   if (imp.status === "running") {
     // Either genuinely in progress, or a crash left the row unfinalised —
     // both are worth seeing as-is rather than dressing up.
-    return <span className="text-flag">running</span>;
+    return (
+      <span>
+        <span className="text-flag" aria-hidden>
+          ⚑
+        </span>{" "}
+        running
+      </span>
+    );
   }
   return <span className="text-ink-2">completed</span>;
 }

@@ -55,3 +55,16 @@ body {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
+
+/* Motion is decoration here (map dimming, upload pulses); a vestibular
+   preference wins over all of it. Near-zero rather than none so
+   transitionend still fires for anything listening. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

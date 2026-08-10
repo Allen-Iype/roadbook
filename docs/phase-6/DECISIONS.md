@@ -209,3 +209,18 @@ Stage C brief choices (maintainer approved recommendations, 2026-08-08).
 - **Would change our mind:** an assembler change that stops emitting
   stationary observed legs; a real journey where a 0 km observed leg is
   genuinely a moving transit.
+
+## Flag amber marks, ink words (CP4 a11y pass, 2026-08-10)
+
+- **Chosen:** the flag token (#B97F10) measures 3.07:1 on paper — passing
+  WCAG's 3:1 for glyphs and marks, failing 4.5:1 for text — so every
+  honesty warning renders as an amber ⚑/◂/▸ mark beside ink words. Also
+  swept: photos-section's dark-era text-amber-500/80 (1.9:1) and
+  text-emerald-400 (1.7:1) — near-invisible on paper — to ink-2 and
+  emerald-700 (4.9:1, the confirm green decide-cell already uses); the
+  unknown chip's 10px label (3.36:1) to ink-2 beside its unknown border.
+- **Rejected:** darkening the flag token to pass as text (DESIGN §6 tokens
+  are binding, and a darker amber stops reading as amber); leaving small
+  amber text as-is (the a11y pass exists to catch exactly this).
+- **Would change our mind:** a token revision at a future design review;
+  the glyph pattern survives one unchanged either way.

@@ -200,7 +200,7 @@ function PhotoTile({
             <span className="text-ink-2/80"> · {photo.time_source}</span>
           </span>
         ) : (
-          <span className="text-amber-500/80">no capture time</span>
+          <span className="text-ink-2">no capture time</span>
         )}
         <span className="block">
           {photo.pos ? (
@@ -208,7 +208,7 @@ function PhotoTile({
               positioned · {photo.pos_source}
             </span>
           ) : (
-            <span className="text-amber-500/80">no position — strip only</span>
+            <span className="text-ink-2">no position — strip only</span>
           )}
         </span>
         {/* Placement (BRIEF §3G): where the journey held this instant, and
@@ -216,9 +216,12 @@ function PhotoTile({
             against the same geometry the map draws. */}
         {photo.place_kind &&
           (photo.distance_from_route_m !== undefined ? (
-            <span
-              className={`block ${photo.far_flagged ? "text-flag" : ""}`}
-            >
+            <span className="block">
+              {/* Amber marks, ink words: the flag token fails contrast as
+                  running text (CP4 a11y pass), so the glyph carries it. */}
+              {photo.far_flagged && (
+                <span className="font-bold text-flag">⚑ </span>
+              )}
               {fmtDistanceM(photo.distance_from_route_m)}{" "}
               {placeStatement(photo.place_kind)}
             </span>
@@ -226,7 +229,7 @@ function PhotoTile({
             <span className="block">{placeStatement(photo.place_kind)}</span>
           ))}
         {!photo.place_kind && photo.pos && photo.taken_at && (
-          <span className="block text-amber-500/80">
+          <span className="block text-ink-2">
             outside this journey&apos;s timeline
           </span>
         )}
@@ -261,18 +264,26 @@ function PendingTile({ pending }: { pending: Pending }) {
 // truthfully (BRIEF §1.5): a rejected file names its reason beside the files
 // that landed.
 function ResultsPanel({ results }: { results: UploadResult[] }) {
-  const label: Record<UploadResult["status"], { text: string; cls: string }> = {
-    accepted: { text: "added", cls: "text-emerald-400" },
+  const label: Record<
+    UploadResult["status"],
+    { text: string; cls: string; flagged?: boolean }
+  > = {
+    accepted: { text: "added", cls: "text-emerald-700" },
     duplicate: { text: "already uploaded", cls: "text-ink-2" },
     rejected: { text: "rejected", cls: "text-red-700" },
-    sidecar_paired: { text: "metadata applied", cls: "text-emerald-400" },
-    sidecar_unpaired: { text: "unpaired sidecar", cls: "text-flag" },
+    sidecar_paired: { text: "metadata applied", cls: "text-emerald-700" },
+    sidecar_unpaired: { text: "unpaired sidecar", cls: "text-ink", flagged: true },
   };
   return (
     <ul className="mt-3 space-y-1 text-xs">
       {results.map((r, i) => (
         <li key={i}>
           <span className="font-mono text-ink">{r.file}</span>{" "}
+          {label[r.status].flagged && (
+            <span className="font-bold text-flag" aria-hidden>
+              ⚑{" "}
+            </span>
+          )}
           <span className={label[r.status].cls}>{label[r.status].text}</span>
           {r.paired_with && (
             <span className="text-ink-2"> → {r.paired_with}</span>
