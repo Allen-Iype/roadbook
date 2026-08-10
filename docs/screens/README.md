@@ -13,6 +13,11 @@ ids: 1 South coast to Höfn · 2 Westfjords · 3 Akureyri by air). The
 `-dark` variants exist for `phase6-baseline` only — the pre-phase-6 UI
 followed `prefers-color-scheme`; the Atlas plate design is single-theme.
 
+A set covers every page the app has at capture time: when a phase adds a
+new page (a new URL), add it to the `PAGES` list in `capture.js` in the
+same change, so no page's history starts late. (Pages the deployed image
+does not serve yet are skipped automatically — the script logs the 404.)
+
 To compare one page over time, list it across sets:
 `ls docs/screens/*-home*.png`.
 

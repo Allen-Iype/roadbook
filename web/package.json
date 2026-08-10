@@ -10,7 +10,8 @@
     "generate": "openapi-typescript ../api/openapi.yaml -o lib/api/schema.d.ts",
     "copy:maplibre": "mkdir -p public/maplibre && cp node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs public/maplibre/",
     "predev": "npm run copy:maplibre",
-    "prebuild": "npm run copy:maplibre"
+    "prebuild": "npm run copy:maplibre",
+    "test": "vitest run"
   },
   "dependencies": {
     "maplibre-gl": "6.1.0",
@@ -29,6 +30,7 @@
     "eslint-config-next": "16.2.12",
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

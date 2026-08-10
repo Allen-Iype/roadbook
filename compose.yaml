@@ -72,7 +72,10 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       ROADBOOK_API_URL: http://api:8080
-      ROADBOOK_MAP_STYLE: ${ROADBOOK_MAP_STYLE:-https://tiles.openfreemap.org/styles/liberty}
+      # Unset by default: the app ships its own basemap (the committed
+      # Roadbook light style under web/public/map-style/). Set in .env to
+      # override with any MapLibre style URL.
+      ROADBOOK_MAP_STYLE: ${ROADBOOK_MAP_STYLE:-}
     depends_on:
       api:
         condition: service_healthy

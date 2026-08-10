@@ -149,6 +149,22 @@ Stage C brief choices (maintainer approved recommendations, 2026-08-08).
 - **Would change our mind:** timebox risk in BRIEF §5 — if style work
   drags, ship Liberty and land the custom style later in the phase.
 
+## Summoned list: the native dialog element, not shadcn (CP2, 2026-08-10)
+
+- **Chosen:** the platform `<dialog>` with `showModal()` — modal focus
+  trap, Escape, backdrop, and focus-return to the opener are browser
+  behaviour, specified and shipped everywhere Roadbook runs; the whole
+  component is ~70 lines with zero new dependencies.
+- **Rejected:** installing shadcn for its Sheet. The BRIEF assumed shadcn
+  was "already in the stack", but web/package.json carries none of it —
+  the CLAUDE.md stack line named it as the sanctioned idiom, and pulling
+  a component system plus Radix into the bundle for one overlay inverts
+  its cost. Also rejected: a hand-rolled toggled div (the focus
+  management `<dialog>` gives for free is exactly what gets forgotten).
+- **Would change our mind:** the second or third overlay surface (menus,
+  sheets, toasts) — that is the point to install shadcn properly and fold
+  this dialog into its idiom.
+
 ## UI screenshots committed per checkpoint, demo instance only
 
 - **Chosen:** a committed visual record of the UI under `docs/screens/`,

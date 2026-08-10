@@ -47,7 +47,8 @@ if (!executablePath) {
     args: ['--hide-scrollbars'],
   });
   const page = await browser.newPage();
-  await page.setViewport({ width: 1600, height: 1000, deviceScaleFactor: 1 });
+  const VIEWPORT = { width: 1600, height: 1000, deviceScaleFactor: 1 };
+  await page.setViewport(VIEWPORT);
 
   for (const scheme of schemes) {
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]);
@@ -57,10 +58,30 @@ if (!executablePath) {
         console.log('skip', p.path, res.status());
         continue;
       }
-      await new Promise((r) => setTimeout(r, 3000)); // let MapLibre finish tiles
+      // Remote tiles on a cold cache can take several seconds; a screenshot
+      // of a half-loaded map would read as a rendering bug in the record.
+      await new Promise((r) => setTimeout(r, 8000));
       const suffix = scheme === 'light' ? '' : '-dark';
       const file = path.join(OUT, `${set}-${p.name}${suffix}.png`);
-      await page.screenshot({ path: file, fullPage: true });
+      // Never fullPage: puppeteer's fullPage mode composites beyond the
+      // viewport, and a WebGL canvas rendered without preserveDrawingBuffer
+      // (MapLibre's default) yields only whatever sliver intersected its
+      // last presented frame — maps come out blank or partial while the
+      // live page is fine. Growing the viewport to the page height and
+      // taking a plain capture goes through the normal compositor path,
+      // which always holds the map's current frame.
+      const fullHeight = await page.evaluate(() =>
+        Math.min(document.documentElement.scrollHeight, 5000),
+      );
+      if (fullHeight > VIEWPORT.height) {
+        await page.setViewport({ ...VIEWPORT, height: fullHeight });
+        await new Promise((r) => setTimeout(r, 2500)); // reflow + repaint
+      }
+      await page.screenshot({ path: file });
+      if (fullHeight > VIEWPORT.height) {
+        await page.setViewport(VIEWPORT);
+        await new Promise((r) => setTimeout(r, 500));
+      }
       console.log('wrote', file);
     }
   }

@@ -5,15 +5,9 @@ import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { PhotosSection } from "./photos-section";
 import { RouteMap } from "./route-map";
+import { MAP_STYLE_URL } from "@/lib/basemap";
 import { ProvenanceBar } from "@/components/provenance-bar";
 import { SiteHeader } from "@/components/site-header";
-
-// The basemap style URL is server-side config passed down as a prop — the
-// phase 5 "configurable tile provider" seam, done cheap now (BRIEF §1.2).
-// Tile requests are the map's one unavoidable third-party dependency; the
-// default is OpenFreeMap, which needs no key and no account.
-const MAP_STYLE_URL =
-  process.env.ROADBOOK_MAP_STYLE ?? "https://tiles.openfreemap.org/styles/liberty";
 
 // Server component for one adventure. Next 16 dynamic route: the [id] folder
 // segment arrives via `params`, which is a Promise here (async request APIs,
