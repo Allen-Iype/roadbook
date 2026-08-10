@@ -348,6 +348,22 @@ none is scheduled:
 - GPX ingestion (Garmin/Strava/Komoot/OsmAnd) — the enthusiast tier. GPX tracks are
   dense, so these adventures arrive nearly gap-free: Timeline is the sparse case,
   GPX the dense case, one observed/inferred model covers both
+- Photos as an import source — geotagged photos become timestamped position fixes:
+  a new parser emitting existing domain types (invariant 4), plus stay-point visit
+  synthesis and home derivation without visits (machinery shared with the legacy
+  Timeline variants above — one brief should cover the synthesis pass for both).
+  Phase 4 already established the principle: a positioned photo is a measurement.
+  Serves anyone with a camera roll but no Timeline — the common iPhone case.
+  Carried from phase 5; needs its own design brief
+- Manual trip creation — a user with no data draws the trip they took: waypoints
+  and dates, road geometry routed between asserted points, geotagged photos
+  slotting in as real measured fixes. Honesty-compatible only as a third
+  provenance class ("recalled": own leg kind, own ink, legend wording, provenance
+  bar stating measured vs recalled) — recalled geometry must never be mistakable
+  for, or used to correct, measured geometry (invariants 2, 5, 8). The largest
+  backlog item: a route editor, a creation path bypassing detection, and a
+  PRODUCT.md amendment — a product-identity decision to take deliberately.
+  Trigger: real users that photo and GPX ingestion still leave stranded
 - Per-adventure GPX/GeoJSON export, with the observed/inferred distinction preserved
   in the output (separate track segments per confidence class) — an export that
   flattens it silently violates the honesty principle
