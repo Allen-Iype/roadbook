@@ -364,6 +364,14 @@ none is scheduled:
   backlog item: a route editor, a creation path bypassing detection, and a
   PRODUCT.md amendment — a product-identity decision to take deliberately.
   Trigger: real users that photo and GPX ingestion still leave stranded
+- Self-serve data deletion — a user-facing "delete my data" removing
+  observations, imports, decisions, photos (rows and files), and retained
+  uploads in one act. Deferred deliberately: on an authless instance a
+  destructive control is a hazard, and for hand-provisioned instances the
+  operator's volume-level reset is structurally complete where row-chasing
+  can silently miss a file. Becomes user-facing — and, for location data,
+  legally required — when accounts arrive. Trigger: the multi-user tenancy
+  phase
 - Per-adventure GPX/GeoJSON export, with the observed/inferred distinction preserved
   in the output (separate track segments per confidence class) — an export that
   flattens it silently violates the honesty principle
