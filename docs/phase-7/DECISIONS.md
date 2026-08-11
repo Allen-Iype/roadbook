@@ -79,6 +79,56 @@ Rejected: in-process detect state (lost on restart), and deriving it from
 the runs table (a failed detect leaves no run row to derive from).
 Would change: nothing foreseeable; the column is additive and nullable.
 
+## 2026-08-11 — Front door hero is a demo-derived SVG plate, not screenshots
+
+Chosen: the /welcome pitch visual is an inline SVG atlas plate of the three
+demo adventures, geometry reused verbatim from the phase 6 Stage B mockups
+(captured from the compose demo API; NE coastline, public domain) — ~20 KB
+of markup, crisp at phone DPR, and it demonstrates the leg-kind language
+itself rather than a picture of it.
+Rejected: embedding docs/screens PNG captures (235–360 KB each on the page
+mobile is the primary funnel for) and re-capturing live screenshots (a new
+moving part for no added honesty — the geometry is the same demo data).
+Would change: the demo dataset changing shape — the plate is committed
+markup and would need regenerating with it.
+
+## 2026-08-11 — Rejection anchors: one module, anchors typed to the page's sections
+
+Chosen: `web/lib/rejection-anchors.ts` maps every sniffer label (13
+synchronous + truncated/json-unrecognised from the parser) to a /welcome
+section id + link text; the page renders its section ids from the same
+module, so a dead-end anchor is unrepresentable, and a vitest walks all 15
+labels as the no-dead-ends regression. Link text points; the API message
+explains — the map never rewords the taxonomy.
+Rejected: per-label bespoke prose (duplicates the Go messages and drifts),
+and parsing rejection prose (detected_format exists precisely to avoid it).
+Would change: new sniffer labels — the vitest fails visibly when the Go
+taxonomy grows past the map.
+
+## 2026-08-11 — /welcome is stateless; outcome copy lives where the outcome shows
+
+Chosen: /welcome makes no API calls. The designed zero-candidates copy
+renders on /candidates and the life-map invitation (both already read the
+run), which is where the island's "See your candidates" link lands; `/`
+redirects to /welcome only when GET /imports answers with zero rows.
+Rejected: the upload island fetching candidate counts (a new proxy route
+for one sentence) and redirecting on failed API calls (API-down must render
+the API-down state, not a pitch).
+Would change: the front door growing per-state content (photos-as-source
+era) — then it earns a fetch.
+
+## 2026-08-11 — Small-screen pass: column hiding and tap targets, no re-layout
+
+Chosen: at phone width the candidates table keeps Start/Days/Distance/
+Status (Track, Stops, Visits, Score hidden — triage detail, still on
+wider screens), the imports table keeps When/Source/Format/New/Status;
+decide-cell controls gain padding-expanded tap areas (visually unchanged);
+overflow-x-auto stays as the belt. Layout and touch only, per the BRIEF.
+Rejected: card-per-candidate re-layout at phone width — a redesign, out of
+the checkpoint's stated scope.
+Would change: the pilot finding the hidden columns missed on phones — a
+real report reopens the layout question with evidence.
+
 ## 2026-08-11 — imports gains an `inserted` column (found writing the tests)
 
 Chosen: record the genuinely-new observation count on the imports row

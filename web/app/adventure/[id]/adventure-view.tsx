@@ -133,7 +133,7 @@ function Cover({
   return (
     <header>
       <p className="text-[11.5px] tracking-[0.24em] text-ink-2">{eyebrow}</p>
-      <h1 className="mt-2 font-display text-5xl font-semibold leading-[1.05]">
+      <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
         {name}
       </h1>
       <p className="mt-3 font-mono text-[13px] text-ink-2">
@@ -160,7 +160,7 @@ function Cover({
       )}
 
       <div className="mt-5 border-b border-rule border-t border-t-ink py-4">
-        <p className="font-display text-4xl font-semibold leading-none">
+        <p className="font-display text-3xl font-semibold leading-none sm:text-4xl">
           {journey.total_km.toFixed(0)} km
           <span className="ml-2 font-sans text-base font-normal text-ink-2">
             drawn — {pctObserved}% of it measured

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { api } from "@/lib/api/client";
 import { MAP_STYLE_URL } from "@/lib/basemap";
@@ -20,7 +21,18 @@ import { SiteHeader } from "@/components/site-header";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { data, error } = await api.GET("/candidates");
+  const [{ data, error }, importsRes] = await Promise.all([
+    api.GET("/candidates"),
+    api.GET("/imports"),
+  ]);
+
+  // A cold instance — nothing has ever been imported — routes to the front
+  // door (phase 7 BRIEF §3E): a shared link lands on the pitch, and the same
+  // link lands here once adventures exist. Only an answered-and-empty
+  // imports list redirects; an unreachable API renders as exactly that.
+  if (importsRes.data && importsRes.data.imports.length === 0) {
+    redirect("/welcome");
+  }
 
   if (error || !data) {
     return (
@@ -39,30 +51,66 @@ export default async function HomePage() {
     (c) => c.decision?.action === "confirmed",
   );
 
-  // Empty state one: nothing imported / nothing detected. An invitation,
-  // not an error — this is every fresh install's first screen.
+  // Empty state one: imports exist but no candidates. Two different facts
+  // deserve two different sentences (BRIEF §3E, the zero-candidates ending):
+  // detection ran and found nothing — designed copy, never a blank screen —
+  // versus detection never ran (a CLI import without a detect).
   if (candidates.length === 0) {
     return (
       <Invitation>
-        <h1 className="font-display text-2xl font-semibold">
-          No adventures yet
-        </h1>
-        <p className="mt-3 text-ink-2">
-          Roadbook draws your life map from the journeys in a Google
-          Timeline export. Import one and run detection — the README
-          quickstart walks through it:
-        </p>
-        <pre className="mx-auto mt-4 w-fit bg-land px-4 py-3 text-left font-mono text-sm">
-          {"roadbook import <your Timeline export>.json\nroadbook detect -from-db"}
-        </pre>
-        {data.run && (
-          <p className="mt-3 text-sm text-ink-2">
-            A detection run exists but produced no candidates — check{" "}
-            <Link href="/imports" className="underline decoration-rule underline-offset-2">
-              Imports
-            </Link>{" "}
-            for what was ingested.
-          </p>
+        {data.run ? (
+          <>
+            <h1 className="font-display text-2xl font-semibold">
+              No adventures found — yet
+            </h1>
+            <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
+              Your data imported fine. Detection ran and found no journeys
+              far from home with a real destination — it looks for time
+              spent well away from every home base, staying somewhere, and
+              pass-throughs don&apos;t count.
+            </p>
+            <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
+              More data may change that:{" "}
+              <Link
+                href="/welcome"
+                className="underline decoration-rule underline-offset-2 hover:text-ink"
+              >
+                add another export
+              </Link>{" "}
+              — earlier years, another device — or see{" "}
+              <Link
+                href="/imports"
+                className="underline decoration-rule underline-offset-2 hover:text-ink"
+              >
+                Imports
+              </Link>{" "}
+              for what was ingested.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="font-display text-2xl font-semibold">
+              No adventures yet
+            </h1>
+            <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
+              Roadbook draws your life map from the journeys in a Google
+              Timeline export. Data has been imported but detection has not
+              run yet.
+            </p>
+            <pre className="mx-auto mt-4 w-fit bg-land px-4 py-3 text-left font-mono text-sm">
+              {"roadbook detect -from-db"}
+            </pre>
+            <p className="mt-3 text-sm text-ink-2">
+              Or{" "}
+              <Link
+                href="/welcome"
+                className="underline decoration-rule underline-offset-2 hover:text-ink"
+              >
+                add your data through the browser
+              </Link>
+              , which runs detection automatically.
+            </p>
+          </>
         )}
       </Invitation>
     );
@@ -141,7 +189,7 @@ export default async function HomePage() {
           <p className="pointer-events-auto border border-rule bg-paper px-4 py-2.5 font-display text-lg font-semibold tracking-[0.28em] shadow-sm">
             ROADBOOK
           </p>
-          <nav className="pointer-events-auto flex items-center gap-5 border border-rule bg-paper px-4 py-2.5 text-sm shadow-sm">
+          <nav className="pointer-events-auto flex flex-wrap items-center gap-x-5 gap-y-1 border border-rule bg-paper px-4 py-2.5 text-sm shadow-sm">
             {/* The summoned list first: it is the accessible enumeration of
                 the map (DESIGN §5), not a secondary link. */}
             <SummonedList adventures={adventures} />
@@ -184,9 +232,9 @@ function Invitation({
   children: React.ReactNode;
 }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-8">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
       <SiteHeader undecided={undecided} />
-      <div className="mt-16 border border-rule bg-paper px-8 py-10 text-center">
+      <div className="mt-16 border border-rule bg-paper px-5 py-10 text-center sm:px-8">
         {children}
       </div>
     </main>

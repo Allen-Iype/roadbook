@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { SiteHeader } from "@/components/site-header";
@@ -30,7 +32,14 @@ export default async function ImportsPage() {
       <UploadImport />
       {data.imports.length === 0 ? (
         <p className="mt-6 text-ink-2">
-          No imports yet — upload an export above, or run{" "}
+          No imports yet — upload an export above (
+          <Link
+            href="/welcome"
+            className="underline decoration-rule underline-offset-2 hover:text-ink"
+          >
+            how to get one
+          </Link>
+          ), or run{" "}
           <code className="font-mono">roadbook import -src Timeline.json</code>.
         </p>
       ) : (
@@ -42,12 +51,19 @@ export default async function ImportsPage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-8">
+    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
       <SiteHeader />
       <h1 className="mt-8 font-display text-2xl font-semibold">Imports</h1>
       <p className="mt-1 text-sm text-ink-2">
         Every import attempt, newest first — including the failed ones, with
-        what the file turned out to be.
+        what the file turned out to be. New here?{" "}
+        <Link
+          href="/welcome"
+          className="underline decoration-rule underline-offset-2 hover:text-ink"
+        >
+          How to export your Timeline
+        </Link>
+        .
       </p>
       {children}
     </main>
@@ -59,16 +75,21 @@ function ImportTable({ imports }: { imports: Import[] }) {
     <div className="mt-6 overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
+          {/* The detail columns hide at phone width (small-screen pass,
+              BRIEF §1.5): When/Source/New/Status is the story a thumb
+              needs — the status cell already carries any failure prose.
+              Format joins from sm:, the full accounting from md:, and
+              overflow-x-auto remains the belt. */}
           <tr className="border-b border-ink/40 text-left text-xs uppercase tracking-wide text-ink-2">
             <th className="py-2 pr-4">When</th>
             <th className="py-2 pr-4">Source</th>
-            <th className="py-2 pr-4">Format</th>
-            <th className="py-2 pr-4">Window</th>
-            <th className="py-2 pr-4 text-right">Visits</th>
-            <th className="py-2 pr-4 text-right">Activities</th>
-            <th className="py-2 pr-4 text-right">Points</th>
-            <th className="py-2 pr-4 text-right">Raw</th>
-            <th className="py-2 pr-4 text-right">Skipped</th>
+            <th className="hidden py-2 pr-4 sm:table-cell">Format</th>
+            <th className="hidden py-2 pr-4 md:table-cell">Window</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Visits</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Activities</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Points</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Raw</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Skipped</th>
             <th className="py-2 pr-4 text-right">New</th>
             <th className="py-2 pr-4">Status</th>
           </tr>
@@ -80,19 +101,19 @@ function ImportTable({ imports }: { imports: Import[] }) {
                 {imp.imported_at.slice(0, 10)}
               </td>
               <td className="py-2 pr-4">{imp.source_label}</td>
-              <td className="py-2 pr-4 font-mono text-ink-2">
+              <td className="hidden py-2 pr-4 font-mono text-ink-2 sm:table-cell">
                 {/* Absent means the input was never recognised (not JSON,
                     unreadable) — different information than a known format. */}
                 {imp.detected_format ?? "—"}
               </td>
-              <td className="py-2 pr-4 font-mono whitespace-nowrap text-ink-2">
+              <td className="hidden py-2 pr-4 font-mono whitespace-nowrap text-ink-2 md:table-cell">
                 {windowLabel(imp)}
               </td>
-              <td className="py-2 pr-4 text-right">{imp.visits}</td>
-              <td className="py-2 pr-4 text-right">{imp.activities}</td>
-              <td className="py-2 pr-4 text-right">{imp.points}</td>
-              <td className="py-2 pr-4 text-right">{imp.raw_positions}</td>
-              <td className="py-2 pr-4 text-right">{imp.skipped}</td>
+              <td className="hidden py-2 pr-4 text-right md:table-cell">{imp.visits}</td>
+              <td className="hidden py-2 pr-4 text-right md:table-cell">{imp.activities}</td>
+              <td className="hidden py-2 pr-4 text-right md:table-cell">{imp.points}</td>
+              <td className="hidden py-2 pr-4 text-right md:table-cell">{imp.raw_positions}</td>
+              <td className="hidden py-2 pr-4 text-right md:table-cell">{imp.skipped}</td>
               <td className="py-2 pr-4 text-right">
                 {/* How many observations were genuinely new. Absent on rows
                     from before the column existed — unknown, not zero. */}

@@ -36,7 +36,7 @@ export default async function AdventurePage({
     // The generated client types the 404 body; anything else is "API down".
     if (journeyRes.response?.status === 404) notFound();
     return (
-      <main className="mx-auto w-full max-w-[91rem] px-6 py-8">
+      <main className="mx-auto w-full max-w-[91rem] px-4 py-8 sm:px-6">
         <p className="text-red-700">
           The Roadbook API is not reachable. Start it with{" "}
           <code className="font-mono">roadbook serve</code> and reload.
@@ -67,7 +67,7 @@ export default async function AdventurePage({
   const undecided = candidates.filter((c) => !c.decision).length;
 
   return (
-    <main className="mx-auto w-full max-w-[91rem] px-6 py-8">
+    <main className="mx-auto w-full max-w-[91rem] px-4 py-8 sm:px-6">
       <SiteHeader undecided={undecided} />
       <p className="mt-6 text-sm">
         <Link href="/" className="text-ink-2 hover:text-ink">

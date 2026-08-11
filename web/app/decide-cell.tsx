@@ -91,18 +91,21 @@ export function DecideCell({
               if (e.key === "Escape") setEditing("closed");
             }}
             placeholder="Name this adventure"
-            className="w-40 rounded border border-rule bg-paper px-2 py-0.5 text-sm outline-none focus:border-ink"
+            className="w-40 rounded border border-rule bg-paper px-2 py-1 text-sm outline-none focus:border-ink"
           />
+          {/* -mx-2 -my-3 px-2 py-3 on every control: the hit area reaches the ~44px
+              a thumb needs (small-screen pass, BRIEF §1.5) while the
+              rendered text moves not at all. */}
           <button
             disabled={trimmed === ""}
             onClick={() => submit({ status: "confirmed", name: trimmed })}
-            className="text-emerald-700 disabled:text-rule"
+            className="-mx-2 -my-3 px-2 py-3 text-emerald-700 disabled:text-rule"
           >
             save
           </button>
           <button
             onClick={() => setEditing("closed")}
-            className="text-ink-2 hover:text-ink"
+            className="-mx-2 -my-3 px-2 py-3 text-ink-2 hover:text-ink"
           >
             cancel
           </button>
@@ -126,13 +129,13 @@ export function DecideCell({
             if (suggested) setName((cur) => (cur === "" ? suggested : cur));
           });
         }}
-        className="text-emerald-700 hover:underline"
+        className="-mx-2 -my-3 px-2 py-3 text-emerald-700 hover:underline"
       >
         confirm
       </button>
       <button
         onClick={() => submit({ status: "dismissed" })}
-        className="text-ink-2 hover:underline"
+        className="-mx-2 -my-3 px-2 py-3 text-ink-2 hover:underline"
       >
         dismiss
       </button>
@@ -153,7 +156,7 @@ export function DecideCell({
       {shown.status !== "undecided" && editing !== "redeciding" && (
         <button
           onClick={() => setEditing("redeciding")}
-          className="text-xs text-ink-2 hover:text-ink"
+          className="-mx-2 -my-3 px-2 py-3 text-xs text-ink-2 hover:text-ink"
         >
           change
         </button>
@@ -161,7 +164,7 @@ export function DecideCell({
       {editing === "redeciding" && (
         <button
           onClick={() => setEditing("closed")}
-          className="text-xs text-ink-2 hover:text-ink"
+          className="-mx-2 -my-3 px-2 py-3 text-xs text-ink-2 hover:text-ink"
         >
           keep as is
         </button>

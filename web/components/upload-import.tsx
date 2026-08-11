@@ -18,6 +18,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { redirectFor } from "@/lib/rejection-anchors";
+
 type ImportRow = {
   id: number;
   status: "running" | "completed" | "failed";
@@ -249,6 +251,7 @@ function PhaseView({ phase }: { phase: Phase }) {
           </p>
           <p className="mt-1 text-ink-2">{phase.message}</p>
           <p className="mt-1 text-ink-2">Nothing was stored — try the right file.</p>
+          <RedirectionLink format={phase.format} />
         </div>
       );
     case "failed":
@@ -257,8 +260,15 @@ function PhaseView({ phase }: { phase: Phase }) {
           <p className="font-semibold text-red-700">The import failed</p>
           {phase.message && <p className="mt-1 text-ink-2">{phase.message}</p>}
           <p className="mt-1 text-ink-2">
-            The attempt is recorded in the list below.
+            The attempt is recorded on the{" "}
+            <a href="/imports" className="underline underline-offset-2">
+              imports list
+            </a>
+            .
           </p>
+          {/* Only when the failure named a format: a detect failure or an
+              unexplained one has no file-shaped fix to point at. */}
+          {phase.format && <RedirectionLink format={phase.format} />}
         </div>
       );
     case "error":
@@ -266,4 +276,22 @@ function PhaseView({ phase }: { phase: Phase }) {
         <p className="max-w-prose font-semibold text-red-700">{phase.message}</p>
       );
   }
+}
+
+// Rejection as redirection (BRIEF §3E): the API's message explains what the
+// file was; this link says where on the front door the fix lives. A plain
+// anchor, not <Link> — on /welcome it scrolls in place, elsewhere it
+// navigates there.
+function RedirectionLink({ format }: { format?: string }) {
+  const r = redirectFor(format);
+  return (
+    <p className="mt-2">
+      <a
+        href={`/welcome#${r.anchor}`}
+        className="font-semibold underline underline-offset-2"
+      >
+        {r.link} →
+      </a>
+    </p>
+  );
 }

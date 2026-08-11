@@ -49,7 +49,11 @@ export function LegKindLegend({ wordy = true }: { wordy?: boolean }) {
         <span key={e.key} className="inline-flex items-center gap-2">
           <Sample kind={e.key} />
           <span className="font-semibold tracking-wide">{e.label}</span>
-          {wordy && <span className="text-ink-2">— {e.desc}</span>}
+          {/* The descriptions yield at phone width — the kind names and the
+              drawn samples stay; the full wording returns from sm: up. */}
+          {wordy && (
+            <span className="hidden text-ink-2 sm:inline">— {e.desc}</span>
+          )}
         </span>
       ))}
     </p>
