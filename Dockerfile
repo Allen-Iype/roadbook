@@ -17,11 +17,14 @@ FROM alpine:3.22
 # endpoints. tzdata: Go time handling for named zones.
 RUN apk add --no-cache ca-certificates tzdata \
     && adduser -D -H roadbook \
-    && mkdir -p /photos && chown roadbook /photos
+    && mkdir -p /photos /uploads && chown roadbook /photos /uploads
 COPY --from=build /out/roadbook /usr/local/bin/roadbook
 USER roadbook
 # /photos is the thumbnail directory — irreplaceable user data, a named
 # volume in compose (it inherits this directory's ownership on first mount).
+# /uploads is the retained-exports directory (phase 7 BRIEF §3C) — same
+# volume-ownership mechanism, same safety class.
 ENV ROADBOOK_PHOTOS_DIR=/photos
+ENV ROADBOOK_UPLOADS_DIR=/uploads
 EXPOSE 8080
 CMD ["roadbook", "serve"]

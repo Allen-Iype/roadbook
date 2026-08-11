@@ -333,6 +333,8 @@ func runServe(args []string) error {
 		"Nominatim base URL (default $ROADBOOK_NOMINATIM_URL)")
 	photosDir := fs.String("photos-dir", envOr("ROADBOOK_PHOTOS_DIR", "data/photos"),
 		"thumbnail directory (default $ROADBOOK_PHOTOS_DIR) — under gitignored data/ by default; photos are user data")
+	uploadsDir := fs.String("uploads-dir", envOr("ROADBOOK_UPLOADS_DIR", "data/uploads"),
+		"retained-uploads directory (default $ROADBOOK_UPLOADS_DIR) — under gitignored data/ by default; exports are real location history")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -360,8 +362,22 @@ func runServe(args []string) error {
 	if err := photos.Init(); err != nil {
 		return fmt.Errorf("photos directory: %w", err)
 	}
+	uploads := store.UploadFiles{Dir: *uploadsDir}
+	if err := uploads.Init(); err != nil {
+		return fmt.Errorf("uploads directory: %w", err)
+	}
 
-	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Suggester: sug, Photos: photos}
+	// A 'running' import whose goroutine died with the last process would
+	// say running forever; finalise it visibly (phase 7 BRIEF §1.2). The
+	// retained file makes retry cheap.
+	if swept, err := s.SweepRunningImports(ctx,
+		"interrupted by a server restart — upload the file again to retry"); err != nil {
+		return fmt.Errorf("sweeping interrupted imports: %w", err)
+	} else if swept > 0 {
+		fmt.Printf("marked %d interrupted import(s) failed\n", swept)
+	}
+
+	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Suggester: sug, Photos: photos, Uploads: uploads}
 	handler := api.HandlerFromMux(api.NewStrictHandler(srv, nil), http.NewServeMux())
 	fmt.Printf("roadbook API listening on %s\n", *addr)
 	return http.ListenAndServe(*addr, handler)

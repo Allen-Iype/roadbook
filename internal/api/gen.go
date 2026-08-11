@@ -55,21 +55,42 @@ func (e DecisionRequestAction) Valid() bool {
 	}
 }
 
+// Defines values for ImportDetectStatus.
+const (
+	ImportDetectStatusCompleted ImportDetectStatus = "completed"
+	ImportDetectStatusFailed    ImportDetectStatus = "failed"
+	ImportDetectStatusRunning   ImportDetectStatus = "running"
+)
+
+// Valid indicates whether the value is a known member of the ImportDetectStatus enum.
+func (e ImportDetectStatus) Valid() bool {
+	switch e {
+	case ImportDetectStatusCompleted:
+		return true
+	case ImportDetectStatusFailed:
+		return true
+	case ImportDetectStatusRunning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ImportStatus.
 const (
-	Completed ImportStatus = "completed"
-	Failed    ImportStatus = "failed"
-	Running   ImportStatus = "running"
+	ImportStatusCompleted ImportStatus = "completed"
+	ImportStatusFailed    ImportStatus = "failed"
+	ImportStatusRunning   ImportStatus = "running"
 )
 
 // Valid indicates whether the value is a known member of the ImportStatus enum.
 func (e ImportStatus) Valid() bool {
 	switch e {
-	case Completed:
+	case ImportStatusCompleted:
 		return true
-	case Failed:
+	case ImportStatusFailed:
 		return true
-	case Running:
+	case ImportStatusRunning:
 		return true
 	default:
 		return false
@@ -300,16 +321,25 @@ type Health struct {
 type Import struct {
 	Activities int `json:"activities"`
 
+	// ContentHash SHA-256 of the uploaded file, upload-path imports only — the retained file's name in the uploads directory (the photos content-hash precedent). Absent on CLI imports.
+	ContentHash *string `json:"content_hash,omitempty"`
+
+	// DetectStatus Status of the automatic detection that follows a successful upload import (phase 7 BRIEF §3D). Absent when no auto-detect was triggered (CLI imports, failed imports). A detection failure never marks the import failed — the import row describes the import.
+	DetectStatus *ImportDetectStatus `json:"detect_status,omitempty"`
+
 	// DetectedFormat The sniffer's stable format label (phone-timeline, records-json, semantic-history, …). Absent when the input was never recognised.
 	DetectedFormat *string `json:"detected_format,omitempty"`
 
 	// Error The user-facing failure message — prose, subject to rewording; never the queryable evidence.
-	Error        *string   `json:"error,omitempty"`
-	Id           int64     `json:"id"`
-	ImportedAt   time.Time `json:"imported_at"`
-	Points       int       `json:"points"`
-	RawPositions int       `json:"raw_positions"`
-	Skipped      int       `json:"skipped"`
+	Error      *string   `json:"error,omitempty"`
+	Id         int64     `json:"id"`
+	ImportedAt time.Time `json:"imported_at"`
+
+	// Inserted How many observations were genuinely new — the per-type counters record what the file contained; this records what the database gained. Zero on a duplicate upload ("nothing new"). Absent on rows from before this field existed.
+	Inserted     *int `json:"inserted,omitempty"`
+	Points       int  `json:"points"`
+	RawPositions int  `json:"raw_positions"`
+	Skipped      int  `json:"skipped"`
 
 	// SourceLabel Provenance label, defaulting to the source file name.
 	SourceLabel string       `json:"source_label"`
@@ -321,12 +351,24 @@ type Import struct {
 	WindowStart *time.Time `json:"window_start,omitempty"`
 }
 
+// ImportDetectStatus Status of the automatic detection that follows a successful upload import (phase 7 BRIEF §3D). Absent when no auto-detect was triggered (CLI imports, failed imports). A detection failure never marks the import failed — the import row describes the import.
+type ImportDetectStatus string
+
 // ImportStatus defines model for Import.Status.
 type ImportStatus string
 
 // ImportList defines model for ImportList.
 type ImportList struct {
 	Imports []Import `json:"imports"`
+}
+
+// ImportRejection defines model for ImportRejection.
+type ImportRejection struct {
+	// DetectedFormat The stable format label (zip, records-json, …) — what the file actually is, for mapping to a walkthrough anchor. Absent when the input was not recognisable at all.
+	DetectedFormat *string `json:"detected_format,omitempty"`
+
+	// Error The sniffer's actionable message — prose, rewordable.
+	Error string `json:"error"`
 }
 
 // Journey defines model for Journey.
@@ -553,11 +595,23 @@ type UploadCandidatePhotosMultipartBody struct {
 	Files *[]openapi_types.File `json:"files,omitempty"`
 }
 
+// UploadImportMultipartBody defines parameters for UploadImport.
+type UploadImportMultipartBody struct {
+	// File The Timeline export.
+	File openapi_types.File `json:"file"`
+
+	// Label Provenance label; defaults to the uploaded file's name (the source_label convention).
+	Label *string `json:"label,omitempty"`
+}
+
 // DecideCandidateJSONRequestBody defines body for DecideCandidate for application/json ContentType.
 type DecideCandidateJSONRequestBody = DecisionRequest
 
 // UploadCandidatePhotosMultipartRequestBody defines body for UploadCandidatePhotos for multipart/form-data ContentType.
 type UploadCandidatePhotosMultipartRequestBody UploadCandidatePhotosMultipartBody
+
+// UploadImportMultipartRequestBody defines body for UploadImport for multipart/form-data ContentType.
+type UploadImportMultipartRequestBody UploadImportMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -585,6 +639,12 @@ type ServerInterface interface {
 	// ListImports Every import attempt, newest first
 	// (GET /imports)
 	ListImports(w http.ResponseWriter, r *http.Request)
+	// UploadImport Upload a Timeline export and import it
+	// (POST /imports)
+	UploadImport(w http.ResponseWriter, r *http.Request)
+	// GetImport One import attempt, by id
+	// (GET /imports/{id})
+	GetImport(w http.ResponseWriter, r *http.Request, id int64)
 	// DeletePhoto Delete one photo
 	// (DELETE /photos/{id})
 	DeletePhoto(w http.ResponseWriter, r *http.Request, id int64)
@@ -774,6 +834,46 @@ func (siw *ServerInterfaceWrapper) ListImports(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// UploadImport operation middleware
+func (siw *ServerInterfaceWrapper) UploadImport(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadImport(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetImport operation middleware
+func (siw *ServerInterfaceWrapper) GetImport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetImport(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeletePhoto operation middleware
 func (siw *ServerInterfaceWrapper) DeletePhoto(w http.ResponseWriter, r *http.Request) {
 
@@ -948,6 +1048,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/healthz", wrapper.GetHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/imports", wrapper.ListImports)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/imports", wrapper.UploadImport)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/imports/{id}", wrapper.GetImport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates", wrapper.ListCandidates)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/journey", wrapper.GetCandidateJourney)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/name-suggestion", wrapper.SuggestCandidateName)
@@ -1275,6 +1377,106 @@ func (response ListImports200JSONResponse) VisitListImportsResponse(w http.Respo
 	return err
 }
 
+type UploadImportRequestObject struct {
+	Body *multipart.Reader
+}
+
+type UploadImportResponseObject interface {
+	VisitUploadImportResponse(w http.ResponseWriter) error
+}
+
+type UploadImport202JSONResponse Import
+
+func (response UploadImport202JSONResponse) VisitUploadImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadImport400JSONResponse ImportRejection
+
+func (response UploadImport400JSONResponse) VisitUploadImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadImport409JSONResponse Error
+
+func (response UploadImport409JSONResponse) VisitUploadImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadImport413JSONResponse Error
+
+func (response UploadImport413JSONResponse) VisitUploadImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetImportRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type GetImportResponseObject interface {
+	VisitGetImportResponse(w http.ResponseWriter) error
+}
+
+type GetImport200JSONResponse Import
+
+func (response GetImport200JSONResponse) VisitGetImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetImport404JSONResponse Error
+
+func (response GetImport404JSONResponse) VisitGetImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeletePhotoRequestObject struct {
 	Id int64 `json:"id"`
 }
@@ -1373,6 +1575,12 @@ type StrictServerInterface interface {
 	// ListImports Every import attempt, newest first
 	// (GET /imports)
 	ListImports(ctx context.Context, request ListImportsRequestObject) (ListImportsResponseObject, error)
+	// UploadImport Upload a Timeline export and import it
+	// (POST /imports)
+	UploadImport(ctx context.Context, request UploadImportRequestObject) (UploadImportResponseObject, error)
+	// GetImport One import attempt, by id
+	// (GET /imports/{id})
+	GetImport(ctx context.Context, request GetImportRequestObject) (GetImportResponseObject, error)
 	// DeletePhoto Delete one photo
 	// (DELETE /photos/{id})
 	DeletePhoto(ctx context.Context, request DeletePhotoRequestObject) (DeletePhotoResponseObject, error)
@@ -1629,6 +1837,63 @@ func (sh *strictHandler) ListImports(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListImportsResponseObject); ok {
 		if err := validResponse.VisitListImportsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadImport operation middleware
+func (sh *strictHandler) UploadImport(w http.ResponseWriter, r *http.Request) {
+	var request UploadImportRequestObject
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadImport(ctx, request.(UploadImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadImportResponseObject); ok {
+		if err := validResponse.VisitUploadImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetImport operation middleware
+func (sh *strictHandler) GetImport(w http.ResponseWriter, r *http.Request, id int64) {
+	var request GetImportRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetImport(ctx, request.(GetImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetImportResponseObject); ok {
+		if err := validResponse.VisitGetImportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

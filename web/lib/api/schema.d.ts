@@ -37,6 +37,30 @@ export interface paths {
          */
         get: operations["listImports"];
         put?: never;
+        /**
+         * Upload a Timeline export and import it
+         * @description The browser import path (phase 7 BRIEF §§1.1–1.3, §3A). The file streams to the instance's uploads directory — named by its SHA-256, retained after import (the export may be irreplaceable: rawSignals windows expire at the source) — and the head is sniffed before the request returns, so a wrong file is rejected synchronously with its stable format label. 202 means accepted: the imports row exists with status "running" and the parse continues in the background; poll GET /imports/{id}. On success detection runs automatically with default parameters (recorded per run as ever), reported via detect_status on the same resource. One import runs at a time; a concurrent attempt gets 409. Re-uploading identical bytes stores no second file and re-imports idempotently (an all-skipped row).
+         */
+        post: operations["uploadImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/imports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One import attempt, by id
+         * @description The polling endpoint for an upload in progress (phase 7 BRIEF §1.2): status running → completed/failed, then detect_status for the automatic detection that follows a successful upload import.
+         */
+        get: operations["getImport"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -220,6 +244,21 @@ export interface components {
             /** @description The user-facing failure message — prose, subject to rewording; never the queryable evidence. */
             error?: string;
             /** @description The sniffer's stable format label (phone-timeline, records-json, semantic-history, …). Absent when the input was never recognised. */
+            detected_format?: string;
+            /** @description How many observations were genuinely new — the per-type counters record what the file contained; this records what the database gained. Zero on a duplicate upload ("nothing new"). Absent on rows from before this field existed. */
+            inserted?: number;
+            /** @description SHA-256 of the uploaded file, upload-path imports only — the retained file's name in the uploads directory (the photos content-hash precedent). Absent on CLI imports. */
+            content_hash?: string;
+            /**
+             * @description Status of the automatic detection that follows a successful upload import (phase 7 BRIEF §3D). Absent when no auto-detect was triggered (CLI imports, failed imports). A detection failure never marks the import failed — the import row describes the import.
+             * @enum {string}
+             */
+            detect_status?: "running" | "completed" | "failed";
+        };
+        ImportRejection: {
+            /** @description The sniffer's actionable message — prose, rewordable. */
+            error: string;
+            /** @description The stable format label (zip, records-json, …) — what the file actually is, for mapping to a walkthrough anchor. Absent when the input was not recognisable at all. */
             detected_format?: string;
         };
         ImportList: {
@@ -569,6 +608,96 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportList"];
+                };
+            };
+        };
+    };
+    uploadImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description The Timeline export.
+                     */
+                    file: string;
+                    /** @description Provenance label; defaults to the uploaded file's name (the source_label convention). */
+                    label?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Accepted — the upload is on disk and the import is running. The returned id is the polling handle. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description The sniffer recognised a wrong input. detected_format carries the stable label so the front door can redirect to the right walkthrough instead of dead-ending; the rejected file is not retained. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRejection"];
+                };
+            };
+            /** @description An import is already running on this instance. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The upload exceeds the configured size limit. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The import attempt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description No such import. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };

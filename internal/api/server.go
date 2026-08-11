@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"sync"
 
 	"roadbook/internal/detect"
 	"roadbook/internal/domain"
@@ -29,6 +30,12 @@ type Server struct {
 	// Photos is the thumbnail directory — the filesystem half of the photos
 	// stratum, reachable only through this process (phase 4 BRIEF §1.3).
 	Photos store.PhotoFiles
+	// Uploads is the retained-exports directory (phase 7 BRIEF §3C) —
+	// real location history, same safety class as data/.
+	Uploads store.UploadFiles
+	// importMu is the one-import-at-a-time guard (phase 7 BRIEF §1.2):
+	// held from an accepted upload until its background import finalises.
+	importMu sync.Mutex
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -50,21 +57,7 @@ func (s *Server) ListImports(ctx context.Context, _ ListImportsRequestObject) (L
 	}
 	resp := ImportList{Imports: []Import{}}
 	for _, r := range rows {
-		resp.Imports = append(resp.Imports, Import{
-			Id:             r.ID,
-			SourceLabel:    r.SourceLabel,
-			ImportedAt:     r.ImportedAt,
-			WindowStart:    r.WindowStart,
-			WindowEnd:      r.WindowEnd,
-			Visits:         r.Visits,
-			Activities:     r.Activities,
-			Points:         r.Points,
-			RawPositions:   r.RawPositions,
-			Skipped:        r.Skipped,
-			Status:         ImportStatus(r.Status),
-			Error:          r.Error,
-			DetectedFormat: r.DetectedFormat,
-		})
+		resp.Imports = append(resp.Imports, toAPIImport(r))
 	}
 	return ListImports200JSONResponse(resp), nil
 }

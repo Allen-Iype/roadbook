@@ -24,6 +24,8 @@ type ImportResult struct {
 
 // ImportRow is one imports-table row, the bookkeeping the UI surfaces
 // (phase 5 BRIEF §3B). Error and DetectedFormat are nil until known.
+// ContentHash and DetectStatus are the upload path's additions (phase 7,
+// migration 00009): nil on CLI imports.
 type ImportRow struct {
 	ID             int64
 	SourceLabel    string
@@ -38,6 +40,11 @@ type ImportRow struct {
 	Status         string
 	Error          *string
 	DetectedFormat *string
+	ContentHash    *string
+	DetectStatus   *string
+	// Inserted is how many observations were genuinely new — nil on rows
+	// from before migration 00009, where the number was only printed.
+	Inserted *int
 }
 
 const batchSize = 2000
@@ -145,9 +152,9 @@ func (s *Store) ImportObservations(ctx context.Context, importID int64, detected
 	res.Parsed = len(obs.Visits) + len(obs.Activities) + len(obs.Points) + len(obs.RawPositions)
 	res.ImportID = importID
 	ct, err := tx.Exec(ctx, `UPDATE imports SET visits = $2, activities = $3, points = $4, raw_positions = $5, skipped = $6,
-		status = 'completed', detected_format = nullif($7, '')
+		status = 'completed', detected_format = nullif($7, ''), inserted = $8
 		WHERE id = $1 AND status = 'running'`,
-		importID, len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions), skipped, detectedFormat)
+		importID, len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions), skipped, detectedFormat, res.Inserted)
 	if err != nil {
 		return res, err
 	}
@@ -157,21 +164,33 @@ func (s *Store) ImportObservations(ctx context.Context, importID int64, detected
 	return res, tx.Commit(ctx)
 }
 
+// importSelect and scanImport are the one column list and one scan shared
+// by ListImports and GetImport, so the two reads cannot drift.
+const importSelect = `SELECT id, source_label, window_start, window_end, imported_at,
+	visits, activities, points, raw_positions, skipped, status, error, detected_format,
+	content_hash, detect_status, inserted
+	FROM imports`
+
+func scanImport(rows pgx.Rows) (ImportRow, error) {
+	var r ImportRow
+	err := rows.Scan(&r.ID, &r.SourceLabel, &r.WindowStart, &r.WindowEnd, &r.ImportedAt,
+		&r.Visits, &r.Activities, &r.Points, &r.RawPositions, &r.Skipped, &r.Status, &r.Error, &r.DetectedFormat,
+		&r.ContentHash, &r.DetectStatus, &r.Inserted)
+	return r, err
+}
+
 // ListImports returns every import attempt, newest first — the bookkeeping
 // view (phase 5 BRIEF §3B).
 func (s *Store) ListImports(ctx context.Context) ([]ImportRow, error) {
-	rows, err := s.pool.Query(ctx, `SELECT id, source_label, window_start, window_end, imported_at,
-		visits, activities, points, raw_positions, skipped, status, error, detected_format
-		FROM imports ORDER BY imported_at DESC, id DESC`)
+	rows, err := s.pool.Query(ctx, importSelect+` ORDER BY imported_at DESC, id DESC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var out []ImportRow
 	for rows.Next() {
-		var r ImportRow
-		if err := rows.Scan(&r.ID, &r.SourceLabel, &r.WindowStart, &r.WindowEnd, &r.ImportedAt,
-			&r.Visits, &r.Activities, &r.Points, &r.RawPositions, &r.Skipped, &r.Status, &r.Error, &r.DetectedFormat); err != nil {
+		r, err := scanImport(rows)
+		if err != nil {
 			return nil, err
 		}
 		out = append(out, r)

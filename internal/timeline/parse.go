@@ -268,6 +268,20 @@ func parseRawSignals(dec *json.Decoder, obs *domain.Observations, st *Stats) err
 	return nil
 }
 
+// Sniff classifies the head of a file for callers that must reject wrong
+// inputs before parsing begins — the upload handler's synchronous rejection
+// (phase 7 BRIEF §1.3), which reads the written file's first bytes and
+// answers in the request. A nil return is not a promise the file parses:
+// truncation and json-unrecognised are only discoverable by Parse, whose
+// verdict is authoritative. Pure function over bytes; the only type it
+// exposes is the error taxonomy this package already exports.
+func Sniff(head []byte) *UnsupportedInputError {
+	if len(head) == 0 {
+		return &UnsupportedInputError{Kind: "empty", Message: "the file is empty; " + exportHint}
+	}
+	return sniff(head)
+}
+
 // sniff classifies the head of the file. It rejects only inputs that are
 // *definitely* something else; anything merely unrecognised falls through to
 // the streaming parser, whose verdict (with the actual top-level keys) is

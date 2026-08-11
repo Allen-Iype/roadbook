@@ -45,12 +45,17 @@ services:
     environment:
       DATABASE_URL: postgres://roadbook:${POSTGRES_PASSWORD:-roadbook}@db:5432/roadbook
       ROADBOOK_PHOTOS_DIR: /photos
+      ROADBOOK_UPLOADS_DIR: /uploads
       ROADBOOK_GEOCODER: ${ROADBOOK_GEOCODER:-none}
       ROADBOOK_NOMINATIM_URL: ${ROADBOOK_NOMINATIM_URL:-https://nominatim.openstreetmap.org}
     volumes:
       # Thumbnails are irreplaceable user data (originals are discarded at
       # upload) — a named volume, covered by `roadbook backup`.
       - photos:/photos
+      # Browser-uploaded exports, retained by content hash (phase 7 BRIEF
+      # §3C) — real location history, possibly the user's only copy of an
+      # expired rawSignals window. Writable, unlike the ./data mount below.
+      - uploads:/uploads
       # Export files enter read-only: the container can read the user's
       # export and structurally cannot modify it — the never-modify-data/
       # rule as a mount flag.
@@ -103,3 +108,4 @@ services:
 volumes:
   pgdata:
   photos:
+  uploads:

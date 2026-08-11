@@ -68,3 +68,24 @@ import upload UI, and keeps that rejection's technical reasoning as design
 input (§§3A–3B answer it).
 Rejected: reopening silently, as if phase 5 had not decided.
 Would change: nothing — the reopening standard itself is charter.
+
+## 2026-08-11 — Migration 00009 carries detect_status as well as content_hash
+
+Chosen: persist detect_status on the imports row (the brief's §4 named the
+API field but the migration named only content_hash — found at
+implementation: the front door polls detect_status, and serve memory would
+turn "detection failed" into silence across a restart).
+Rejected: in-process detect state (lost on restart), and deriving it from
+the runs table (a failed detect leaves no run row to derive from).
+Would change: nothing foreseeable; the column is additive and nullable.
+
+## 2026-08-11 — imports gains an `inserted` column (found writing the tests)
+
+Chosen: record the genuinely-new observation count on the imports row
+(migration 00009, `inserted`; API field `inserted`). Without it a duplicate
+upload's row is indistinguishable from its original — the store computed
+the number all along and only ever printed it to a terminal, so the front
+door could not say "nothing new".
+Rejected: leaving duplicate detection to prose comparison of counters, and
+per-type inserted counters (one total answers the UX question).
+Would change: nothing foreseeable; additive, NULL on historical rows.
