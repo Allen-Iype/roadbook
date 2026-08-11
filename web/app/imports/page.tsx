@@ -1,6 +1,7 @@
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { SiteHeader } from "@/components/site-header";
+import { UploadImport } from "@/components/upload-import";
 
 // Server component, same shape as the home page: runs per request on the
 // server, calls the Go API, ships HTML. Nothing here is interactive, so no
@@ -26,9 +27,10 @@ export default async function ImportsPage() {
 
   return (
     <Shell>
+      <UploadImport />
       {data.imports.length === 0 ? (
         <p className="mt-6 text-ink-2">
-          No imports yet. Run{" "}
+          No imports yet — upload an export above, or run{" "}
           <code className="font-mono">roadbook import -src Timeline.json</code>.
         </p>
       ) : (
@@ -67,6 +69,7 @@ function ImportTable({ imports }: { imports: Import[] }) {
             <th className="py-2 pr-4 text-right">Points</th>
             <th className="py-2 pr-4 text-right">Raw</th>
             <th className="py-2 pr-4 text-right">Skipped</th>
+            <th className="py-2 pr-4 text-right">New</th>
             <th className="py-2 pr-4">Status</th>
           </tr>
         </thead>
@@ -90,6 +93,11 @@ function ImportTable({ imports }: { imports: Import[] }) {
               <td className="py-2 pr-4 text-right">{imp.points}</td>
               <td className="py-2 pr-4 text-right">{imp.raw_positions}</td>
               <td className="py-2 pr-4 text-right">{imp.skipped}</td>
+              <td className="py-2 pr-4 text-right">
+                {/* How many observations were genuinely new. Absent on rows
+                    from before the column existed — unknown, not zero. */}
+                {imp.inserted ?? "—"}
+              </td>
               <td className="py-2 pr-4">
                 <StatusCell imp={imp} />
               </td>
@@ -122,6 +130,18 @@ function StatusCell({ imp }: { imp: Import }) {
         </span>{" "}
         running
       </span>
+    );
+  }
+  // Completed — but the automatic detection that follows an upload import
+  // has its own outcome, and a failure there must not hide (BRIEF §3D).
+  if (imp.detect_status === "failed") {
+    return (
+      <div>
+        <span className="text-ink-2">completed</span>
+        <p className="mt-1 max-w-md text-xs text-red-700">
+          detection failed — the server log has details
+        </p>
+      </div>
     );
   }
   return <span className="text-ink-2">completed</span>;
