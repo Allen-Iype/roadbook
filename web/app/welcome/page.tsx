@@ -166,6 +166,8 @@ export default function WelcomePage() {
         <Walkthrough
           id={S.exportAndroid}
           title="On Android"
+          verified="Verified 11 Aug 2026 · Android"
+          verifiedNote="Walked 11 Aug 2026 on an Android device from a WhatsApp-opened link: the steps matched the phone's menus and the upload completed in the in-app browser."
           steps={[
             <>
               Open <strong>Settings</strong> →{" "}
@@ -272,24 +274,31 @@ export default function WelcomePage() {
 
 // One platform walkthrough. Steps are a real sequence, so an ordered list is
 // the honest structure. Each branch carries its verification state as
-// visible page text (BRIEF §3E): a drafted-but-unverified walkthrough says
-// so rather than carrying a false date — the CP4 device pass replaces the
-// marker with "verified <date>, <device>".
+// visible page text (BRIEF §3E): a real device pass stamps `verified`; a
+// drafted-but-unwalked branch says "unverified" rather than carrying a
+// false date. A stale verified date is itself information — Google changes
+// these menus without notice, and the date says when they last matched.
 function Walkthrough({
   id,
   title,
   steps,
+  verified,
+  verifiedNote,
 }: {
   id: string;
   title: string;
   steps: React.ReactNode[];
+  /** Chip text once the device pass has walked this branch. */
+  verified?: string;
+  /** Footer sentence recording what the pass checked. */
+  verifiedNote?: string;
 }) {
   return (
     <div id={id} className="mt-6 max-w-prose scroll-mt-6 border border-rule bg-paper">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule bg-land px-4 py-2.5">
         <h3 className="font-display text-lg font-semibold">{title}</h3>
         <p className="text-[11px] uppercase tracking-[0.14em] text-ink-2">
-          Unverified — steps may have changed
+          {verified ?? "Unverified — steps may have changed"}
         </p>
       </div>
       <ol className="space-y-2.5 px-4 py-3.5 text-sm leading-relaxed">
@@ -301,8 +310,8 @@ function Walkthrough({
         ))}
       </ol>
       <p className="border-t border-rule px-4 py-2 text-xs text-ink-2">
-        Drafted 11 Aug 2026 from documentation, not yet verified on a device
-        — Google changes these menus without notice.
+        {verifiedNote ??
+          "Drafted 11 Aug 2026 from documentation, not yet verified on a device — Google changes these menus without notice."}
       </p>
     </div>
   );

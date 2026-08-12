@@ -16,7 +16,8 @@ marked unknown line. No geometry on the map ever hides its confidence.
 
 The current on-device phone export, and only that: on Android, **Settings →
 Location → Location Services → Timeline → Export Timeline data**. This export
-carries your full history.
+carries your full history. The UI's front door (`/welcome`) carries
+per-platform walkthroughs, each marked with its verification state.
 
 Two legacy Takeout-era formats — Semantic History (monthly `timelineObjects`
 files) and `Records.json` (raw location samples) — are recognised and rejected
@@ -35,13 +36,20 @@ You need Docker (with Compose). From a checkout:
 
 ```
 docker compose up -d --build
-mkdir -p data && cp testdata/demo/demo.json data/
-docker compose run --rm api roadbook import -src /data/demo.json
-docker compose run --rm api roadbook countries
-docker compose run --rm api roadbook detect -from-db
 ```
 
-Then open **http://127.0.0.1:3000**. The home page is the life map: one map
+Then open **http://127.0.0.1:3000**. A fresh instance lands you on the front
+door — what Roadbook is, how to export a Timeline, and an upload control.
+Upload `testdata/demo/demo.json` from the checkout there; import and
+detection run automatically, and the page walks you to the candidates. No
+command-line step is needed.
+
+One optional enrichment still runs from the CLI: country attribution
+(the "Iceland" line on an adventure's cover) needs the countries table,
+which an operator populates once with
+`docker compose run --rm api roadbook countries`.
+
+The home page is the life map: one map
 holding every confirmed adventure's route. Nothing is confirmed yet, so it
 points you at the **Candidates** page, which lists the 3 detected
 candidates: a dense south-coast drive to Höfn, a sparse Westfjords trip to
@@ -77,8 +85,19 @@ byte-identically. The regression test for these exact values is
 
 ## Run it against your own export
 
-Put your export in `data/` (gitignored — nothing under it can be committed)
-and import with an optional date window:
+The browser path is the same as the demo: open the instance, follow the
+front door's export walkthrough on your phone, and upload the file. The
+upload streams to your instance and nowhere else; the export is retained
+on the instance (named by content hash) so future parser improvements can
+re-read it without asking you for the file again; detection runs
+automatically with default parameters and your candidates appear. Uploads
+are capped at 2 GiB. A wrong file — a Takeout zip, an old-format export, a
+PDF — is rejected at upload with a message saying what it was and a
+pointer back to the walkthrough for the right one.
+
+Operators can instead import from the CLI, with an optional date window —
+put your export in `data/` (gitignored — nothing under it can be
+committed):
 
 ```
 docker compose run --rm api roadbook import -src /data/Timeline.json
@@ -116,7 +135,8 @@ the API only to the database.
 
 The database schema migrates automatically when the API container starts.
 User data lives in named volumes (`pgdata` for the database, `photos` for
-photo thumbnails); your export directory is mounted read-only.
+photo thumbnails, `uploads` for browser-uploaded exports); a `data/`
+directory used for CLI imports is mounted read-only.
 
 ### Configuration
 

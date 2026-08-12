@@ -60,7 +60,20 @@ destruction.
 Would change: accounts arriving (v2) — deletion then becomes a user-facing
 legal requirement, not an operator courtesy.
 
-## 2026-08-10 — Phase 5's upload-UI rejection reopened on a named new fact
+## 2026-08-11 — Device pass: Android verified from WhatsApp; iPhone ships unverified
+
+Chosen: the Android walkthrough is stamped "Verified 11 Aug 2026 · Android"
+after the maintainer walked the full funnel from a WhatsApp-opened link on
+his own device (steps matched the phone's menus; export, upload, confirm,
+and the life map all worked in the in-app browser). The iPhone branch ships
+with its honest "unverified" marker — the audit friend's device was not
+reachable this phase, and the BRIEF (§8) makes the marker, not the
+verification, the hard requirement.
+Rejected: stamping iPhone from documentation, and holding the phase open
+for a device that may be weeks away.
+Would change: the friend walking it — the stamp lands in a follow-up
+commit; or a report that the steps are wrong — the branch gets fixed and
+re-walked before any stamp.
 
 Chosen: the brief's opening names the v1 definition (DIRECTIONS, 2026-08-10)
 as the substantive new fact that reopens phase 5 §3B's rejection of an
