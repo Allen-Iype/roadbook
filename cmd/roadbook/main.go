@@ -68,7 +68,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   roadbook migrate [-db url]
   roadbook import  -src <timeline export.json> [-db url] [-from date] [-to date] [-label name]
-  roadbook countries [-src <admin-0 geojson[.gz]>] [-db url]
+  roadbook countries [-src <admin-0 geojson[.gz]>] [-if-empty] [-db url]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
   roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
   roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh]
@@ -284,6 +284,7 @@ func filterWindow(obs domain.Observations, from, to *time.Time) domain.Observati
 func runCountries(args []string) error {
 	fs := flag.NewFlagSet("countries", flag.ExitOnError)
 	src := fs.String("src", "", "Natural Earth admin-0 GeoJSON, .geojson or .gz (default: bundled 1:110m)")
+	ifEmpty := fs.Bool("if-empty", false, "load only when the countries table is empty (startup-safe: never overwrites an existing load)")
 	db := dbFlag(fs)
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -316,6 +317,16 @@ func runCountries(args []string) error {
 		return err
 	}
 	defer s.Close()
+	if *ifEmpty {
+		n, err := s.CountCountries(ctx)
+		if err != nil {
+			return err
+		}
+		if n > 0 {
+			fmt.Printf("countries table already holds %d rows; -if-empty leaves it untouched\n", n)
+			return nil
+		}
+	}
 	if err := s.ReplaceCountries(ctx, list); err != nil {
 		return err
 	}

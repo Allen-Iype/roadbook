@@ -37,6 +37,17 @@ func (s *Store) ReplaceCountries(ctx context.Context, list []countries.Country) 
 	return tx.Commit(ctx)
 }
 
+// CountCountries reports how many country polygons are loaded. Its one
+// caller is `countries -if-empty` (phase 8 §3E): the compose startup path
+// loads the bundled set only when the table has never been populated, so a
+// fresh instance is browser-complete without re-doing the work — or
+// overwriting an operator's higher-resolution load — on every restart.
+func (s *Store) CountCountries(ctx context.Context) (int64, error) {
+	var n int64
+	err := s.pool.QueryRow(ctx, `SELECT count(*) FROM countries`).Scan(&n)
+	return n, err
+}
+
 // CountryRef is a country a journey crossed.
 type CountryRef struct {
 	ISOCode string

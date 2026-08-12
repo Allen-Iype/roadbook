@@ -19,6 +19,10 @@ services:
     # itself publishes no arm64, which would exclude every ARM self-host
     # (Raspberry Pi, ARM VPS, Apple Silicon).
     image: imresamu/postgis:18-3.6
+    # A serving machine must survive a reboot without a human replaying `up`
+    # per stack (phase 8 BRIEF §3E). unless-stopped respects a deliberate
+    # `docker compose stop`; it only revives what a reboot or crash took.
+    restart: unless-stopped
     environment:
       POSTGRES_USER: roadbook
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-roadbook}
@@ -37,11 +41,15 @@ services:
 
   api:
     build: .
+    restart: unless-stopped
     # Migrate-then-serve lives here, in the compose command, not in the
     # binary: goose is idempotent and embedded, so a version upgrade cannot
     # forget its migration — while dev `roadbook serve` keeps no implicit
-    # migration side effect (BRIEF §3A).
-    command: sh -c "roadbook migrate && exec roadbook serve"
+    # migration side effect (BRIEF §3A). countries -if-empty makes a fresh
+    # instance browser-complete (country attribution) with zero CLI steps
+    # (phase 8 §3E): the bundled set is go:embed'ed so nothing is fetched,
+    # and -if-empty never overwrites an operator's higher-resolution load.
+    command: sh -c "roadbook migrate && roadbook countries -if-empty && exec roadbook serve"
     environment:
       DATABASE_URL: postgres://roadbook:${POSTGRES_PASSWORD:-roadbook}@db:5432/roadbook
       ROADBOOK_PHOTOS_DIR: /photos
@@ -73,6 +81,7 @@ services:
 
   web:
     build: ./web
+    restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"
     environment:
@@ -100,6 +109,7 @@ services:
   # step talks to it, and serve never does — serve reads only the cache.
   osrm:
     image: ghcr.io/project-osrm/osrm-backend
+    restart: unless-stopped
     profiles: ["routing"]
     command: osrm-routed --algorithm mld /data/${OSRM_DATA:-unset-see-env-example}.osrm
     volumes:

@@ -1,0 +1,38 @@
+#!/bin/sh
+# Rotate a tester's basic-auth credential in place (phase 8 BRIEF §1.4):
+# at every handover, and immediately on any suspected leak. The link stays;
+# the old password stops working the moment Caddy reloads.
+#
+#   scripts/pilot/rotate-credential.sh <slug>
+set -eu
+
+[ $# -eq 1 ] || { echo "usage: $0 <slug>" >&2; exit 2; }
+SLUG=$1
+
+REPO=$(cd "$(dirname "$0")/../.." && pwd)
+PILOT_DIR=${ROADBOOK_PILOT_DIR:-$REPO/docs/private/pilot}
+INST=$PILOT_DIR/instances/$SLUG
+
+[ -f "$INST/caddy.conf" ] || { echo "no such instance: $INST" >&2; exit 1; }
+
+PASSWORD=$(openssl rand -base64 15 | tr '+/' '-_')
+HASH=$(caddy hash-password --plaintext "$PASSWORD")
+
+# The basic_auth block holds exactly one "user hash" line (new-instance.sh
+# wrote it); replace the hash, keep the username.
+awk -v hash="$HASH" -v slug="$SLUG" '
+  $1 == slug && $2 ~ /^\$2/ { print "\t\t" slug " " hash; next }
+  { print }
+' "$INST/caddy.conf" > "$INST/caddy.conf.new"
+mv "$INST/caddy.conf.new" "$INST/caddy.conf"
+
+caddy reload --config /opt/homebrew/etc/Caddyfile --adapter caddyfile
+
+cat <<EOF
+== credential rotated for $SLUG ==
+username:  $SLUG
+password:  $PASSWORD
+
+Old password is dead. Update the ledger, then send the new pair over the
+same channel as the link.
+EOF

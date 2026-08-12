@@ -1,0 +1,24 @@
+# Per-tester instance override (phase 8 BRIEF §3C). Layered over the base
+# compose.yaml by scripts/pilot/new-instance.sh:
+#
+#   docker compose -p roadbook-<slug> \
+#     --env-file <instance-dir>/.env \
+#     -f compose.yaml -f scripts/pilot/compose.instance.yaml up -d
+#
+# The project name (-p) namespaces containers, networks, and volumes, so
+# every tester gets their own Postgres, photos, and uploads with nothing
+# shared (BRIEF §1.6). The instance .env supplies ROADBOOK_WEB_PORT and a
+# random POSTGRES_PASSWORD.
+services:
+  api:
+    # !override drops the base file's ./data:ro bind mount: a pilot
+    # instance must have no path to the operator's own data directory —
+    # structural on the exact machine where it matters most (BRIEF §1.1).
+    volumes: !override
+      - photos:/photos
+      - uploads:/uploads
+  web:
+    # Loopback only; the local Caddy listener is the sole way in, behind
+    # this tester's basic-auth credential, behind the funnel.
+    ports: !override
+      - "127.0.0.1:${ROADBOOK_WEB_PORT:?set in the instance .env}:3000"
