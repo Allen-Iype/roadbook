@@ -44,10 +44,12 @@ Upload `testdata/demo/demo.json` from the checkout there; import and
 detection run automatically, and the page walks you to the candidates. No
 command-line step is needed.
 
-One optional enrichment still runs from the CLI: country attribution
-(the "Iceland" line on an adventure's cover) needs the countries table,
-which an operator populates once with
-`docker compose run --rm api roadbook countries`.
+Country attribution (the "Iceland" line on an adventure's cover) loads
+automatically at first start: the bundled Natural Earth country set ships
+inside the binary and populates an empty countries table with no network
+fetch. An operator with a higher-resolution admin-0 file can replace it any
+time with `docker compose run --rm api roadbook countries -src <file>`;
+the automatic load never overwrites an existing table.
 
 The home page is the life map: one map
 holding every confirmed adventure's route. Nothing is confirmed yet, so it
@@ -155,6 +157,21 @@ viewport you look at leaks to the style's tile host. Point
 `ROADBOOK_MAP_STYLE` at your own tile server to close even that. The
 geocoder is off by default for the same reason: a self-hosted product makes
 no surprise network calls.
+
+### Hosting for more than yourself
+
+Roadbook has no accounts: one instance is one person's data. The supported
+way to host for a few people is therefore one compose stack per person —
+fully separate databases and volumes, so no cross-user bug can exist —
+each published on its own loopback port behind your own authenticated
+front. `scripts/pilot/` holds the tooling this project uses for exactly
+that: a per-instance compose override, stamp/reset/rotate scripts, a Caddy
+config template with per-person basic auth, and encrypted backup scripts.
+The operating procedure — including handover between testers and why the
+credential, not the URL, is the secret — is documented in
+`docs/phase-8/RUNBOOK.md`. Multi-user tenancy with real authentication is
+deliberately out of scope until the product needs strangers to sign
+themselves up.
 
 ## Routing, and what happens without it
 

@@ -132,6 +132,23 @@ Would change: sidecar-per-tester arrival (slots stop mapping to funnel
 ports); the pilot outgrowing one operator (then allocation earns
 automation).
 
+## 2026-08-13 — Backups ride launchd, encrypted with age to an operator keypair
+
+Chosen: a LaunchAgent (daily 03:30, `launchctl kickstart` for on-demand
+runs, missed nights run on wake) executing backup-all.sh — per instance:
+`roadbook backup` + uploads-volume tar, bundled and age-encrypted to the
+operator public key, written to `$ROADBOOK_BACKUP_DIR` (default an iCloud
+Drive folder; only ciphertext leaves the machine); restore-instance.sh is
+the drilled inverse (CP3: 3/3 decisions re-attached on a fresh instance
+through the browser path). The secret key must also live off-machine
+(password manager) — recorded in RUNBOOK §8.
+Rejected: cron (`crontab -` is blocked by macOS from this context, and
+launchd tests on demand and catches missed schedules — strictly better
+here); passphrase encryption (needs a tty nightly); plaintext offsite
+(location data through a cloud account).
+Would change: moving to the rented host (systemd timer replaces the
+LaunchAgent; the scripts survive).
+
 ## 2026-08-12 — Committed hosting artifacts carry no infrastructure identity
 
 Chosen: the repository is public, so committed templates, runbook, and README
