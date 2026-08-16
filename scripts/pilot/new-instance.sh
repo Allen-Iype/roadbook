@@ -59,6 +59,11 @@ ROADBOOK_WEB_PORT=$WEB_PORT
 POSTGRES_PASSWORD=$PGPASS
 EOF
 
+# The username is an address, not a secret — the password guards the
+# instance. Phone keyboards auto-capitalize and append spaces (measured on
+# Android AND iOS in this pilot), so accept those variants up front rather
+# than teaching every tester to fight their keyboard.
+CAP=$(printf '%s' "$SLUG" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
 cat > "$INST/caddy.conf" <<EOF
 # Instance $SLUG (slot $SLOT) — generated $(date +%F). Private, never commit.
 # Port-only address + loopback bind: see scripts/pilot/Caddyfile.template.
@@ -66,6 +71,9 @@ http://:$LISTENER {
 	bind 127.0.0.1
 	basic_auth {
 		$SLUG $HASH
+		$CAP $HASH
+		"$SLUG " $HASH
+		"$CAP " $HASH
 	}
 	header X-Robots-Tag "noindex, nofollow"
 	log {

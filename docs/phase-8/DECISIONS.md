@@ -149,6 +149,22 @@ here); passphrase encryption (needs a tty nightly); plaintext offsite
 Would change: moving to the rented host (systemd timer replaces the
 LaunchAgent; the scripts survive).
 
+## 2026-08-16 — Gate amendment: first friend instance stamped before the reboot drill and tester zero
+
+Chosen: the maintainer's call at a STOP — a friend instance was needed now;
+friend-1 stamped into slot 2 and the link handed over with the reboot drill
+and the full tester-zero walk still outstanding, replaced for this handover
+by a compressed check (maintainer opens the friend link from WhatsApp on
+cellular before forwarding). Risk stated openly: an unplanned reboot has
+never been proven to bring the serving posture back, and the friend may hit
+a dead link until the operator notices.
+Rejected: refusing the handover until both gates passed (the gates are the
+maintainer's own; amending them is theirs to do), and silently skipping
+them (they remain CP4 items — the drill at the next restart, the full walk
+with the maintainer's own export before the phase closes).
+Would change: nothing — this entry records sequencing, not design; the
+drill and walk still gate PHASE CLOSE, just no longer the first link.
+
 ## 2026-08-12 — Committed hosting artifacts carry no infrastructure identity
 
 Chosen: the repository is public, so committed templates, runbook, and README

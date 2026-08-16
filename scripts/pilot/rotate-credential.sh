@@ -18,10 +18,11 @@ INST=$PILOT_DIR/instances/$SLUG
 PASSWORD=$(openssl rand -base64 15 | tr '+/' '-_')
 HASH=$(caddy hash-password --plaintext "$PASSWORD")
 
-# The basic_auth block holds exactly one "user hash" line (new-instance.sh
-# wrote it); replace the hash, keep the username.
-awk -v hash="$HASH" -v slug="$SLUG" '
-  $1 == slug && $2 ~ /^\$2/ { print "\t\t" slug " " hash; next }
+# The basic_auth block holds one line per accepted username variant
+# (new-instance.sh writes four — keyboard-forgiving spellings of the same
+# user). Replace the hash on every one; usernames stay as written.
+awk -v hash="$HASH" '
+  $NF ~ /^\$2[aby]?\$/ { $NF = hash; print "\t\t" $0; next }
   { print }
 ' "$INST/caddy.conf" > "$INST/caddy.conf.new"
 mv "$INST/caddy.conf.new" "$INST/caddy.conf"
