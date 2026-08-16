@@ -7,7 +7,6 @@ design — real hostnames, testers, links, and credentials live only in the
 private ledger (`docs/private/pilot/LEDGER.md`, gitignored) and never in
 this file (the public-repo rule, BRIEF §2).
 
-Sections 6, 7 and 9 are completed at CP4; the rest is live procedure.
 
 ## 1 Serving posture
 
@@ -25,12 +24,15 @@ posture checklist; all of it must hold for the pilot to be up:
   project per active tester; all containers carry `restart:
   unless-stopped`, so a reboot revives them once Docker starts.
 
-**Reboot drill** (must pass before the first tester link goes out, and
-after any change to the posture): restart the machine, touch nothing, then
-confirm from a phone on cellular that each active link answers with its
-credential prompt and serves after login. This proves the whole chain —
-Docker autostart, container restart policy, Caddy service, funnel
-persistence — with no human replaying commands.
+**Reboot drill** (run at every restart until first passed, then after any
+posture change): restart the machine, log in, touch nothing, then confirm
+from a phone on cellular that each active link answers with its credential
+prompt and serves after login. This proves the whole chain — Docker
+autostart, container restart policy, Caddy service, the caffeinate agent,
+funnel persistence — with no human replaying commands. Status: the
+ingredients are all in place, but the end-to-end drill has not yet run
+(deferred 2026-08-16, DECISIONS); treat the next restart, planned or not,
+as the drill and record its result.
 
 ## 2 Stamp a new instance
 
@@ -112,19 +114,51 @@ command; `countries -if-empty` never overwrites an existing load. Do not
 update while a tester is mid-upload — a rebuilt api container kills the
 stream and leaves a stale `.tmp` (measured at CP2).
 
-## 6 Handover (completed at CP4)
+## 6 Handover
 
-Outline, binding since the brief: tell the outgoing tester first; remind
-them to keep their own export file; `scripts/pilot/reset-instance.sh
-<slug> --retire`; stamp fresh for the next person (never reuse a
-credential); update the ledger both directions.
+Moving a slot from one tester to the next, in order — the order is the
+point (data is wiped only after its owner has been told):
 
-## 7 Incident (completed at CP4)
+1. **Tell the outgoing tester first.** Remind them to keep their own
+   export file — the instance's retained copy may be their only one — and
+   offer their backup archive (it is their data; `restore-instance.sh`
+   into a fresh stamp can resurrect it later if they return).
+2. `scripts/pilot/reset-instance.sh <slug> --retire` — volumes wiped,
+   Caddy block gone, funnel listener off, slot free. The old
+   link+credential pair is dead.
+3. Update the ledger: outgoing holder closed out with the date.
+4. Stamp fresh for the next person: `new-instance.sh <new-slug> <slot>`.
+   Never reuse a slug or a credential — old chats keep old messages
+   forever, and a reused credential would let the previous holder into
+   the new holder's data.
+5. Ledger again (new holder, consent date), then the section-3 message.
 
-Outline: suspected credential leak → `scripts/pilot/rotate-credential.sh
-<slug>` immediately, resend; machine loss/compromise → assume all instance
-data exposed, tell every tester plainly; funnel/Tailscale outage → honest
-message, nothing to fix locally.
+Sequential testers on one slot are the normal case; three slots only cap
+*concurrent* testers.
+
+## 7 Incident
+
+- **Suspected credential leak** (forwarded message, shoulder-surfed,
+  device lost): `scripts/pilot/rotate-credential.sh <slug>` immediately —
+  the old password dies on Caddy reload — then resend the new pair over
+  the private channel. Rotation is cheap; rotate on suspicion, not proof.
+- **Login loop reported by a tester** ("it keeps asking again"): check
+  the listener's access log first. `auth:none` on every attempt means the
+  browser never sent credentials; `auth:sent` + 401 means a string
+  mismatch — keyboard artifacts are the measured cause (Android appends a
+  space, iOS capitalizes; the stamp script's username variants absorb
+  those). If it persists, rotate to a fresh password and resend with
+  copy-don't-type emphasis.
+- **Machine loss or compromise:** assume every instance's data exposed.
+  Tell every tester plainly what was on the machine and what it means;
+  offsite archives (age-encrypted) are unreadable without the key, so
+  state that too. Rebuild, restore per instance, rotate everything.
+- **Funnel or Tailscale outage:** nothing to fix locally — links answer
+  again when the service does; send an honest "not on your side" message
+  to anyone mid-onboarding.
+- **A tester asks for deletion:** that is section 6 steps 1–3 without a
+  successor, plus deleting their offsite archives; confirm to them when
+  done. On an authless pilot the operator IS the deletion mechanism.
 
 ## 8 Backup and restore
 
@@ -158,8 +192,12 @@ detection runs — then they re-attach by anchored identity (proven at CP3:
 3/3 on a fresh instance, through the browser upload path). The uploads
 tar restores the retained export alongside.
 
-## 9 Decommission (completed at CP4)
+## 9 Decommission
 
-Outline: testers notified; per-tester backup offered (their archive, their
-data); `reset-instance.sh --retire` for each; funnel off; LaunchAgent
-unloaded; ledger closed out.
+End of pilot, in order: tell every tester and offer each their final
+backup archive; `reset-instance.sh <slug> --retire` per instance; demo
+off the funnel (`tailscale funnel --https=443 off`) or the whole funnel
+down; `launchctl bootout gui/$(id -u)/com.roadbook.pilot.backup` to stop
+the nightly job; decide the fate of offsite archives per tester (keep by
+request, else delete); close the ledger with dates. The repo, scripts,
+and runbook remain — the pilot can restart any time with one stamp.

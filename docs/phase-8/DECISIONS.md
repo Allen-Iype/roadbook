@@ -165,6 +165,23 @@ with the maintainer's own export before the phase closes).
 Would change: nothing — this entry records sequencing, not design; the
 drill and walk still gate PHASE CLOSE, just no longer the first link.
 
+## 2026-08-16 — Reboot drill converts to next-natural-restart; phase may close without it
+
+Chosen: the maintainer's call — the machine cannot restart now (other work
+riding on it), so the drill stops gating the phase close and fires at the
+next natural restart instead (an OS update forces one eventually); the
+phase 7 precedent (iPhone branch shipped honestly unverified, stamped on
+evidence). The drill's settings half is repaired NOW without a restart:
+Docker Desktop autostart was found OFF (the guaranteed failure), caffeinate
+was transient — a KeepAlive LaunchAgent (com.roadbook.pilot.caffeinate) now
+owns the wake posture.
+Rejected: holding the phase open for a reboot window (44 days of uptime
+says that could be weeks), and quietly calling the posture verified when
+only its ingredients are.
+Would change: the next restart IS the drill — its result gets logged here
+and in the LOG either way; an unplanned restart that fails to recover
+promotes the §3A upgrade trigger conversation.
+
 ## 2026-08-12 — Committed hosting artifacts carry no infrastructure identity
 
 Chosen: the repository is public, so committed templates, runbook, and README
