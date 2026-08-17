@@ -14,6 +14,7 @@ the application. Every page carries a footer note saying it is a mockup.
 | `index.html` | links to both mockups and lists the review questions |
 | `adventures-grid.html` | option (b): a new `/adventures` page — the full mock, with review exhibits (cover densities, pilot-scale grid, empty state) |
 | `summoned-grid.html` | option (a): the existing summoned-list dialog carrying the same covers — the cheap contrast, costs stated on the page |
+| `triage-gallery.html` | added at the review: `/candidates` as T1 table (today) / T2 table with a shape column / T3 full gallery, on undecided candidates, with a 66-candidate density exhibit |
 
 Option (c) — the home page as a map-over-grid hybrid — is deliberately not
 mocked: it would re-litigate the phase 6 map-is-the-navigation decision,
@@ -49,6 +50,9 @@ domain).
 
 The "grid at pilot scale" exhibit repeats the three demo covers four times
 over. That is a density study, not data; the exhibit says so on the page.
+The triage page repeats them to twenty-four tiles for the same reason, and
+shows the three demo candidates as *undecided* — a state fiction (their
+demo decisions stripped for the mock), the data itself unchanged.
 
 All three demo adventures carry a divergence flag (window truncation
 against Google's door-to-door figure — a known property of the demo

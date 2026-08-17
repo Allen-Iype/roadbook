@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 9 · CP3 — triage reconsidered: table, thumbnail column, or gallery</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+body{background:#F5F2E8;color:#26251F;font-family:'Avenir Next',Avenir,'Segoe UI',system-ui,sans-serif;font-size:15px}
+a{color:inherit}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+
+.masthead{display:flex;justify-content:space-between;align-items:baseline;gap:18px;flex-wrap:wrap;
+  max-width:1280px;margin:0 auto;padding:26px 36px 18px}
+.brand{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  font-size:26px;letter-spacing:.28em;font-weight:600}
+.brand small{display:block;font-family:'Avenir Next',Avenir,'Segoe UI',system-ui,sans-serif;
+  font-size:12px;letter-spacing:.08em;color:#6E6A5E;margin-top:4px}
+.worknav{font-size:13px;letter-spacing:.05em;color:#6E6A5E}
+.worknav a{text-decoration:none;border-bottom:1px solid #C9C3B2;padding-bottom:1px}
+.worknav a:hover{border-color:#26251F}
+.worknav a[aria-current]{color:#26251F;border-bottom:2px solid #26251F;font-weight:600}
+.worknav .sep{margin:0 10px;color:#C9C3B2}
+
+.intro{max-width:1280px;margin:0 auto;padding:10px 36px 6px}
+.intro h1{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  font-size:28px;font-weight:600}
+.intro p{font-size:13.5px;color:#6E6A5E;max-width:82ch;margin-top:6px}
+.runline{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12px;color:#6E6A5E;
+  max-width:1280px;margin:0 auto;padding:8px 36px 0}
+
+.treatment{max-width:1280px;margin:0 auto;padding:26px 36px 6px}
+.treatment h2{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  font-size:20px;font-weight:600}
+.treatment .caption{font-size:12.5px;color:#6E6A5E;max-width:82ch;margin:4px 0 16px}
+
+/* ——— T1: the table as it is today ——— */
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6E6A5E;text-align:left;
+  font-weight:600;padding:8px 14px 8px 0;border-bottom:1px solid #26251F}
+th.num,td.num{text-align:right}
+td{padding:10px 14px 10px 0;border-bottom:1px solid #C9C3B2;vertical-align:middle}
+td.mono,th.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+.thumbcell svg{display:block;width:96px;height:54px;border:1px solid #C9C3B2;background:#F5F2E8}
+
+/* decide cell, both table and tile */
+.decide{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.decide input{font-family:inherit;font-size:12.5px;border:1px solid #C9C3B2;background:#F5F2E8;
+  padding:9px 10px;width:150px}
+.decide input::placeholder{color:#6E6A5E}
+.btn{font-family:inherit;font-size:12px;letter-spacing:.05em;border:1px solid #26251F;background:none;
+  padding:9px 13px;cursor:pointer}
+.btn:hover{background:#ECE8DA}
+.btn.quiet{border-color:#C9C3B2;color:#6E6A5E}
+.scorechip{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12px}
+
+/* thumbnail strokes — components/route-thumb.tsx verbatim */
+.tcase,.t-observed,.t-road,.t-unknown,.t-air{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tcase{stroke:#F5F2E8;stroke-width:3.5}
+.t-observed{stroke:#A81E22;stroke-width:2.25}
+.t-road{stroke:#2A5DA8;stroke-width:1.6}
+.t-unknown{stroke:#8A8375;stroke-width:1.6;stroke-dasharray:3 3}
+.t-air{stroke:#3F7069;stroke-width:1.6;stroke-dasharray:0.1 3.4}
+
+/* ——— T3: the gallery ——— */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:26px}
+.tcard{background:#F5F2E8;border:1px solid #26251F;outline:1px solid #26251F;outline-offset:3px;margin:4px}
+.tcard-art{position:relative;background:#F5F2E8;border-bottom:1px solid #C9C3B2}
+.tcard-art svg{display:block;width:100%;height:auto}
+.tcard-body{padding:11px 14px 13px}
+.tc-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+.tc-start{font-size:13px;font-weight:600}
+.tc-facts{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;color:#6E6A5E;
+  margin:5px 0 12px}
+.tgrid .decide input{width:130px}
+
+.verdict{max-width:1280px;margin:0 auto;padding:4px 36px 0;font-size:12.5px;color:#6E6A5E;max-width:82ch}
+.verdict{margin-left:auto;margin-right:auto}
+
+/* ——— exhibits ——— */
+.exhibits{border-top:2px dashed #C9C3B2;margin-top:30px;background:#EFECE2}
+.exhibits-inner{max-width:1280px;margin:0 auto;padding:22px 36px 34px}
+.exhibits h2{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  font-size:13px;letter-spacing:.24em;font-weight:600;color:#6E6A5E;margin-bottom:6px}
+.exhibits .exh-note{font-size:12.5px;color:#6E6A5E;max-width:78ch;margin-bottom:20px}
+.exhibit{margin-bottom:36px}
+.exhibit h3{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  font-size:18px;font-weight:600;margin-bottom:4px}
+.exhibit .caption{font-size:12.5px;color:#6E6A5E;max-width:78ch;margin-bottom:16px}
+.minigrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.minicard{background:#F5F2E8;border:1px solid #26251F;margin:2px}
+.minicard svg{display:block;width:100%;height:auto;border-bottom:1px solid #C9C3B2}
+.minicard .mc{padding:6px 9px 8px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  font-size:10px;color:#6E6A5E;display:flex;justify-content:space-between;gap:6px}
+.minicard .mc b{color:#26251F;font-weight:600}
+.mini-decide{display:flex;gap:5px;padding:0 9px 9px}
+.mini-decide .btn{font-size:10px;padding:6px 8px}
+
+.compare{width:100%;max-width:900px;border-collapse:collapse;font-size:13px}
+.compare th{font-size:11px}
+.compare td{vertical-align:top;padding:10px 18px 10px 0}
+.compare td:first-child{font-weight:600;white-space:nowrap}
+
+.mocknote{max-width:1280px;margin:0 auto;padding:14px 36px 26px;font-size:11px;color:#6E6A5E;
+  border-top:1px dashed #C9C3B2}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="thumb-1"><path class="tcase" d="M83.7 113.0L83.7 113.0"/>
+<path class="t-road" d="M83.7 113.0L83.7 113.0"/>
+<path class="tcase" d="M105.5 121.9L105.5 121.9"/>
+<path class="t-road" d="M105.5 121.9L105.5 121.9"/>
+<path class="tcase" d="M129.2 133.6L129.2 133.6"/>
+<path class="t-road" d="M129.2 133.6L129.2 133.6"/>
+<path class="tcase" d="M223.1 71.1L223.1 71.1"/>
+<path class="t-road" d="M223.1 71.1L223.1 71.1"/>
+<path class="tcase" d="M259.4 67.9L259.4 67.9"/>
+<path class="t-road" d="M259.4 67.9L259.4 67.9"/>
+<path class="tcase" d="M304.0 46.4L304.0 46.4"/>
+<path class="t-road" d="M304.0 46.4L304.0 46.4"/>
+<path class="tcase" d="M37.4 79.9L37.4 79.9"/>
+<path class="t-road" d="M37.4 79.9L37.4 79.9"/>
+<path class="t-observed" d="M17.9 70.0L25.7 73.9L33.5 77.9L41.6 82.9L50.1 88.9L58.5 95.0L67.0 101.0L75.4 107.0L83.9 113.1"/>
+<path class="t-observed" d="M83.9 113.1L91.2 116.0L98.5 118.9L105.9 121.8"/>
+<path class="t-observed" d="M105.9 121.8L111.7 124.7L117.5 127.7L123.3 130.7L129.1 133.6"/>
+<path class="t-observed" d="M129.1 133.6L137.0 126.6L145.0 119.7L152.9 112.7L160.8 105.7L168.7 98.7L177.2 93.0L186.4 88.6L195.6 84.3L204.7 79.9L213.9 75.5L223.1 71.2"/>
+<path class="t-observed" d="M223.1 71.2L230.4 70.5L237.6 69.9L244.9 69.2L252.1 68.6L259.3 67.9"/>
+<path class="t-observed" d="M259.3 67.9L266.8 64.3L274.2 60.7L281.7 57.1L289.1 53.5L296.6 50.0L304.0 46.4"/>
+<path class="t-observed" d="M304.0 46.4L290.4 52.9L276.8 59.5L263.2 66.0L251.5 68.6L240.4 69.6L229.4 70.6L216.5 74.3L201.2 81.6L185.8 88.9L170.7 96.9L157.5 108.6L144.3 120.3L131.0 132.0L123.1 130.5L116.0 126.9L108.9 123.3L102.0 120.3L95.3 117.6L88.7 115.0L79.8 110.2L65.7 100.1L51.6 90.0L37.4 79.9"/>
+<path class="t-observed" d="M37.4 79.9L26.7 74.4L16.0 69.0"/></g>
+    <g id="thumb-2"><path class="tcase" d="M148.2 164.0L148.6 163.5L148.7 162.9L149.0 162.2L149.3 161.7L149.4 161.1L149.7 160.4L150.2 159.4L150.6 158.9L151.5 158.1L151.9 157.7L152.4 157.3L152.9 156.8L153.2 156.3L153.3 155.7L153.8 155.0L154.3 154.6L154.8 154.3L155.2 153.8L155.5 153.3L156.0 152.8L156.2 152.0L156.4 151.4L156.6 150.8L157.1 150.5L157.6 150.1L157.9 149.6L158.3 149.1L158.9 148.9L159.4 148.6L159.7 148.0L160.4 147.5L161.0 147.3L161.5 147.0L162.0 146.3L162.3 145.7L162.7 145.2L162.9 144.6L163.4 144.1L163.7 143.5L163.8 142.9L164.1 142.3L164.6 141.9L165.0 141.3L165.3 140.6L165.4 140.0L165.6 139.4L166.0 138.7L166.3 138.2L166.5 137.5L167.1 136.7L167.5 136.2L167.8 135.6L168.1 135.1L168.6 134.9L169.0 134.5L169.5 134.0L170.0 133.6L170.3 133.0L170.4 132.4L170.9 131.9L171.6 131.4L172.3 130.9L172.0 130.4L172.1 129.7L172.2 129.1L172.0 128.5L171.8 128.0L171.5 127.4L171.3 126.8L171.0 126.2L171.2 125.6L171.0 125.1L170.7 124.5L170.2 124.1L169.9 123.6L169.6 123.0L169.7 122.4L169.5 121.8L169.8 121.3L169.8 120.6L169.9 119.9L169.7 119.3L169.7 118.7L169.7 118.1L169.9 117.5L169.5 117.0L169.2 116.4L169.0 115.7L168.8 115.1L168.3 114.4L168.1 113.7L167.9 112.9L167.9 112.3L168.0 111.7L168.0 110.5L168.1 109.8L167.5 108.9L167.0 108.5L166.5 108.3L165.9 107.9L165.5 107.4L165.1 107.0L164.5 106.4L164.1 106.0L163.7 105.3L163.2 104.1L162.7 103.3L162.1 102.5L161.1 101.4L160.5 100.8L160.2 100.2L160.1 99.4L160.0 98.8L159.3 98.4L158.7 98.3L158.0 98.1L157.4 97.8L156.7 97.5L156.3 97.0L156.0 96.4L156.0 95.8L157.0 94.9L157.5 94.3L157.4 93.7L157.1 93.1L156.7 92.5L156.5 91.9L156.9 91.2L157.1 90.7L157.6 89.9L158.0 89.4L158.4 88.7L158.6 88.1L158.5 87.5L159.0 86.5L159.4 85.9L159.6 85.3L159.8 84.6L159.8 83.9L159.5 83.4L159.1 82.9L159.1 82.1L159.3 81.2L159.3 80.5L159.1 79.6L158.7 79.0L158.1 78.2L157.7 77.7L157.1 77.0L156.7 76.5L156.4 76.0L156.3 75.2L156.3 74.5L156.3 73.9L156.3 73.3L156.6 72.8L156.9 72.0L157.1 71.4L157.2 70.7L157.3 70.1L157.4 69.2L157.5 68.6L157.6 67.9L157.8 66.8L157.7 66.2L157.6 65.4L157.6 64.4L157.6 63.7L157.5 63.1L157.4 62.5L157.0 62.0L156.6 61.5L156.4 60.9L156.0 60.3L155.4 60.1L154.7 59.9L154.1 59.8L153.4 59.3L152.7 59.2L151.7 58.6L150.9 57.9L150.6 57.1L150.3 56.4L150.2 55.8L150.3 55.1L150.4 54.2L150.3 53.4L150.1 52.8L149.8 52.3L149.7 51.7L149.8 51.0L149.9 50.4L149.8 49.8L149.6 49.2L149.2 48.7L148.6 48.5L148.1 48.1L148.2 47.5L148.6 47.0L148.5 46.2L148.3 45.6L147.9 45.2L148.0 44.4L148.6 44.2L149.1 43.8L149.5 43.3L149.7 42.7L150.0 42.1L150.3 41.5L150.5 41.0L150.8 40.4L150.9 39.8L151.4 39.4L151.7 38.8L152.0 38.3L152.3 37.7L152.4 37.1L152.9 36.5L152.9 35.6L153.1 35.0L153.9 34.5L154.4 34.0L154.5 33.3L154.9 32.8L155.2 32.3L155.6 31.8L155.9 31.2L156.3 30.8L156.6 30.2L156.9 29.6L157.0 29.0L157.3 28.4L157.7 27.9L157.9 27.3L158.0 26.7L158.3 26.1L158.8 25.7L159.1 25.1L159.4 24.5L159.8 24.1L160.3 23.7L160.8 23.4L161.2 22.8L161.4 22.3L161.6 21.7L161.6 21.0L161.9 20.4L161.8 19.8L161.4 19.2L161.0 18.7L160.5 18.4L160.1 17.9L160.2 17.2L160.2 16.6L160.8 16.5L161.3 16.1L161.6 16.0"/>
+<path class="t-road" d="M148.2 164.0L148.6 163.5L148.7 162.9L149.0 162.2L149.3 161.7L149.4 161.1L149.7 160.4L150.2 159.4L150.6 158.9L151.5 158.1L151.9 157.7L152.4 157.3L152.9 156.8L153.2 156.3L153.3 155.7L153.8 155.0L154.3 154.6L154.8 154.3L155.2 153.8L155.5 153.3L156.0 152.8L156.2 152.0L156.4 151.4L156.6 150.8L157.1 150.5L157.6 150.1L157.9 149.6L158.3 149.1L158.9 148.9L159.4 148.6L159.7 148.0L160.4 147.5L161.0 147.3L161.5 147.0L162.0 146.3L162.3 145.7L162.7 145.2L162.9 144.6L163.4 144.1L163.7 143.5L163.8 142.9L164.1 142.3L164.6 141.9L165.0 141.3L165.3 140.6L165.4 140.0L165.6 139.4L166.0 138.7L166.3 138.2L166.5 137.5L167.1 136.7L167.5 136.2L167.8 135.6L168.1 135.1L168.6 134.9L169.0 134.5L169.5 134.0L170.0 133.6L170.3 133.0L170.4 132.4L170.9 131.9L171.6 131.4L172.3 130.9L172.0 130.4L172.1 129.7L172.2 129.1L172.0 128.5L171.8 128.0L171.5 127.4L171.3 126.8L171.0 126.2L171.2 125.6L171.0 125.1L170.7 124.5L170.2 124.1L169.9 123.6L169.6 123.0L169.7 122.4L169.5 121.8L169.8 121.3L169.8 120.6L169.9 119.9L169.7 119.3L169.7 118.7L169.7 118.1L169.9 117.5L169.5 117.0L169.2 116.4L169.0 115.7L168.8 115.1L168.3 114.4L168.1 113.7L167.9 112.9L167.9 112.3L168.0 111.7L168.0 110.5L168.1 109.8L167.5 108.9L167.0 108.5L166.5 108.3L165.9 107.9L165.5 107.4L165.1 107.0L164.5 106.4L164.1 106.0L163.7 105.3L163.2 104.1L162.7 103.3L162.1 102.5L161.1 101.4L160.5 100.8L160.2 100.2L160.1 99.4L160.0 98.8L159.3 98.4L158.7 98.3L158.0 98.1L157.4 97.8L156.7 97.5L156.3 97.0L156.0 96.4L156.0 95.8L157.0 94.9L157.5 94.3L157.4 93.7L157.1 93.1L156.7 92.5L156.5 91.9L156.9 91.2L157.1 90.7L157.6 89.9L158.0 89.4L158.4 88.7L158.6 88.1L158.5 87.5L159.0 86.5L159.4 85.9L159.6 85.3L159.8 84.6L159.8 83.9L159.5 83.4L159.1 82.9L159.1 82.1L159.3 81.2L159.3 80.5L159.1 79.6L158.7 79.0L158.1 78.2L157.7 77.7L157.1 77.0L156.7 76.5L156.4 76.0L156.3 75.2L156.3 74.5L156.3 73.9L156.3 73.3L156.6 72.8L156.9 72.0L157.1 71.4L157.2 70.7L157.3 70.1L157.4 69.2L157.5 68.6L157.6 67.9L157.8 66.8L157.7 66.2L157.6 65.4L157.6 64.4L157.6 63.7L157.5 63.1L157.4 62.5L157.0 62.0L156.6 61.5L156.4 60.9L156.0 60.3L155.4 60.1L154.7 59.9L154.1 59.8L153.4 59.3L152.7 59.2L151.7 58.6L150.9 57.9L150.6 57.1L150.3 56.4L150.2 55.8L150.3 55.1L150.4 54.2L150.3 53.4L150.1 52.8L149.8 52.3L149.7 51.7L149.8 51.0L149.9 50.4L149.8 49.8L149.6 49.2L149.2 48.7L148.6 48.5L148.1 48.1L148.2 47.5L148.6 47.0L148.5 46.2L148.3 45.6L147.9 45.2L148.0 44.4L148.6 44.2L149.1 43.8L149.5 43.3L149.7 42.7L150.0 42.1L150.3 41.5L150.5 41.0L150.8 40.4L150.9 39.8L151.4 39.4L151.7 38.8L152.0 38.3L152.3 37.7L152.4 37.1L152.9 36.5L152.9 35.6L153.1 35.0L153.9 34.5L154.4 34.0L154.5 33.3L154.9 32.8L155.2 32.3L155.6 31.8L155.9 31.2L156.3 30.8L156.6 30.2L156.9 29.6L157.0 29.0L157.3 28.4L157.7 27.9L157.9 27.3L158.0 26.7L158.3 26.1L158.8 25.7L159.1 25.1L159.4 24.5L159.8 24.1L160.3 23.7L160.8 23.4L161.2 22.8L161.4 22.3L161.6 21.7L161.6 21.0L161.9 20.4L161.8 19.8L161.4 19.2L161.0 18.7L160.5 18.4L160.1 17.9L160.2 17.2L160.2 16.6L160.8 16.5L161.3 16.1L161.6 16.0"/>
+<path class="tcase" d="M161.6 16.0L161.1 16.4L160.5 16.5L160.2 17.1L160.1 17.8L160.4 18.3L161.0 18.7L161.4 19.1L161.8 19.6L161.8 20.2L161.7 20.8L161.6 21.4L161.6 22.0L161.3 22.6L160.9 23.2L160.5 23.6L159.9 24.0L159.4 24.4L159.1 24.9L159.0 25.5L158.5 26.0L158.1 26.5L158.0 27.1L157.8 27.6L157.4 28.2L157.1 28.7L156.9 29.4L156.7 30.0L156.4 30.6L156.0 31.1L155.7 31.7L155.3 32.1L155.0 32.6L154.6 33.2L154.5 33.9L153.9 34.5L153.4 34.8L152.9 35.3L153.0 36.0L152.7 36.6L152.4 37.3L152.3 37.8L152.0 38.4L151.6 38.9L151.2 39.5L150.8 39.9L150.7 40.5L150.4 41.2L150.2 41.8L149.9 42.3L149.7 42.9L149.4 43.5L149.0 43.9L148.4 44.2L147.7 44.6L148.0 45.3L148.4 45.8L148.6 46.8L148.4 47.3L148.0 47.8L148.3 48.4L148.9 48.6L149.4 48.9L149.7 49.4L149.9 50.1L149.8 50.8L149.7 51.5L149.7 52.1L150.0 52.7L150.3 53.4L150.4 54.2L150.3 54.9L150.2 55.6L150.3 56.2L150.5 56.9L150.7 57.5L151.3 58.2L152.3 58.9L152.9 59.2L153.8 59.6L154.5 59.9L155.1 60.0L155.7 60.2L156.2 60.5L156.4 61.1L156.7 61.6L157.2 62.2L157.5 62.8L157.5 63.5L157.6 64.2L157.6 64.9L157.6 65.6L157.8 66.3L157.6 67.4L157.6 68.2L157.4 68.8L157.4 69.5L157.3 70.2L157.2 70.9L157.0 71.6L156.8 72.2L156.6 72.8L156.3 73.5L156.3 74.1L156.3 74.8L156.3 75.4L156.4 76.0L156.7 76.6L157.3 77.3L157.7 77.7L158.3 78.6L158.9 79.1L159.2 80.1L159.3 80.7L159.2 81.6L159.1 82.4L159.2 83.0L159.6 83.5L159.9 84.1L159.8 84.8L159.6 85.4L159.3 86.0L158.6 87.0L158.5 87.6L158.6 88.2L158.0 89.4L157.6 89.9L157.1 90.7L156.9 91.2L156.6 91.8L156.2 92.1"/>
+<path class="t-road" d="M161.6 16.0L161.1 16.4L160.5 16.5L160.2 17.1L160.1 17.8L160.4 18.3L161.0 18.7L161.4 19.1L161.8 19.6L161.8 20.2L161.7 20.8L161.6 21.4L161.6 22.0L161.3 22.6L160.9 23.2L160.5 23.6L159.9 24.0L159.4 24.4L159.1 24.9L159.0 25.5L158.5 26.0L158.1 26.5L158.0 27.1L157.8 27.6L157.4 28.2L157.1 28.7L156.9 29.4L156.7 30.0L156.4 30.6L156.0 31.1L155.7 31.7L155.3 32.1L155.0 32.6L154.6 33.2L154.5 33.9L153.9 34.5L153.4 34.8L152.9 35.3L153.0 36.0L152.7 36.6L152.4 37.3L152.3 37.8L152.0 38.4L151.6 38.9L151.2 39.5L150.8 39.9L150.7 40.5L150.4 41.2L150.2 41.8L149.9 42.3L149.7 42.9L149.4 43.5L149.0 43.9L148.4 44.2L147.7 44.6L148.0 45.3L148.4 45.8L148.6 46.8L148.4 47.3L148.0 47.8L148.3 48.4L148.9 48.6L149.4 48.9L149.7 49.4L149.9 50.1L149.8 50.8L149.7 51.5L149.7 52.1L150.0 52.7L150.3 53.4L150.4 54.2L150.3 54.9L150.2 55.6L150.3 56.2L150.5 56.9L150.7 57.5L151.3 58.2L152.3 58.9L152.9 59.2L153.8 59.6L154.5 59.9L155.1 60.0L155.7 60.2L156.2 60.5L156.4 61.1L156.7 61.6L157.2 62.2L157.5 62.8L157.5 63.5L157.6 64.2L157.6 64.9L157.6 65.6L157.8 66.3L157.6 67.4L157.6 68.2L157.4 68.8L157.4 69.5L157.3 70.2L157.2 70.9L157.0 71.6L156.8 72.2L156.6 72.8L156.3 73.5L156.3 74.1L156.3 74.8L156.3 75.4L156.4 76.0L156.7 76.6L157.3 77.3L157.7 77.7L158.3 78.6L158.9 79.1L159.2 80.1L159.3 80.7L159.2 81.6L159.1 82.4L159.2 83.0L159.6 83.5L159.9 84.1L159.8 84.8L159.6 85.4L159.3 86.0L158.6 87.0L158.5 87.6L158.6 88.2L158.0 89.4L157.6 89.9L157.1 90.7L156.9 91.2L156.6 91.8L156.2 92.1"/>
+<path class="t-observed" d="M156.2 92.1L156.2 92.1"/></g>
+    <g id="thumb-3"><path class="t-air" d="M66.9 163.4L73.5 157.2L80.0 150.9L86.6 144.7L93.3 138.5L100.0 132.3L106.7 126.1L113.4 119.9L120.2 113.8L127.0 107.7L133.9 101.6L140.8 95.5L147.7 89.5L154.7 83.4L161.7 77.4L168.7 71.4L175.8 65.5L182.9 59.5L190.0 53.6L197.2 47.7L204.4 41.8L211.7 35.9L219.0 30.1L226.3 24.3L233.7 18.5"/>
+<path class="t-air" d="M233.7 18.5L226.3 24.3L219.0 30.1L211.7 35.9L204.4 41.8L197.2 47.7L190.0 53.6L182.9 59.5L175.8 65.5L168.7 71.4L161.7 77.4L154.7 83.4L147.7 89.5L140.8 95.5L133.9 101.6L127.0 107.7L120.2 113.8L113.4 119.9L106.7 126.1L100.0 132.3L93.3 138.5L86.6 144.7L80.0 150.9L73.5 157.2L66.9 163.4"/>
+<path class="tcase" d="M67.6 164.0L67.6 164.0"/>
+<path class="t-road" d="M67.6 164.0L67.6 164.0"/>
+<path class="tcase" d="M233.4 18.5L233.4 17.8L233.2 17.2L233.2 16.6L232.8 16.1L232.2 16.3L231.7 16.0"/>
+<path class="t-road" d="M233.4 18.5L233.4 17.8L233.2 17.2L233.2 16.6L232.8 16.1L232.2 16.3L231.7 16.0"/>
+<path class="tcase" d="M253.1 16.3L253.1 16.3"/>
+<path class="t-road" d="M253.1 16.3L253.1 16.3"/>
+<path class="tcase" d="M231.7 16.0L232.3 16.2L232.9 16.2L233.2 16.7L233.3 17.3L233.4 17.9L233.4 18.5"/>
+<path class="t-road" d="M231.7 16.0L232.3 16.2L232.9 16.2L233.2 16.7L233.3 17.3L233.4 17.9L233.4 18.5"/>
+<path class="t-observed" d="M66.9 163.4L66.9 163.4"/>
+<path class="t-observed" d="M233.7 18.5L233.7 18.5"/>
+<path class="t-observed" d="M231.7 16.0L238.8 16.2L245.9 16.3L252.9 16.5"/>
+<path class="t-observed" d="M252.9 16.5L245.9 16.3L238.8 16.2L231.7 16.0"/>
+<path class="t-observed" d="M233.7 18.5L233.7 18.5"/>
+<path class="t-observed" d="M66.9 163.4L66.9 163.4"/></g>
+  </defs>
+</svg>
+
+<header class="masthead">
+  <div class="brand">ROADBOOK<small>candidate triage</small></div>
+  <nav class="worknav">
+    <a href="#">Life map</a><span class="sep">·</span>
+    <a href="#">Adventures</a><span class="sep">·</span>
+    <a href="#" aria-current="page">Candidates</a><span class="sep">·</span>
+    <a href="#">Imports</a>
+  </nav>
+</header>
+
+<div class="intro">
+  <h1>Triage, reconsidered</h1>
+  <p>The maintainer reopened BRIEF §3's "triage stays a table" at the CP3 review. This page
+    renders the three honest treatments side by side, on the same three candidates shown
+    <em>undecided</em> — the state triage exists for. The decide affordances (name, confirm,
+    dismiss) are the page's job and appear in all three; score stays, per DESIGN §4 it is
+    retired from confirmed covers only.</p>
+</div>
+<p class="runline">Detection run 7 · 3 candidates · 3 undecided</p>
+
+<section class="treatment">
+  <h2>T1 — the table as it is today</h2>
+  <p class="caption">The work queue: eight comparable columns, one decision per row,
+    thirty rows scannable without scrolling far. What it lacks: nothing tells you what
+    the journey <em>looked like</em> — recall runs on dates and figures alone.</p>
+  <table>
+    <thead><tr>
+      <th>Start</th><th class="num">Days</th><th class="num">Distance</th>
+      <th class="num">Track</th><th class="num">Stops</th><th class="num">Visits</th>
+      <th class="num">Score</th><th>Status</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td class="mono">2026-04-24</td><td class="num mono">2.3</td><td class="num mono">325 km</td>
+        <td class="num mono">794 km</td><td class="num mono">4</td><td class="num mono">91</td>
+        <td class="num mono">55</td>
+        <td><div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div></td>
+      </tr>
+      <tr>
+        <td class="mono">2026-05-22</td><td class="num mono">1.9</td><td class="num mono">222 km</td>
+        <td class="num mono">455 km</td><td class="num mono">3</td><td class="num mono">9</td>
+        <td class="num mono">44</td>
+        <td><div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div></td>
+      </tr>
+      <tr>
+        <td class="mono">2026-06-12</td><td class="num mono">2.4</td><td class="num mono">249 km</td>
+        <td class="num mono">691 km</td><td class="num mono">4</td><td class="num mono">39</td>
+        <td class="num mono">51</td>
+        <td><div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="treatment">
+  <h2>T2 — the table gains a shape column</h2>
+  <p class="caption">The middle path: the queue stays a queue, and the one thing a
+    gallery genuinely adds — <em>seeing</em> the journey's shape while deciding whether it
+    was real — arrives as a 96 px thumbnail column. Every other property of the table
+    survives untouched. Cost: one column of width, one journey fetch per row.</p>
+  <table>
+    <thead><tr>
+      <th>Shape</th><th>Start</th><th class="num">Days</th><th class="num">Distance</th>
+      <th class="num">Track</th><th class="num">Stops</th><th class="num">Visits</th>
+      <th class="num">Score</th><th>Status</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td class="thumbcell"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg></td>
+        <td class="mono">2026-04-24</td><td class="num mono">2.3</td><td class="num mono">325 km</td>
+        <td class="num mono">794 km</td><td class="num mono">4</td><td class="num mono">91</td>
+        <td class="num mono">55</td>
+        <td><div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div></td>
+      </tr>
+      <tr>
+        <td class="thumbcell"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg></td>
+        <td class="mono">2026-05-22</td><td class="num mono">1.9</td><td class="num mono">222 km</td>
+        <td class="num mono">455 km</td><td class="num mono">3</td><td class="num mono">9</td>
+        <td class="num mono">44</td>
+        <td><div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div></td>
+      </tr>
+      <tr>
+        <td class="thumbcell"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg></td>
+        <td class="mono">2026-06-12</td><td class="num mono">2.4</td><td class="num mono">249 km</td>
+        <td class="num mono">691 km</td><td class="num mono">4</td><td class="num mono">39</td>
+        <td class="num mono">51</td>
+        <td><div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="treatment">
+  <h2>T3 — the full gallery</h2>
+  <p class="caption">Triage as tiles. The shape leads; figures compress to one mono line;
+    the decision moves into each card. Note what changed: candidates have no name, so the
+    headline is a date; score comparison now means reading across cards instead of down a
+    column; and a page of undecided tiles wears the same clothes as the confirmed
+    adventures grid — two different jobs, one look.</p>
+  <div class="tgrid">
+
+    <div class="tcard">
+      <div class="tcard-art"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg></div>
+      <div class="tcard-body">
+        <div class="tc-head"><span class="tc-start">24 Apr 2026</span><span class="scorechip">score 55</span></div>
+        <div class="tc-facts">2.3 days · 325 km away · track 794 km · 91 visits</div>
+        <div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+      </div>
+    </div>
+
+    <div class="tcard">
+      <div class="tcard-art"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg></div>
+      <div class="tcard-body">
+        <div class="tc-head"><span class="tc-start">22 May 2026</span><span class="scorechip">score 44</span></div>
+        <div class="tc-facts">1.9 days · 222 km away · track 455 km · 9 visits</div>
+        <div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+      </div>
+    </div>
+
+    <div class="tcard">
+      <div class="tcard-art"><svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg></div>
+      <div class="tcard-body">
+        <div class="tc-head"><span class="tc-start">12 Jun 2026</span><span class="scorechip">score 51</span></div>
+        <div class="tc-facts">2.4 days · 249 km away · track 691 km · 39 visits</div>
+        <div class="decide"><input placeholder="Name this adventure"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="exhibits">
+  <div class="exhibits-inner">
+    <h2>REVIEW EXHIBITS</h2>
+    <p class="exh-note">The archive behind the pilot carries 66 candidates in one
+      detection run — triage's real workload, and the scale the treatments must be judged
+      at. The panels below repeat the three demo candidates to roughly that shelf.</p>
+
+    <div class="exhibit">
+      <h3>Exhibit 1 — the gallery at 66 candidates</h3>
+      <p class="caption">Twenty-four of sixty-six tiles (the rest scroll). Repeated demo
+        covers, <strong>not data</strong>. Judge: how far you scroll to find the trip you
+        remember; how you compare scores; how a dismissed-heavy queue feels as a wall of
+        framed art.</p>
+      <div class="minigrid"><div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg>
+  <div class="mc"><b>24 Apr 2026</b><span>score 55</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg>
+  <div class="mc"><b>22 May 2026</b><span>score 44</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg>
+  <div class="mc"><b>12 Jun 2026</b><span>score 51</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg>
+  <div class="mc"><b>24 Apr 2026</b><span>score 55</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg>
+  <div class="mc"><b>22 May 2026</b><span>score 44</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg>
+  <div class="mc"><b>12 Jun 2026</b><span>score 51</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg>
+  <div class="mc"><b>24 Apr 2026</b><span>score 55</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg>
+  <div class="mc"><b>22 May 2026</b><span>score 44</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg>
+  <div class="mc"><b>12 Jun 2026</b><span>score 51</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg>
+  <div class="mc"><b>24 Apr 2026</b><span>score 55</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg>
+  <div class="mc"><b>22 May 2026</b><span>score 44</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg>
+  <div class="mc"><b>12 Jun 2026</b><span>score 51</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg>
+  <div class="mc"><b>24 Apr 2026</b><span>score 55</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg>
+  <div class="mc"><b>22 May 2026</b><span>score 44</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg>
+  <div class="mc"><b>12 Jun 2026</b><span>score 51</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg>
+  <div class="mc"><b>24 Apr 2026</b><span>score 55</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg>
+  <div class="mc"><b>22 May 2026</b><span>score 44</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg>
+  <div class="mc"><b>12 Jun 2026</b><span>score 51</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg>
+  <div class="mc"><b>24 Apr 2026</b><span>score 55</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg>
+  <div class="mc"><b>22 May 2026</b><span>score 44</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg>
+  <div class="mc"><b>12 Jun 2026</b><span>score 51</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-1"/></svg>
+  <div class="mc"><b>24 Apr 2026</b><span>score 55</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-2"/></svg>
+  <div class="mc"><b>22 May 2026</b><span>score 44</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div>
+<div class="minicard">
+  <svg viewBox="0 0 320 180" aria-hidden="true"><use href="#thumb-3"/></svg>
+  <div class="mc"><b>12 Jun 2026</b><span>score 51</span></div>
+  <div class="mini-decide"><button class="btn">Confirm</button><button class="btn quiet">Dismiss</button></div>
+</div></div>
+    </div>
+
+    <div class="exhibit">
+      <h3>Exhibit 2 — what each treatment trades</h3>
+      <table class="compare">
+        <thead><tr><th></th><th>T1 table</th><th>T2 shape column</th><th>T3 gallery</th></tr></thead>
+        <tbody>
+          <tr><td>Rows per screen (desktop)</td><td>~12</td><td>~8</td><td>~6 (2 per row)</td></tr>
+          <tr><td>Score comparison</td><td>down a column</td><td>down a column</td><td>across cards</td></tr>
+          <tr><td>Shape recall while deciding</td><td>none</td><td>96 px thumbnail</td><td>full-width art</td></tr>
+          <tr><td>Cost per row</td><td>—</td><td>one journey fetch</td><td>one journey fetch</td></tr>
+          <tr><td>Distinct from the adventures grid</td><td>clearly</td><td>clearly</td><td>same clothes, different job</td></tr>
+          <tr><td>Phone width</td><td>folds (built, tested)</td><td>folds; thumbnail stays</td><td>single column, tall scroll</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+<p class="mocknote">Phase 9 · CP3 supplementary mockup — triage treatments, at the
+  maintainer's request at the review. Static HTML, review artifact, not product code. The
+  three demo candidates are shown undecided (their demo decisions stripped — a state
+  fiction, the data itself is unchanged); figures from the demo compose instance,
+  thumbnails via the web/lib/route-thumb.ts projection. Type is system-stack; the product
+  uses Source Serif 4 and IBM Plex Mono.</p>
+
+</body>
+</html>

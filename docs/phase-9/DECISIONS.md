@@ -170,3 +170,51 @@ rejected, what would change our mind.
   (BRIEF §2 marks the grid provisional on it).
 - **Would change our mind:** the review itself — that is what the gate
   is for; every proposal above is decided there, not here.
+
+## 2026-08-17 — CP3 review: option (b), cover B, newest first; triage reopened
+
+- **Chosen:** the grid lives at a new /adventures page (option b). Cover
+  density B (name, dates, days, distance with provenance bar, countries,
+  ⚑ mark when flagged). Order newest first, plate numbers kept and
+  chronological — so display order and numbering deliberately disagree,
+  the number is the atlas register, not the sort key. The summoned list
+  stays exactly as it is: quick map navigation, while /adventures is the
+  browsing surface.
+- **Rejected:** option (a) the dialog-as-grid (its costs page made the
+  case); chronological display order (the mockup's proposal — maintainer
+  preferred recency); cover densities A and C.
+- **Would change our mind:** on ordering, pilot feedback that the
+  number/order disagreement confuses; nothing else foreseeable.
+
+## 2026-08-17 — Triage-as-gallery reopened at the review; extra mockup added
+
+- **Chosen:** the maintainer reopened BRIEF §3's "triage stays a table"
+  at the CP3 review. Per the bucket rule that makes it a mockup-gated
+  question: triage-gallery.html added to the CP3 set — T1 today's table,
+  T2 table plus a shape-thumbnail column (the middle path), T3 full
+  gallery — all three on undecided candidates with the decide
+  affordances present, plus a 66-candidate density exhibit and a
+  trade-off table. Assistant's recorded position: T1/T2 — triage is a
+  deciding surface and the gallery dresses a work queue in the confirmed
+  atlas's clothes; T2 captures the gallery's one real gain (shape recall
+  while deciding) without losing the queue. Maintainer decides at the
+  STOP.
+- **Rejected:** building anything for triage before that decision; and
+  settling the question in prose — it reopened precisely because the
+  covers looked good on a screen, so a screen is where it gets decided.
+- **Would change our mind:** the decision itself, at the STOP.
+
+## 2026-08-17 — Triage: T3, the full gallery
+
+- **Chosen:** triage becomes the gallery (maintainer's call at the
+  mockup STOP, on triage-gallery.html): tiles with full-width route
+  art, date headline, score chip, facts line, and the decide cell in
+  the card. The queue properties the table carried (column-scannable
+  scores, rows-per-screen) are consciously traded for shape-led recall.
+- **Rejected:** T1 (today's table) and T2 (table + shape column) — the
+  assistant's recorded recommendation; overruled at the STOP, which is
+  the gate working as designed.
+- **Would change our mind:** pilot evidence that deciding 66 candidates
+  in a gallery is materially slower or error-prone — the trade-off
+  table's rows are the things to watch; T2 remains the documented
+  fallback and shares all of T3's parts.
