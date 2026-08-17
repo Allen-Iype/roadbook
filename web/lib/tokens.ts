@@ -12,4 +12,5 @@ export const INK = {
   known: "#3a3a34", // T2 overview only: observed+routed merged
   ink: "#26251f",
   paper: "#f5f2e8",
+  flag: "#8a5c0b", // honesty warnings only; ≥4.5:1 on both grounds (scripts/contrast.mjs)
 } as const;

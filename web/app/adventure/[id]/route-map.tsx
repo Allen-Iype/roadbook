@@ -31,7 +31,7 @@ import { fmtDistanceM, placeStatement } from "@/lib/format";
 // one implementation of leg→GeoJSON, arcs, and bounds for every map.
 import { bboxOf, legFeatures, lngLat, stopFeatures } from "@/lib/geo";
 import { INK } from "@/lib/tokens";
-import type { Day } from "@/lib/slice-days";
+import { isFixLeg, type Day } from "@/lib/slice-days";
 import type { components } from "@/lib/api/schema";
 
 // MapLibre parses tiles in a Web Worker whose URL it derives from its own
@@ -79,6 +79,11 @@ function applyHighlight(
   if (map.getLayer("stops")) {
     map.setPaintProperty("stops", "circle-opacity", stopOpacity(sel));
     map.setPaintProperty("stops", "circle-stroke-opacity", stopOpacity(sel));
+  }
+  // Fix dots carry a leg's start day, so they dim on the leg rule.
+  if (map.getLayer("fixes")) {
+    map.setPaintProperty("fixes", "circle-opacity", legOpacity(sel));
+    map.setPaintProperty("fixes", "circle-stroke-opacity", legOpacity(sel));
   }
   for (const m of markers) {
     m.el.style.opacity =
@@ -136,6 +141,26 @@ export function RouteMap({
         ...journey.legs.flatMap((leg, i) =>
           legFeatures([leg], { day: legDay.get(i) ?? 0 }),
         ),
+        // A fix — a stationary observed leg — is a LineString with nowhere
+        // to go: one point (or two coincident ones) paints nothing, so
+        // observed evidence would render as absence (invariant 8, found in
+        // phase 9 CP2). Each fix additionally becomes a Point feature the
+        // "fixes" layer can draw. Same predicate as the narrative's fix
+        // events, so the map dot and the "Fix —" line always agree.
+        ...journey.legs.flatMap((leg, i) =>
+          isFixLeg(leg)
+            ? [
+                {
+                  type: "Feature" as const,
+                  properties: { kind: "fix", day: legDay.get(i) ?? 0 },
+                  geometry: {
+                    type: "Point" as const,
+                    coordinates: lngLat(leg.points[0]),
+                  },
+                },
+              ]
+            : [],
+        ),
         ...stopFeatures(journey.stops, (_s, i) => ({
           days: stopDays.get(i) ?? [],
         })),
@@ -183,7 +208,7 @@ export function RouteMap({
         "width:34px;height:34px;object-fit:cover;border-radius:6px;cursor:pointer;" +
         "transition:opacity .3s;" +
         (p.far_flagged
-          ? "border:2.5px solid #b97f10;box-shadow:0 0 0 2px #f5f2e8;"
+          ? `border:2.5px solid ${INK.flag};box-shadow:0 0 0 2px #f5f2e8;`
           : "border:1.5px solid #f5f2e8;box-shadow:0 0 0 1px #26251f;");
 
       const popup = new Popup({ offset: 20, closeButton: false });
@@ -204,7 +229,7 @@ export function RouteMap({
           // running text (CP4 a11y pass); the words stay ink.
           const flag = document.createElement("span");
           flag.textContent = "⚑ ";
-          flag.style.cssText = "color:#b97f10;font-weight:700;";
+          flag.style.cssText = `color:${INK.flag};font-weight:700;`;
           dist.appendChild(flag);
         }
         dist.appendChild(
@@ -307,6 +332,22 @@ export function RouteMap({
         paint: {
           "line-color": INK.observed,
           "line-width": 3.5,
+        },
+      });
+      // Fixes wear the observed ink — they ARE measurements — at a smaller
+      // radius than stops, whose black dots stay the page's "you stayed
+      // here" marks. Below stops in paint order: where a dwell and its
+      // gate fix coincide, the stop reads on top.
+      map.addLayer({
+        id: "fixes",
+        type: "circle",
+        source: "route",
+        filter: ["==", ["get", "kind"], "fix"],
+        paint: {
+          "circle-radius": 4,
+          "circle-color": INK.observed,
+          "circle-stroke-color": INK.paper,
+          "circle-stroke-width": 1.25,
         },
       });
       map.addLayer({

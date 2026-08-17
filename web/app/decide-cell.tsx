@@ -93,9 +93,12 @@ export function DecideCell({
             placeholder="Name this adventure"
             className="w-40 rounded border border-rule bg-paper px-2 py-1 text-sm outline-none focus:border-ink"
           />
-          {/* -mx-2 -my-3 px-2 py-3 on every control: the hit area reaches the ~44px
-              a thumb needs (small-screen pass, BRIEF §1.5) while the
-              rendered text moves not at all. */}
+          {/* Negative-margin padding on every control: the hit area reaches
+              the 44px a thumb needs (phase 7 BRIEF §1.5) while the rendered
+              text moves not at all. The padding depends on the text size —
+              text-sm (20px line) needs py-3, text-xs (16px line) py-3.5 —
+              which is how the decided-state buttons shipped at 40px until
+              the phase 9 harness measured them. */}
           <button
             disabled={trimmed === ""}
             onClick={() => submit({ status: "confirmed", name: trimmed })}
@@ -156,7 +159,7 @@ export function DecideCell({
       {shown.status !== "undecided" && editing !== "redeciding" && (
         <button
           onClick={() => setEditing("redeciding")}
-          className="-mx-2 -my-3 px-2 py-3 text-xs text-ink-2 hover:text-ink"
+          className="-mx-2 -my-3.5 px-2 py-3.5 text-xs text-ink-2 hover:text-ink"
         >
           change
         </button>
@@ -164,7 +167,7 @@ export function DecideCell({
       {editing === "redeciding" && (
         <button
           onClick={() => setEditing("closed")}
-          className="-mx-2 -my-3 px-2 py-3 text-xs text-ink-2 hover:text-ink"
+          className="-mx-2 -my-3.5 px-2 py-3.5 text-xs text-ink-2 hover:text-ink"
         >
           keep as is
         </button>

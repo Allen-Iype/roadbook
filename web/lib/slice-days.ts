@@ -160,6 +160,19 @@ export function fmtDateRange(startIso: string, endIso: string): string {
 
 /** The distance a leg is drawn with: the routed figure where road geometry
  * exists, the chord (observed sum or gap chord) otherwise. */
+// A fix: a stationary observed leg — one recorded point, or a run that
+// went nowhere (exactly 0 km; the assembler emits these, e.g. the airport
+// gate from phase 3). Exported because the narrative and the detail map
+// must agree on what a fix is: this predicate creates the narrative's fix
+// events below AND the map's fix dots (route-map.tsx). Two copies of the
+// definition is how they would eventually disagree.
+export function isFixLeg(leg: Leg): boolean {
+  return (
+    leg.kind === "observed" &&
+    (leg.points.length === 1 || leg.distance_km === 0)
+  );
+}
+
 export function drawnKm(leg: Leg): number {
   return leg.gap_kind === "road" && leg.routed_km !== undefined
     ? leg.routed_km
@@ -211,10 +224,7 @@ export function sliceDays(journey: SliceInput): Day[] {
     const day = byDate.get(dateOf(leg.start))!;
     day.legIndices.push(legIndex);
     day.km += drawnKm(leg);
-    if (
-      leg.kind === "observed" &&
-      (leg.points.length === 1 || leg.distance_km === 0)
-    ) {
+    if (isFixLeg(leg)) {
       day.events.push({
         type: "fix",
         legIndex,

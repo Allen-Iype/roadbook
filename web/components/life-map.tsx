@@ -28,6 +28,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { bboxOf, legFeatures } from "@/lib/geo";
 import { HIT_LAYER, LIFE_SOURCE, lifeMapLayers } from "@/lib/life-map-layers";
 import { ProvenanceBar } from "@/components/provenance-bar";
+import { RouteThumb } from "@/components/route-thumb";
 import type { components } from "@/lib/api/schema";
 
 // Same Turbopack worker-URL trap as route-map.tsx — see the comment there.
@@ -201,6 +202,13 @@ function HoverCard({
       <p className="mt-0.5 font-mono text-xs text-ink-2">
         {adventure.start.slice(0, 10)} → {adventure.end.slice(0, 10)}
       </p>
+      {/* The route's own shape (the phase 6 BRIEF's hover-card thumbnail,
+          built in phase 9): bare SVG in the Atlas encoding — a WebGL map
+          per tooltip would burn a capped context on a glance. */}
+      <RouteThumb
+        legs={j.legs}
+        className="mt-2 w-full border border-rule bg-land"
+      />
       <p className="mt-2 font-mono text-sm">
         {j.total_km.toFixed(0)} km
         <span className="ml-1 text-xs text-ink-2">

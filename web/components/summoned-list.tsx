@@ -26,10 +26,12 @@ export function SummonedList({ adventures }: { adventures: Adventure[] }) {
 
   return (
     <>
+      {/* The list is the primary navigation on a phone (DESIGN §5), so its
+          summoning control gets the 44px negative-margin hit area. */}
       <button
         type="button"
         onClick={() => ref.current?.showModal()}
-        className="cursor-pointer font-semibold text-ink underline decoration-rule underline-offset-2 hover:decoration-ink"
+        className="-mx-2 -my-3 cursor-pointer px-2 py-3 font-semibold text-ink underline decoration-rule underline-offset-2 hover:decoration-ink"
       >
         List ({adventures.length})
       </button>
@@ -49,7 +51,7 @@ export function SummonedList({ adventures }: { adventures: Adventure[] }) {
             <button
               type="button"
               onClick={() => ref.current?.close()}
-              className="cursor-pointer text-sm text-ink-2 hover:text-ink"
+              className="-mx-2 -my-3 cursor-pointer px-2 py-3 text-sm text-ink-2 hover:text-ink"
             >
               Close
             </button>

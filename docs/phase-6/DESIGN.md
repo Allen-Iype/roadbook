@@ -78,6 +78,13 @@ Ground: paper #F5F2E8 · land #EFECE2 · sea #D9E2E4 · ink #26251F ·
 secondary #6E6A5E · rule #C9C3B2. Flag amber #B97F10 marks honesty
 warnings only (divergence, far-from-route photos); it never decorates.
 
+*Amendment (2026-08-17, phase 9 CP2, maintainer-approved):* flag amber is
+now **#8A5C0B**. The original measured 3.07:1 on paper and 2.91:1 on land —
+under the 3:1 non-text bar on the divergence box's own background. The
+replacement measures 5.18:1 / 4.91:1 (`node web/scripts/contrast.mjs`),
+passing AA as glyph and as text on both grounds. Decision record:
+`docs/phase-9/DECISIONS.md`.
+
 Type roles: characterful serif display (adventure names, plate labels),
 quiet sans body, mono for every figure (distances, coordinates, times).
 Faces are a Stage C decision; mockups used system stacks, candidates are

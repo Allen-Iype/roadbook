@@ -154,6 +154,14 @@ function DwellDayNote({ day, journey }: { day: Day; journey: Journey }) {
   );
 }
 
+// Below this drawn distance a routed leg reads as a stationary gap rather
+// than a transit (phase 9 BRIEF §5.2). Named, per invariant 3's spirit: a
+// display threshold buried as a literal could never be explained later.
+// 0.25 km covers the measured cases — the demo's 0.0 km overnight gaps and
+// the ~100 m routed overnight gap carried from phase 3 — while any real
+// movement (the shortest genuine transit in the goldens is >1 km) clears it.
+const STATIONARY_ROUTED_KM = 0.25;
+
 // Chip styles per event class. Spelled out: Tailwind extracts class names
 // statically, so `text-${kind}` would silently generate nothing.
 const CHIP: Record<string, { label: string; cls: string }> = {
@@ -198,7 +206,7 @@ function EventRow({
         {time}
       </span>
       <span
-        className={`shrink-0 border px-1.5 py-px text-[10px] uppercase tracking-[0.1em] ${c.cls}`}
+        className={`shrink-0 border px-1.5 py-px text-[11px] font-medium uppercase tracking-[0.1em] ${c.cls}`}
       >
         {c.label}
       </span>
@@ -260,13 +268,27 @@ function eventBits(
             {e.points} fixes{overnight}
           </>
         ),
-        road: (
-          <>
-            Routed transit — <b className="font-mono">{km} km</b> along roads
-            {muted(`(straight line ${e.chordKm.toFixed(1)} km)`)}
-            {overnight}
-          </>
-        ),
+        road:
+          // A stationary gap: both ends are effectively the same place, so
+          // routing has nothing to draw — an overnight at a guesthouse, a
+          // parked afternoon. "Routed transit — 0.0 km along roads" is true
+          // but reads as noise; the wording demotes it while the routed
+          // figure stays visible, muted. Presentation only — the geometry
+          // and every stated figure are untouched (phase 9 BRIEF §5.2; the
+          // pipeline-side min-chord floor stays a carried item).
+          e.km < STATIONARY_ROUTED_KM ? (
+            <>
+              Stationary gap — start and end coincide
+              {muted(`(routed ${km} km)`)}
+              {overnight}
+            </>
+          ) : (
+            <>
+              Routed transit — <b className="font-mono">{km} km</b> along roads
+              {muted(`(straight line ${e.chordKm.toFixed(1)} km)`)}
+              {overnight}
+            </>
+          ),
         unknown: (
           <>
             Unobserved gap — straight line{" "}

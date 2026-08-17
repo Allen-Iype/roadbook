@@ -21,16 +21,26 @@ import { SiteHeader } from "@/components/site-header";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [{ data, error }, importsRes] = await Promise.all([
-    api.GET("/candidates"),
-    api.GET("/imports"),
+  // A rejected fetch (API container down, connection refused) THROWS — the
+  // generated client's {error} shape only covers HTTP responses — and an
+  // uncaught throw here lands on the generic error boundary instead of the
+  // designed API-down state below. Found by phase 9 CP2's empty-state
+  // render check: the designed copy was dead code for the very failure it
+  // described. null = "no answer", distinct from an HTTP error.
+  const safe = <T,>(p: Promise<T>): Promise<T | null> =>
+    p.catch(() => null);
+  const [candidatesRes, importsRes] = await Promise.all([
+    safe(api.GET("/candidates")),
+    safe(api.GET("/imports")),
   ]);
+  const data = candidatesRes?.data;
+  const error = candidatesRes ? candidatesRes.error : undefined;
 
   // A cold instance — nothing has ever been imported — routes to the front
   // door (phase 7 BRIEF §3E): a shared link lands on the pitch, and the same
   // link lands here once adventures exist. Only an answered-and-empty
   // imports list redirects; an unreachable API renders as exactly that.
-  if (importsRes.data && importsRes.data.imports.length === 0) {
+  if (importsRes?.data && importsRes.data.imports.length === 0) {
     redirect("/welcome");
   }
 
@@ -195,14 +205,14 @@ export default async function HomePage() {
             <SummonedList adventures={adventures} />
             <Link
               href="/candidates"
-              className="underline decoration-rule underline-offset-2 hover:text-ink"
+              className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
               Candidates
               {undecided > 0 && <> — {undecided} undecided</>}
             </Link>
             <Link
               href="/imports"
-              className="underline decoration-rule underline-offset-2 hover:text-ink"
+              className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
               Imports
             </Link>

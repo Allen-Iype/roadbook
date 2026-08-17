@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 
 import { LegKindLegend } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
-import { fmtDateRange, sliceDays } from "@/lib/slice-days";
+import { fmtDateRange, isFixLeg, sliceDays } from "@/lib/slice-days";
 import { DayNarrative } from "./day-narrative";
 import { PhotosSection } from "./photos-section";
 import { RouteMap } from "./route-map";
@@ -86,6 +86,12 @@ export function AdventureView({
                   : "FULL ROUTE"}
             </span>
             <LegKindLegend wordy={false} />
+            {journey.legs.some(isFixLeg) && (
+              <span className="inline-flex items-center gap-2 text-xs text-ink">
+                <span className="inline-block h-2 w-2 rounded-full border border-paper bg-observed shadow-[0_0_0_1px_var(--color-observed)]" />
+                <span className="font-semibold tracking-wide">Fix</span>
+              </span>
+            )}
             {journey.stops.some((s) => !(s.loc.lat === 0 && s.loc.lon === 0)) && (
               <span className="inline-flex items-center gap-2 text-xs text-ink">
                 <span className="inline-block h-2.5 w-2.5 rounded-full border border-paper bg-ink shadow-[0_0_0_1px_var(--color-ink)]" />
@@ -213,14 +219,20 @@ function Cover({
 // explaining it are right there on the map.
 function Divergence({ journey }: { journey: Journey }) {
   if (journey.divergence_pct === undefined) return null;
+  // Spacing rides in {" "} expressions throughout: SWC drops inter-tag
+  // whitespace in some constructs (the phase 7 trap — this very line
+  // rendered "62.7 km· Google's" and "172.0 km(-63.5%)" until phase 9's
+  // screenshot review caught it).
   const figures = (
     <>
       ground reconstruction{" "}
-      <span className="font-mono">{journey.ground_km.toFixed(1)} km</span> ·
-      Google&apos;s ground figure{" "}
-      <span className="font-mono">{journey.google_ground_km.toFixed(1)} km</span>{" "}
-      ({journey.divergence_pct >= 0 ? "+" : ""}
-      {journey.divergence_pct.toFixed(1)}%)
+      <span className="font-mono">{journey.ground_km.toFixed(1)} km</span>
+      {" · Google's ground figure "}
+      <span className="font-mono">{journey.google_ground_km.toFixed(1)} km</span>
+      {" ("}
+      {journey.divergence_pct >= 0 ? "+" : ""}
+      {journey.divergence_pct.toFixed(1)}
+      {"%)"}
     </>
   );
   if (!journey.divergence_flagged) {
