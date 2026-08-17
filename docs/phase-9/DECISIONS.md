@@ -153,3 +153,20 @@ rejected, what would change our mind.
 - **Would change our mind:** nothing foreseeable; the accepted cost is
   spec churn on surfaces CP4 later reshapes, and layout assertions mostly
   survive redesign.
+
+## 2026-08-17 — CP3 mockup execution: what got mocked, and how
+
+- **Chosen:** per BRIEF §5.1 — option (b) mocked fully
+  (`docs/phase-9/mockups/adventures-grid.html`: grid of plate covers,
+  plus exhibits for cover density, pilot-scale repetition, and the empty
+  state), option (a) as the cheap contrast (`summoned-grid.html`, its
+  costs stated on the page), option (c) not mocked. Cover art reuses the
+  CP2 route-thumbnail projection verbatim; geometry captured from the
+  demo API; covers propose plate numbers with chronological order, an
+  amber flag mark when divergence is flagged, and no score (DESIGN §4).
+- **Rejected:** proceeding to any grid code before the STOP passes; and
+  waiting on the first pilot user's still-absent report — the maintainer
+  chose to proceed, with the report folding in at review if it arrives
+  (BRIEF §2 marks the grid provisional on it).
+- **Would change our mind:** the review itself — that is what the gate
+  is for; every proposal above is decided there, not here.
