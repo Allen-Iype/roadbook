@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { MAP_STYLE_URL } from "@/lib/basemap";
 import { SiteHeader } from "@/components/site-header";
+import { INSTANCE_LABEL } from "@/lib/instance";
 import { AdventureView } from "./adventure-view";
 
 // Server component for one adventure. Next 16 dynamic route: the [id] folder
@@ -68,7 +69,7 @@ export default async function AdventurePage({
 
   return (
     <main className="mx-auto w-full max-w-[91rem] px-4 py-8 sm:px-6">
-      <SiteHeader undecided={undecided} />
+      <SiteHeader undecided={undecided} instanceLabel={INSTANCE_LABEL} />
       <p className="mt-6 text-sm">
         <Link href="/" className="text-ink-2 hover:text-ink">
           ← Life map

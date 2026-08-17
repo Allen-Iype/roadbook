@@ -8,7 +8,7 @@ import { WELCOME_SECTIONS } from "../lib/rejection-anchors";
 import { MD, SM, expectNoHorizontalScroll, viewportWidth } from "./helpers";
 
 test.describe("no horizontal scroll on any v1 loop page", () => {
-  for (const path of ["/", "/welcome", "/candidates", "/imports"]) {
+  for (const path of ["/", "/welcome", "/adventures", "/candidates", "/imports"]) {
     test(`at ${path}`, async ({ page }) => {
       await page.goto(path);
       await expectNoHorizontalScroll(page);
@@ -31,16 +31,22 @@ test("welcome: the upload island is present", async ({ page }) => {
   await expect(page.locator('input[type="file"]')).toBeAttached();
 });
 
-test("candidates: secondary columns fold below sm", async ({ page }) => {
+test("candidates: every gallery card carries art, figures, and a decision", async ({ page }) => {
+  // Triage is a gallery from phase 9 CP4 (T3, decided at the mockup STOP).
+  // Cards do not fold — the same structure renders at every width; what
+  // each card owes the decider is the route shape, the facts line with its
+  // score, and the decide control.
   await page.goto("/candidates");
-  const wide = viewportWidth(page) >= SM;
-  for (const th of ["Track", "Score"]) {
-    const header = page.getByRole("columnheader", { name: th });
-    if (wide) {
-      await expect(header).toBeVisible();
-    } else {
-      await expect(header).toBeHidden();
-    }
+  const cards = page.locator("main ul > li");
+  const n = await cards.count();
+  expect(n).toBeGreaterThan(0);
+  for (let i = 0; i < n; i++) {
+    const card = cards.nth(i);
+    await expect(card.locator("svg").first()).toBeVisible();
+    await expect(card.getByText(/score (\d+|—)/)).toBeVisible();
+    await expect(
+      card.locator('a[href^="/adventure/"]').first(),
+    ).toBeVisible();
   }
 });
 

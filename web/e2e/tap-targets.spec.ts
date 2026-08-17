@@ -43,9 +43,16 @@ test.beforeEach(({ page }) => {
   test.skip(viewportWidth(page) >= 640, "tap targets are a phone concern");
 });
 
-test("candidates: table buttons and header links are thumb-sized", async ({ page }) => {
+test("candidates: gallery card buttons and header links are thumb-sized", async ({ page }) => {
   await page.goto("/candidates");
-  await expectThumbSized(page, "table button");
+  // The decide controls now live inside gallery cards (phase 9 CP4, T3);
+  // the selector follows them — the 44px rule itself is unchanged.
+  await expectThumbSized(page, "main ul button");
+  await expectThumbSized(page, "header a");
+});
+
+test("adventures: header links are thumb-sized", async ({ page }) => {
+  await page.goto("/adventures");
   await expectThumbSized(page, "header a");
 });
 

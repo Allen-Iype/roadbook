@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { api } from "@/lib/api/client";
 import { MAP_STYLE_URL } from "@/lib/basemap";
+import { INSTANCE_LABEL } from "@/lib/instance";
 import { LifeMap, type Adventure } from "@/components/life-map";
 import { SummonedList } from "@/components/summoned-list";
 import { LegKindLegend } from "@/components/legend";
@@ -204,6 +205,12 @@ export default async function HomePage() {
                 the map (DESIGN §5), not a secondary link. */}
             <SummonedList adventures={adventures} />
             <Link
+              href="/adventures"
+              className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
+            >
+              Adventures
+            </Link>
+            <Link
               href="/candidates"
               className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
@@ -216,6 +223,14 @@ export default async function HomePage() {
             >
               Imports
             </Link>
+            {/* The reserved header slot (BRIEF §6): the operator's instance
+                label today, an account control in a later charter-gated
+                phase. A label, not a control. */}
+            {INSTANCE_LABEL && (
+              <span className="border border-rule px-2 py-0.5 font-mono text-xs text-ink-2">
+                {INSTANCE_LABEL}
+              </span>
+            )}
           </nav>
         </header>
 
@@ -243,7 +258,7 @@ function Invitation({
 }) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <SiteHeader undecided={undecided} />
+      <SiteHeader undecided={undecided} instanceLabel={INSTANCE_LABEL} />
       <div className="mt-16 border border-rule bg-paper px-5 py-10 text-center sm:px-8">
         {children}
       </div>

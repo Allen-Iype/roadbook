@@ -3,6 +3,7 @@ import Link from "next/link";
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { SiteHeader } from "@/components/site-header";
+import { INSTANCE_LABEL } from "@/lib/instance";
 import { UploadImport } from "@/components/upload-import";
 
 // Server component, same shape as the home page: runs per request on the
@@ -52,7 +53,7 @@ export default async function ImportsPage() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-      <SiteHeader />
+      <SiteHeader active="imports" instanceLabel={INSTANCE_LABEL} />
       <h1 className="mt-8 font-display text-2xl font-semibold">Imports</h1>
       <p className="mt-1 text-sm text-ink-2">
         Every import attempt, newest first — including the failed ones, with

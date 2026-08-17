@@ -218,3 +218,28 @@ rejected, what would change our mind.
   in a gallery is materially slower or error-prone — the trade-off
   table's rows are the things to watch; T2 remains the documented
   fallback and shares all of T3's parts.
+
+## 2026-08-17 — CP4 execution choices
+
+- **Chosen:** (1) the shell seam is a pass-through: both route-group
+  layouts render children only — headers stay per-page because the life
+  map floats its own chrome; the seam is file layout, which is all BRIEF
+  §6 asks. (2) The reserved slot is ROADBOOK_INSTANCE_LABEL, read
+  server-side at request time (compose can set it without a rebuild);
+  the public shell never reads it — a visitor has no account to show.
+  (3) Triage cards wear a single rule; the double-rule plate frame stays
+  reserved for confirmed covers on /adventures, so the undecided queue
+  never wears the atlas's clothes. (4) The card facts line corrects the
+  mockup's "visits" figure — the mock had labelled the observation count
+  "visits"; the product line uses days / km away / km track / stops and
+  the repeat count ("2× visited") the table's Visits column actually
+  carried. (5) /welcome's product-story evolution shipped copy-level
+  (the atlas joins the pitch and the what-happens-next steps); a richer
+  visual front door stays with the standalone marketing site as a launch
+  item.
+- **Rejected:** a shared header in the (app) layout (would force the
+  life map's floating chrome into a shell it deliberately escapes);
+  baking the instance label at build time (compose operators set env at
+  run time).
+- **Would change our mind:** on (5), maintainer appetite at review — the
+  copy delta is deliberately minimal and says so here.

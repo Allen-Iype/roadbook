@@ -90,6 +90,9 @@ services:
       # Roadbook light style under web/public/map-style/). Set in .env to
       # override with any MapLibre style URL.
       ROADBOOK_MAP_STYLE: ${ROADBOOK_MAP_STYLE:-}
+      # Optional label shown in the app header's reserved slot — useful
+      # when one operator runs several instances. Empty renders nothing.
+      ROADBOOK_INSTANCE_LABEL: ${ROADBOOK_INSTANCE_LABEL:-}
     depends_on:
       api:
         condition: service_healthy

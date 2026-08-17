@@ -45,7 +45,8 @@ export default function WelcomePage() {
           calls it Timeline. Roadbook reads one Timeline export and finds the
           journeys that stand out: stretches far from home, with a real
           destination. You confirm the ones that mattered and name them; each
-          becomes a route on a life map of your own.
+          becomes a route on a life map of your own, and a plate in an atlas
+          of your adventures.
         </p>
         <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
           The maps are honest about what they know. What your phone recorded
@@ -256,7 +257,8 @@ export default function WelcomePage() {
           </NextStep>
           <NextStep n={4} title="You decide">
             Confirm the real adventures and name them; dismiss the rest. The
-            confirmed ones are drawn on your life map.
+            confirmed ones are drawn on your life map and shelved as plate
+            covers in your atlas.
           </NextStep>
         </ol>
         <p className="mt-5 max-w-[58ch] text-sm leading-relaxed text-ink-2">
