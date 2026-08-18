@@ -371,7 +371,7 @@ none is scheduled:
   operator's volume-level reset is structurally complete where row-chasing
   can silently miss a file. Becomes user-facing — and, for location data,
   legally required — when accounts arrive. Trigger: the multi-user tenancy
-  phase
+  phase (phase 12 in the roadmap below)
 - Per-adventure GPX/GeoJSON export, with the observed/inferred distinction preserved
   in the output (separate track segments per confidence class) — an export that
   flattens it silently violates the honesty principle
@@ -385,3 +385,171 @@ none is scheduled:
 notes (comparison doc §8.2 points there). It contradicts the current charter and
 must not be absorbed into this plan silently; the private record includes explicit
 trigger conditions, all of which must hold before it is even reconsidered.
+
+---
+
+## The road to strangers — phases 10–12 (roadmap, 2026-08-18)
+
+Phases 6–9 (life-map UI and design system, browser import as the front door, pilot
+hosting, UI refinement) are recorded in their own `docs/phase-N/` artifacts and are
+not restated here.
+
+This roadmap is written under the dual-mode charter amendment of 2026-08 (CLAUDE.md
+do-not-add list; PRODUCT.md "Hostable as a service"). It sequences the phases from
+the current state — a working self-serve loop on hand-provisioned pilot instances —
+to the point where strangers can be brought in. It does not replace phase briefs:
+every phase below opens with its own design brief, and a brief may overturn a
+leaning recorded here with better evidence.
+
+**The finish line.** A stranger who finds the public landing page understands what
+Roadbook is, and either receives one of the capped instance slots or joins a
+waitlist; an accepted person gets an entry email with a private link and completes
+the existing loop — upload, import, detection, life map — with no ad-hoc operator
+work (scripted provisioning counts as none). That is the close of phase 11. The
+cap is ten users to start, a chosen number, revisited in the phase 11 brief.
+
+### Phase 10 — Hosting readiness
+
+**Goal.** The hosted offering survives without the operator's laptop: instances on
+a rented host with a real domain and TLS, sized for ten, with off-machine backups.
+No product code — the target is a zero Go/web diff for the whole phase.
+
+**Charter basis.** Phase 8 recorded the upgrade path (§3A: small ARM VPS; §3B:
+domain + wildcard TLS + per-instance secret subdomain + basic auth) with named
+triggers. Two now fire: the maintainer deciding to spend — the public-hosting
+decision is that decision — and the pilot outgrowing three concurrent testers,
+since ten exceeds the three-port funnel front. The move retires the funnel relay
+from the upload path.
+
+**Checkpoints.**
+
+1. **The host and the front.** Server provisioned and hardened, domain bought,
+   wildcard TLS, the demo instance live on a subdomain. *Visible: the demo link
+   answers from a phone on cellular with the laptop closed.*
+2. **Topology at ten.** The per-instance compose template and operator scripts
+   (stamp, reset, rotate, backup) ported and run against the new host; capacity
+   for ten stacks measured under real instances, not assumed. *Visible: one
+   command stamps a fresh instance; a measured capacity statement.*
+3. **Migration.** The existing pilot instances move via the proven backup/restore
+   path with zero decision loss; links rotate at the move, per the handover rule.
+   *Visible: existing testers' instances answer at new URLs with their data
+   intact; the restore drill recorded.*
+4. **Durability.** Nightly encrypted backups leave the host for a destination the
+   brief decides; a reboot/failure drill runs on the new host; the runbook is
+   rewritten; the laptop front is retired. *Visible: a restore from the
+   off-machine copy; a documented drill.*
+
+**Excludes.** Any product code; the landing page; waitlist; auth; tenancy; new
+ingestion sources.
+
+**Open questions for the brief.** Provider and region — other people's location
+data makes residency a real consideration; the domain name, which becomes the
+product's public name; the monthly cost ceiling — this phase explicitly retires
+phase 8's zero-cash stance; whether the demo instance goes credential-free.
+
+**What would resequence it.** Pilot reports showing the self-serve loop failing
+for product reasons — then a fix-the-loop pass precedes this phase's close,
+because infrastructure under a loop nobody completes is waste.
+
+### Phase 11 — Front gate
+
+**Goal.** A stranger can find Roadbook, understand it, and either get a slot or
+join the waitlist; entry is an email carrying a private link into the existing
+loop.
+
+**Checkpoints.**
+
+1. **The public landing.** The pitch surface on the apex domain. The brief
+   decides whether the existing front door evolves or a distinct landing hands
+   off to per-instance front doors. The supported-data statement is honest and
+   up front: Google Timeline only today, per-platform expectations, "Timeline
+   never enabled means nothing to export" stated before anyone is asked to want
+   in. *Visible: a cold visitor reaches "I want this" or "not for me" without
+   contacting the operator.*
+2. **The waitlist.** Email capture, stored minimally, purpose stated plainly,
+   deletable on request — the PRODUCT.md contact-data sentence governs. The
+   brief decides the simplest honest mechanism and where entries live.
+   *Visible: a submitted address lands somewhere durable; the page says exactly
+   what will happen with it.*
+3. **Cap and entry.** Scripted provisioning turns an accepted person into a
+   stamped instance; the entry email carries their private link and credential;
+   the cap is enforced — by process, not code, at this scale, unless the brief
+   argues otherwise. *Visible: one command turns a waitlist entry into a
+   welcomed user.*
+4. **The proof.** One real person walks the whole path — landing, waitlist,
+   entry email, upload, adventures — with zero ad-hoc operator work. README and
+   docs updated. *Visible: the full loop, witnessed.*
+
+**Excludes.** Product auth and accounts — instances stay single-user behind
+per-instance credentials, consistent with the amendment, because entrants are
+hand-provisioned; self-serve signup; share links; tenancy machinery.
+
+**Open questions for the brief.** How the entry email is sent — at ten users,
+operator-sent mail with no sending machinery is the lean answer; whether waitlist
+entries need verification; the cap's exact number; what the landing promises
+about data handling — instance isolation should be stated plainly.
+
+**What would resequence it.** Audit returns showing most interested people have
+no Timeline data — then the ingestion phase moves ahead of this one, because a
+gate that turns away most entrants converts the waitlist into a disappointment
+list.
+
+### Phase 12 — Accounts and tenancy (gated)
+
+**Goal.** Strangers sign themselves up and the waitlist drains without per-person
+operator work. Charterable under the amendment; briefed only when its trigger
+binds — the cap filled and real demand beyond it. If the waitlist stays short,
+this phase never runs, and nothing above depends on it.
+
+**Shape — the brief decides between two forms that both satisfy "scale".**
+True tenancy: delegated auth (OIDC, never hand-rolled), user scoping on every
+query — the store test harness was built for that day — and the data-lifecycle
+work that location data makes legally real, including self-serve deletion (the
+backlog entry lands here). Or automated instance-per-user: provisioning becomes
+software and isolation stays structural, preserving the property that no
+cross-user bug class exists. The recorded direction is the first; the second is
+to be argued against, not skipped.
+
+**Also staged here:** read-only share links — the "shared view" consumer the
+architecture rationale has always anticipated, and a privacy surface that only
+makes sense once access control exists. Own checkpoint or own phase; the brief
+decides. The UI seam is already banked: the route-group shell split and the
+reserved header slot mean an auth gate drops in without moving pages.
+
+**Excludes.** Social features, live sharing, community content — still banned
+outright.
+
+### Gated alongside — not in the sequence until their evidence arrives
+
+- **Ingestion (photos as a source, GPX).** Gated on the data audit's returns.
+  Photos-as-source needs stay-point synthesis and home derivation without
+  visits, shared with the legacy-format machinery — one brief covers the
+  synthesis pass for both; GPX is the enthusiast tier. It touches product code
+  while phase 10 touches none, so the two can run in parallel; and it widens
+  the stranger funnel, which is why phase 11's resequencing clause points at
+  it.
+- **Manual "recalled" adventures.** Stays behind its recorded trigger — real
+  users that photos and GPX still leave stranded. Requires its own PRODUCT.md
+  amendment (the third provenance class), decided deliberately at its own
+  gate; deliberately not bundled into the dual-mode amendment. Sequenced after
+  ingestion.
+- **Refinements (non-gating).** GPX/GeoJSON export preserving confidence
+  classes, poster/print, a reproducible stats panel, leg-average speed in the
+  day narrative (instantaneous speed stays rejected — the observation density
+  cannot support it honestly), dark theme, unified timeline. These ride along
+  when evidence or appetite says so; none blocks strangers.
+
+### The sequence, and what would change it
+
+Phase 10, then 11, then 12 when its trigger binds; ingestion slots in on audit
+returns — in parallel with 10, or ahead of 11 if the returns demand it; recalled
+adventures after ingestion on its own trigger; refinements ride along.
+
+- Audit returns mostly without Timeline data → ingestion moves ahead of the
+  front gate.
+- Pilot evidence of a broken loop → a fix-the-loop pass precedes phase 10's
+  close.
+- The waitlist never fills → phase 12 never runs; a capped hosted pilot plus
+  self-host is a complete product.
+- The maintainer deciding against public hosting → phase 10 shrinks to a
+  friends-pilot re-homing, phases 11 and 12 close, the backlog continues.
