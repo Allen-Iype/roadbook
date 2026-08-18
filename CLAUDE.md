@@ -53,9 +53,15 @@ before writing any Next-specific code, and heed the deprecation notices there.
 
 **Do not add:** an ORM that owns the schema · a message queue, Redis, or Kubernetes ·
 runtime dependence on a routing service · business logic in the Next layer, which
-renders and interacts and nothing more · live sharing, WebSockets, multi-user, or
-social features · list virtualization or geometry level-of-detail precompute — there
-are tens of journeys, and building for thousands is theatre.
+renders and interacts and nothing more · live sharing, WebSockets, or social
+features · multi-user tenancy ahead of its own chartered phase — its trigger,
+opening hosted instances to people beyond hand-provisioned friends, is a
+deliberate launch decision, not something to drift into; until that phase, every
+instance is single-user and authless, and every feature must work that way first
+(amended 2026-08: was an unconditional ban; self-host is the reference deployment,
+hosted is a superset, never a fork) · list virtualization or geometry
+level-of-detail precompute — there are tens of journeys, and building for
+thousands is theatre.
 
 ---
 

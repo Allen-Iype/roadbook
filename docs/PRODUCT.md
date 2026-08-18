@@ -28,10 +28,24 @@ any specific user is hardcoded — no coordinates in config, no regional assumpt
 every threshold a named parameter with a sensible default. Setup must not begin with
 "obtain an OSM extract."
 
+**Hostable as a service; self-host is the reference.** Roadbook serves two kinds of
+user with one codebase: people who run it themselves, and people who use an instance
+someone runs for them. Self-host is the reference deployment forever; hosted is a
+superset, never a fork. The test every feature must pass: it works single-user and
+authless, on a plain `docker compose up`, before anything hosted builds on it.
+Whatever an operator adds to host for someone else — provisioning, reverse proxies,
+authentication in front — lives outside this repository's product code until
+multi-user tenancy earns its own chartered phase, a deliberate launch decision.
+Hosting for strangers also means holding a new category of data — contact details
+such as a waitlist's email addresses — which is held minimally, stated plainly to
+the person, and deletable on request.
+
 ## Out of scope
 
-Full timeline browsing. Live tracking. A mobile app. Sharing, social features, or
-community content such as road conditions and points of interest. The last is a
+Full timeline browsing. Live tracking. A mobile app. Live sharing, social features, or
+community content such as road conditions and points of interest. Accounts,
+sign-up, and read-only share links are not in scope until multi-user tenancy's
+chartered phase — they are staged, not rejected. The community direction is a
 plausible future direction and a different product; the only accommodation now is a
 `user_id` column that always holds the same value, so that adding it later is not a
 migration nightmare.
