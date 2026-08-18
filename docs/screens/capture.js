@@ -16,6 +16,8 @@ const OUT = __dirname;
 const BASE = 'http://127.0.0.1:3000';
 const PAGES = [
   { path: '/', name: 'home' },
+  { path: '/welcome', name: 'welcome' },
+  { path: '/adventures', name: 'adventures' }, // 404 before phase 9 CP4 ships
   { path: '/candidates', name: 'candidates' }, // 404 before phase 6 CP2 ships
   { path: '/imports', name: 'imports' },
   { path: '/adventure/1', name: 'adventure-1' },

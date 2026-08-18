@@ -49,3 +49,23 @@ test("the header marks Adventures as the current page", async ({ page }) => {
     page.locator('header a[aria-current="page"]', { hasText: "Adventures" }),
   ).toBeVisible();
 });
+
+test("covers are keyboard-reachable and Enter opens the adventure", async ({ page }) => {
+  // The §7 keyboard walk, made permanent: a cover is a link, so the
+  // keyboard contract is focus + Enter — no pointer required anywhere on
+  // the shelf.
+  await page.goto("/adventures");
+  const first = page.locator('main ul a[href^="/adventure/"]').first();
+  const href = await first.getAttribute("href");
+  // Focus set before hydration is dropped when React reconciles the node
+  // (the clickUntil trap, in focus form — helpers.ts documents it), so
+  // re-issue focus until it sticks; a human tabbing after paint never
+  // races this.
+  for (let i = 0; i < 5 && !(await first.evaluate((el) => el === document.activeElement)); i++) {
+    await first.focus();
+    await page.waitForTimeout(300);
+  }
+  await expect(first).toBeFocused();
+  await page.keyboard.press("Enter");
+  await page.waitForURL(`**${href}`);
+});

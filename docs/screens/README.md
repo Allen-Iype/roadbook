@@ -8,7 +8,8 @@ never enters git, and that includes pixels.
 Naming: `<set>-<page>[-dark].png`. A set is `phase<N>-<milestone>` —
 `phase6-baseline` is the UI before phase 6's redesign, `phase6-cp2` the UI
 at that checkpoint's acceptance, and later phases add sets the same way.
-`<page>` is `home`, `candidates`, `imports`, or `adventure-<id>` (demo
+`<page>` is `home`, `welcome`, `adventures`, `candidates`, `imports`, or
+`adventure-<id>` (demo
 ids: 1 South coast to Höfn · 2 Westfjords · 3 Akureyri by air). The
 `-dark` variants exist for `phase6-baseline` only — the pre-phase-6 UI
 followed `prefers-color-scheme`; the Atlas plate design is single-theme.

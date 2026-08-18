@@ -53,12 +53,16 @@ the automatic load never overwrites an existing table.
 
 The home page is the life map: one map
 holding every confirmed adventure's route. Nothing is confirmed yet, so it
-points you at the **Candidates** page, which lists the 3 detected
-candidates: a dense south-coast drive to Höfn, a sparse Westfjords trip to
-Ísafjörður, and an Akureyri weekend by air. The daily commute noise and a
+points you at the **Candidates** page, where the 3 detected candidates
+appear as cards led by their routes' shapes: a dense south-coast drive to
+Höfn, a sparse Westfjords trip to Ísafjörður, and an Akureyri weekend by
+air. The daily commute noise and a
 44 km day trip are correctly absent — near-home movement and trips without a
 far destination are not adventures. Confirm a candidate with a name and it
-joins the life map; click its route (or use the List control — everything on
+joins the life map, and its plate cover joins the **Adventures** page — an
+atlas of framed covers (route shape, dates, distance with its composition,
+countries), newest first, numbered in the order travelled. Click a route on
+the map (or use the List control — everything on
 the map is equally reachable by keyboard) to open the adventure page: a
 cover of honest figures — distance with its measured/inferred composition,
 dates, countries, and any warnings in words — and the journey sliced into
