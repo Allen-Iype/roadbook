@@ -1,0 +1,35 @@
+# Roadbook host front — per-instance Caddy snippet (phase 10 CP2).
+#
+# Shape: one wildcard TLS site in /etc/caddy/Caddyfile terminates
+# *.$ROADBOOK_DOMAIN with a DNS-01 wildcard certificate (CT logs see only
+# the wildcard, never a tester's subdomain — phase 10 BRIEF §1.2). Inside
+# that site block, ONE line pulls in every stamped instance:
+#
+#   import /home/ubuntu/pilot/instances/*/caddy.conf
+#
+# followed by the fallback `handle { respond 404 }`. Caddy evaluates
+# `handle` blocks in source order, so every imported host-matched block
+# wins over the fallback and an unknown subdomain reveals nothing.
+#
+# new-instance.sh instantiates this template per tester; nothing
+# instantiated is ever committed (credential hashes and the real domain
+# stay private — the repo is public). The credential, not the URL, is the
+# secret: the subdomain is unlisted, never load-bearing (BRIEF §1.2).
+#
+# Field-tested trap (phase 8 CP1, real phones): mobile keyboards
+# auto-capitalize and auto-append a space after the username, and "user "
+# fails bcrypt exactly like a wrong password — an endless re-prompt with
+# no clue. The four variant lines below accept what keyboards actually
+# send; the handover message still says "no space after the username".
+@{SLUG} host {SLUG}.{ROADBOOK_DOMAIN}
+handle @{SLUG} {
+	basic_auth {
+		{SLUG} {BCRYPT_HASH}
+		{SLUG_CAPITALIZED} {BCRYPT_HASH}
+		"{SLUG} " {BCRYPT_HASH}
+		"{SLUG_CAPITALIZED} " {BCRYPT_HASH}
+	}
+	# Belt-and-braces behind auth: never indexed, never previewed.
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy 127.0.0.1:{INSTANCE_WEB_PORT}
+}

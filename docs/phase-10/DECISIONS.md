@@ -69,3 +69,59 @@ continuous; both 4/24 and 2/12 create attempts failed on Hyderabad capacity
 across two days with the PAYG lever unavailable. Would change our mind:
 money returning (Hetzner per the addendum) or the A1 sniper landing the free
 instance (the intended exit).
+
+**2026-08-20 — A1 sniper runs on the bridge host as a systemd timer.**
+Chosen: the capacity retry lives on the host itself (OCI CLI + a 15-minute
+systemd timer attempting the free A1.Flex 2/12 launch; stops itself and
+writes a success marker on the first landing; double-launch guarded); the
+API private key is generated on the host and never leaves it. Rejected:
+running the retry from the laptop (reintroduces the lid-open dependency the
+phase exists to remove) and manual console retries (two days of them
+already failed). Would change our mind: the trial ending before a landing —
+the sniper dies with the host, and the exit becomes laptop-return or
+Hetzner-when-money-returns per the addendum.
+
+**2026-08-20 — CP2: host scripts land beside the laptop scripts, not in
+place of them.** Chosen: the host-topology pilot scripts go to
+`scripts/pilot/host/`; the laptop originals stay untouched until CP3
+closes, then are deleted in the same change that retires the laptop front.
+Rejected: replacing in place (the laptop's nightly backup LaunchAgent runs
+`scripts/pilot/backup-instance.sh` from the working tree while the laptop
+still serves two real testers — a silent break weeks before retirement)
+and dual-mode scripts (two topologies branching inside one script is
+untestable). Would change our mind: nothing — the two-flavor state is a
+dated transition ending at CP3, not a fork.
+
+**2026-08-20 — CP2: routing by hostname; slots retired; the domain is a
+parameter.** Chosen: one wildcard TLS site whose per-instance config is an
+imported host-matched `handle` block (`import .../instances/*/caddy.conf`
+before the 404 fallback — Caddy evaluates `handle` blocks in source order);
+web ports allocated sequentially from 3010 by scanning instance `.env`
+files; the base domain read from `~/pilot/front.env` as `ROADBOOK_DOMAIN`,
+its real value recorded only in the private ledger (the repo is public).
+Rejected: per-instance Caddy listener ports (an artifact of the funnel's
+three fixed ports) and hardcoding the DuckDNS domain in committed scripts.
+Would change our mind: the phase-11 naming decision buying a real domain —
+the same parameter absorbs it with zero script changes.
+
+**2026-08-20 — CP2: pilot state lives at `/srv/pilot`, not under
+`/home/ubuntu`.** Chosen: the instance tree moves to `/srv/pilot`
+(directories 755, `.env` 600, snippets 644; `~/pilot` stays as a symlink)
+because the systemd Caddy runs as user `caddy`, which cannot traverse
+`/home/ubuntu` (750) — and a glob `import` matching unreadable files
+silently matches NOTHING, turning every subdomain into the 404 fallback
+with a "Valid configuration" from a root-run validate (found live: the
+external check caught it; validation must run as the caddy user).
+Rejected: loosening `/home/ubuntu` to 755 (a hardening regression) and
+splitting snippets into `/etc/caddy` away from their instance dirs (two
+places for one instance's state). Would change our mind: nothing — this
+is filesystem hygiene, not policy.
+
+**2026-08-20 — CP2: the age secret never touches the host.** Chosen:
+host-side backup encrypts with a recipient string only
+(`~/pilot/keys/backup.pub`); host-side restore consumes plaintext tar from
+a file or stdin, with decryption done on the laptop and piped over tailnet
+SSH. Rejected: copying `backup.key` to the host for convenience — a
+compromised host must never be able to read backup history (BRIEF §1.5).
+Would change our mind: nothing foreseeable; this is the asymmetry the
+design exists for.
