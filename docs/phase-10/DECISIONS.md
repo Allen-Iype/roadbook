@@ -125,3 +125,20 @@ SSH. Rejected: copying `backup.key` to the host for convenience — a
 compromised host must never be able to read backup history (BRIEF §1.5).
 Would change our mind: nothing foreseeable; this is the asymmetry the
 design exists for.
+
+**2026-08-20 — CP3 reshaped: fresh instances, no migration.** Chosen: the
+laptop pilot instances are not migrated — every tester gets a fresh stamp
+on the host (the maintainer's call at the CP2 STOP): the host demo already
+exists; allen-zero is re-stamped and the maintainer re-uploads his archive
+(doubling as the real-scale rehearsal CP2's demo-sized load could not
+provide); friend-1 — who never got past login and almost certainly holds
+no data — is stamped fresh when she returns. Rejected: the BRIEF's
+backup/restore migration of all three (its mechanism is proven and stays
+the re-homing path for E5→A1, but at this pilot's size there is nothing
+worth moving: three confirmations on allen-zero the maintainer can redo
+in a minute, and nightly encrypted backups already hold the laptop state
+regardless). Would change our mind: an instance accumulating decisions or
+photos that are expensive to recreate — then the proven restore pipe is
+the path, unchanged. Laptop stacks stay up until each holder has their
+new link (handover rules); the laptop front retires via the CP4
+checklist.
