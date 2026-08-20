@@ -48,3 +48,24 @@ dismissal (the phase's own backups + scripted re-homing reduce reclamation
 to downtime, never data loss). Would change our mind: free-tier ARM capacity
 unobtainable, or a real tester-facing outage attributable to the free host —
 either fires the Hetzner fallback without a new gate.
+
+**2026-08-20 — Zero-cash reversion; trial-credits bridge instead of the paid
+fallback.** Chosen: the maintainer cannot spend on infrastructure right now,
+so the Hetzner fallback (which the capacity failure would otherwise have
+fired) is DEFERRED to when money returns; CP1a proceeds today on a paid AMD
+shape (E5.Flex 2 OCPU/12 GB — mirrors the A1 target so sizing measurements
+transfer) covered by the ~30-day trial credits, ₹0 out of pocket; trials do
+not auto-convert — at trial end paid resources are stopped, never billed.
+Bridge exit before the trial ends: an automated A1 capacity-retry (2/12,
+free) plus PAYG conversion when Oracle's stuck billing setup completes;
+re-homing is the proven cheap operation. Front without buying a domain:
+free DuckDNS subdomain + Caddy wildcard via its DNS-01 plugin + per-tester
+basic auth (real TLS, direct traffic, no relay ceiling) — bare-IP links
+REJECTED (no TLS for IPs in practice: plaintext credentials + location data,
+the line phase 8 refused to cross; links also rot at re-homing). Learned en
+route, verified (Oracle docs + press): Always Free A1 was halved unannounced
+on 2026-06-15 to 1,500 OCPU-hrs + 9,000 GB-hrs/month = 2 OCPU/12 GB
+continuous; both 4/24 and 2/12 create attempts failed on Hyderabad capacity
+across two days with the PAYG lever unavailable. Would change our mind:
+money returning (Hetzner per the addendum) or the A1 sniper landing the free
+instance (the intended exit).

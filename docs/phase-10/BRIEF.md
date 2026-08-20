@@ -268,9 +268,13 @@ The maintainer reviewed with prices verified same-day (list prices; re-verify
 at purchase):
 
 - **§3A — Oracle Cloud Always Free tier, India home region (Mumbai or
-  Hyderabad), as the primary host.** Up to 4 ARM cores / 24 GB RAM free;
-  account converted to pay-as-you-go (card on file, expected bill zero) to
-  remove the idle-reclaim policy. This overrides the draft's free-tier
+  Hyderabad), as the primary host.** *(Correction 2026-08-20, checked against
+  Oracle's current Always Free documentation during CP1a: the A1 allowance is
+  1,500 OCPU-hours + 9,000 GB-hours per month — a continuous 2 OCPU / 12 GB,
+  half the 4/24 this addendum first assumed from stale knowledge. A 4/24
+  instance would bill ~$25–30/month on a converted account. Target shape is
+  therefore 2 OCPU / 12 GB.)* Account converted to pay-as-you-go (card on
+  file, expected bill zero) to remove the idle-reclaim policy. This overrides the draft's free-tier
   dismissal *because the phase's own machinery changes the risk*: nightly
   off-machine encrypted backups plus scripted re-homing mean a reclaimed
   free instance costs downtime, never data. **Named fallback, pre-decided:**
