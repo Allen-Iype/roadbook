@@ -142,3 +142,28 @@ photos that are expensive to recreate — then the proven restore pipe is
 the path, unchanged. Laptop stacks stay up until each holder has their
 new link (handover rules); the laptop front retires via the CP4
 checklist.
+
+**2026-08-21 — CP4: the backup chain is host-timer + Mac pull agent, both
+nightly.** Chosen: systemd `roadbook-backup.timer` at 22:00 UTC (03:30
+IST) produces age ciphertext on the host (public key only); a Mac
+LaunchAgent (`com.roadbook.pilot.pull`, 04:30 IST) rsyncs it into the
+proven iCloud directory; no pruning on either side yet — archives are
+kilobytes-to-megabytes and deletion is the only irreversible act in the
+chain. The Tailscale-SSH periodic re-auth can block an unattended pull;
+accepted with logging, because archives accumulate on the host between
+successful pulls and any interactive ssh clears the check. Rejected:
+object-storage push (a credential on the host, per BRIEF §3D) and
+host-side retention (could destroy not-yet-pulled archives). Would change
+our mind: silent pull failures in backup.log (→ dedicated pull keypair)
+or archive growth past tens of MB/night (→ retention policy).
+
+**2026-08-21 — CP4: laptop retired to pull-only; its volumes kept.**
+Chosen: laptop pilot stacks down with volumes KEPT (final deletion
+deferred until the host has run clean for a while), brew Caddy stopped,
+backup + caffeinate LaunchAgents removed (only the pull agent remains —
+the laptop no longer hosts and may sleep), laptop-flavor pilot scripts
+deleted from the repo (closing CP2's dated two-flavor transition; git
+history keeps them), runbook v2 written to docs/private/pilot/. Rejected:
+`down -v` today — the laptop volumes are the last pre-host state and disk
+is cheaper than irreversibility. Would change our mind: nothing urgent;
+a month of clean host operation retires the volumes too.
