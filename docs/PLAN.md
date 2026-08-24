@@ -373,6 +373,25 @@ none is scheduled:
   legally required — when accounts arrive. Trigger: the multi-user tenancy
   phase (phase 12 in the roadmap below)
 - Per-adventure GPX/GeoJSON export, with the observed/inferred distinction preserved
+- Bulk triage actions — first non-operator pilot report (2026-08-24): confirming
+  candidates one at a time is a real workload at full-archive scale (the
+  triage-friction-at-scale evidence phase 9 anticipated). In-system answers to
+  design from: multi-select confirm/dismiss, a quick-confirm that never opens the
+  card, a score-ordered sweep flow. The reported *solution* — auto-confirm
+  everything, edit later — is recorded but is not a UI fix: the detector
+  over-produces deliberately (rank, don't filter), so auto-confirmation would put
+  known noise on the life map and invert the curation stance that defines the
+  product; adopting it would be a PRODUCT.md amendment taken deliberately at a
+  gate. Trigger: already fired; schedule the friction work in the next UI/product
+  refinement phase
+- Per-mode distance breakdown (air / road / rail / water) — pilot request
+  (2026-08-24). Activities carry mode and distance, so a per-journey breakdown is
+  computable from existing data. Constraint: source modes are guesses with
+  recorded failures at the extremes, and the pipeline already trusts speed over
+  mode for flight detection — so any breakdown must be labelled as
+  source-asserted, never presented with the confidence of measured geometry
+  (invariant 8's spirit applied to labels). Fits the day-narrative/stats seam
+  alongside leg-average speed
   in the output (separate track segments per confidence class) — an export that
   flattens it silently violates the honesty principle
 - Poster / print view of an adventure
