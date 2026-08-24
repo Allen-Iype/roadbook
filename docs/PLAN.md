@@ -354,7 +354,8 @@ none is scheduled:
   Timeline variants above — one brief should cover the synthesis pass for both).
   Phase 4 already established the principle: a positioned photo is a measurement.
   Serves anyone with a camera roll but no Timeline — the common iPhone case.
-  Carried from phase 5; needs its own design brief
+  Carried from phase 5; chartered 2026-08-24 as phase 11
+  (`docs/phase-11/BRIEF.md`)
 - Manual trip creation — a user with no data draws the trip they took: waypoints
   and dates, road geometry routed between asserted points, geotagged photos
   slotting in as real measured fixes. Honesty-compatible only as a third
@@ -371,7 +372,7 @@ none is scheduled:
   operator's volume-level reset is structurally complete where row-chasing
   can silently miss a file. Becomes user-facing — and, for location data,
   legally required — when accounts arrive. Trigger: the multi-user tenancy
-  phase (phase 12 in the roadmap below)
+  phase (phase 13 in the roadmap below)
 - Per-adventure GPX/GeoJSON export, with the observed/inferred distinction preserved
 - Bulk triage actions — first non-operator pilot report (2026-08-24): confirming
   candidates one at a time is a real workload at full-archive scale (the
@@ -407,7 +408,7 @@ trigger conditions, all of which must hold before it is even reconsidered.
 
 ---
 
-## The road to strangers — phases 10–12 (roadmap, 2026-08-18)
+## The road to strangers — phases 10–13 (roadmap, 2026-08-18; resequenced 2026-08-24)
 
 Phases 6–9 (life-map UI and design system, browser import as the front door, pilot
 hosting, UI refinement) are recorded in their own `docs/phase-N/` artifacts and are
@@ -424,8 +425,9 @@ leaning recorded here with better evidence.
 Roadbook is, and either receives one of the capped instance slots or joins a
 waitlist; an accepted person gets an entry email with a private link and completes
 the existing loop — upload, import, detection, life map — with no ad-hoc operator
-work (scripted provisioning counts as none). That is the close of phase 11. The
-cap is ten users to start, a chosen number, revisited in the phase 11 brief.
+work (scripted provisioning counts as none). That is the close of the front-gate
+phase (now phase 12). The cap is ten users to start, a chosen number, revisited
+in its brief.
 
 ### Phase 10 — Hosting readiness
 
@@ -470,7 +472,23 @@ phase 8's zero-cash stance; whether the demo instance goes credential-free.
 for product reasons — then a fix-the-loop pass precedes this phase's close,
 because infrastructure under a loop nobody completes is waste.
 
-### Phase 11 — Front gate
+### Phase 11 — Ingestion: photos as an import source (chartered 2026-08-24)
+
+**Goal.** A person with no Timeline data — the measured iPhone majority — reaches
+their adventures from their camera roll: geotagged photos become position fixes,
+a pure stay-point synthesis pass derives the visits detection needs, and home
+derivation generalises to home evidence with strict semantic precedence so all
+existing outputs stay byte-identical. Includes the pilot-response scope
+candidates (bulk triage actions, per-mode distance breakdown) argued in the
+brief. Design brief: `docs/phase-11/BRIEF.md`.
+
+**Charter basis.** The resequencing clause below fired 2026-08-24: none of the
+iPhone-holding pilot users has Timeline data at all (four of six instances at
+zero imports), so the pilot itself returned the audit's answer and the unsent
+audit message was retired. A front gate built first would recruit into a funnel
+the pilot proved closed to the iPhone majority.
+
+### Phase 12 — Front gate
 
 **Goal.** A stranger can find Roadbook, understand it, and either get a slot or
 join the waitlist; entry is an email carrying a private link into the existing
@@ -511,9 +529,9 @@ about data handling — instance isolation should be stated plainly.
 **What would resequence it.** Audit returns showing most interested people have
 no Timeline data — then the ingestion phase moves ahead of this one, because a
 gate that turns away most entrants converts the waitlist into a disappointment
-list.
+list. (This fired 2026-08-24 — hence this phase's move from 11 to 12.)
 
-### Phase 12 — Accounts and tenancy (gated)
+### Phase 13 — Accounts and tenancy (gated)
 
 **Goal.** Strangers sign themselves up and the waitlist drains without per-person
 operator work. Charterable under the amendment; briefed only when its trigger
@@ -540,13 +558,12 @@ outright.
 
 ### Gated alongside — not in the sequence until their evidence arrives
 
-- **Ingestion (photos as a source, GPX).** Gated on the data audit's returns.
-  Photos-as-source needs stay-point synthesis and home derivation without
-  visits, shared with the legacy-format machinery — one brief covers the
-  synthesis pass for both; GPX is the enthusiast tier. It touches product code
-  while phase 10 touches none, so the two can run in parallel; and it widens
-  the stranger funnel, which is why phase 11's resequencing clause points at
-  it.
+- **Ingestion (photos as a source, GPX).** Photos-as-source was chartered
+  2026-08-24 as phase 11 above — the pilot's iPhone finding replaced the
+  planned data audit. Its brief designs the stay-point synthesis pass for all
+  the visit-less sources (photos, the legacy Timeline formats, continuous
+  GPX) and implements photos; GPX — the enthusiast tier — stays gated on its
+  own evidence and joins the already-built synthesis pass when it arrives.
 - **Manual "recalled" adventures.** Stays behind its recorded trigger — real
   users that photos and GPX still leave stranded. Requires its own PRODUCT.md
   amendment (the third provenance class), decided deliberately at its own
@@ -560,15 +577,19 @@ outright.
 
 ### The sequence, and what would change it
 
-Phase 10, then 11, then 12 when its trigger binds; ingestion slots in on audit
-returns — in parallel with 10, or ahead of 11 if the returns demand it; recalled
-adventures after ingestion on its own trigger; refinements ride along.
+Phase 10 (complete), then 11 (ingestion), then 12 (front gate), then 13 when
+its trigger binds; recalled adventures after ingestion on its own trigger;
+refinements ride along.
 
 - Audit returns mostly without Timeline data → ingestion moves ahead of the
-  front gate.
+  front gate. **Fired 2026-08-24**: the pilot itself returned the answer —
+  no iPhone-holding pilot user has Timeline data at all — and ingestion was
+  chartered as phase 11 at that day's charter STOP.
 - Pilot evidence of a broken loop → a fix-the-loop pass precedes phase 10's
-  close.
-- The waitlist never fills → phase 12 never runs; a capped hosted pilot plus
+  close. (Phase 10 closed with the loop's first non-operator completion on
+  record; the reported friction items are scope candidates in the phase 11
+  brief, not loop breaks.)
+- The waitlist never fills → phase 13 never runs; a capped hosted pilot plus
   self-host is a complete product.
-- The maintainer deciding against public hosting → phase 10 shrinks to a
-  friends-pilot re-homing, phases 11 and 12 close, the backlog continues.
+- The maintainer deciding against public hosting → phases 12 and 13 close,
+  the backlog continues.
