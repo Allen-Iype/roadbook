@@ -211,27 +211,57 @@ func (e PhotoTimeSource) Valid() bool {
 	}
 }
 
+// Defines values for PhotoImportFileStatus.
+const (
+	PhotoImportFileStatusFix             PhotoImportFileStatus = "fix"
+	PhotoImportFileStatusNoPosition      PhotoImportFileStatus = "no_position"
+	PhotoImportFileStatusNoTime          PhotoImportFileStatus = "no_time"
+	PhotoImportFileStatusSidecarPaired   PhotoImportFileStatus = "sidecar_paired"
+	PhotoImportFileStatusSidecarUnpaired PhotoImportFileStatus = "sidecar_unpaired"
+	PhotoImportFileStatusUnsupported     PhotoImportFileStatus = "unsupported"
+)
+
+// Valid indicates whether the value is a known member of the PhotoImportFileStatus enum.
+func (e PhotoImportFileStatus) Valid() bool {
+	switch e {
+	case PhotoImportFileStatusFix:
+		return true
+	case PhotoImportFileStatusNoPosition:
+		return true
+	case PhotoImportFileStatusNoTime:
+		return true
+	case PhotoImportFileStatusSidecarPaired:
+		return true
+	case PhotoImportFileStatusSidecarUnpaired:
+		return true
+	case PhotoImportFileStatusUnsupported:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PhotoUploadResultStatus.
 const (
-	Accepted        PhotoUploadResultStatus = "accepted"
-	Duplicate       PhotoUploadResultStatus = "duplicate"
-	Rejected        PhotoUploadResultStatus = "rejected"
-	SidecarPaired   PhotoUploadResultStatus = "sidecar_paired"
-	SidecarUnpaired PhotoUploadResultStatus = "sidecar_unpaired"
+	PhotoUploadResultStatusAccepted        PhotoUploadResultStatus = "accepted"
+	PhotoUploadResultStatusDuplicate       PhotoUploadResultStatus = "duplicate"
+	PhotoUploadResultStatusRejected        PhotoUploadResultStatus = "rejected"
+	PhotoUploadResultStatusSidecarPaired   PhotoUploadResultStatus = "sidecar_paired"
+	PhotoUploadResultStatusSidecarUnpaired PhotoUploadResultStatus = "sidecar_unpaired"
 )
 
 // Valid indicates whether the value is a known member of the PhotoUploadResultStatus enum.
 func (e PhotoUploadResultStatus) Valid() bool {
 	switch e {
-	case Accepted:
+	case PhotoUploadResultStatusAccepted:
 		return true
-	case Duplicate:
+	case PhotoUploadResultStatusDuplicate:
 		return true
-	case Rejected:
+	case PhotoUploadResultStatusRejected:
 		return true
-	case SidecarPaired:
+	case PhotoUploadResultStatusSidecarPaired:
 		return true
-	case SidecarUnpaired:
+	case PhotoUploadResultStatusSidecarUnpaired:
 		return true
 	default:
 		return false
@@ -510,6 +540,26 @@ type PhotoPosSource string
 // PhotoTimeSource Which rung of the resolution ladder produced taken_at (BRIEF §3E), strongest first — the GPS receiver's own UTC clock, the explicit EXIF offset tag, the Takeout sidecar's epoch, or the wall clock interpreted in the adventure's own offset (stated as the weakest rung; wrong by the zone difference on multi-zone adventures).
 type PhotoTimeSource string
 
+// PhotoImportFile defines model for PhotoImportFile.
+type PhotoImportFile struct {
+	File string `json:"file"`
+
+	// Message Prose for rejected files — rewordable, never the label.
+	Message *string `json:"message,omitempty"`
+
+	// Status What this file contributed. "fix" — a position fix was extracted (with a photo record, and a thumbnail where decodable); "no_position"/"no_time" — a recognised photo carrying no usable reading (photos are stored only when they place something); sidecar verdicts mirror the phase-4 upload; "unsupported" carries the sniffer's actionable message.
+	Status PhotoImportFileStatus `json:"status"`
+}
+
+// PhotoImportFileStatus What this file contributed. "fix" — a position fix was extracted (with a photo record, and a thumbnail where decodable); "no_position"/"no_time" — a recognised photo carrying no usable reading (photos are stored only when they place something); sidecar verdicts mirror the phase-4 upload; "unsupported" carries the sniffer's actionable message.
+type PhotoImportFileStatus string
+
+// PhotoImportResult defines model for PhotoImportResult.
+type PhotoImportResult struct {
+	Files  []PhotoImportFile `json:"files"`
+	Import Import            `json:"import"`
+}
+
 // PhotoList defines model for PhotoList.
 type PhotoList struct {
 	// Params The placement parameters that produced the derived fields (invariant 3) — photo_far_warn_m today.
@@ -604,6 +654,15 @@ type UploadImportMultipartBody struct {
 	Label *string `json:"label,omitempty"`
 }
 
+// UploadPhotoImportMultipartBody defines parameters for UploadPhotoImport.
+type UploadPhotoImportMultipartBody struct {
+	// File Photos and sidecars; repeatable.
+	File []openapi_types.File `json:"file"`
+
+	// Label Provenance label; defaults to "photo upload".
+	Label *string `json:"label,omitempty"`
+}
+
 // DecideCandidateJSONRequestBody defines body for DecideCandidate for application/json ContentType.
 type DecideCandidateJSONRequestBody = DecisionRequest
 
@@ -612,6 +671,9 @@ type UploadCandidatePhotosMultipartRequestBody UploadCandidatePhotosMultipartBod
 
 // UploadImportMultipartRequestBody defines body for UploadImport for multipart/form-data ContentType.
 type UploadImportMultipartRequestBody UploadImportMultipartBody
+
+// UploadPhotoImportMultipartRequestBody defines body for UploadPhotoImport for multipart/form-data ContentType.
+type UploadPhotoImportMultipartRequestBody UploadPhotoImportMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -642,6 +704,9 @@ type ServerInterface interface {
 	// UploadImport Upload a Timeline export and import it
 	// (POST /imports)
 	UploadImport(w http.ResponseWriter, r *http.Request)
+	// UploadPhotoImport Upload a batch of photos as an import source
+	// (POST /imports/photos)
+	UploadPhotoImport(w http.ResponseWriter, r *http.Request)
 	// GetImport One import attempt, by id
 	// (GET /imports/{id})
 	GetImport(w http.ResponseWriter, r *http.Request, id int64)
@@ -839,6 +904,20 @@ func (siw *ServerInterfaceWrapper) UploadImport(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UploadImport(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadPhotoImport operation middleware
+func (siw *ServerInterfaceWrapper) UploadPhotoImport(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadPhotoImport(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1049,6 +1128,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/healthz", wrapper.GetHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/imports", wrapper.ListImports)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/imports", wrapper.UploadImport)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/imports/photos", wrapper.UploadPhotoImport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/imports/{id}", wrapper.GetImport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates", wrapper.ListCandidates)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/journey", wrapper.GetCandidateJourney)
@@ -1441,6 +1521,56 @@ func (response UploadImport413JSONResponse) VisitUploadImportResponse(w http.Res
 	return err
 }
 
+type UploadPhotoImportRequestObject struct {
+	Body *multipart.Reader
+}
+
+type UploadPhotoImportResponseObject interface {
+	VisitUploadPhotoImportResponse(w http.ResponseWriter) error
+}
+
+type UploadPhotoImport202JSONResponse PhotoImportResult
+
+func (response UploadPhotoImport202JSONResponse) VisitUploadPhotoImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadPhotoImport400JSONResponse Error
+
+func (response UploadPhotoImport400JSONResponse) VisitUploadPhotoImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadPhotoImport409JSONResponse Error
+
+func (response UploadPhotoImport409JSONResponse) VisitUploadPhotoImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetImportRequestObject struct {
 	Id int64 `json:"id"`
 }
@@ -1578,6 +1708,9 @@ type StrictServerInterface interface {
 	// UploadImport Upload a Timeline export and import it
 	// (POST /imports)
 	UploadImport(ctx context.Context, request UploadImportRequestObject) (UploadImportResponseObject, error)
+	// UploadPhotoImport Upload a batch of photos as an import source
+	// (POST /imports/photos)
+	UploadPhotoImport(ctx context.Context, request UploadPhotoImportRequestObject) (UploadPhotoImportResponseObject, error)
 	// GetImport One import attempt, by id
 	// (GET /imports/{id})
 	GetImport(ctx context.Context, request GetImportRequestObject) (GetImportResponseObject, error)
@@ -1868,6 +2001,37 @@ func (sh *strictHandler) UploadImport(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UploadImportResponseObject); ok {
 		if err := validResponse.VisitUploadImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadPhotoImport operation middleware
+func (sh *strictHandler) UploadPhotoImport(w http.ResponseWriter, r *http.Request) {
+	var request UploadPhotoImportRequestObject
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadPhotoImport(ctx, request.(UploadPhotoImportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadPhotoImport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadPhotoImportResponseObject); ok {
+		if err := validResponse.VisitUploadPhotoImportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

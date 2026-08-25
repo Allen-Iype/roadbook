@@ -29,7 +29,7 @@ func TestCorpusDetection(t *testing.T) {
 	}
 
 	obs, _, st := ParseFiles(files)
-	if st != (Stats{Photos: 55, Fixes: 53, NoPosition: 2, SidecarsPaired: 1}) {
+	if st != (Stats{Photos: 57, Fixes: 55, NoPosition: 2, SidecarsPaired: 1}) {
 		t.Fatalf("corpus parse stats = %+v", st)
 	}
 
@@ -62,9 +62,11 @@ func TestCorpusDetection(t *testing.T) {
 		obsCount         int
 		destLat, destLon float64
 	}
+	// The two HEIC shots land inside existing stays: one more observation in
+	// each span, everything else — stays, destinations, days — unmoved.
 	want := []pin{
-		{days: 1.0, destKm: 249, stops: 1, obsCount: 8, destLat: 65.6835, destLon: -18.1001},
-		{days: 2.1, destKm: 337, stops: 3, obsCount: 19, destLat: 64.2445, destLon: -14.9782},
+		{days: 1.0, destKm: 249, stops: 1, obsCount: 9, destLat: 65.6835, destLon: -18.1001},
+		{days: 2.1, destKm: 337, stops: 3, obsCount: 20, destLat: 64.2445, destLon: -14.9782},
 	}
 	for i, w := range want {
 		c := res.Candidates[i]

@@ -193,6 +193,14 @@ func (s *Server) runUploadImport(importID int64, path string) {
 		return
 	}
 
+	s.runAutoDetect(ctx, importID)
+}
+
+// runAutoDetect runs detection with default parameters after a successful
+// import, reporting through detect_status only — a detect failure never
+// marks the import failed (BRIEF §3D). Shared by the Timeline and photo
+// upload paths.
+func (s *Server) runAutoDetect(ctx context.Context, importID int64) {
 	setDetect := func(status string) {
 		if err := s.Store.SetImportDetectStatus(ctx, importID, status); err != nil {
 			log.Printf("import %d: recording detect status %q: %v", importID, status, err)

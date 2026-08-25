@@ -12,6 +12,7 @@ type Kind string
 
 const (
 	KindJPEG    Kind = "jpeg"
+	KindHEIC    Kind = "heic"    // HEIF container; metadata extractable, pixels not (no codec)
 	KindSidecar Kind = "sidecar" // a Takeout JSON sidecar, to be paired with an image
 )
 
@@ -46,8 +47,14 @@ func Sniff(data []byte) (Kind, *UnsupportedError) {
 	case len(data) >= 12 && bytes.Equal(data[4:8], []byte("ftyp")):
 		brand := string(data[8:12])
 		switch brand {
-		case "heic", "heix", "heim", "heis", "hevc", "hevx", "hevm", "hevs", "mif1", "msf1", "avif":
-			return reject("heic", "HEIC/HEIF (the iPhone default format) is not supported — convert to JPEG, or download the photo from Google Photos, which serves JPEG")
+		case "heic", "heix", "heim", "heis", "hevc", "hevx", "hevm", "hevs", "mif1", "msf1":
+			// Accepted since phase 11 for metadata extraction (position and
+			// instant); the pixels stay undecodable — no thumbnail. Callers
+			// that require pixels (the attachment path) reject this kind
+			// themselves with their own actionable message.
+			return KindHEIC, nil
+		case "avif":
+			return reject("avif", "AVIF is a re-encoded web format that has lost its camera metadata — upload the original JPEG or HEIC")
 		case "qt  ":
 			return reject("video", "this is a video (QuickTime), which the product excludes — photos only")
 		default:

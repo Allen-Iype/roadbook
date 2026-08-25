@@ -114,6 +114,66 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /imports/photos:
+    post:
+      operationId: uploadPhotoImport
+      summary: Upload a batch of photos as an import source
+      description: >
+        The photo-ingestion path (phase 11 BRIEF §4C). Repeatable `file`
+        parts — photos (JPEG or HEIC) and their Takeout JSON sidecars —
+        stream through metadata extraction one at a time: each usable photo
+        becomes one position fix in the observation stratum plus a photo
+        record (and a thumbnail where the format is decodable); the original
+        bytes are discarded, never retained (§4D — the records are the
+        durable product, and this is the privacy-shaped answer). Unlike the
+        Timeline path there is no all-or-nothing rule: a camera roll is many
+        files, so the response carries a per-file verdict and the import row
+        records what the batch contributed. The import itself completes
+        before the response; detection then runs in the background with
+        default parameters, reported via detect_status on GET /imports/{id}.
+        One import runs at a time; a concurrent attempt gets 409.
+        Re-uploading the same photos is idempotent — no new fixes, no new
+        records, no second thumbnail.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Photos and sidecars; repeatable.
+                label:
+                  type: string
+                  description: Provenance label; defaults to "photo upload".
+      responses:
+        "202":
+          description: >
+            The batch is imported (the import row is already completed) and
+            automatic detection is running; the import id is the polling
+            handle for detect_status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoImportResult"
+        "400":
+          description: The request carried no file parts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: An import is already running on this instance.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /imports/{id}:
     get:
       operationId: getImport
@@ -522,6 +582,37 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Import"
+
+    PhotoImportResult:
+      type: object
+      required: [import, files]
+      properties:
+        import:
+          $ref: "#/components/schemas/Import"
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhotoImportFile"
+
+    PhotoImportFile:
+      type: object
+      required: [file, status]
+      properties:
+        file:
+          type: string
+        status:
+          type: string
+          enum: [fix, no_position, no_time, sidecar_paired, sidecar_unpaired, unsupported]
+          description: >
+            What this file contributed. "fix" — a position fix was extracted
+            (with a photo record, and a thumbnail where decodable);
+            "no_position"/"no_time" — a recognised photo carrying no usable
+            reading (photos are stored only when they place something);
+            sidecar verdicts mirror the phase-4 upload; "unsupported"
+            carries the sniffer's actionable message.
+        message:
+          type: string
+          description: Prose for rejected files — rewordable, never the label.
 
     LatLng:
       type: object

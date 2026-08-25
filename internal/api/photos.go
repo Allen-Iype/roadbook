@@ -102,19 +102,25 @@ func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidateP
 		res := PhotoUploadResult{File: c.entry.name}
 		switch {
 		case c.entry.reject != "":
-			res.Status = Rejected
+			res.Status = PhotoUploadResultStatusRejected
 			res.Reason = strp(c.entry.reject)
 		case c.rej != nil:
-			res.Status = Rejected
+			res.Status = PhotoUploadResultStatusRejected
 			res.Reason = strp(c.rej.Message)
 		case c.kind == photo.KindSidecar:
 			if target, ok := pairedTo[i]; ok {
-				res.Status = SidecarPaired
+				res.Status = PhotoUploadResultStatusSidecarPaired
 				res.PairedWith = strp(target)
 			} else {
-				res.Status = SidecarUnpaired
+				res.Status = PhotoUploadResultStatusSidecarUnpaired
 				res.Reason = strp("names no image in this upload — include the photo it describes in the same request")
 			}
+		case c.kind == photo.KindHEIC:
+			// Attached photos require a thumbnail, and HEIC pixels cannot be
+			// decoded here (no codec) — only the import path reads HEIC, for
+			// its position metadata.
+			res.Status = PhotoUploadResultStatusRejected
+			res.Reason = strp("HEIC (the iPhone default format) cannot be attached — attaching needs a thumbnail and HEIC pixels cannot be decoded here; convert to JPEG, or download it from Google Photos, which serves JPEG")
 		default: // a JPEG
 			var sc *photo.Sidecar
 			if v, ok := sidecarFor[i]; ok {
@@ -123,7 +129,7 @@ func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidateP
 			row, inserted, err := s.storePhoto(ctx, dec.ID, offsetOf(cand.SpanStart), c.entry, sc)
 			if err != nil {
 				if ue, ok := err.(*photo.UnsupportedError); ok {
-					res.Status = Rejected
+					res.Status = PhotoUploadResultStatusRejected
 					res.Reason = strp(ue.Message)
 					break
 				}
@@ -132,9 +138,9 @@ func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidateP
 			ap := toAPIPhoto(row)
 			res.Photo = &ap
 			if inserted {
-				res.Status = Accepted
+				res.Status = PhotoUploadResultStatusAccepted
 			} else {
-				res.Status = Duplicate
+				res.Status = PhotoUploadResultStatusDuplicate
 			}
 		}
 		results = append(results, res)

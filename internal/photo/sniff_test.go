@@ -18,7 +18,9 @@ func TestSniff(t *testing.T) {
 		{"gps_full.jpg.json", photo.KindSidecar, ""},
 		{"not_sidecar.json", photo.KindSidecar, ""}, // sniff says JSON; ParseSidecar gives the verdict
 		{"sample.png", "", "png"},
-		{"sample.heic", "", "heic"},
+		{"sample.heic", photo.KindHEIC, ""}, // accepted since phase 11: metadata extraction
+		{"gps_full.heic", photo.KindHEIC, ""},
+		{"trunc_meta.heic", photo.KindHEIC, ""}, // sniff says HEIF; extraction gives absence
 		{"sample.mp4", "", "video"},
 		{"sample.webp", "", "webp"},
 	}
@@ -75,9 +77,15 @@ func TestSniffSynthetic(t *testing.T) {
 	}
 }
 
-func TestSniffHEICMessageIsActionable(t *testing.T) {
-	_, rej := photo.Sniff(fixture(t, "sample.heic"))
+func TestSniffAVIFMessageIsActionable(t *testing.T) {
+	// HEIC itself is accepted since phase 11; AVIF — same container family,
+	// but a web re-encode — stays rejected, and the message must still say
+	// the way forward.
+	avif := []byte{0, 0, 0, 0x18}
+	avif = append(avif, []byte("ftypavif")...)
+	avif = append(avif, make([]byte, 12)...)
+	_, rej := photo.Sniff(avif)
 	if rej == nil || !strings.Contains(rej.Message, "JPEG") {
-		t.Errorf("HEIC rejection must tell the user the way forward (convert to JPEG); got: %v", rej)
+		t.Errorf("AVIF rejection must tell the user the way forward; got: %v", rej)
 	}
 }

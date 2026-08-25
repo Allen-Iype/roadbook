@@ -48,6 +48,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/imports/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload a batch of photos as an import source
+         * @description The photo-ingestion path (phase 11 BRIEF §4C). Repeatable `file` parts — photos (JPEG or HEIC) and their Takeout JSON sidecars — stream through metadata extraction one at a time: each usable photo becomes one position fix in the observation stratum plus a photo record (and a thumbnail where the format is decodable); the original bytes are discarded, never retained (§4D — the records are the durable product, and this is the privacy-shaped answer). Unlike the Timeline path there is no all-or-nothing rule: a camera roll is many files, so the response carries a per-file verdict and the import row records what the batch contributed. The import itself completes before the response; detection then runs in the background with default parameters, reported via detect_status on GET /imports/{id}. One import runs at a time; a concurrent attempt gets 409. Re-uploading the same photos is idempotent — no new fixes, no new records, no second thumbnail.
+         */
+        post: operations["uploadPhotoImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/imports/{id}": {
         parameters: {
             query?: never;
@@ -263,6 +283,20 @@ export interface components {
         };
         ImportList: {
             imports: components["schemas"]["Import"][];
+        };
+        PhotoImportResult: {
+            import: components["schemas"]["Import"];
+            files: components["schemas"]["PhotoImportFile"][];
+        };
+        PhotoImportFile: {
+            file: string;
+            /**
+             * @description What this file contributed. "fix" — a position fix was extracted (with a photo record, and a thumbnail where decodable); "no_position"/"no_time" — a recognised photo carrying no usable reading (photos are stored only when they place something); sidecar verdicts mirror the phase-4 upload; "unsupported" carries the sniffer's actionable message.
+             * @enum {string}
+             */
+            status: "fix" | "no_position" | "no_time" | "sidecar_paired" | "sidecar_unpaired" | "unsupported";
+            /** @description Prose for rejected files — rewordable, never the label. */
+            message?: string;
         };
         LatLng: {
             /** Format: double */
@@ -662,6 +696,53 @@ export interface operations {
             };
             /** @description The upload exceeds the configured size limit. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    uploadPhotoImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @description Photos and sidecars; repeatable. */
+                    file: string[];
+                    /** @description Provenance label; defaults to "photo upload". */
+                    label?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The batch is imported (the import row is already completed) and automatic detection is running; the import id is the polling handle for detect_status. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoImportResult"];
+                };
+            };
+            /** @description The request carried no file parts. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description An import is already running on this instance. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

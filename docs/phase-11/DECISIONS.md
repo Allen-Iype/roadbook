@@ -23,6 +23,56 @@ Written as decisions are made, not reconstructed.
   instruction was that this brief must argue them.
 - **Would change our mind:** n/a — instruction, not inference.
 
+## 2026-08-25 — CP2: photo_records is its own table
+
+- **Chosen:** a separate `photo_records` table (migration 00010), records
+  created only for usable photos (position AND instant); the thumbnail
+  directory is shared with attachment photos (both name files by content
+  hash, so the same photo attached and ingested stores one file).
+- **Rejected:** relaxing `photos.decision_id` to nullable — the two tables
+  share a shape but not a lifecycle (photos ride decision re-matching,
+  records ride imports), and a nullable FK would make every photos query
+  carry both meanings; also rejected: rows for unusable photos (per-file
+  verdicts already report them; retained rows would be storage with no
+  product use).
+- **Would change our mind:** a feature needing to remember unusable uploads
+  across sessions (none is recorded).
+
+## 2026-08-25 — CP2: record→fix join via stored fix hash
+
+- **Chosen:** `photo_records.fix_content_hash` names the paired
+  `raw_positions` row (content-hash unique) — the observation stratum gains
+  no column.
+- **Rejected:** a nullable `photo_record_id` on `raw_positions` — a
+  photo-shaped column on the shared stratum, migration on the largest
+  table, for a join the hash already provides.
+- **Would change our mind:** measured join cost at real scale (the hash
+  index exists; none expected at tens of thousands of rows).
+
+## 2026-08-25 — CP2: per-file verdicts, no all-or-nothing, no request 413
+
+- **Chosen:** the photo batch endpoint gives every file its own verdict;
+  an oversized or over-count file gets a per-file verdict and the rest of
+  the batch lands. Transport failure mid-stream still records nothing
+  (no row exists until the stream completes).
+- **Rejected:** the Timeline path's all-or-nothing rule (one bad file must
+  not sink 800 good ones) and a request-level 413.
+- **Would change our mind:** evidence of users misreading partial success —
+  then the summary copy is the remedy, not the semantics.
+
+## 2026-08-25 — CP2: HEIC accepted for ingestion, still rejected for
+## attachment; AVIF stays rejected
+
+- **Chosen:** the sniffer accepts the HEIC brand family as a third kind;
+  ingestion extracts metadata (BMFF box walk into the existing TIFF
+  parser); the phase-4 attachment endpoint rejects HEIC with its own
+  message (attachment requires a thumbnail; no codec). AVIF remains
+  rejected as a web re-encode.
+- **Rejected:** cgo/libheif for pixel decode (excluded by the brief);
+  accepting AVIF (not a camera capture format).
+- **Would change our mind:** the ingested-photo attachment follow-up firing
+  — that is the recorded trigger for revisiting HEIC pixels.
+
 ## 2026-08-24 — Gate 1 review input: three photo futures (maintainer)
 
 - **Chosen:** the maintainer's three raised scenarios sorted per the standing

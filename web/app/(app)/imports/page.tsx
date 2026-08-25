@@ -4,6 +4,7 @@ import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { SiteHeader } from "@/components/site-header";
 import { INSTANCE_LABEL } from "@/lib/instance";
+import { PhotoUploadImport } from "@/components/photo-upload-import";
 import { UploadImport } from "@/components/upload-import";
 
 // Server component, same shape as the home page: runs per request on the
@@ -31,6 +32,7 @@ export default async function ImportsPage() {
   return (
     <Shell>
       <UploadImport />
+      <PhotoUploadImport />
       {data.imports.length === 0 ? (
         <p className="mt-6 text-ink-2">
           No imports yet — upload an export above (

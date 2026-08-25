@@ -39,16 +39,18 @@ func TestParseFilesFixtureMatrix(t *testing.T) {
 		"bad_ifd_offset.jpg": VerdictNoPosition,
 		"bigendian.jpg":      VerdictNoTime,
 		"gps_full.jpg":       VerdictFix,
+		"gps_full.heic":      VerdictFix, // the same TIFF via the HEIF walk
 		"gps_full.jpg.json":  VerdictSidecarPaired,
 		"no_meta.jpg":        VerdictNoPosition,
 		"not_sidecar.json":   VerdictUnsupported,
 		"offset_time.jpg":    VerdictNoPosition,
-		"sample.heic":        VerdictUnsupported,
+		"sample.heic":        VerdictNoPosition, // accepted HEIF, no metadata inside
 		"sample.mp4":         VerdictUnsupported,
 		"sample.png":         VerdictUnsupported,
 		"sample.webp":        VerdictUnsupported,
 		"trunc_app1.jpg":     VerdictNoPosition,
-		"wall_only.jpg":      VerdictFix, // position and instant arrive via its sidecar
+		"trunc_meta.heic":    VerdictNoPosition, // malformation is absence
+		"wall_only.jpg":      VerdictFix,        // position and instant arrive via its sidecar
 		"wall_only.jpg.json": VerdictSidecarPaired,
 		"zero_denom.jpg":     VerdictNoPosition,
 		"zero_geo.jpg.supplemental-metadata.json": VerdictSidecarUnpaired,
@@ -70,8 +72,8 @@ func TestParseFilesFixtureMatrix(t *testing.T) {
 		}
 	}
 
-	if st != (Stats{Photos: 8, Fixes: 2, NoPosition: 5, NoTime: 1,
-		SidecarsPaired: 2, SidecarsUnpaired: 1, Unsupported: 5}) {
+	if st != (Stats{Photos: 11, Fixes: 3, NoPosition: 7, NoTime: 1,
+		SidecarsPaired: 2, SidecarsUnpaired: 1, Unsupported: 4}) {
 		t.Errorf("stats = %+v", st)
 	}
 
@@ -80,8 +82,8 @@ func TestParseFilesFixtureMatrix(t *testing.T) {
 	if len(obs.Visits)+len(obs.Activities)+len(obs.Points) != 0 {
 		t.Error("photo batch emitted non-fix observations")
 	}
-	if len(obs.RawPositions) != 2 {
-		t.Fatalf("got %d fixes, want 2", len(obs.RawPositions))
+	if len(obs.RawPositions) != 3 {
+		t.Fatalf("got %d fixes, want 3", len(obs.RawPositions))
 	}
 	for _, rp := range obs.RawPositions {
 		if rp.Source != domain.SourcePhoto {

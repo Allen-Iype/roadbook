@@ -107,6 +107,25 @@ func main() {
 	binary.Write(badTIFF, le, uint32(0xFFFFFF00))
 	writeJPEG("bad_ifd_offset.jpg", badTIFF.Bytes())
 
+	// HEIC fixtures (phase 11): the same gps_full TIFF inside a hand-built
+	// HEIF container — the HEIC walk must read exactly what the JPEG walk
+	// reads — and a container whose meta box declares a size past EOF.
+	gpsFullTIFF := buildTIFF(le, tiffSpec{
+		orientation: 6,
+		dateTime:    "2026:07:27 21:15:03",
+		offsetTime:  "+05:30",
+		gps: &gpsSpec{
+			latRef: "N", lat: [3][2]uint32{{12, 1}, {20, 1}, {4416, 100}},
+			lonRef: "E", lon: [3][2]uint32{{45, 1}, {40, 1}, {4404, 100}},
+			dateStamp: "2026:07:27", timeStamp: [3][2]uint32{{15, 1}, {45, 1}, {3, 1}},
+		},
+	})
+	write("gps_full.heic", buildHEIC(gpsFullTIFF))
+	truncHEIC := ftypStub("heic")
+	truncHEIC = append(truncHEIC, []byte{0x00, 0x00, 0xFF, 0xFF}...) // meta size far past EOF
+	truncHEIC = append(truncHEIC, []byte("meta")...)
+	write("trunc_meta.heic", truncHEIC)
+
 	// Sniff-taxonomy stubs: just enough magic bytes to classify.
 	pngBuf := &bytes.Buffer{}
 	png.Encode(pngBuf, image.NewRGBA(image.Rect(0, 0, 1, 1)))
@@ -233,6 +252,18 @@ func writeCorpus() {
 		}))
 	}
 
+	// The HEIC subset: two shots in HEIF containers — the iPhone default
+	// format flowing through the same pipeline (metadata only, no pixels).
+	for _, s := range []shot{
+		{"trip1_hofn_eve_d.heic", 64.2541, -15.2081, at(2026, time.June, 5, 19, 50)},
+		{"trip2_akureyri_morn_c.heic", 65.6836, -18.1003, at(2026, time.May, 10, 11, 55)},
+	} {
+		writeTo(corpusDir, s.name, buildHEIC(buildTIFF(le, tiffSpec{
+			dateTime: s.t.Format("2006:01:02 15:04:05"),
+			gps:      gpsFromDeg(s.lat, s.lon, s.t),
+		})))
+	}
+
 	// A photo whose EXIF was stripped (a messenger copy): the Takeout
 	// sidecar restores position and time — the sidecar path, in-corpus.
 	writeJPEGTo(corpusDir, "trip1_hofn_market.jpg", nil)
@@ -247,6 +278,42 @@ func writeCorpus() {
 	writeJPEGTo(corpusDir, "unplaced_b.jpg", buildTIFF(le, tiffSpec{dateTime: "2026:05:16 11:30:00"}))
 
 	fmt.Println("gen: corpus written to", corpusDir)
+}
+
+// --- HEIF assembly ------------------------------------------------------
+
+func bmffBox(typ string, payload []byte) []byte {
+	out := make([]byte, 0, 8+len(payload))
+	out = binary.BigEndian.AppendUint32(out, uint32(8+len(payload)))
+	out = append(out, []byte(typ)...)
+	return append(out, payload...)
+}
+
+func bmffFullBox(typ string, version byte, payload []byte) []byte {
+	return bmffBox(typ, append([]byte{version, 0, 0, 0}, payload...))
+}
+
+// buildHEIC wraps a TIFF blob in a minimal well-formed HEIF container:
+// ftyp(heic), meta{hdlr, iinf/infe(Exif), iloc}, mdat{ExifDataBlock}. Built
+// in two passes because iloc's extent offset is absolute in the file.
+func buildHEIC(tiff []byte) []byte {
+	ftyp := bmffBox("ftyp", append(append([]byte("heic"), 0, 0, 0, 0), []byte("mif1")...))
+	exifBlock := append(binary.BigEndian.AppendUint32(nil, 6), append([]byte("Exif\x00\x00"), tiff...)...)
+
+	buildMeta := func(extentOff uint32) []byte {
+		hdlr := bmffFullBox("hdlr", 0, append(append(make([]byte, 4), []byte("pict")...), make([]byte, 13)...))
+		infe := bmffFullBox("infe", 2, append([]byte{0, 1, 0, 0}, append([]byte("Exif"), 0)...))
+		iinf := bmffFullBox("iinf", 0, append([]byte{0, 1}, infe...))
+		ilocItem := []byte{0, 1, 0, 0, 0, 1} // item_ID 1, data_ref 0, extent_count 1
+		ilocItem = binary.BigEndian.AppendUint32(ilocItem, extentOff)
+		ilocItem = binary.BigEndian.AppendUint32(ilocItem, uint32(len(exifBlock)))
+		iloc := bmffFullBox("iloc", 0, append([]byte{0x44, 0x00, 0, 1}, ilocItem...))
+		return bmffBox("meta", append([]byte{0, 0, 0, 0}, append(hdlr, append(iinf, iloc...)...)...))
+	}
+	metaLen := len(buildMeta(0))
+	meta := buildMeta(uint32(len(ftyp) + metaLen + 8)) // + mdat header
+	mdat := bmffBox("mdat", exifBlock)
+	return append(append(ftyp, meta...), mdat...)
 }
 
 // gpsFromDeg converts decimal degrees and a UTC instant into the EXIF GPS
