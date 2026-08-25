@@ -41,6 +41,44 @@ Written as decisions are made, not reconstructed.
   seam at near-zero cost); on the parked direction — only its own charter
   change, never this phase.
 
+## 2026-08-24 — CP1: home-evidence precedence is fallback-on-failure
+
+- **Chosen:** synthetic home evidence is consulted when INFERRED_HOME
+  *derivation yields zero bases*, not merely when zero INFERRED_HOME visits
+  exist. A user with a handful of Timeline home visits (below MinVisits) plus
+  a camera roll still gets a home.
+- **Rejected:** presence-based precedence — it would strand exactly the mixed
+  thin-Timeline case this phase serves, for no honesty gain.
+- **Would change our mind:** a real dataset where weak INFERRED_HOME evidence
+  should have beaten strong synthetic evidence. Byte-identity is unaffected
+  either way: without photo fixes there is no synthetic evidence to fall to.
+
+## 2026-08-24 — CP1: HomeMinDays day-spread guard on synthetic bases
+
+- **Chosen:** a synthetic cluster must recur across ≥ HOME_MIN_DAYS (8)
+  distinct civil days, on top of the MinVisits count — recurrence alone
+  cannot tell a residence from a week's hotel.
+- **Rejected:** count-only qualification (a 12-stay hotel week would become a
+  "home" and erase its own trip); applying the guard to INFERRED_HOME
+  evidence too (byte-identity — Google already asserted home there).
+- **Would change our mind:** corpus or real-data evidence of a true home
+  lost to the guard (a weekend-only residence, e.g.); the parameter is the
+  remedy, not code.
+
+## 2026-08-24 — CP1 deviation from brief §4B: no on/off parameter for
+## photo-fix observation inclusion
+
+- **Chosen:** photo-sourced fixes always join the observation stream —
+  inclusion is scoped by the source class itself, with no boolean parameter.
+  The brief promised "behind a named parameter, default on".
+- **Rejected:** the boolean — a dead knob nobody would turn off; invariant 3
+  governs thresholds, and this is a structural rule made safe by scoping
+  (data without PHOTO rows is byte-identical by construction, proven by the
+  fixture/archive/demo regressions running green with synthesis live).
+- **Would change our mind:** evidence that direct photo observations harm
+  detection somewhere synthesis alone would not — then the knob earns its
+  existence. Flagged for the maintainer at the CP1 STOP.
+
 ## 2026-08-24 — Gate 1 PASSED: brief accepted as amended
 
 - **Chosen:** all §9 recommendations stand — A/B (photo records in their own

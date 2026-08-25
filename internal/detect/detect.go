@@ -29,12 +29,14 @@ type Params struct {
 	MaxKmh      float64 `json:"MAX_KMH"`       // implied-speed outlier threshold; must clear real air travel
 
 	Score ScoreParams `json:"SCORE"` // confidence-scoring weights and anchors (score.go)
+	Synth SynthParams `json:"SYNTH"` // stay-point visit synthesis over photo fixes (synth.go)
+	Bases BaseParams  `json:"BASES"` // home-base derivation thresholds (bases.go)
 }
 
 // DefaultParams are the measured defaults from the exploration phase.
 func DefaultParams() Params {
 	return Params{NearM: 25000, FarKm: 100, MinObs: 5, MinHrs: 1.0, MinDwellMin: 60, MaxKmh: 900,
-		Score: DefaultScoreParams()}
+		Score: DefaultScoreParams(), Synth: DefaultSynthParams(), Bases: DefaultBaseParams()}
 }
 
 // Base is a derived home base: a cluster of INFERRED_HOME visits with the era in
@@ -94,11 +96,28 @@ type obs struct {
 // Run detects adventure candidates. See the package comment: the structure
 // mirrors the reference detector stage for stage.
 func Run(o domain.Observations, p Params) Result {
-	all := flatten(o)
+	// Phase 11: photo-sourced fixes join detection through two channels —
+	// stay-point synthesis (synthetic visits supplying dwells and home
+	// evidence) and direct observation. Both are scoped to the PHOTO source
+	// class, so data without photo fixes takes exactly the pre-phase-11
+	// path, byte for byte.
+	photos := photoFixes(o.RawPositions)
+	synthetic := synthesizeStays(photos, p.Synth)
+	visits := o.Visits
+	if len(synthetic) > 0 {
+		visits = mergeVisitsByStart(o.Visits, synthetic)
+	}
+
+	all := flatten(visits, o.Activities, o.Points, photos)
 	all, dropped := rejectOutliers(all, p)
-	bases := deriveBases(o.Visits)
+	bases := deriveBases(visits, p.Bases)
+	if len(bases) == 0 && len(synthetic) > 0 {
+		// Home evidence precedence: Google's own INFERRED_HOME assertions
+		// first; synthetic recurrence evidence only when they yield nothing.
+		bases = deriveSyntheticBases(synthetic, p)
+	}
 	if len(bases) == 0 {
-		// No INFERRED_HOME cluster ⇒ "away from home" is undefined. The
+		// No home evidence clusters ⇒ "away from home" is undefined. The
 		// reference detector would crash here; returning no candidates is the
 		// deliberate behaviour (the importer should surface it).
 		return Result{OutliersDropped: dropped}
@@ -114,8 +133,10 @@ func Run(o domain.Observations, p Params) Result {
 	// File-order key slices for the same binary searches the prototype does.
 	// The export is chronological; the search replicates bisect exactly either
 	// way, so both implementations agree even if that assumption ever breaks.
-	visitStarts := make([]time.Time, len(o.Visits))
-	for i, v := range o.Visits {
+	// (With synthetic visits merged in, `visits` is explicitly start-sorted,
+	// which is the stronger form of the same property.)
+	visitStarts := make([]time.Time, len(visits))
+	for i, v := range visits {
 		visitStarts[i] = v.Start
 	}
 	actStarts := make([]time.Time, len(o.Activities))
@@ -136,7 +157,7 @@ func Run(o domain.Observations, p Params) Result {
 		}
 		var dwells []dwell
 		for j := bisectLeft(visitStarts, t0); j < bisectRight(visitStarts, t1); j++ {
-			v := o.Visits[j]
+			v := visits[j]
 			if v.Loc != nil && v.End.Sub(v.Start).Minutes() >= p.MinDwellMin {
 				dwells = append(dwells, dwell{homeDistM(bases, v.Start, *v.Loc), *v.Loc, v.End.Sub(v.Start).Hours()})
 			}
@@ -225,18 +246,20 @@ func Run(o domain.Observations, p Params) Result {
 	return Result{Bases: bases, Candidates: cands, OutliersDropped: dropped}
 }
 
-// flatten turns visits, activity endpoints, and path points into one
-// time-ordered observation list. The sort must be stable and key only on start
-// time: Python's sort is stable and the prototype relies on it, so equal
-// timestamps keep insertion order (visits, then activities, then points).
-func flatten(o domain.Observations) []obs {
+// flatten turns visits, activity endpoints, path points, and photo fixes into
+// one time-ordered observation list. The sort must be stable and key only on
+// start time: Python's sort is stable and the prototype relies on it, so equal
+// timestamps keep insertion order (visits, then activities, then points, then
+// photo fixes — the last class is empty on all pre-phase-11 data, leaving that
+// ordering untouched).
+func flatten(visits []domain.Visit, acts []domain.Activity, pts []domain.PathPoint, photos []domain.RawPosition) []obs {
 	var all []obs
-	for _, v := range o.Visits {
+	for _, v := range visits {
 		if v.Loc != nil {
 			all = append(all, obs{v.Start, v.End, *v.Loc})
 		}
 	}
-	for _, a := range o.Activities {
+	for _, a := range acts {
 		if a.From != nil {
 			all = append(all, obs{a.Start, a.Start, *a.From})
 		}
@@ -244,9 +267,14 @@ func flatten(o domain.Observations) []obs {
 			all = append(all, obs{a.End, a.End, *a.To})
 		}
 	}
-	for _, pt := range o.Points {
+	for _, pt := range pts {
 		if pt.Loc != nil {
 			all = append(all, obs{pt.Time, pt.Time, *pt.Loc})
+		}
+	}
+	for _, rp := range photos {
+		if rp.Loc != nil {
+			all = append(all, obs{rp.Time, rp.Time, *rp.Loc})
 		}
 	}
 	sort.SliceStable(all, func(i, j int) bool { return all[i].start.Before(all[j].start) })

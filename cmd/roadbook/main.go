@@ -19,6 +19,7 @@ import (
 	"roadbook/internal/detect"
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
+	"roadbook/internal/photosource"
 	"roadbook/internal/route"
 	"roadbook/internal/store"
 	"roadbook/internal/suggest"
@@ -397,6 +398,7 @@ func runServe(args []string) error {
 func runDetect(args []string) error {
 	fs := flag.NewFlagSet("detect", flag.ExitOnError)
 	src := fs.String("src", "", "path to a Timeline export (file mode: print only)")
+	photosDir := fs.String("photos", "", "path to a directory of geotagged photos (file mode: print only)")
 	db := dbFlag(fs)
 	useDB := fs.Bool("from-db", false, "detect over the database's observations and persist the run")
 	jsonOut := fs.String("json", "", "also write full results as JSON to this path")
@@ -416,18 +418,59 @@ func runDetect(args []string) error {
 	fs.Float64Var(&p.Score.DensityFullPerDay, "score-density-full", p.Score.DensityFullPerDay, "observations/day saturating its score component")
 	fs.Float64Var(&p.Score.DurationFullDays, "score-duration-full-days", p.Score.DurationFullDays, "span days saturating its score component")
 	fs.Float64Var(&p.Score.DestRadiusKm, "score-dest-radius-km", p.Score.DestRadiusKm, "dwells within this of the destination count as destination dwell, km")
+	fs.Float64Var(&p.Synth.StayRadiusM, "stay-radius-m", p.Synth.StayRadiusM, "stay-point synthesis: a photo fix within this of the open stay's centroid extends it, metres")
+	fs.Float64Var(&p.Synth.StayMinMin, "stay-min-min", p.Synth.StayMinMin, "stay-point synthesis: discard stays shorter than this, minutes")
+	fs.Float64Var(&p.Synth.StayMaxGapMin, "stay-max-gap-min", p.Synth.StayMaxGapMin, "stay-point synthesis: a silence longer than this closes the open stay, minutes")
+	fs.IntVar(&p.Synth.HomeMinDays, "home-min-days", p.Synth.HomeMinDays, "synthetic home evidence must recur across at least this many distinct days")
+	fs.Float64Var(&p.Bases.GridPerDeg, "base-grid-per-deg", p.Bases.GridPerDeg, "home derivation: evidence grid cells per degree")
+	fs.Float64Var(&p.Bases.MergeM, "base-merge-m", p.Bases.MergeM, "home derivation: merge clusters whose medians sit within this, metres")
+	fs.IntVar(&p.Bases.MinVisits, "base-min-visits", p.Bases.MinVisits, "home derivation: minimum evidence count per base")
+	fs.IntVar(&p.Bases.EraPadDays, "base-era-pad-days", p.Bases.EraPadDays, "home derivation: era padding around first..last evidence, days")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if (*src == "") == !*useDB {
+	modes := 0
+	for _, on := range []bool{*src != "", *photosDir != "", *useDB} {
+		if on {
+			modes++
+		}
+	}
+	if modes != 1 {
 		fs.Usage()
-		return fmt.Errorf("exactly one of -src (file mode) or -from-db (database mode) is required")
+		return fmt.Errorf("exactly one of -src (file mode), -photos (photo-directory mode), or -from-db (database mode) is required")
 	}
 
 	var obs domain.Observations
 	var s *store.Store
 	ctx := context.Background()
-	if *useDB {
+	if *photosDir != "" {
+		entries, err := os.ReadDir(*photosDir)
+		if err != nil {
+			return err
+		}
+		var files []photosource.File
+		for _, e := range entries {
+			if e.IsDir() {
+				continue
+			}
+			data, err := os.ReadFile(filepath.Join(*photosDir, e.Name()))
+			if err != nil {
+				return err
+			}
+			files = append(files, photosource.File{Name: e.Name(), Data: data})
+		}
+		var st photosource.Stats
+		var results []photosource.FileResult
+		obs, results, st = photosource.ParseFiles(files)
+		fmt.Printf("parsed %d photos from %s: %d fixes, %d without position, %d without time, %d sidecars paired (%d unpaired), %d unsupported\n",
+			st.Photos, filepath.Base(*photosDir), st.Fixes, st.NoPosition, st.NoTime,
+			st.SidecarsPaired, st.SidecarsUnpaired, st.Unsupported)
+		for _, r := range results {
+			if r.Verdict == photosource.VerdictUnsupported {
+				fmt.Printf("  %s: %s\n", r.Name, r.Message)
+			}
+		}
+	} else if *useDB {
 		var err error
 		s, err = openStore(ctx, *db)
 		if err != nil {

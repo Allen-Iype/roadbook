@@ -41,12 +41,21 @@ type PathPoint struct {
 // RawPosition is one position fix from the export's rawSignals section — the
 // only data in the export that carries a reported accuracy. An export holds
 // only the ~30 days before it was taken, so most of the timeline has none.
+// Since phase 11 it is also the stratum where photo-derived fixes land,
+// discriminated by Source alone: a fix is a timestamped position whatever
+// produced it, and nothing downstream learns about photos (invariant 4).
 type RawPosition struct {
 	Time      time.Time
 	Loc       *LatLng
 	AccuracyM float64 // reported horizontal accuracy in metres; 0 when absent
-	Source    string  // WIFI, CELL, WIFI_ONLY, GPS, or "" when absent
+	Source    string  // WIFI, CELL, WIFI_ONLY, GPS, SourcePhoto, or "" when absent
 }
+
+// SourcePhoto marks a RawPosition extracted from a photograph. Detection
+// treats this source class specially (stay-point synthesis, observation
+// inclusion) precisely because the class is named — the parameterisation
+// names an evidence class, never a user (invariant 9).
+const SourcePhoto = "PHOTO"
 
 // Observations is everything parsed from one source, in source-file order.
 // Slices are treated as immutable after parsing (CLAUDE.md invariant 2).
