@@ -14,10 +14,27 @@ marked unknown line. No geometry on the map ever hides its confidence.
 
 ## Supported input
 
-The current on-device phone export, and only that: on Android, **Settings →
-Location → Location Services → Timeline → Export Timeline data**. This export
-carries your full history. The UI's front door (`/welcome`) carries
-per-platform walkthroughs, each marked with its verification state.
+Two sources.
+
+**A Timeline export** — the current on-device phone export: on Android,
+**Settings → Location → Location Services → Timeline → Export Timeline
+data**. This export carries your full history. The UI's front door
+(`/welcome`) carries per-platform walkthroughs, each marked with its
+verification state.
+
+**Geotagged photos** — the source for anyone whose phone never had Timeline
+on. Every geotagged photo carries a position and a capture time; a batch of
+them is enough evidence to detect adventures from photos alone, and on an
+instance that already holds a Timeline export each photo simply adds
+another observed point to the adventures it finds. JPEG and HEIC both work,
+as do Google Photos Takeout files with their JSON sidecars (a sidecar can
+restore a location the photo file itself lost). The photos themselves are
+never kept: what an import stores is the position fix, the capture time,
+and a small thumbnail where one can be cut. HEIC metadata is read without
+decoding pixels, so a HEIC photo contributes its position but no thumbnail.
+Photos saved from messaging apps have their location stripped at source and
+carry nothing to import; each file in a batch gets its own verdict saying
+which case it was.
 
 Two legacy Takeout-era formats — Semantic History (monthly `timelineObjects`
 files) and `Records.json` (raw location samples) — are recognised and rejected
@@ -99,7 +116,15 @@ re-read it without asking you for the file again; detection runs
 automatically with default parameters and your candidates appear. Uploads
 are capped at 2 GiB. A wrong file — a Takeout zip, an old-format export, a
 PDF — is rejected at upload with a message saying what it was and a
-pointer back to the walkthrough for the right one.
+pointer back to the walkthrough for the right one; an image lands on a
+pointer to the photos section instead, because photos go in through their
+own door.
+
+Photos travel the same browser path: the front door's photos section (and
+the **Imports** page) opens your photo library directly — no export step —
+and reports a per-file verdict for each photo rather than an all-or-nothing
+result. Detection runs automatically afterwards, exactly as for a Timeline
+upload.
 
 Operators can instead import from the CLI, with an optional date window —
 put your export in `data/` (gitignored — nothing under it can be
@@ -120,13 +145,16 @@ run records the exact parameters that produced it.
 The **Imports** page in the UI lists every import attempt, including failed
 ones, with what the file turned out to be and what to do about it.
 
-Photos can be attached to a confirmed adventure. Camera originals and Google
-Photos Takeout files (with their JSON sidecars) carry position and time and
-place themselves on the map and timeline; photos saved from messaging apps
-have their metadata stripped at source and will honestly show as unplaced.
-Only a thumbnail is stored — originals never touch the server's disk. A photo
-that sits far from the inferred route is flagged, because a positioned photo
-is the one ground truth that does not come from the same source as the route.
+Photos can also be attached to a specific confirmed adventure. Camera
+originals and Google Photos Takeout files (with their JSON sidecars) carry
+position and time and place themselves on the map and timeline; photos saved
+from messaging apps have their metadata stripped at source and will honestly
+show as unplaced. Only a thumbnail is stored — originals never touch the
+server's disk. A photo that sits far from the inferred route is flagged,
+because a positioned photo is the one ground truth that does not come from
+the same source as the route. Photos brought in through the import door need
+no attaching: each appears automatically on any adventure whose dates cover
+its capture time.
 
 ## What the deployment looks like
 
