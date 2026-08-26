@@ -66,38 +66,53 @@ export async function decideBulk(
 }
 
 export type ConfirmSuggestedResult =
-  | { ok: true; confirmed: number; unnamed: number[] }
+  | { ok: true; confirmed: number; suggested: number; dateNamed: number }
   | { ok: false; error: string };
 
 // Confirm a selection using suggested names (phase 11 §6.1's quick-confirm
-// at selection scale). Suggestions are best-effort — with no geocoder every
-// id comes back unnamed — so this action splits honestly: the ids a
-// suggestion named are confirmed in one atomic call; the rest are returned
-// for the bar to report ("name them individually"), never guessed at. A
-// junk auto-name would put words on an atlas cover the user did not choose.
+// at selection scale). Suggestions are best-effort; where none exists the
+// candidate is named by its start date — "Journey of 2026-06-16", the same
+// convention unconfirmed covers already display — and confirmed anyway
+// (maintainer's decision at the CP4 review, DECISIONS 2026-08-26: one pass
+// clears the whole selection; renaming is one click via the card's or the
+// adventure page's change control).
 export async function confirmSelectedWithSuggestions(
   ids: number[],
 ): Promise<ConfirmSuggestedResult> {
-  const suggestions = await Promise.all(
-    ids.map(async (id) => {
-      const { data } = await api.GET("/candidates/{id}/name-suggestion", {
-        params: { path: { id } },
-      });
-      return { id, name: data?.name };
-    }),
-  );
-  const named = suggestions.filter(
-    (s): s is { id: number; name: string } => !!s.name && s.name.trim() !== "",
-  );
-  const unnamed = suggestions.filter((s) => !s.name?.trim()).map((s) => s.id);
-  if (named.length === 0) {
-    return { ok: true, confirmed: 0, unnamed };
+  // The date fallback needs each candidate's span start.
+  const list = await api.GET("/candidates");
+  const startById = new Map<number, string>();
+  for (const c of list.data?.candidates ?? []) {
+    startById.set(c.id, c.span_start);
   }
-  const res = await decideBulk(
-    named.map((s) => ({ id: s.id, action: "confirmed" as const, name: s.name })),
-  );
+
+  // Sequential, deliberately: with a real geocoder behind the seam these
+  // are external requests, and the public Nominatim policy is ~1/s — a
+  // 60-wide parallel burst is how instances get blocked. Natural request
+  // latency spaces the calls; the null suggester answers instantly, so a
+  // geocoder-less instance pays nothing for the loop.
+  let suggested = 0;
+  let dateNamed = 0;
+  const decisions: { id: number; action: Action; name: string }[] = [];
+  for (const id of ids) {
+    const { data } = await api.GET("/candidates/{id}/name-suggestion", {
+      params: { path: { id } },
+    });
+    const name = data?.name?.trim();
+    if (name) {
+      suggested++;
+      decisions.push({ id, action: "confirmed", name });
+    } else {
+      dateNamed++;
+      // slice(0, 10): the civil date the traveller experienced, never
+      // shifted through the viewer's timezone (the page-wide convention).
+      const date = startById.get(id)?.slice(0, 10) ?? "unknown date";
+      decisions.push({ id, action: "confirmed", name: `Journey of ${date}` });
+    }
+  }
+  const res = await decideBulk(decisions);
   if (!res.ok) return res;
-  return { ok: true, confirmed: res.decided, unnamed };
+  return { ok: true, confirmed: res.decided, suggested, dateNamed };
 }
 
 // Name suggestion for the confirm step (BRIEF §1.7). Best-effort by design:

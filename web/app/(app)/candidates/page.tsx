@@ -8,6 +8,7 @@ import { RouteThumb } from "@/components/route-thumb";
 import { SiteHeader } from "@/components/site-header";
 import { TriageBar } from "@/components/triage-bar";
 import { TriageSelect } from "@/components/triage-select";
+import { TriageSelectAll } from "@/components/triage-select-all";
 
 // The triage workbench. Phase 9 CP3 review decided T3: triage is a gallery
 // of route-shape cards, not a table — the maintainer's call at the mockup
@@ -71,7 +72,18 @@ export default async function CandidatesPage({
   return (
     <Shell>
       <RunSummary list={data} />
-      {data.candidates.length > 0 && <SortToggle byScore={byScore} />}
+      {data.candidates.length > 0 && (
+        <>
+          <SortToggle byScore={byScore} />
+          <p className="mt-1.5">
+            <TriageSelectAll
+              undecidedIds={data.candidates
+                .filter((c) => !c.decision)
+                .map((c) => c.id)}
+            />
+          </p>
+        </>
+      )}
       {data.candidates.length === 0 ? (
         data.run ? (
           <div className="mt-6 max-w-[58ch]">

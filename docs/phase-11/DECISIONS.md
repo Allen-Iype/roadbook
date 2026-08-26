@@ -262,3 +262,39 @@ Written as decisions are made, not reconstructed.
   the fallback shapes are batch-naming UI or a geocoder-on default, each its
   own decision; or a sweep session showing focus advance is not enough pace
   and a true modal flow earns its complexity.
+
+## 2026-08-26 — CP4 review: "confirm all" lands as select-all, not auto-confirm
+
+- **Chosen:** a select-all control on the triage page, scoped to UNDECIDED
+  candidates only, feeding the existing bulk actions — so "confirm all"
+  means select-all + confirm-with-suggested-names, with the unnamed rest
+  reported for individual naming. The maintainer raised confirm-all at the
+  CP4 review; the Gate-1 sorting was reaffirmed in discussion.
+- **Rejected:** true auto-confirm-all with fallback names — the Gate-1
+  DECLINED PRODUCT.md amendment, and it stays declined: the detector
+  over-produces deliberately (rank, don't filter), so confirming everything
+  puts known noise on the life map and machine names on atlas covers;
+  select-all including decided rows (a bulk action must never silently
+  re-decide curated rows); a score-threshold select (offered, not chosen —
+  plain select-all with the honest unnamed report was preferred).
+- **Would change our mind:** the same trigger as the Gate-1 decline — a
+  deliberate PRODUCT.md amendment at a STOP, argued against the curation
+  stance, not a UI request.
+
+## 2026-08-26 — CP4 review: date-fallback names for suggestion-less bulk confirms
+
+- **Chosen (maintainer's call, at this STOP):** bulk confirm names
+  suggestion-less candidates "Journey of <span-start date>" — the display
+  convention unconfirmed covers already use — and stores it as the decision's
+  name. One pass confirms the whole selection. The note reports the split
+  (suggested vs date-named) and points at rename-from-the-page.
+- **Rejected:** the assistant's recommendation of nameless confirms (NULL
+  name + display fallback + add-a-name nudge — it would keep machine names
+  distinguishable from chosen ones forever) — the maintainer weighed the
+  extra contract/display machinery against the value and chose the stored
+  fallback; also rejected: keeping the honest-remainder behavior (leaves the
+  queue standing, which is the friction this checkpoint exists to remove).
+- **Would change our mind:** wanting to know, later, which plates were
+  human-named — that information is not recoverable under this choice
+  (`updated_at` and the name pattern are weak proxies); if it starts to
+  matter, design B's distinction requires a migration-time backfill guess.

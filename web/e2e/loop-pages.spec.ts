@@ -76,6 +76,19 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   await bar.getByRole("button", { name: "Clear" }).click();
   await expect(bar).toBeHidden();
 
+  // Select-all: scoped to undecided candidates, and the count says so.
+  const selectAllBtn = page.getByRole("button", {
+    name: /^Select all \d+ undecided$/,
+  });
+  if (await selectAllBtn.isVisible()) {
+    const m = (await selectAllBtn.textContent())?.match(/(\d+)/);
+    const undecided = Number(m?.[1] ?? 0);
+    await selectAllBtn.click();
+    await expect(bar.getByText(`${undecided} selected`)).toBeVisible();
+    await bar.getByRole("button", { name: "Clear" }).click();
+    await expect(bar).toBeHidden();
+  }
+
   // The sweep order: ?sort=score renders scores non-increasing.
   await page.goto("/candidates?sort=score");
   // The score element, not card textContent: concatenated text runs the

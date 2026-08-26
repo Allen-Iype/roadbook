@@ -48,18 +48,20 @@ export function TriageBar() {
         return;
       }
       clear();
-      const parts: string[] = [];
-      if (res.confirmed > 0) {
+      const parts: string[] = [
+        `Confirmed ${res.confirmed} candidate${res.confirmed === 1 ? "" : "s"}`,
+      ];
+      if (res.suggested > 0 && res.dateNamed > 0) {
         parts.push(
-          `Confirmed ${res.confirmed} with suggested name${res.confirmed === 1 ? "" : "s"}.`,
+          ` — ${res.suggested} with suggested names, ${res.dateNamed} named by date.`,
         );
+      } else if (res.dateNamed > 0) {
+        parts.push(` — all named by date (no suggestions were available).`);
+      } else {
+        parts.push(` with suggested names.`);
       }
-      if (res.unnamed.length > 0) {
-        parts.push(
-          `${res.unnamed.length} had no name suggestion — confirm ${res.unnamed.length === 1 ? "it" : "them"} individually (a confirmed adventure carries a name you chose).`,
-        );
-      }
-      setNote(parts.join(" "));
+      parts.push(" Rename any from its card or adventure page.");
+      setNote(parts.join(""));
     });
   }
 
@@ -89,7 +91,7 @@ export function TriageBar() {
             disabled={isPending}
             className="-my-2 py-2 text-sm text-emerald-700 underline decoration-rule underline-offset-2 disabled:opacity-50"
           >
-            Confirm selected with suggested names
+            Confirm selected
           </button>
           <button
             onClick={() => {

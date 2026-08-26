@@ -38,3 +38,11 @@ export function clear(): void {
   selected = new Set();
   emit();
 }
+
+// Select-all (phase 11 §6.1 review addition): replaces the selection with
+// the given ids. The caller passes UNDECIDED candidates only — a bulk
+// action must never silently re-decide rows the user already curated.
+export function selectAll(ids: number[]): void {
+  selected = new Set(ids);
+  emit();
+}
