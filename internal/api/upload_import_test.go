@@ -172,6 +172,28 @@ func TestUploadImportEndToEnd(t *testing.T) {
 		t.Errorf("auto-detect found %d candidates, demo pins 3", len(cands))
 	}
 
+	// A Timeline-sourced journey carries the source-asserted mode breakdown
+	// (phase 11 §6.2) — present, km-descending, in the source's own labels.
+	jresp, err := http.Get(ts.URL + "/candidates/" + itoa(cands[0].ID) + "/journey")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if jresp.StatusCode != http.StatusOK {
+		t.Fatalf("journey status %d", jresp.StatusCode)
+	}
+	jd := decodeJSON[api.Journey](t, jresp.Body)
+	jresp.Body.Close()
+	if jd.ModeBreakdown == nil || len(*jd.ModeBreakdown) == 0 {
+		t.Errorf("Timeline journey mode_breakdown = %v, want non-empty", jd.ModeBreakdown)
+	} else {
+		bd := *jd.ModeBreakdown
+		for i := 1; i < len(bd); i++ {
+			if bd[i].Km > bd[i-1].Km {
+				t.Errorf("mode_breakdown not km-descending: %v", bd)
+			}
+		}
+	}
+
 	// Duplicate upload: same bytes → inserted 0, one retained file.
 	body2, ct2 := multipartUpload(t, demoExport)
 	resp2 := postUpload(t, ts, body2, ct2)

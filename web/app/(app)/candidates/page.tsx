@@ -6,6 +6,8 @@ import type { components } from "@/lib/api/schema";
 import { DecideCell } from "@/app/decide-cell";
 import { RouteThumb } from "@/components/route-thumb";
 import { SiteHeader } from "@/components/site-header";
+import { TriageBar } from "@/components/triage-bar";
+import { TriageSelect } from "@/components/triage-select";
 
 // The triage workbench. Phase 9 CP3 review decided T3: triage is a gallery
 // of route-shape cards, not a table — the maintainer's call at the mockup
@@ -20,7 +22,17 @@ type Candidate = components["schemas"]["Candidate"];
 type CandidateList = components["schemas"]["CandidateList"];
 type Leg = components["schemas"]["Leg"];
 
-export default async function CandidatesPage() {
+export default async function CandidatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string }>;
+}) {
+  // ?sort=score is the sweep order (phase 11 §6.1): score-descending, built
+  // for clearing a long queue in one sitting. Default stays chronological.
+  // A search param rather than client state: the order is part of the URL a
+  // person can share or reload, and the server sorts before any HTML ships.
+  const { sort } = await searchParams;
+  const byScore = sort === "score";
   const res = await api.GET("/candidates").catch(() => null);
 
   if (!res?.data) {
@@ -50,9 +62,16 @@ export default async function CandidatesPage() {
     }),
   );
 
+  // Sort a copy — never the fetched array. Unscored candidates (pre-scoring
+  // runs) sink to the end rather than interleaving as zeros.
+  const ordered = byScore
+    ? [...data.candidates].sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
+    : data.candidates;
+
   return (
     <Shell>
       <RunSummary list={data} />
+      {data.candidates.length > 0 && <SortToggle byScore={byScore} />}
       {data.candidates.length === 0 ? (
         data.run ? (
           <div className="mt-6 max-w-[58ch]">
@@ -90,7 +109,10 @@ export default async function CandidatesPage() {
           </p>
         )
       ) : (
-        <CandidateGallery candidates={data.candidates} legsById={legsById} />
+        <>
+          <CandidateGallery candidates={ordered} legsById={legsById} />
+          <TriageBar />
+        </>
       )}
       {data.orphaned_decisions.length > 0 && (
         <p className="mt-4 text-sm">
@@ -118,6 +140,44 @@ function Shell({ children }: { children: React.ReactNode }) {
       </p>
       {children}
     </main>
+  );
+}
+
+// The sweep-order toggle (phase 11 §6.1). Links, not buttons: the order is
+// URL state, and the score order is the "clear the queue" mode — highest
+// confidence first, keyboard from there.
+function SortToggle({ byScore }: { byScore: boolean }) {
+  return (
+    <p className="mt-2 text-sm">
+      <span className="text-ink-2">Order: </span>
+      {byScore ? (
+        <>
+          <Link
+            href="/candidates"
+            className="underline decoration-rule underline-offset-2 hover:text-ink"
+          >
+            by date
+          </Link>
+          <span className="text-ink-2"> · </span>
+          <span className="font-semibold">by score</span>
+        </>
+      ) : (
+        <>
+          <span className="font-semibold">by date</span>
+          <span className="text-ink-2"> · </span>
+          <Link
+            href="/candidates?sort=score"
+            className="underline decoration-rule underline-offset-2 hover:text-ink"
+          >
+            by score
+          </Link>
+        </>
+      )}
+      <span className="ml-3 text-xs text-ink-2">
+        Deciding moves focus to the next undecided card — the queue clears
+        from the keyboard.
+      </span>
+    </p>
   );
 }
 
@@ -165,7 +225,13 @@ function CandidateCard({
   legs: Leg[] | undefined;
 }) {
   return (
-    <div className="border border-rule bg-paper">
+    // data-candidate-card + data-undecided drive the sweep's focus advance
+    // (DecideCell walks to the next undecided card after a decision).
+    <div
+      data-candidate-card={c.id}
+      data-undecided={c.decision ? undefined : "true"}
+      className="border border-rule bg-paper"
+    >
       <div className="border-b border-rule">
         {legs && legs.length > 0 ? (
           <RouteThumb legs={legs} className="block h-auto w-full" />
@@ -177,7 +243,8 @@ function CandidateCard({
       </div>
       <div className="px-3.5 py-3">
         <p className="flex items-baseline justify-between gap-2 font-mono text-sm">
-          <span>
+          <span className="flex items-baseline gap-2.5">
+            <TriageSelect candidateId={c.id} />
             <Link
               href={`/adventure/${c.id}`}
               className="font-medium underline decoration-rule underline-offset-2 hover:text-ink"

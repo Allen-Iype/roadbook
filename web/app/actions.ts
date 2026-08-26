@@ -41,6 +41,65 @@ export async function decideCandidate(
   return { ok: true };
 }
 
+export type BulkDecideResult =
+  | { ok: true; decided: number }
+  | { ok: false; error: string };
+
+// Bulk triage (phase 11 §6.1): one atomic API call for a whole selection.
+// All-or-nothing is the contract's promise — a failure means nothing landed,
+// and the bar can say so in one sentence.
+export async function decideBulk(
+  decisions: { id: number; action: Action; name?: string }[],
+): Promise<BulkDecideResult> {
+  const { data, error, response } = await api.POST("/candidates/decisions", {
+    body: { decisions },
+  });
+  if (error || !data) {
+    return {
+      ok: false,
+      error: error?.error ?? `bulk decide failed (HTTP ${response.status})`,
+    };
+  }
+  revalidatePath("/candidates");
+  revalidatePath("/");
+  return { ok: true, decided: data.decided };
+}
+
+export type ConfirmSuggestedResult =
+  | { ok: true; confirmed: number; unnamed: number[] }
+  | { ok: false; error: string };
+
+// Confirm a selection using suggested names (phase 11 §6.1's quick-confirm
+// at selection scale). Suggestions are best-effort — with no geocoder every
+// id comes back unnamed — so this action splits honestly: the ids a
+// suggestion named are confirmed in one atomic call; the rest are returned
+// for the bar to report ("name them individually"), never guessed at. A
+// junk auto-name would put words on an atlas cover the user did not choose.
+export async function confirmSelectedWithSuggestions(
+  ids: number[],
+): Promise<ConfirmSuggestedResult> {
+  const suggestions = await Promise.all(
+    ids.map(async (id) => {
+      const { data } = await api.GET("/candidates/{id}/name-suggestion", {
+        params: { path: { id } },
+      });
+      return { id, name: data?.name };
+    }),
+  );
+  const named = suggestions.filter(
+    (s): s is { id: number; name: string } => !!s.name && s.name.trim() !== "",
+  );
+  const unnamed = suggestions.filter((s) => !s.name?.trim()).map((s) => s.id);
+  if (named.length === 0) {
+    return { ok: true, confirmed: 0, unnamed };
+  }
+  const res = await decideBulk(
+    named.map((s) => ({ id: s.id, action: "confirmed" as const, name: s.name })),
+  );
+  if (!res.ok) return res;
+  return { ok: true, confirmed: res.decided, unnamed };
+}
+
 // Name suggestion for the confirm step (BRIEF §1.7). Best-effort by design:
 // the null suggester, a stale candidate, or an unreachable geocoder all
 // return no name, and the confirm flow proceeds with an empty input exactly

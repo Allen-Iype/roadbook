@@ -216,3 +216,49 @@ Written as decisions are made, not reconstructed.
   identity question (records ride imports, not decisions — deletion and
   re-detection semantics must be settled in the CP4 work, and if they turn
   out deep, the item gets its own brief section rather than a quiet corner).
+
+## 2026-08-26 — CP4 item 1: records join adventures at read time, by span
+
+- **Chosen:** an adventure's photo-record list is computed per request — the
+  records whose capture instant falls inside the candidate's span — and never
+  stored against the candidate. Records keep riding imports (00010's shape);
+  re-detection cannot orphan what is never anchored; deletion semantics stay
+  the import's problem; no migration.
+- **Rejected:** anchoring records to decisions like attached photos (double
+  bookkeeping and a re-attachment machine for rows whose identity is already
+  durable via content hash + import); folding records into the attached
+  PhotoList response (attached photos are deletable and decision-anchored —
+  one schema for two capability sets confuses the contract; the UI can merge
+  visually without the API lying).
+- **Would change our mind:** a real need to *exclude* one imported photo from
+  one adventure (span-join has no per-adventure hide) — that would force a
+  stored relation, and it should arrive as its own decision.
+
+## 2026-08-26 — CP4 items 2+3 shapes: mode line placement; bulk triage anatomy
+
+- **Chosen:** (2) mode breakdown computed OUTSIDE Assemble (golden contract
+  pins assembly byte-for-byte) as a pure `journey.ModeBreakdown`; overlap
+  counts in full, never pro-rated (slicing a guessed distance pretends
+  precision); absent ≠ empty — a photo-sourced journey has no activities and
+  the cover says "no mode record", never zeros; `roadbook journey` prints the
+  same line (invariant 13's reproduction command). (3) one atomic bulk
+  endpoint POST /candidates/decisions (all-or-nothing, per-item semantics =
+  the single endpoint's); selection = module-level external store bridging
+  per-card checkbox islands and a sticky bottom bar (cards stay server HTML —
+  66 cards of leg geometry must not ship as client props); Dismiss-selected
+  is the primary bulk gesture; Confirm-selected rides name suggestions and
+  reports the unnamed rest for individual naming — a name is never invented;
+  sweep order = ?sort=score search param (URL state, server-sorted);
+  keyboard pace = focus advances to the next undecided card after each
+  decision.
+- **Rejected:** mode figures inside the pure assembly (golden churn for a
+  display-layer claim); pro-rating activity distance by window overlap;
+  client-side gallery (geometry payload); auto-naming bulk confirms ("Journey
+  of <date>" on an atlas cover the user never chose — the quick-confirm
+  stance, applied at selection scale); a modal sweep mode (sort + focus
+  advance reach keyboard pace without new UI state machinery).
+- **Would change our mind:** pilot evidence that suggestion-less instances
+  (no geocoder — the default) make Confirm-selected useless in practice —
+  the fallback shapes are batch-naming UI or a geocoder-on default, each its
+  own decision; or a sweep session showing focus advance is not enough pace
+  and a true modal flow earns its complexity.

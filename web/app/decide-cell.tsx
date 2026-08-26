@@ -4,7 +4,7 @@
 // The table stays server-rendered; interactivity is opted into per-island, so
 // the JavaScript sent to the browser is exactly this file and nothing else.
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useRef, useState, useTransition } from "react";
 import { decideCandidate, suggestName } from "@/app/actions";
 import type { components } from "@/lib/api/schema";
 
@@ -57,6 +57,7 @@ export function DecideCell({
     "closed",
   );
   const [error, setError] = useState<string | null>(null);
+  const rootRef = useRef<HTMLSpanElement>(null);
 
   function submit(next: DecisionState) {
     setError(null);
@@ -71,6 +72,7 @@ export function DecideCell({
         next.status === "confirmed" ? next.name : undefined,
       );
       if (!result.ok) setError(result.error);
+      else advanceFocus(rootRef.current);
     });
   }
 
@@ -78,7 +80,7 @@ export function DecideCell({
 
   if (editing === "naming") {
     return (
-      <span className="flex flex-col gap-1.5">
+      <span ref={rootRef} className="flex flex-col gap-1.5">
         <span className="flex items-center gap-2">
           <input
             autoFocus
@@ -147,6 +149,7 @@ export function DecideCell({
 
   return (
     <span
+      ref={rootRef}
       className={`flex items-center gap-3 ${isPending ? "opacity-60" : ""}`}
     >
       {shown.status === "undecided" || editing === "redeciding" ? (
@@ -175,6 +178,32 @@ export function DecideCell({
       {error && <span className="text-xs text-red-700">{error}</span>}
     </span>
   );
+}
+
+// The sweep's keyboard pace (phase 11 §6.1): after a decision lands, focus
+// jumps to the next undecided card's first control, so a queue clears
+// without reaching for the mouse. DOM-order walk over the gallery's
+// data-candidate-card attributes — the cards are server HTML with no shared
+// React ancestor, so the document is the honest source of "next". A no-op
+// off the gallery (the attribute doesn't exist elsewhere) and on the last
+// card.
+function advanceFocus(from: HTMLElement | null) {
+  if (!from) return;
+  const own = from.closest("[data-candidate-card]");
+  if (!own) return;
+  const cards = [...document.querySelectorAll("[data-candidate-card]")];
+  const start = cards.indexOf(own as Element);
+  for (let i = start + 1; i < cards.length; i++) {
+    if (cards[i].getAttribute("data-undecided") === "true") {
+      const btn = cards[i].querySelector<HTMLButtonElement>(
+        "button:not([disabled])",
+      );
+      if (btn) {
+        btn.focus();
+        return;
+      }
+    }
+  }
 }
 
 // Why the machine proposed this candidate: the stored per-component

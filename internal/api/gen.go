@@ -19,6 +19,24 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for BulkDecisionItemAction.
+const (
+	BulkDecisionItemActionConfirmed BulkDecisionItemAction = "confirmed"
+	BulkDecisionItemActionDismissed BulkDecisionItemAction = "dismissed"
+)
+
+// Valid indicates whether the value is a known member of the BulkDecisionItemAction enum.
+func (e BulkDecisionItemAction) Valid() bool {
+	switch e {
+	case BulkDecisionItemActionConfirmed:
+		return true
+	case BulkDecisionItemActionDismissed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DecisionAction.
 const (
 	DecisionActionConfirmed DecisionAction = "confirmed"
@@ -91,6 +109,75 @@ func (e ImportStatus) Valid() bool {
 	case ImportStatusFailed:
 		return true
 	case ImportStatusRunning:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportPhotoPlaceKind.
+const (
+	ImportPhotoPlaceKindAir      ImportPhotoPlaceKind = "air"
+	ImportPhotoPlaceKindObserved ImportPhotoPlaceKind = "observed"
+	ImportPhotoPlaceKindRoad     ImportPhotoPlaceKind = "road"
+	ImportPhotoPlaceKindStop     ImportPhotoPlaceKind = "stop"
+	ImportPhotoPlaceKindUnknown  ImportPhotoPlaceKind = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the ImportPhotoPlaceKind enum.
+func (e ImportPhotoPlaceKind) Valid() bool {
+	switch e {
+	case ImportPhotoPlaceKindAir:
+		return true
+	case ImportPhotoPlaceKindObserved:
+		return true
+	case ImportPhotoPlaceKindRoad:
+		return true
+	case ImportPhotoPlaceKindStop:
+		return true
+	case ImportPhotoPlaceKindUnknown:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportPhotoPosSource.
+const (
+	ImportPhotoPosSourceExif    ImportPhotoPosSource = "exif"
+	ImportPhotoPosSourceSidecar ImportPhotoPosSource = "sidecar"
+)
+
+// Valid indicates whether the value is a known member of the ImportPhotoPosSource enum.
+func (e ImportPhotoPosSource) Valid() bool {
+	switch e {
+	case ImportPhotoPosSourceExif:
+		return true
+	case ImportPhotoPosSourceSidecar:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportPhotoTimeSource.
+const (
+	ImportPhotoTimeSourceExifLocal  ImportPhotoTimeSource = "exif_local"
+	ImportPhotoTimeSourceExifOffset ImportPhotoTimeSource = "exif_offset"
+	ImportPhotoTimeSourceGps        ImportPhotoTimeSource = "gps"
+	ImportPhotoTimeSourceSidecar    ImportPhotoTimeSource = "sidecar"
+)
+
+// Valid indicates whether the value is a known member of the ImportPhotoTimeSource enum.
+func (e ImportPhotoTimeSource) Valid() bool {
+	switch e {
+	case ImportPhotoTimeSourceExifLocal:
+		return true
+	case ImportPhotoTimeSourceExifOffset:
+		return true
+	case ImportPhotoTimeSourceGps:
+		return true
+	case ImportPhotoTimeSourceSidecar:
 		return true
 	default:
 		return false
@@ -268,6 +355,31 @@ func (e PhotoUploadResultStatus) Valid() bool {
 	}
 }
 
+// BulkDecisionItem defines model for BulkDecisionItem.
+type BulkDecisionItem struct {
+	Action BulkDecisionItemAction `json:"action"`
+
+	// Id Candidate id from the latest run.
+	Id int64 `json:"id"`
+
+	// Name Required, non-empty, when action is "confirmed".
+	Name *string `json:"name,omitempty"`
+}
+
+// BulkDecisionItemAction defines model for BulkDecisionItem.Action.
+type BulkDecisionItemAction string
+
+// BulkDecisionRequest defines model for BulkDecisionRequest.
+type BulkDecisionRequest struct {
+	Decisions []BulkDecisionItem `json:"decisions"`
+}
+
+// BulkDecisionResult defines model for BulkDecisionResult.
+type BulkDecisionResult struct {
+	// Decided How many decisions were applied (equals the request's count).
+	Decided int `json:"decided"`
+}
+
 // Candidate defines model for Candidate.
 type Candidate struct {
 	Days     float64   `json:"days"`
@@ -392,6 +504,50 @@ type ImportList struct {
 	Imports []Import `json:"imports"`
 }
 
+// ImportPhoto One photo-import record (phase 11 §4D), distinct from Photo deliberately: records ride imports and are never deletable from an adventure, while attached photos ride decisions and are — one schema for both would blur what each id can do. Records exist only for usable photos, so position and instant are always present.
+type ImportPhoto struct {
+	DistanceFromRouteM *float64 `json:"distance_from_route_m,omitempty"`
+	FarFlagged         *bool    `json:"far_flagged,omitempty"`
+	Id                 int64    `json:"id"`
+
+	// ImportId The photo import this record arrived in.
+	ImportId     int64  `json:"import_id"`
+	LegIndex     *int   `json:"leg_index,omitempty"`
+	OriginalName string `json:"original_name"`
+
+	// PlaceKind Same read-time placement as Photo.place_kind, against the same drawn geometry. Absent when the instant falls outside every leg and stop of the assembled journey.
+	PlaceKind *ImportPhotoPlaceKind `json:"place_kind,omitempty"`
+	Pos       LatLng                `json:"pos"`
+	PosSource ImportPhotoPosSource  `json:"pos_source"`
+	StopIndex *int                  `json:"stop_index,omitempty"`
+	TakenAt   time.Time             `json:"taken_at"`
+
+	// TakenOffsetSec Civil offset for display, seconds east of UTC.
+	TakenOffsetSec int `json:"taken_offset_sec"`
+	ThumbH         int `json:"thumb_h"`
+
+	// ThumbW Thumbnail pixel width; 0 means no thumbnail (HEIC).
+	ThumbW     int                   `json:"thumb_w"`
+	TimeSource ImportPhotoTimeSource `json:"time_source"`
+	UploadedAt time.Time             `json:"uploaded_at"`
+}
+
+// ImportPhotoPlaceKind Same read-time placement as Photo.place_kind, against the same drawn geometry. Absent when the instant falls outside every leg and stop of the assembled journey.
+type ImportPhotoPlaceKind string
+
+// ImportPhotoPosSource defines model for ImportPhoto.PosSource.
+type ImportPhotoPosSource string
+
+// ImportPhotoTimeSource defines model for ImportPhoto.TimeSource.
+type ImportPhotoTimeSource string
+
+// ImportPhotoList defines model for ImportPhotoList.
+type ImportPhotoList struct {
+	// Params The placement parameters that produced the derived fields (invariant 3) — photo_far_warn_m today.
+	Params map[string]interface{} `json:"params"`
+	Photos []ImportPhoto          `json:"photos"`
+}
+
 // ImportRejection defines model for ImportRejection.
 type ImportRejection struct {
 	// DetectedFormat The stable format label (zip, records-json, …) — what the file actually is, for mapping to a walkthrough anchor. Absent when the input was not recognisable at all.
@@ -426,7 +582,10 @@ type Journey struct {
 	InferredKm   float64 `json:"inferred_km"`
 	Legs         []Leg   `json:"legs"`
 	MergedPoints int     `json:"merged_points"`
-	ObservedKm   float64 `json:"observed_km"`
+
+	// ModeBreakdown Source-asserted per-mode distance (phase 11 §6.2): the window's activity distances summed by Google's own mode labels, ordered km-descending. These are the source's guesses (recorded failures: a 1,023 km "motorcycling" relocation, probability-0.00 modes; the pipeline itself trusts speed over mode for flight), so display keeps them visually subordinate, labels the source, and never sums them against measured geometry. Absent — not empty — when the journey's evidence carries no activities at all (photo-sourced journeys): the display states that rather than showing zeros.
+	ModeBreakdown *[]ModeKm `json:"mode_breakdown,omitempty"`
+	ObservedKm    float64   `json:"observed_km"`
 
 	// Params Exactly the parameters that produced this assembly (invariant 3).
 	Params        map[string]interface{} `json:"params"`
@@ -482,6 +641,14 @@ type ModeCount struct {
 	// Mode Google's mode guess, e.g. IN_PASSENGER_VEHICLE. Unreliable at extremes.
 	Mode string `json:"mode"`
 	N    int    `json:"n"`
+}
+
+// ModeKm defines model for ModeKm.
+type ModeKm struct {
+	Km float64 `json:"km"`
+
+	// Mode The source's own label (IN_BUS, FLYING, …), unreworded.
+	Mode string `json:"mode"`
 }
 
 // NameSuggestion defines model for NameSuggestion.
@@ -663,6 +830,9 @@ type UploadPhotoImportMultipartBody struct {
 	Label *string `json:"label,omitempty"`
 }
 
+// DecideCandidatesBulkJSONRequestBody defines body for DecideCandidatesBulk for application/json ContentType.
+type DecideCandidatesBulkJSONRequestBody = BulkDecisionRequest
+
 // DecideCandidateJSONRequestBody defines body for DecideCandidate for application/json ContentType.
 type DecideCandidateJSONRequestBody = DecisionRequest
 
@@ -680,9 +850,15 @@ type ServerInterface interface {
 	// ListCandidates The latest detection run's candidates, with decision state attached
 	// (GET /candidates)
 	ListCandidates(w http.ResponseWriter, r *http.Request)
+	// DecideCandidatesBulk Decide several candidates in one atomic request
+	// (POST /candidates/decisions)
+	DecideCandidatesBulk(w http.ResponseWriter, r *http.Request)
 	// DecideCandidate Confirm or dismiss a candidate
 	// (POST /candidates/{id}/decision)
 	DecideCandidate(w http.ResponseWriter, r *http.Request, id int64)
+	// ListCandidateImportPhotos Photo-import records whose capture falls in this candidate's span
+	// (GET /candidates/{id}/import-photos)
+	ListCandidateImportPhotos(w http.ResponseWriter, r *http.Request, id int64)
 	// GetCandidateJourney The journey reconstruction for a candidate of the latest run
 	// (GET /candidates/{id}/journey)
 	GetCandidateJourney(w http.ResponseWriter, r *http.Request, id int64)
@@ -698,6 +874,9 @@ type ServerInterface interface {
 	// GetHealth Readiness check
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// GetImportPhotoThumbnail The stored thumbnail of a photo-import record
+	// (GET /import-photos/{id}/thumbnail)
+	GetImportPhotoThumbnail(w http.ResponseWriter, r *http.Request, id int64)
 	// ListImports Every import attempt, newest first
 	// (GET /imports)
 	ListImports(w http.ResponseWriter, r *http.Request)
@@ -741,6 +920,20 @@ func (siw *ServerInterfaceWrapper) ListCandidates(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// DecideCandidatesBulk operation middleware
+func (siw *ServerInterfaceWrapper) DecideCandidatesBulk(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DecideCandidatesBulk(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DecideCandidate operation middleware
 func (siw *ServerInterfaceWrapper) DecideCandidate(w http.ResponseWriter, r *http.Request) {
 
@@ -758,6 +951,32 @@ func (siw *ServerInterfaceWrapper) DecideCandidate(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DecideCandidate(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCandidateImportPhotos operation middleware
+func (siw *ServerInterfaceWrapper) ListCandidateImportPhotos(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCandidateImportPhotos(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -876,6 +1095,32 @@ func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetImportPhotoThumbnail operation middleware
+func (siw *ServerInterfaceWrapper) GetImportPhotoThumbnail(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetImportPhotoThumbnail(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1131,11 +1376,14 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/imports/photos", wrapper.UploadPhotoImport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/imports/{id}", wrapper.GetImport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates", wrapper.ListCandidates)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/decisions", wrapper.DecideCandidatesBulk)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/journey", wrapper.GetCandidateJourney)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/name-suggestion", wrapper.SuggestCandidateName)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/decision", wrapper.DecideCandidate)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/photos", wrapper.ListCandidatePhotos)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/photos", wrapper.UploadCandidatePhotos)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/import-photos", wrapper.ListCandidateImportPhotos)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-photos/{id}/thumbnail", wrapper.GetImportPhotoThumbnail)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/photos/{id}/thumbnail", wrapper.GetPhotoThumbnail)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/photos/{id}", wrapper.DeletePhoto)
 
@@ -1159,6 +1407,56 @@ func (response ListCandidates200JSONResponse) VisitListCandidatesResponse(w http
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideCandidatesBulkRequestObject struct {
+	Body *DecideCandidatesBulkJSONRequestBody
+}
+
+type DecideCandidatesBulkResponseObject interface {
+	VisitDecideCandidatesBulkResponse(w http.ResponseWriter) error
+}
+
+type DecideCandidatesBulk200JSONResponse BulkDecisionResult
+
+func (response DecideCandidatesBulk200JSONResponse) VisitDecideCandidatesBulkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideCandidatesBulk400JSONResponse Error
+
+func (response DecideCandidatesBulk400JSONResponse) VisitDecideCandidatesBulkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideCandidatesBulk404JSONResponse Error
+
+func (response DecideCandidatesBulk404JSONResponse) VisitDecideCandidatesBulkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1203,6 +1501,42 @@ func (response DecideCandidate400JSONResponse) VisitDecideCandidateResponse(w ht
 type DecideCandidate404JSONResponse Error
 
 func (response DecideCandidate404JSONResponse) VisitDecideCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCandidateImportPhotosRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type ListCandidateImportPhotosResponseObject interface {
+	VisitListCandidateImportPhotosResponse(w http.ResponseWriter) error
+}
+
+type ListCandidateImportPhotos200JSONResponse ImportPhotoList
+
+func (response ListCandidateImportPhotos200JSONResponse) VisitListCandidateImportPhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCandidateImportPhotos404JSONResponse Error
+
+func (response ListCandidateImportPhotos404JSONResponse) VisitListCandidateImportPhotosResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1432,6 +1766,48 @@ func (response GetHealth503JSONResponse) VisitGetHealthResponse(w http.ResponseW
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetImportPhotoThumbnailRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type GetImportPhotoThumbnailResponseObject interface {
+	VisitGetImportPhotoThumbnailResponse(w http.ResponseWriter) error
+}
+
+type GetImportPhotoThumbnail200ImagejpegResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response GetImportPhotoThumbnail200ImagejpegResponse) VisitGetImportPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetImportPhotoThumbnail404JSONResponse Error
+
+func (response GetImportPhotoThumbnail404JSONResponse) VisitGetImportPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1684,9 +2060,15 @@ type StrictServerInterface interface {
 	// ListCandidates The latest detection run's candidates, with decision state attached
 	// (GET /candidates)
 	ListCandidates(ctx context.Context, request ListCandidatesRequestObject) (ListCandidatesResponseObject, error)
+	// DecideCandidatesBulk Decide several candidates in one atomic request
+	// (POST /candidates/decisions)
+	DecideCandidatesBulk(ctx context.Context, request DecideCandidatesBulkRequestObject) (DecideCandidatesBulkResponseObject, error)
 	// DecideCandidate Confirm or dismiss a candidate
 	// (POST /candidates/{id}/decision)
 	DecideCandidate(ctx context.Context, request DecideCandidateRequestObject) (DecideCandidateResponseObject, error)
+	// ListCandidateImportPhotos Photo-import records whose capture falls in this candidate's span
+	// (GET /candidates/{id}/import-photos)
+	ListCandidateImportPhotos(ctx context.Context, request ListCandidateImportPhotosRequestObject) (ListCandidateImportPhotosResponseObject, error)
 	// GetCandidateJourney The journey reconstruction for a candidate of the latest run
 	// (GET /candidates/{id}/journey)
 	GetCandidateJourney(ctx context.Context, request GetCandidateJourneyRequestObject) (GetCandidateJourneyResponseObject, error)
@@ -1702,6 +2084,9 @@ type StrictServerInterface interface {
 	// GetHealth Readiness check
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
+	// GetImportPhotoThumbnail The stored thumbnail of a photo-import record
+	// (GET /import-photos/{id}/thumbnail)
+	GetImportPhotoThumbnail(ctx context.Context, request GetImportPhotoThumbnailRequestObject) (GetImportPhotoThumbnailResponseObject, error)
 	// ListImports Every import attempt, newest first
 	// (GET /imports)
 	ListImports(ctx context.Context, request ListImportsRequestObject) (ListImportsResponseObject, error)
@@ -1785,6 +2170,37 @@ func (sh *strictHandler) ListCandidates(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// DecideCandidatesBulk operation middleware
+func (sh *strictHandler) DecideCandidatesBulk(w http.ResponseWriter, r *http.Request) {
+	var request DecideCandidatesBulkRequestObject
+
+	var body DecideCandidatesBulkJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DecideCandidatesBulk(ctx, request.(DecideCandidatesBulkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DecideCandidatesBulk")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DecideCandidatesBulkResponseObject); ok {
+		if err := validResponse.VisitDecideCandidatesBulkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // DecideCandidate operation middleware
 func (sh *strictHandler) DecideCandidate(w http.ResponseWriter, r *http.Request, id int64) {
 	var request DecideCandidateRequestObject
@@ -1811,6 +2227,32 @@ func (sh *strictHandler) DecideCandidate(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DecideCandidateResponseObject); ok {
 		if err := validResponse.VisitDecideCandidateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCandidateImportPhotos operation middleware
+func (sh *strictHandler) ListCandidateImportPhotos(w http.ResponseWriter, r *http.Request, id int64) {
+	var request ListCandidateImportPhotosRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCandidateImportPhotos(ctx, request.(ListCandidateImportPhotosRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCandidateImportPhotos")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCandidateImportPhotosResponseObject); ok {
+		if err := validResponse.VisitListCandidateImportPhotosResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1946,6 +2388,32 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHealthResponseObject); ok {
 		if err := validResponse.VisitGetHealthResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetImportPhotoThumbnail operation middleware
+func (sh *strictHandler) GetImportPhotoThumbnail(w http.ResponseWriter, r *http.Request, id int64) {
+	var request GetImportPhotoThumbnailRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetImportPhotoThumbnail(ctx, request.(GetImportPhotoThumbnailRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetImportPhotoThumbnail")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetImportPhotoThumbnailResponseObject); ok {
+		if err := validResponse.VisitGetImportPhotoThumbnailResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

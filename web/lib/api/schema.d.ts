@@ -108,6 +108,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide several candidates in one atomic request
+         * @description Bulk triage (phase 11 §6.1, the first pilot report's friction): confirm or dismiss many candidates at once. All-or-nothing — every item is validated (a confirm carries a non-empty name; every id is in the latest run) and applied in one transaction, or nothing is recorded and the error says why. Anchoring and re-decide semantics are exactly the single-decision endpoint's, per item.
+         */
+        post: operations["decideCandidatesBulk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/candidates/{id}/journey": {
         parameters: {
             query?: never;
@@ -186,6 +206,46 @@ export interface paths {
          * @description Multipart upload through the one API boundary (BRIEF §1.3): images and optional Google Photos Takeout JSON sidecars in a single request. Only the thumbnail and extracted metadata are stored; original bytes are discarded after extraction and never written to disk. Results are per-file — one unsupported file never fails the batch. Re-upload of identical bytes reports "duplicate" and stores nothing (content- hash idempotency, the imports precedent). Sidecars pair with their image by filename, falling back to their title field.
          */
         post: operations["uploadCandidatePhotos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/candidates/{id}/import-photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Photo-import records whose capture falls in this candidate's span
+         * @description The photo records (phase 11 §4D) whose capture instant lies inside the candidate's span, joined at read time and never stored against the candidate (DECISIONS 2026-08-26): records ride imports, so re-detection cannot orphan them and there is nothing to migrate. Available for any candidate of the latest run — records are facts about the window, and seeing them helps triage as much as it decorates a confirmed adventure. Placement fields are derived against the same assembled journey the page draws, exactly as for attached photos.
+         */
+        get: operations["listCandidateImportPhotos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/import-photos/{id}/thumbnail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The stored thumbnail of a photo-import record
+         * @description JPEG bytes from the shared thumbnail store, metadata-stripped like every thumbnail. 404 both for an unknown record and for a record with no thumbnail (HEIC: metadata readable at ingest, pixels not decodable — thumb_w/thumb_h are 0 on the record).
+         */
+        get: operations["getImportPhotoThumbnail"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -501,6 +561,8 @@ export interface components {
              * @description Google's own activity distances minus FLYING-mode activities — the comparable side of the road validation. Air must leave both sides or neither. Mode is a guess: a flight Google mislabelled as ground inflates this figure, and the divergence flag is the tripwire that surfaces it.
              */
             google_ground_km: number;
+            /** @description Source-asserted per-mode distance (phase 11 §6.2): the window's activity distances summed by Google's own mode labels, ordered km-descending. These are the source's guesses (recorded failures: a 1,023 km "motorcycling" relocation, probability-0.00 modes; the pipeline itself trusts speed over mode for flight), so display keeps them visually subordinate, labels the source, and never sums them against measured geometry. Absent — not empty — when the journey's evidence carries no activities at all (photo-sourced journeys): the display states that rather than showing zeros. */
+            mode_breakdown?: components["schemas"]["ModeKm"][];
             /**
              * Format: double
              * @description Signed percentage by which ground_km differs from google_ground_km. Absent when Google recorded no ground distance in the window — nothing to compare is not zero divergence. A conversation starter, never a gate: unroutable gaps under-count, OSM detours over-count, and both explain themselves on the map.
@@ -560,6 +622,72 @@ export interface components {
             distance_from_route_m?: number;
             /** @description True when distance_from_route_m exceeds the photo_far_warn_m parameter (echoed in the list's params). The photo's position is a measurement — the most accurate in the project — so the flag marks a disagreement between the photo and the inferred route, not a doubt about the photo. A conversation starter, never a gate. */
             far_flagged?: boolean;
+        };
+        BulkDecisionItem: {
+            /**
+             * Format: int64
+             * @description Candidate id from the latest run.
+             */
+            id: number;
+            /** @enum {string} */
+            action: "confirmed" | "dismissed";
+            /** @description Required, non-empty, when action is "confirmed". */
+            name?: string;
+        };
+        BulkDecisionRequest: {
+            decisions: components["schemas"]["BulkDecisionItem"][];
+        };
+        BulkDecisionResult: {
+            /** @description How many decisions were applied (equals the request's count). */
+            decided: number;
+        };
+        ModeKm: {
+            /** @description The source's own label (IN_BUS, FLYING, …), unreworded. */
+            mode: string;
+            /** Format: double */
+            km: number;
+        };
+        /** @description One photo-import record (phase 11 §4D), distinct from Photo deliberately: records ride imports and are never deletable from an adventure, while attached photos ride decisions and are — one schema for both would blur what each id can do. Records exist only for usable photos, so position and instant are always present. */
+        ImportPhoto: {
+            /** Format: int64 */
+            id: number;
+            /**
+             * Format: int64
+             * @description The photo import this record arrived in.
+             */
+            import_id: number;
+            original_name: string;
+            /** Format: date-time */
+            taken_at: string;
+            /** @description Civil offset for display, seconds east of UTC. */
+            taken_offset_sec: number;
+            /** @enum {string} */
+            time_source: "gps" | "exif_offset" | "sidecar" | "exif_local";
+            pos: components["schemas"]["LatLng"];
+            /** @enum {string} */
+            pos_source: "exif" | "sidecar";
+            /** @description Thumbnail pixel width; 0 means no thumbnail (HEIC). */
+            thumb_w: number;
+            thumb_h: number;
+            /** Format: date-time */
+            uploaded_at: string;
+            /**
+             * @description Same read-time placement as Photo.place_kind, against the same drawn geometry. Absent when the instant falls outside every leg and stop of the assembled journey.
+             * @enum {string}
+             */
+            place_kind?: "observed" | "road" | "unknown" | "air" | "stop";
+            leg_index?: number;
+            stop_index?: number;
+            /** Format: double */
+            distance_from_route_m?: number;
+            far_flagged?: boolean;
+        };
+        ImportPhotoList: {
+            photos: components["schemas"]["ImportPhoto"][];
+            /** @description The placement parameters that produced the derived fields (invariant 3) — photo_far_warn_m today. */
+            params: {
+                [key: string]: unknown;
+            };
         };
         PhotoUploadResult: {
             /** @description The uploaded filename this result is about. */
@@ -803,6 +931,48 @@ export interface operations {
             };
         };
     };
+    decideCandidatesBulk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Every decision applied. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkDecisionResult"];
+                };
+            };
+            /** @description Invalid request — empty list, an unknown action, a confirm without a name, or the same candidate twice. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description One or more ids are not in the latest run (stale after re-detection). Nothing was applied; the message names them. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     getCandidateJourney: {
         parameters: {
             query?: never;
@@ -1000,6 +1170,69 @@ export interface operations {
             };
             /** @description The candidate has no confirmed decision. Photos attach to adventures — confirmed candidates — because they are user data and must not attach to disposable rows (BRIEF §3A). */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listCandidateImportPhotos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Candidate id from the latest run. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The records, in capture order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPhotoList"];
+                };
+            };
+            /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getImportPhotoThumbnail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The thumbnail. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description No such record, or the record has no thumbnail. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -54,6 +54,44 @@ func (s *Store) InsertDecision(ctx context.Context, action string, name *string,
 	return d, err
 }
 
+// BulkDecision is one item of an atomic bulk triage write (phase 11 §6.1).
+// The caller (the API layer) resolves candidate identity and the matched
+// decision id; the store's job is exactly the single-decision SQL, once per
+// item, inside one transaction.
+type BulkDecision struct {
+	Anchor   CandidateRow
+	Action   string
+	Name     *string
+	UpdateID *int64 // matched decision to re-decide in place; nil = fresh insert
+}
+
+// DecideBulk applies every item or none: a mid-list failure rolls the whole
+// batch back, so "some of your sweep landed" is a state that cannot exist.
+func (s *Store) DecideBulk(ctx context.Context, items []BulkDecision) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	for _, it := range items {
+		if it.UpdateID != nil {
+			_, err = tx.Exec(ctx, `UPDATE decisions SET action=$2, name=$3, anchor_span_start=$4, anchor_span_end=$5,
+				anchor_dest_lat=$6, anchor_dest_lon=$7, updated_at=now() WHERE id=$1`,
+				*it.UpdateID, it.Action, it.Name, it.Anchor.SpanStart, it.Anchor.SpanEnd,
+				it.Anchor.Dest.Lat, it.Anchor.Dest.Lon)
+		} else {
+			_, err = tx.Exec(ctx, `INSERT INTO decisions (action, name, anchor_span_start, anchor_span_end, anchor_dest_lat, anchor_dest_lon)
+				VALUES ($1,$2,$3,$4,$5,$6)`,
+				it.Action, it.Name, it.Anchor.SpanStart, it.Anchor.SpanEnd,
+				it.Anchor.Dest.Lat, it.Anchor.Dest.Lon)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
+}
+
 // UpdateDecision re-decides in place, refreshing the anchor to the candidate
 // the user is looking at now (BRIEF §3.1). The user overwriting their own
 // decision is the one legitimate mutation of user data.

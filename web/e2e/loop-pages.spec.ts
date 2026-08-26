@@ -5,7 +5,7 @@
 import { expect, test } from "@playwright/test";
 
 import { WELCOME_SECTIONS } from "../lib/rejection-anchors";
-import { MD, SM, expectNoHorizontalScroll, viewportWidth } from "./helpers";
+import { MD, SM, clickUntil, expectNoHorizontalScroll, viewportWidth } from "./helpers";
 
 test.describe("no horizontal scroll on any v1 loop page", () => {
   for (const path of ["/", "/welcome", "/adventures", "/candidates", "/imports"]) {
@@ -49,6 +49,48 @@ test("candidates: every gallery card carries art, figures, and a decision", asyn
     await expect(
       card.locator('a[href^="/adventure/"]').first(),
     ).toBeVisible();
+  }
+});
+
+test("candidates: bulk triage — selection summons the bar; score order sorts", async ({ page }) => {
+  // Read-only walk of phase 11 §6.1's surfaces: ticking a checkbox is
+  // client state (no server mutation), so the bar's appearance is safe to
+  // drive; its action buttons are never clicked here — the Go suite owns
+  // the mutation path.
+  await page.goto("/candidates");
+  const boxes = page.locator('main input[type="checkbox"]');
+  const n = await boxes.count();
+  expect(n).toBeGreaterThan(0);
+
+  const bar = page.getByRole("region", { name: "Bulk decision" });
+  await expect(bar).toBeHidden();
+  // clickUntil, not .check(): a click before hydration silently no-ops
+  // (the phase 7 trap) — clicking until the bar appears waits it out.
+  // Clicks toggle, so land on an odd count by pairing each retry.
+  await clickUntil(boxes.first(), bar);
+  await expect(bar).toBeVisible();
+  await expect(bar.getByText("1 selected")).toBeVisible();
+  await expect(
+    bar.getByRole("button", { name: "Dismiss selected" }),
+  ).toBeVisible();
+  await bar.getByRole("button", { name: "Clear" }).click();
+  await expect(bar).toBeHidden();
+
+  // The sweep order: ?sort=score renders scores non-increasing.
+  await page.goto("/candidates?sort=score");
+  // The score element, not card textContent: concatenated text runs the
+  // score into the next figure ("score 100" + "28 days" → "10028").
+  const scores = await page
+    .locator('main ul > li [title^="Confidence"]')
+    .evaluateAll((els) =>
+      els.map((el) => {
+        const m = el.textContent?.match(/score (\d+|—)/);
+        return m && m[1] !== "—" ? Number(m[1]) : -1;
+      }),
+    );
+  expect(scores.length).toBeGreaterThan(0);
+  for (let i = 1; i < scores.length; i++) {
+    expect(scores[i]).toBeLessThanOrEqual(scores[i - 1]);
   }
 });
 

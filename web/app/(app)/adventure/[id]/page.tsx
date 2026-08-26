@@ -51,12 +51,19 @@ export default async function AdventurePage({
   const confirmed = candidate?.decision?.action === "confirmed";
 
   // Photos exist only for confirmed adventures (phase 4 BRIEF §3A) — the
-  // list call is skipped otherwise rather than made to 409.
-  const photos = confirmed
-    ? (
-        await api.GET("/candidates/{id}/photos", { params: { path: { id } } })
-      ).data?.photos ?? []
-    : null;
+  // list call is skipped otherwise rather than made to 409. Import-photo
+  // records are different (CP4): span-joined at read time for any candidate,
+  // because during triage they are evidence of what the trip was.
+  const [photos, importPhotos] = await Promise.all([
+    confirmed
+      ? api
+          .GET("/candidates/{id}/photos", { params: { path: { id } } })
+          .then((r) => r.data?.photos ?? [])
+      : Promise.resolve(null),
+    api
+      .GET("/candidates/{id}/import-photos", { params: { path: { id } } })
+      .then((r) => r.data?.photos ?? []),
+  ]);
 
   // The plate number: this adventure's position among confirmed adventures
   // in date order — derived from the data on every render, never stored.
@@ -79,6 +86,7 @@ export default async function AdventurePage({
         journey={journey}
         candidate={candidate}
         photos={photos}
+        importPhotos={importPhotos}
         styleUrl={MAP_STYLE_URL}
         plate={plate}
       />

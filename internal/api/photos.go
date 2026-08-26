@@ -223,7 +223,7 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 	var haveJourney bool
 	for _, r := range rows {
 		if r.TakenAt != nil && r.Lat != nil {
-			jv, err := s.assembledJourney(ctx, cand)
+			jv, _, err := s.assembledJourney(ctx, cand)
 			if err != nil {
 				return nil, err
 			}

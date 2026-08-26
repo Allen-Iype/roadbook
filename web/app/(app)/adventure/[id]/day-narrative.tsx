@@ -10,11 +10,11 @@
 // into the client graph, not every file in it.
 import { clockOf, dayLabel, type Day, type DayEvent } from "@/lib/slice-days";
 import { fmtDuration, fmtLatLon } from "@/lib/format";
+import type { DisplayPhoto } from "@/lib/photo-display";
 import type { components } from "@/lib/api/schema";
 
 type Journey = components["schemas"]["Journey"];
 type Candidate = components["schemas"]["Candidate"];
-type Photo = components["schemas"]["Photo"];
 
 export function DayNarrative({
   days,
@@ -27,12 +27,12 @@ export function DayNarrative({
   days: Day[];
   journey: Journey;
   candidate?: Candidate;
-  photos: Photo[];
+  photos: DisplayPhoto[];
   selected: number | null;
   onSelect: (dayIndex: number) => void;
 }) {
-  const byLeg = new Map<number, Photo[]>();
-  const byStop = new Map<number, Photo[]>();
+  const byLeg = new Map<number, DisplayPhoto[]>();
+  const byStop = new Map<number, DisplayPhoto[]>();
   for (const p of photos) {
     if (p.leg_index !== undefined)
       byLeg.set(p.leg_index, [...(byLeg.get(p.leg_index) ?? []), p]);
@@ -70,8 +70,8 @@ function DaySection({
   day: Day;
   journey: Journey;
   candidate?: Candidate;
-  byLeg: Map<number, Photo[]>;
-  byStop: Map<number, Photo[]>;
+  byLeg: Map<number, DisplayPhoto[]>;
+  byStop: Map<number, DisplayPhoto[]>;
   active: boolean;
   onSelect: () => void;
 }) {
@@ -188,8 +188,8 @@ function EventRow({
   day: Day;
   journey: Journey;
   candidate?: Candidate;
-  byLeg: Map<number, Photo[]>;
-  byStop: Map<number, Photo[]>;
+  byLeg: Map<number, DisplayPhoto[]>;
+  byStop: Map<number, DisplayPhoto[]>;
 }) {
   const { time, chip, body, photos } = eventBits(
     event,
@@ -228,9 +228,9 @@ function eventBits(
   day: Day,
   journey: Journey,
   candidate: Candidate | undefined,
-  byLeg: Map<number, Photo[]>,
-  byStop: Map<number, Photo[]>,
-): { time: string; chip: string; body: React.ReactNode; photos?: Photo[] } {
+  byLeg: Map<number, DisplayPhoto[]>,
+  byStop: Map<number, DisplayPhoto[]>,
+): { time: string; chip: string; body: React.ReactNode; photos?: DisplayPhoto[] } {
   // A dwell photo appears on the day it was taken — the one dwell event
   // instance (begin, intermediate day, end) whose civil date matches.
   const stopPhotos = (stopIndex: number) =>
@@ -389,21 +389,23 @@ function eventBits(
 // Photos slot into the timeline by placement (BRIEF §3G): each placed photo
 // appears inline on the leg or dwell whose span held its instant —
 // thumbnails where the journey says they happened.
-function PhotoThumbs({ photos }: { photos: Photo[] }) {
+function PhotoThumbs({ photos }: { photos: DisplayPhoto[] }) {
   return (
     <span className="inline-flex gap-1 align-middle">
-      {photos.map((p) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={p.id}
-          src={`/api/photos/${p.id}/thumb`}
-          alt={p.original_name}
-          title={p.original_name}
-          className={`h-6 w-6 rounded object-cover ${
-            p.far_flagged ? "ring-1 ring-flag" : ""
-          }`}
-        />
-      ))}
+      {photos
+        .filter((p) => p.thumb_url !== null)
+        .map((p) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={p.key}
+            src={p.thumb_url!}
+            alt={p.original_name}
+            title={p.original_name}
+            className={`h-6 w-6 rounded object-cover ${
+              p.far_flagged ? "ring-1 ring-flag" : ""
+            }`}
+          />
+        ))}
     </span>
   );
 }

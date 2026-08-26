@@ -9,20 +9,25 @@ import { useMemo, useState } from "react";
 
 import { LegKindLegend } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
+import { fmtMode } from "@/lib/format";
 import { fmtDateRange, isFixLeg, sliceDays } from "@/lib/slice-days";
 import { DayNarrative } from "./day-narrative";
+import { ImportPhotosStrip } from "./import-photos-strip";
 import { PhotosSection } from "./photos-section";
 import { RouteMap } from "./route-map";
+import { displayAttached, displayImported } from "@/lib/photo-display";
 import type { components } from "@/lib/api/schema";
 
 type Journey = components["schemas"]["Journey"];
 type Candidate = components["schemas"]["Candidate"];
 type Photo = components["schemas"]["Photo"];
+type ImportPhoto = components["schemas"]["ImportPhoto"];
 
 export function AdventureView({
   journey,
   candidate,
   photos,
+  importPhotos,
   styleUrl,
   plate,
 }: {
@@ -30,6 +35,8 @@ export function AdventureView({
   candidate?: Candidate;
   /** null when the candidate is not confirmed — photos do not exist then. */
   photos: Photo[] | null;
+  /** Records span-joined to this candidate (CP4) — any candidate, read-time. */
+  importPhotos: ImportPhoto[];
   styleUrl: string;
   /** Position among confirmed adventures in date order; null if unconfirmed. */
   plate: number | null;
@@ -37,7 +44,15 @@ export function AdventureView({
   // Memoised: these feed effect dependencies in RouteMap, and a fresh array
   // identity per render would tear the map down on every day selection.
   const days = useMemo(() => sliceDays(journey), [journey]);
-  const photoList = useMemo(() => photos ?? [], [photos]);
+  // Both provenances flatten to one display list for the map and the
+  // narrative — the strip below keeps them apart, where capability differs.
+  const photoList = useMemo(
+    () => [
+      ...(photos ?? []).map(displayAttached),
+      ...importPhotos.map(displayImported),
+    ],
+    [photos, importPhotos],
+  );
   const [selected, setSelected] = useState<number | null>(null);
 
   return (
@@ -60,6 +75,7 @@ export function AdventureView({
         {photos !== null && candidate && (
           <PhotosSection candidateId={candidate.id} photos={photos} />
         )}
+        <ImportPhotosStrip photos={importPhotos.map(displayImported)} />
       </article>
 
       {journey.legs.length > 0 && (
@@ -195,6 +211,7 @@ function Cover({
             <> · countries derived from route points</>
           )}
         </p>
+        <ModeLine journey={journey} />
       </div>
 
       <Divergence journey={journey} />
@@ -209,6 +226,38 @@ function Cover({
         )}
       </p>
     </header>
+  );
+}
+
+// The source-asserted mode line (phase 11 §6.2): Google's own labels and
+// distances, visually subordinate to the measured figures above it and never
+// summed with them — the source's guesses have recorded failures (a 1,023 km
+// "motorcycling" relocation; probability-0.00 modes), and the pipeline
+// itself trusts speed over mode for flight classification. Absent breakdown
+// (a photo-sourced journey has no activities) states the absence, never
+// zeros. Reproduction: `roadbook journey -candidate N` prints the same line.
+function ModeLine({ journey }: { journey: Journey }) {
+  const bd = journey.mode_breakdown;
+  if (bd === undefined) {
+    return (
+      <p className="mt-1.5 text-xs text-ink-2">
+        No mode record — this journey&apos;s evidence carries no activity
+        data.
+      </p>
+    );
+  }
+  if (bd.length === 0) return null;
+  return (
+    <p className="mt-1.5 text-xs text-ink-2">
+      By mode, as the source recorded it (modes are guesses):{" "}
+      {bd.map((m, i) => (
+        <span key={m.mode}>
+          {i > 0 && " · "}
+          {fmtMode(m.mode)}{" "}
+          <span className="font-mono">{m.km.toFixed(1)} km</span>
+        </span>
+      ))}
+    </p>
   );
 }
 

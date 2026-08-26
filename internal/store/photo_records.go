@@ -25,6 +25,7 @@ type PhotoRecord struct {
 	Lat, Lon       float64
 	PosSource      string
 	ThumbW, ThumbH int // 0,0 = no thumbnail (HEIC pixels are not decodable here)
+	UploadedAt     time.Time
 }
 
 // PhotoIngest pairs one photo's fix with its record for import.
@@ -110,23 +111,53 @@ func (s *Store) ImportPhotos(ctx context.Context, importID int64, items []PhotoI
 	return res, tx.Commit(ctx)
 }
 
-// ListPhotoRecords returns one import's records in upload order.
-func (s *Store) ListPhotoRecords(ctx context.Context, importID int64) ([]PhotoRecord, error) {
-	rows, err := s.pool.Query(ctx, `SELECT id, import_id, content_hash, original_name, taken_at, taken_offset_sec,
-		time_source, lat, lon, pos_source, thumb_w, thumb_h
-		FROM photo_records WHERE import_id = $1 ORDER BY id`, importID)
+const photoRecordSelect = `SELECT id, import_id, content_hash, original_name, taken_at, taken_offset_sec,
+	time_source, lat, lon, pos_source, thumb_w, thumb_h, uploaded_at
+	FROM photo_records`
+
+func scanPhotoRecord(rows pgx.Rows) (PhotoRecord, error) {
+	var r PhotoRecord
+	err := rows.Scan(&r.ID, &r.ImportID, &r.ContentHash, &r.OriginalName, &r.TakenAt, &r.TakenOffsetSec,
+		&r.TimeSource, &r.Lat, &r.Lon, &r.PosSource, &r.ThumbW, &r.ThumbH, &r.UploadedAt)
+	return r, err
+}
+
+func (s *Store) photoRecordsWhere(ctx context.Context, clause string, args ...any) ([]PhotoRecord, error) {
+	rows, err := s.pool.Query(ctx, photoRecordSelect+" "+clause, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var out []PhotoRecord
 	for rows.Next() {
-		var r PhotoRecord
-		if err := rows.Scan(&r.ID, &r.ImportID, &r.ContentHash, &r.OriginalName, &r.TakenAt, &r.TakenOffsetSec,
-			&r.TimeSource, &r.Lat, &r.Lon, &r.PosSource, &r.ThumbW, &r.ThumbH); err != nil {
+		r, err := scanPhotoRecord(rows)
+		if err != nil {
 			return nil, err
 		}
 		out = append(out, r)
 	}
 	return out, rows.Err()
+}
+
+// ListPhotoRecords returns one import's records in upload order.
+func (s *Store) ListPhotoRecords(ctx context.Context, importID int64) ([]PhotoRecord, error) {
+	return s.photoRecordsWhere(ctx, `WHERE import_id = $1 ORDER BY id`, importID)
+}
+
+// ListPhotoRecordsInSpan returns the records whose capture instant falls
+// inside [from, to], in capture order. This query IS the record→adventure
+// relation (DECISIONS 2026-08-26): records are never anchored to candidates,
+// so re-detection has nothing to orphan and deletion stays the import's
+// concern.
+func (s *Store) ListPhotoRecordsInSpan(ctx context.Context, from, to time.Time) ([]PhotoRecord, error) {
+	return s.photoRecordsWhere(ctx, `WHERE taken_at >= $1 AND taken_at <= $2 ORDER BY taken_at, id`, from, to)
+}
+
+// GetPhotoRecord returns one record by id, nil when absent.
+func (s *Store) GetPhotoRecord(ctx context.Context, id int64) (*PhotoRecord, error) {
+	recs, err := s.photoRecordsWhere(ctx, `WHERE id = $1`, id)
+	if err != nil || len(recs) == 0 {
+		return nil, err
+	}
+	return &recs[0], nil
 }

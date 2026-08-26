@@ -19,6 +19,19 @@ export function fmtDuration(minutes: number): string {
   return `${h} h ${m} min`;
 }
 
+/**
+ * "IN_PASSENGER_VEHICLE" → "passenger vehicle" — the source's mode label
+ * made readable without editorialising: strip the IN_/ON_ prefix, lowercase,
+ * underscores to spaces. Unknown labels degrade to the same treatment rather
+ * than throwing (the source adds labels without announcement).
+ */
+export function fmtMode(mode: string): string {
+  return mode
+    .replace(/^(IN|ON)_/, "")
+    .toLowerCase()
+    .replace(/_/g, " ");
+}
+
 /** "65.71°N 21.67°W" — the atlas-margin coordinate style. */
 export function fmtLatLon(lat: number, lon: number): string {
   const ns = lat < 0 ? "S" : "N";

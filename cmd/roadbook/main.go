@@ -591,6 +591,9 @@ func runJourney(args []string) error {
 	}
 
 	var j journey.Journey
+	// The window's activities, kept for the source-asserted mode breakdown —
+	// computed outside Assemble (the golden contract pins assembly's output).
+	var acts []domain.Activity
 	switch {
 	case *candidateID != 0:
 		// DB mode mirrors the API handler exactly — Assemble, then apply the
@@ -615,6 +618,7 @@ func runJourney(args []string) error {
 			return err
 		}
 		j = journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, p)
+		acts = obs.Activities
 		lookup, err := s.LookupRoutes(ctx, route.UnknownKeys(j, api.RouteProfile))
 		if err != nil {
 			return err
@@ -641,6 +645,7 @@ func runJourney(args []string) error {
 		fmt.Printf("parsed %s: %d visits, %d activities, %d path points, %d raw positions\n",
 			filepath.Base(*src), st.Visits, st.Activities, st.Points, st.RawPositions)
 		j = journey.Assemble(obs, winStart, winEnd, p)
+		acts = obs.Activities
 	default:
 		fs.Usage()
 		return fmt.Errorf("either -candidate id, or -src with -from and -to")
@@ -671,6 +676,22 @@ func runJourney(args []string) error {
 	}
 	if j.GoogleDistanceKm > 0 {
 		fmt.Printf("google's own figure %.1f km total\n", j.GoogleDistanceKm)
+	}
+	// Source-asserted per-mode figures (phase 11 §6.2) — the reproduction
+	// command for the adventure page's mode line. Absent activities (a
+	// photo-sourced journey) print as the absence they are, never zeros.
+	if bd := journey.ModeBreakdown(acts, j.WindowStart, j.WindowEnd); len(bd) > 0 {
+		fmt.Printf("modes, source-asserted (Google's labels, guesses):")
+		for i, m := range bd {
+			sep := " "
+			if i > 0 {
+				sep = " · "
+			}
+			fmt.Printf("%s%s %.1f km", sep, m.Mode, m.Km)
+		}
+		fmt.Println()
+	} else {
+		fmt.Println("no mode record — the window's evidence carries no activity data")
 	}
 	if pct, ok := j.DivergencePct(); ok {
 		flag := ""

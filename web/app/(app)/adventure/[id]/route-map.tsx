@@ -32,6 +32,7 @@ import { fmtDistanceM, placeStatement } from "@/lib/format";
 import { bboxOf, legFeatures, lngLat, stopFeatures } from "@/lib/geo";
 import { INK } from "@/lib/tokens";
 import { isFixLeg, type Day } from "@/lib/slice-days";
+import type { DisplayPhoto } from "@/lib/photo-display";
 import type { components } from "@/lib/api/schema";
 
 // MapLibre parses tiles in a Web Worker whose URL it derives from its own
@@ -44,7 +45,6 @@ import type { components } from "@/lib/api/schema";
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 type Journey = components["schemas"]["Journey"];
-type Photo = components["schemas"]["Photo"];
 
 // Everything outside the selected day fades to this opacity — dimmed, never
 // hidden: geometry that vanished would misstate what the journey contains.
@@ -101,7 +101,7 @@ export function RouteMap({
 }: {
   journey: Journey;
   styleUrl: string;
-  photos?: Photo[];
+  photos?: DisplayPhoto[];
   /** sliceDays output; when present, features carry day assignments. */
   days?: Day[];
   /** 1-based day to highlight; null shows the whole route full-strength. */
@@ -200,9 +200,12 @@ export function RouteMap({
     // no sprite loading. The marker is the measurement — solid, confident;
     // the amber ring is the far flag: the photo disagreeing with the drawn
     // route, not a doubt about the photo (invariants 5 and 8).
-    const markers = placed.map((p) => {
+    // Only thumbnail-bearing photos become markers: a record with no
+    // thumbnail (HEIC) has nothing to show as one — its position is already
+    // in the drawn geometry as a fix, and its facts live in the strip.
+    const markers = placed.filter((p) => p.thumb_url !== null).map((p) => {
       const el = document.createElement("img");
-      el.src = `/api/photos/${p.id}/thumb`;
+      el.src = p.thumb_url!;
       el.alt = p.original_name;
       el.style.cssText =
         "width:34px;height:34px;object-fit:cover;border-radius:6px;cursor:pointer;" +

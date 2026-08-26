@@ -7,6 +7,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -113,7 +114,7 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 	if cand == nil {
 		return GetCandidateJourney404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
 	}
-	j, err := s.assembledJourney(ctx, cand)
+	j, obs, err := s.assembledJourney(ctx, cand)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +122,18 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 	out, err := toAPIJourney(j)
 	if err != nil {
 		return nil, err
+	}
+
+	// Source-asserted mode figures (phase 11 §6.2): absent — not empty —
+	// when the window holds no activities at all (photo-sourced journeys),
+	// so the display can say "no mode record" instead of zeros.
+	if len(obs.Activities) > 0 {
+		bd := journey.ModeBreakdown(obs.Activities, cand.SpanStart, cand.SpanEnd)
+		apiBd := make([]ModeKm, len(bd))
+		for i, m := range bd {
+			apiBd[i] = ModeKm{Mode: m.Mode, Km: m.Km}
+		}
+		out.ModeBreakdown = &apiBd
 	}
 
 	// Countries crossed: every point the route draws, against the loaded
@@ -149,17 +162,20 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 // the same assembly and the same routing cache (phase 3 BRIEF §1.2: the
 // serve binary never dials a router; a gap with no cached answer stays
 // unknown and renders as such).
-func (s *Server) assembledJourney(ctx context.Context, cand *store.CandidateRow) (journey.Journey, error) {
+// assembledJourney also hands back the window's raw observations: the journey
+// handler derives the source-asserted mode breakdown from their activities —
+// deliberately outside Assemble, whose output the golden contract pins.
+func (s *Server) assembledJourney(ctx context.Context, cand *store.CandidateRow) (journey.Journey, domain.Observations, error) {
 	obs, err := s.Store.LoadJourneyInputs(ctx, cand.SpanStart, cand.SpanEnd)
 	if err != nil {
-		return journey.Journey{}, err
+		return journey.Journey{}, obs, err
 	}
 	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
 	lookup, err := s.Store.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
 	if err != nil {
-		return journey.Journey{}, err
+		return journey.Journey{}, obs, err
 	}
-	return route.Apply(j, RouteProfile, lookup), nil
+	return route.Apply(j, RouteProfile, lookup), obs, nil
 }
 
 func toAPIJourney(j journey.Journey) (Journey, error) {
@@ -306,6 +322,71 @@ func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequest
 		return nil, err
 	}
 	return DecideCandidate200JSONResponse(toAPIDecision(row)), nil
+}
+
+// DecideCandidatesBulk is the atomic bulk-triage write (phase 11 §6.1):
+// every item validated up front against one matchedState snapshot, then one
+// store transaction. Per-item semantics — anchoring, re-decide-in-place —
+// are exactly DecideCandidate's; the batch adds nothing but the transaction.
+func (s *Server) DecideCandidatesBulk(ctx context.Context, req DecideCandidatesBulkRequestObject) (DecideCandidatesBulkResponseObject, error) {
+	items := req.Body.Decisions
+	if len(items) == 0 {
+		return DecideCandidatesBulk400JSONResponse{Error: "decisions must not be empty"}, nil
+	}
+
+	_, cands, _, matched, err := s.matchedState(ctx)
+	if err != nil {
+		return nil, err
+	}
+	byID := make(map[int64]*store.CandidateRow, len(cands))
+	for i := range cands {
+		byID[cands[i].ID] = &cands[i]
+	}
+
+	seen := make(map[int64]bool, len(items))
+	var missing []string
+	bulk := make([]store.BulkDecision, 0, len(items))
+	for _, it := range items {
+		action := DecisionAction(it.Action)
+		if !action.Valid() {
+			return DecideCandidatesBulk400JSONResponse{Error: fmt.Sprintf("candidate %d: action must be 'confirmed' or 'dismissed'", it.Id)}, nil
+		}
+		var name *string
+		if action == DecisionActionConfirmed {
+			trimmed := ""
+			if it.Name != nil {
+				trimmed = strings.TrimSpace(*it.Name)
+			}
+			if trimmed == "" {
+				return DecideCandidatesBulk400JSONResponse{Error: fmt.Sprintf("candidate %d: confirming requires a non-empty name", it.Id)}, nil
+			}
+			name = &trimmed
+		}
+		if seen[it.Id] {
+			return DecideCandidatesBulk400JSONResponse{Error: fmt.Sprintf("candidate %d appears twice — one decision per candidate", it.Id)}, nil
+		}
+		seen[it.Id] = true
+
+		cand, ok := byID[it.Id]
+		if !ok {
+			missing = append(missing, fmt.Sprintf("%d", it.Id))
+			continue
+		}
+		b := store.BulkDecision{Anchor: *cand, Action: string(action), Name: name}
+		if did, ok := matched[cand.ID]; ok {
+			id := did
+			b.UpdateID = &id
+		}
+		bulk = append(bulk, b)
+	}
+	if len(missing) > 0 {
+		return DecideCandidatesBulk404JSONResponse{Error: "not in the latest run (re-detection may have replaced them; reload the list): candidates " + strings.Join(missing, ", ")}, nil
+	}
+
+	if err := s.Store.DecideBulk(ctx, bulk); err != nil {
+		return nil, err
+	}
+	return DecideCandidatesBulk200JSONResponse(BulkDecisionResult{Decided: len(bulk)}), nil
 }
 
 // matchedState loads the latest run, its candidates, all decisions, and the
