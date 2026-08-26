@@ -52,6 +52,12 @@ describe("rejection redirection", () => {
     }
   });
 
+  it("an image in the Timeline upload routes to the photos section", () => {
+    // Phase 11: photos are an import source, so a photo dropped into the
+    // Timeline upload is redirected to its own door, not "wrong file".
+    expect(redirectFor("image").anchor).toBe(WELCOME_SECTIONS.photos);
+  });
+
   it("unknown and absent labels fall back to a real section", () => {
     for (const format of [undefined, "some-future-label"]) {
       const r = redirectFor(format);

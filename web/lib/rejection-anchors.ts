@@ -23,6 +23,7 @@ export const WELCOME_SECTIONS = {
   exportAndroid: "export-android",
   exportIphone: "export-iphone",
   upload: "upload",
+  photos: "photos",
   next: "what-happens-next",
 } as const;
 
@@ -35,9 +36,11 @@ export type Redirection = {
   link: string;
 };
 
-// Three destinations cover the taxonomy: old or adjacent Google products →
+// Four destinations cover the taxonomy: old or adjacent Google products →
 // the phone-export walkthroughs; everything that is simply the wrong file →
-// what the right file looks like; an incomplete file → export it again.
+// what the right file looks like; an incomplete file → export it again; an
+// image dropped into the Timeline upload → the photos section, because since
+// phase 11 photos are an import source of their own, not a wrong file.
 const OLD_FORMAT: Redirection = {
   anchor: WELCOME_SECTIONS.export,
   link: "How to export the current format from your phone",
@@ -50,6 +53,10 @@ const INCOMPLETE: Redirection = {
   anchor: WELCOME_SECTIONS.export,
   link: "Export a fresh copy from your phone and upload that",
 };
+const A_PHOTO: Redirection = {
+  anchor: WELCOME_SECTIONS.photos,
+  link: "Photos import separately — add them in the photos section",
+};
 
 export const REJECTION_REDIRECTS: Record<string, Redirection> = {
   // Old Google products with a current phone-export answer.
@@ -57,10 +64,11 @@ export const REJECTION_REDIRECTS: Record<string, Redirection> = {
   "records-json": OLD_FORMAT,
   "my-activity": OLD_FORMAT,
   kml: OLD_FORMAT,
+  // A photo in the Timeline upload: not wrong, just the other door.
+  image: A_PHOTO,
   // Wrong file outright.
   zip: WRONG_FILE,
   gzip: WRONG_FILE,
-  image: WRONG_FILE,
   pdf: WRONG_FILE,
   html: WRONG_FILE,
   xml: WRONG_FILE,

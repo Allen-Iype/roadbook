@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LegKindLegend } from "@/components/legend";
+import { PhotoUploadImport } from "@/components/photo-upload-import";
 import { SiteHeader } from "@/components/site-header";
 import { UploadImport } from "@/components/upload-import";
 import { WelcomePlate } from "@/components/welcome-plate";
@@ -42,11 +43,11 @@ export default function WelcomePage() {
         </h1>
         <p className="mt-5 max-w-[58ch] text-[15px] leading-relaxed">
           Your phone has been keeping a record of where it went — Google Maps
-          calls it Timeline. Roadbook reads one Timeline export and finds the
-          journeys that stand out: stretches far from home, with a real
-          destination. You confirm the ones that mattered and name them; each
-          becomes a route on a life map of your own, and a plate in an atlas
-          of your adventures.
+          calls it Timeline. Roadbook reads one Timeline export — or the
+          places your photos were taken — and finds the journeys that stand
+          out: stretches far from home, with a real destination. You confirm
+          the ones that mattered and name them; each becomes a route on a
+          life map of your own, and a plate in an atlas of your adventures.
         </p>
         <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
           The maps are honest about what they know. What your phone recorded
@@ -89,6 +90,9 @@ export default function WelcomePage() {
           <a href={`#${S.upload}`} className="underline decoration-rule underline-offset-2 hover:text-ink">
             Upload
           </a>
+          <a href={`#${S.photos}`} className="underline decoration-rule underline-offset-2 hover:text-ink">
+            Start from photos
+          </a>
         </nav>
       </section>
 
@@ -106,7 +110,9 @@ export default function WelcomePage() {
         </p>
 
         {/* The honest third branch, stated before the walkthroughs (BRIEF
-            §3E): this page never implies data exists that does not. */}
+            §3E): this page never implies data exists that does not. Since
+            phase 11 it is no longer a dead end — photos are the second
+            source, and this box points at that door. */}
         <div
           id={S.neverEnabled}
           className="mt-5 max-w-prose scroll-mt-6 border-l-[3px] border-rule bg-land px-4 py-3"
@@ -114,10 +120,15 @@ export default function WelcomePage() {
           <p className="text-[15px] font-semibold">Never had Timeline on?</p>
           <p className="mt-1 text-sm leading-relaxed text-ink-2">
             Then there is nothing to export — Google holds no location record
-            for you, and Roadbook has nothing to read. No tool can recover
-            journeys that were never recorded. Turning Timeline on now starts
-            the record from today: an export made after your next real
-            journey would hold it.
+            for you. But your camera probably does: geotagged photos work as
+            location evidence on their own.{/* SWC drops the plain space */}{" "}
+            <a
+              href={`#${S.photos}`}
+              className="underline decoration-rule underline-offset-2 hover:text-ink"
+            >
+              Start from your photos
+            </a>{" "}
+            instead — no export step needed.
           </p>
         </div>
 
@@ -233,7 +244,63 @@ export default function WelcomePage() {
         <UploadImport />
       </section>
 
-      {/* ── 5 · What happens next ─────────────────────────────────────── */}
+      {/* ── 5 · Photos as a source (phase 11) ─────────────────────────── */}
+      <section id={S.photos} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
+        <h2 className="font-display text-2xl font-semibold">
+          No Timeline? Start from your photos
+        </h2>
+        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
+          Every geotagged photo already records where and when it was taken.
+          Roadbook reads exactly that — the position and the moment — so a
+          camera roll works as location evidence on its own. There is no
+          export step: the picker below opens your photo library directly.
+        </p>
+        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
+          The photos themselves are never kept. What this instance stores is
+          the position, the time, and a small thumbnail — enough to place a
+          photo on a map, nothing more.
+        </p>
+
+        <div className="mt-5 max-w-prose">
+          <h3 className="font-display text-lg font-semibold">
+            Which photos carry location
+          </h3>
+          <ul className="mt-2 max-w-[58ch] list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink-2">
+            <li>
+              Camera originals do, and downloads from your own Google Photos
+              keep it. iPhone photos are usually HEIC — upload them as they
+              are; if the picker offers to convert to JPEG, either works.
+            </li>
+            <li>
+              Photos received in a chat almost never do — messaging apps
+              strip location on the way through. Screenshots never have it.
+            </li>
+            <li>
+              A Google Photos Takeout includes small{" "}
+              <code className="font-mono">.json</code> files beside the
+              photos. Upload them together: they can restore a location the
+              photo file itself lost.
+            </li>
+          </ul>
+          <p className="mt-3 max-w-[58ch] text-sm leading-relaxed text-ink-2">
+            Already uploaded a Timeline export? Photos simply add detail —
+            each becomes another observed point on the adventures it found.
+            On their own, photos need a little context: home is worked out
+            from where your photos recur, so include a spread from ordinary
+            weeks too, not only the trips.
+          </p>
+        </div>
+
+        <PhotoUploadImport intro={false} />
+
+        <p className="mt-3 max-w-[58ch] text-xs leading-relaxed text-ink-2">
+          Photo intake verified 26 Aug 2026 with a real camera roll. Not yet
+          walked on a phone — the iPhone HEIC notes come from documentation,
+          not a device.
+        </p>
+      </section>
+
+      {/* ── 6 · What happens next ─────────────────────────────────────── */}
       <section id={S.next} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
         <h2 className="font-display text-2xl font-semibold">
           What happens next
@@ -245,7 +312,8 @@ export default function WelcomePage() {
             connection drops, just try again.
           </NextStep>
           <NextStep n={2} title="Import">
-            Every visit, activity, and recorded point is read in. Your export
+            Every visit, activity, and recorded point is read in — and each
+            geotagged photo contributes the position it carries. Your export
             is stored on the instance as-is, so future versions of Roadbook
             can re-read it without asking you for the file again.
           </NextStep>

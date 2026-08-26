@@ -49,7 +49,10 @@ type Phase =
 
 const POLL_MS = 1500;
 
-export function PhotoUploadImport() {
+// `intro` controls the explanatory paragraph: standalone placements
+// (/imports) need it; /welcome embeds the island under a section that has
+// already said all of it, and keeps only the operational line.
+export function PhotoUploadImport({ intro = true }: { intro?: boolean } = {}) {
   const [phase, setPhase] = useState<Phase>({ k: "idle" });
   const [verdicts, setVerdicts] = useState<FileVerdict[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -138,12 +141,19 @@ export function PhotoUploadImport() {
     <section className="mt-6 border border-rule bg-land p-4">
       <h2 className="font-display text-lg font-semibold">Add photos</h2>
       <p className="mt-1 text-sm text-ink-2">
-        Geotagged photos become position evidence: pick the trips (and some
-        everyday photos, so home can be worked out), and detection runs on
-        what they show. JPEG and HEIC both work; Google Photos Takeout JSON
-        sidecars fill in photos whose location was stripped. The photos
-        themselves are not kept — only their positions, times, and small
-        thumbnails. Keep the screen on until the upload finishes.
+        {intro ? (
+          <>
+            Geotagged photos become position evidence: pick the trips (and
+            some everyday photos, so home can be worked out), and detection
+            runs on what they show. JPEG and HEIC both work; Google Photos
+            Takeout JSON sidecars fill in photos whose location was stripped.
+            The photos themselves are not kept — only their positions, times,
+            and small thumbnails. Keep the screen on until the upload
+            finishes.
+          </>
+        ) : (
+          <>Keep the screen on until the upload finishes.</>
+        )}
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">

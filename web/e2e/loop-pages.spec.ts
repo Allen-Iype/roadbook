@@ -26,9 +26,11 @@ test("welcome: every rejection anchor has a real target", async ({ page }) => {
   }
 });
 
-test("welcome: the upload island is present", async ({ page }) => {
+test("welcome: both upload islands are present", async ({ page }) => {
+  // Two doors since phase 11: the Timeline export upload and the photo
+  // batch upload each carry their own file input.
   await page.goto("/welcome");
-  await expect(page.locator('input[type="file"]')).toBeAttached();
+  await expect(page.locator('input[type="file"]')).toHaveCount(2);
 });
 
 test("candidates: every gallery card carries art, figures, and a decision", async ({ page }) => {

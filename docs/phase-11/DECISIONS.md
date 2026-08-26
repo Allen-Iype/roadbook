@@ -146,3 +146,73 @@ Written as decisions are made, not reconstructed.
   The separate-table instinct is satisfied by the §4D photo-record table.
 - **Would change our mind:** a real consumer that needs fix-level photo
   attributes the record link cannot serve — none is known or foreseen.
+
+## 2026-08-26 — CP3: home-photos copy softened; points-not-routes recorded, not built
+
+- **Chosen:** the /welcome photos walkthrough carries one honest line for
+  photo-only users — adventures need a spread of photos including ordinary
+  days near home, plus a plain statement of what the server keeps (positions,
+  times, thumbnails; never the photos) — no prominent callout. The
+  maintainer's "just show points on a map" direction for no-Timeline users is
+  recorded as strengthened input to the §6.3 points-not-routes future, which
+  keeps its own mockup STOP (after this phase's close or at the next charter);
+  nothing of it is built in CP3.
+- **Rejected:** silence on home photos (a trip-only uploader would get a
+  silent zero-candidate result with no explanation — measured on real data
+  2026-08-26: 13 trip photos, all usable fixes, 0 candidates, correctly);
+  full-emphasis instruction (the real user cost is privacy, not effort —
+  select-all is one gesture); pulling the points view into phase 11 (new IA
+  re-opening the curation boundary belongs behind mockups at its own STOP,
+  per the Gate-1 three-futures sorting).
+- **Would change our mind:** pilot evidence that the soft mention is missed
+  and photo-only users still hit silent zeros — then the copy hardens; or the
+  points-view STOP resolving the curation boundary — then the walkthrough can
+  promise something for trip-only uploads.
+
+## 2026-08-26 — CP3: real-data measurement closed; photo-only detection is not
+## the photo story
+
+- **Chosen:** stop real-photo gathering at one month — the brief's "is photo
+  evidence enough" question is answered structurally, not left half-measured:
+  a real camera roll is trip-heavy (38 destination photos vs 7 near-home in
+  the same month), photo-only detection needs 2–3 months of home recurrence
+  to derive a base, and a *selective* upload — what a real user will actually
+  provide — is more trip-heavy still. The maintainer's direction: photos are
+  read for where/when, then plotted; with a Timeline they enrich adventures
+  (measured working, +13 obs on the Oct-2 candidate); without one, the
+  answer is the §6.3 points-not-routes view at its own mockup STOP, now
+  carrying this measurement as its evidence base. The synthesis core stays
+  (corpus-pinned; shared with the legacy-formats future; its guards proved
+  right — the relaxed-parameter sweep turned the trip destination into
+  "home", the exact inversion HOME_MIN_DAYS exists to prevent).
+- **Rejected:** gathering Jun+Jul to force a photo-only success (confirms an
+  extrapolation, changes no decision); loosening synthesis defaults to make
+  one month "work" (measured: it inverts home and destination); removing the
+  synthesis core (it serves the multi-month and legacy-format cases and the
+  honest-zero path costs nothing).
+- **Would change our mind:** a pilot user whose roll genuinely carries home
+  recurrence (photo-only bases then derive at defaults and the positive path
+  deserves a real-data pin); or the points-view STOP deciding against a
+  points surface — then the photo-only story needs a different answer.
+
+## 2026-08-26 — CP3 review finding: imported photos are invisible as photos;
+## records→adventures display added to CP4
+
+- **Chosen:** a new named CP4 item, beside bulk triage and the per-mode
+  breakdown: photo records whose fix falls inside a confirmed adventure's
+  span appear on that adventure's page and map like attached photos —
+  thumbnails placed against the drawn geometry via the existing pure
+  placement, HEIC records listed honestly without a thumbnail. Found at the
+  CP3 STOP: the maintainer uploaded real photos, confirmed the adventure
+  they enriched, and could not see a single photo anywhere — records had no
+  endpoint and no UI by CP2 design (§4D foundation), and the fixes are
+  visible only as route geometry. This is the §6.3 proof-of-location future
+  arriving as in-system scope, on the evidence the brief said would summon it.
+- **Rejected:** building it immediately as a CP3.5 (CP3 is a measurement
+  checkpoint; the STOP should close it, not grow it); backlogging to the
+  points-view STOP (that STOP owns the no-Timeline points *surface* — this
+  is display of records on adventures that already exist, blocked on nothing).
+- **Would change our mind:** the CP4 design hitting a real privacy or
+  identity question (records ride imports, not decisions — deletion and
+  re-detection semantics must be settled in the CP4 work, and if they turn
+  out deep, the item gets its own brief section rather than a quiet corner).
