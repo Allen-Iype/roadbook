@@ -48,3 +48,27 @@ Written as decisions are made, not reconstructed.
   addition, CT-visible, for no reader benefit).
 - **Would change our mind:** the landing growing real interactivity — which
   §2's zero-product-code rule already routes to a future brief instead.
+
+## 2026-08-27 — CP2: Gate-1 §4B REVERSED — the waitlist is a form, not a stated address
+
+- **Chosen (maintainer's challenge, assistant agreed on the evidence):** a
+  plain HTML form on the landing (zero-JS preserved — no scripts needed for
+  a POST), handled by a tiny standalone intake service on the host
+  (stdlib-only, loopback, systemd, reverse-proxied by Caddy for exactly one
+  route), appending timestamp+email to one 0600 file under
+  /srv/pilot/waitlist/. Spam: CSS-hidden honeypot + in-handler per-IP rate
+  limit (Caddy's rate-limit plugin is not in our build). IPs are used for
+  the limit in memory and never stored — held minimally. Copy is an
+  invitation ("ten slots, join the list"), never a date promise.
+- **Rejected:** the Gate-1 stated-address choice — two things the gate
+  underweighted: mobile is the primary funnel and mailto: on phones is
+  unreliable, high-friction (nobody composes "I would like to join"); and a
+  published Gmail address is both worse custody optics and an impression
+  cost on a trust-sensitive page. Also still rejected: third-party form
+  services (PII to another party), and putting the handler in product code
+  (PRODUCT.md boundary — it is operator machinery).
+- **Would change our mind:** abuse that outgrows honeypot+rate-limit (then
+  the endpoint earns real defenses or retires back to an address); the
+  entries file is deliberately NOT in nightly backups so the deletion
+  promise stays absolute — if losing pending entries to a host failure ever
+  stings, that trade-off gets revisited openly.

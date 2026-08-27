@@ -29,9 +29,14 @@ voice CLAUDE.md requires. When the product changes (a new source, a changed
 retention fact, a different cap), this page changes in the same phase —
 same standard as the README.
 
-The waitlist address in the "way in" section is a visible placeholder until
-phase 12 checkpoint 2 lands the real alias. Do not deploy the placeholder
-past CP2.
+The waitlist is a plain HTML form (the page stays zero-JavaScript — a POST
+needs no script): Caddy proxies `/waitlist` to a tiny loopback intake
+service (`scripts/pilot/host/waitlistd.py`, installed by
+`setup-waitlist.sh`) that appends timestamp + address to one 0600 file on
+the host. `joined.html` and `oops.html` are the form's two endings. The
+custody sentence on the page — one file, nothing else sent, deleted on
+request — is the contract; the entries file is deliberately excluded from
+nightly backups so the deletion promise is absolute.
 
 ## Deploying
 

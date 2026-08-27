@@ -1,0 +1,20 @@
+# Roadbook waitlist intake (phase 12 CP2) — see waitlistd.py.
+# Installed by setup-waitlist.sh; runs from the repo checkout like the
+# other host scripts.
+[Unit]
+Description=Roadbook waitlist intake
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/ubuntu/roadbook/scripts/pilot/host/waitlistd.py
+Environment=WAITLIST_FILE=/srv/pilot/waitlist/entries.log
+User=ubuntu
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/srv/pilot/waitlist
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

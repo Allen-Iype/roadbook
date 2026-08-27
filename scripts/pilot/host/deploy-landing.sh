@@ -35,18 +35,12 @@ PILOT_DIR=${ROADBOOK_PILOT_DIR:-/srv/pilot}
 LANDING=$PILOT_DIR/landing
 SITE=$LANDING/site
 
-# Refuse to ship the CP2 placeholder to a live front once a real address
-# exists is a human judgement; refusing an obviously-unfinished page is not.
-if grep -q "waitlist address — opens shortly" "$REPO/landing/index.html"; then
-  echo "note: index.html still carries the CP2 waitlist placeholder — deploying anyway (pre-CP2 state)" >&2
-fi
-
 # Stage into a fresh directory, then swap: the front never serves a
 # half-copied tree.
 STAGE=$(mktemp -d "$LANDING.stage.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/fonts" "$STAGE/shots"
-cp "$REPO/landing/index.html" "$STAGE/"
+cp "$REPO/landing/index.html" "$REPO/landing/joined.html" "$REPO/landing/oops.html" "$STAGE/"
 cp -R "$REPO/web/app/fonts/source-serif-4" "$STAGE/fonts/source-serif-4"
 cp -R "$REPO/web/app/fonts/ibm-plex-mono" "$STAGE/fonts/ibm-plex-mono"
 # Screenshot mapping — the page's <img> names on the left, the committed
@@ -72,10 +66,12 @@ chmod 755 "$LANDING" "$SITE"
 
 # The Caddy snippet. Host-matched handle block, same shape as the instance
 # snippets; no auth, no robots header — this page is the public face and
-# is meant to be found.
+# is meant to be found. The one dynamic route is the waitlist form's POST,
+# proxied to the loopback intake service (setup-waitlist.sh installs it).
 cat > "$LANDING/caddy.conf" <<EOF
 @landing host www.$ROADBOOK_DOMAIN
 handle @landing {
+	reverse_proxy /waitlist 127.0.0.1:9310
 	root * $SITE
 	file_server
 	header Cache-Control "public, max-age=3600"
