@@ -5,6 +5,7 @@ import { api } from "@/lib/api/client";
 import { MAP_STYLE_URL } from "@/lib/basemap";
 import { SiteHeader } from "@/components/site-header";
 import { INSTANCE_LABEL } from "@/lib/instance";
+import { requireUser } from "@/lib/session";
 import { AdventureView } from "./adventure-view";
 
 // Server component for one adventure. Next 16 dynamic route: the [id] folder
@@ -20,6 +21,12 @@ export default async function AdventurePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // The auth gate (phase 13 CP3): UX only — Go 401s regardless. Mode
+  // off returns pass-through and this page renders exactly as before.
+  const session = await requireUser();
+  const accountEmail =
+    session?.mode === "oidc" ? (session.email ?? "") : undefined;
+
   const { id: rawId } = await params;
   const id = Number(rawId);
   if (!Number.isInteger(id)) notFound();
@@ -76,7 +83,8 @@ export default async function AdventurePage({
 
   return (
     <main className="mx-auto w-full max-w-[91rem] px-4 py-8 sm:px-6">
-      <SiteHeader undecided={undecided} instanceLabel={INSTANCE_LABEL} />
+      <SiteHeader undecided={undecided} instanceLabel={INSTANCE_LABEL}
+        accountEmail={accountEmail} />
       <p className="mt-6 text-sm">
         <Link href="/" className="text-ink-2 hover:text-ink">
           ← Life map

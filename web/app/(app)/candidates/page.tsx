@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { api } from "@/lib/api/client";
 import { INSTANCE_LABEL } from "@/lib/instance";
+import { requireUser } from "@/lib/session";
 import type { components } from "@/lib/api/schema";
 import { DecideCell } from "@/app/decide-cell";
 import { RouteThumb } from "@/components/route-thumb";
@@ -28,6 +29,12 @@ export default async function CandidatesPage({
 }: {
   searchParams: Promise<{ sort?: string }>;
 }) {
+  // The auth gate (phase 13 CP3): UX only — Go 401s regardless. Mode
+  // off returns pass-through and this page renders exactly as before.
+  const session = await requireUser();
+  const accountEmail =
+    session?.mode === "oidc" ? (session.email ?? "") : undefined;
+
   // ?sort=score is the sweep order (phase 11 §6.1): score-descending, built
   // for clearing a long queue in one sitting. Default stays chronological.
   // A search param rather than client state: the order is part of the URL a
@@ -38,7 +45,7 @@ export default async function CandidatesPage({
 
   if (!res?.data) {
     return (
-      <Shell>
+      <Shell accountEmail={accountEmail}>
         <p className="mt-6 text-red-700">
           The Roadbook API is not reachable. Start it with{" "}
           <code className="font-mono">roadbook serve</code> and reload.
@@ -70,7 +77,7 @@ export default async function CandidatesPage({
     : data.candidates;
 
   return (
-    <Shell>
+    <Shell accountEmail={accountEmail}>
       <RunSummary list={data} />
       {data.candidates.length > 0 && (
         <>
@@ -141,10 +148,17 @@ export default async function CandidatesPage({
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children,
+  accountEmail,
+}: {
+  children: React.ReactNode;
+  accountEmail?: string;
+}) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-      <SiteHeader active="candidates" instanceLabel={INSTANCE_LABEL} />
+      <SiteHeader active="candidates" instanceLabel={INSTANCE_LABEL}
+        accountEmail={accountEmail} />
       <h1 className="mt-8 font-display text-2xl font-semibold">Candidates</h1>
       <p className="mt-1 text-sm text-ink-2">
         Adventure candidates detected from your timeline. Confirm the real

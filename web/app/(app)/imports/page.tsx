@@ -4,6 +4,7 @@ import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { SiteHeader } from "@/components/site-header";
 import { INSTANCE_LABEL } from "@/lib/instance";
+import { requireUser } from "@/lib/session";
 import { PhotoUploadImport } from "@/components/photo-upload-import";
 import { UploadImport } from "@/components/upload-import";
 
@@ -16,11 +17,17 @@ export const dynamic = "force-dynamic";
 type Import = components["schemas"]["Import"];
 
 export default async function ImportsPage() {
+  // The auth gate (phase 13 CP3): UX only — Go 401s regardless. Mode
+  // off returns pass-through and this page renders exactly as before.
+  const session = await requireUser();
+  const accountEmail =
+    session?.mode === "oidc" ? (session.email ?? "") : undefined;
+
   const { data, error } = await api.GET("/imports");
 
   if (error || !data) {
     return (
-      <Shell>
+      <Shell accountEmail={accountEmail}>
         <p className="mt-6 text-red-700">
           The Roadbook API is not reachable. Start it with{" "}
           <code className="font-mono">roadbook serve</code> and reload.
@@ -30,7 +37,7 @@ export default async function ImportsPage() {
   }
 
   return (
-    <Shell>
+    <Shell accountEmail={accountEmail}>
       <UploadImport />
       <PhotoUploadImport />
       {data.imports.length === 0 ? (
@@ -52,10 +59,17 @@ export default async function ImportsPage() {
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children,
+  accountEmail,
+}: {
+  children: React.ReactNode;
+  accountEmail?: string;
+}) {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-      <SiteHeader active="imports" instanceLabel={INSTANCE_LABEL} />
+      <SiteHeader active="imports" instanceLabel={INSTANCE_LABEL}
+        accountEmail={accountEmail} />
       <h1 className="mt-8 font-display text-2xl font-semibold">Imports</h1>
       <p className="mt-1 text-sm text-ink-2">
         Every import attempt, newest first — including the failed ones, with

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { api } from "@/lib/api/client";
 import { INSTANCE_LABEL } from "@/lib/instance";
+import { requireUser } from "@/lib/session";
 import { fmtDateRange, sliceDays } from "@/lib/slice-days";
 import { LegKindLegend } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
@@ -33,13 +34,19 @@ type Cover = {
 };
 
 export default async function AdventuresPage() {
+  // The auth gate (phase 13 CP3): UX only — Go 401s regardless. Mode
+  // off returns pass-through and this page renders exactly as before.
+  const session = await requireUser();
+  const accountEmail =
+    session?.mode === "oidc" ? (session.email ?? "") : undefined;
+
   // Connection-refused rejects rather than returning {error} — the same
   // trap the home page documents (phase 9 CP2); catch to a designed state.
   const res = await api.GET("/candidates").catch(() => null);
 
   if (!res?.data) {
     return (
-      <Shell>
+      <Shell accountEmail={accountEmail}>
         <p className="mt-6 text-red-700">
           The Roadbook API is not reachable. Start it with{" "}
           <code className="font-mono">roadbook serve</code> and reload.
@@ -55,7 +62,7 @@ export default async function AdventuresPage() {
 
   if (confirmed.length === 0) {
     return (
-      <Shell undecided={undecided}>
+      <Shell undecided={undecided} accountEmail={accountEmail}>
         <div className="mt-14 border border-rule bg-paper px-5 py-10 text-center sm:px-8">
           <h2 className="font-display text-2xl font-semibold">
             No adventures yet
@@ -105,7 +112,7 @@ export default async function AdventuresPage() {
     .reverse();
 
   return (
-    <Shell undecided={undecided}>
+    <Shell undecided={undecided} accountEmail={accountEmail}>
       <p className="mt-1 text-sm text-ink-2">
         {covers.length} confirmed adventure{covers.length === 1 ? "" : "s"},
         most recent first. Plate numbers follow the order travelled.
@@ -127,9 +134,11 @@ export default async function AdventuresPage() {
 function Shell({
   undecided,
   children,
+  accountEmail,
 }: {
   undecided?: number;
   children: React.ReactNode;
+  accountEmail?: string;
 }) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
@@ -137,6 +146,7 @@ function Shell({
         undecided={undecided}
         active="adventures"
         instanceLabel={INSTANCE_LABEL}
+        accountEmail={accountEmail}
       />
       <h1 className="mt-8 font-display text-2xl font-semibold">Adventures</h1>
       {children}

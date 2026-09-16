@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { MAP_STYLE_URL } from "@/lib/basemap";
 import { INSTANCE_LABEL } from "@/lib/instance";
+import { requireUser } from "@/lib/session";
 import { LifeMap, type Adventure } from "@/components/life-map";
 import { SummonedList } from "@/components/summoned-list";
 import { LegKindLegend } from "@/components/legend";
@@ -22,6 +23,12 @@ import { SiteHeader } from "@/components/site-header";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  // The auth gate (phase 13 CP3): UX only — Go 401s regardless. Mode
+  // off returns pass-through and this page renders exactly as before.
+  const session = await requireUser();
+  const accountEmail =
+    session?.mode === "oidc" ? (session.email ?? "") : undefined;
+
   // A rejected fetch (API container down, connection refused) THROWS — the
   // generated client's {error} shape only covers HTTP responses — and an
   // uncaught throw here lands on the generic error boundary instead of the
@@ -47,7 +54,7 @@ export default async function HomePage() {
 
   if (error || !data) {
     return (
-      <Invitation>
+      <Invitation accountEmail={accountEmail}>
         <p className="text-red-700">
           The Roadbook API is not reachable. Start it with{" "}
           <code className="font-mono">roadbook serve</code> and reload.
@@ -68,7 +75,7 @@ export default async function HomePage() {
   // versus detection never ran (a CLI import without a detect).
   if (candidates.length === 0) {
     return (
-      <Invitation>
+      <Invitation accountEmail={accountEmail}>
         {data.run ? (
           <>
             <h1 className="font-display text-2xl font-semibold">
@@ -132,7 +139,7 @@ export default async function HomePage() {
   // the invitation points at triage.
   if (confirmed.length === 0) {
     return (
-      <Invitation undecided={undecided}>
+      <Invitation undecided={undecided} accountEmail={accountEmail}>
         <h1 className="font-display text-2xl font-semibold">
           {candidates.length} candidate{candidates.length === 1 ? "" : "s"}{" "}
           await review
@@ -178,7 +185,7 @@ export default async function HomePage() {
 
   if (adventures.length === 0) {
     return (
-      <Invitation undecided={undecided}>
+      <Invitation undecided={undecided} accountEmail={accountEmail}>
         <p className="text-red-700">
           {confirmed.length} confirmed adventure
           {confirmed.length === 1 ? "" : "s"} exist, but no journey could be
@@ -223,12 +230,31 @@ export default async function HomePage() {
             >
               Imports
             </Link>
-            {/* The reserved header slot (BRIEF §6): the operator's instance
-                label today, an account control in a later charter-gated
-                phase. A label, not a control. */}
+            {/* The reserved header slot (phase 9 BRIEF §6), now carrying
+                both meanings (phase 13 CP3): the operator label, and on a
+                multi-user instance the signed-in identity + sign-out. */}
             {INSTANCE_LABEL && (
               <span className="border border-rule px-2 py-0.5 font-mono text-xs text-ink-2">
                 {INSTANCE_LABEL}
+              </span>
+            )}
+            {accountEmail !== undefined && (
+              <span className="flex items-baseline gap-3 text-xs text-ink-2">
+                {accountEmail && (
+                  <span className="font-mono">{accountEmail}</span>
+                )}
+                <form
+                  action="/api/auth/signout"
+                  method="post"
+                  className="inline"
+                >
+                  <button
+                    type="submit"
+                    className="-mx-2 -my-3.5 px-2 py-3.5 underline decoration-rule underline-offset-2 hover:text-ink"
+                  >
+                    Sign out
+                  </button>
+                </form>
               </span>
             )}
           </nav>
@@ -252,13 +278,16 @@ export default async function HomePage() {
 function Invitation({
   undecided,
   children,
+  accountEmail,
 }: {
   undecided?: number;
   children: React.ReactNode;
+  accountEmail?: string;
 }) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <SiteHeader undecided={undecided} instanceLabel={INSTANCE_LABEL} />
+      <SiteHeader undecided={undecided} instanceLabel={INSTANCE_LABEL}
+        accountEmail={accountEmail} />
       <div className="mt-16 border border-rule bg-paper px-5 py-10 text-center sm:px-8">
         {children}
       </div>

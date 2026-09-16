@@ -5,18 +5,22 @@ import Link from "next/link";
 // consumer: it floats its own chrome over the map (BRIEF §0), so this stays
 // a per-page component rather than living in the shell layout.
 //
-// `instanceLabel` is the reserved account slot (phase 9 BRIEF §6): the app
-// pages pass the operator-set label through; the public shell passes
-// nothing and the slot renders nothing. No auth surface — a label, not a
-// control.
+// The reserved slot (phase 9 BRIEF §6) now carries both of its meanings
+// (phase 13 CP3): `instanceLabel` is the operator label, unchanged; and on
+// a multi-user instance the app pages pass `accountEmail`, which renders
+// the signed-in identity and a sign-out control. Mode off passes neither
+// extra — no auth surface exists on the authless reference, exactly as
+// before. Sign-out is a plain form POST: leaving must not need JavaScript.
 export function SiteHeader({
   undecided,
   active,
   instanceLabel,
+  accountEmail,
 }: {
   undecided?: number;
   active?: "adventures" | "candidates" | "imports";
   instanceLabel?: string;
+  accountEmail?: string;
 }) {
   return (
     <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule pb-4">
@@ -48,6 +52,19 @@ export function SiteHeader({
         {instanceLabel ? (
           <span className="border border-rule px-2 py-0.5 font-mono text-xs text-ink-2">
             {instanceLabel}
+          </span>
+        ) : null}
+        {accountEmail !== undefined ? (
+          <span className="flex items-baseline gap-3 text-xs text-ink-2">
+            {accountEmail && <span className="font-mono">{accountEmail}</span>}
+            <form action="/api/auth/signout" method="post" className="inline">
+              <button
+                type="submit"
+                className="-mx-2 -my-3.5 px-2 py-3.5 underline decoration-rule underline-offset-2 hover:text-ink"
+              >
+                Sign out
+              </button>
+            </form>
           </span>
         ) : null}
       </span>

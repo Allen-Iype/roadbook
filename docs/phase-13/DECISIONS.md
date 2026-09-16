@@ -78,3 +78,29 @@ decisions are made, per the working agreement.
   (Google's email is enough today — a provider without email would make
   the account slot show nothing and force a display-name claim);
   session-fixation-grade issues found at CP3's browser walk.
+
+## 2026-09-16 — CP3: where the web gate lives, and what stays public
+
+- **Chosen:** the gate is `requireUser()` at the top of each app PAGE, not
+  the (app) layout and not proxy middleware — layouts don't re-run on
+  soft navigation, and the check is UX only (Go's 401 is the enforcement;
+  a bug here shows an empty shell, never data). Exactly one cookie
+  crosses the Next→Go boundary (the session; client middleware fills
+  only silence, so the callback's explicit state-cookie header wins).
+  /welcome STAYS static and ungated: it is genuinely the public pitch,
+  its islands fail honestly on Go's 401, and the signed-out path lands
+  on /signin via every app page's gate — the phase-7 statically-rendered
+  decision survives. /signin renders exactly one action (the OIDC
+  redirect link, zero JS) and redirects home on an authless instance —
+  no dead controls, the phase-9 rule kept now that auth is real.
+  Sign-out is a plain form POST through a proxy route (leaving needs no
+  JavaScript). Callback failures land on /signin?error=… — a stranded
+  JSON body is not a page a person can act on.
+- **Rejected:** gating in the (app) layout (soft-nav staleness); Next
+  middleware.ts auth (a second enforcement point to keep honest when Go
+  already is one); forwarding all cookies upstream (the boundary stays
+  as narrow as the architecture drawing).
+- **Would change our mind:** session expiry mid-browse surfacing as
+  ugly boundary errors instead of the signin redirect (then data fetches
+  gain a 401→redirect helper); a real marketing landing replacing
+  /welcome's pitch role (then /welcome may move behind the gate).

@@ -8,6 +8,7 @@
 // architecture). Keeping the import server-side is what enforces that.
 import "server-only";
 
+import { cookies } from "next/headers";
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
 
@@ -18,4 +19,22 @@ export const api = createClient<paths>({
   // The candidate list must reflect the database on every request — decisions
   // change it. `no-store` opts this fetch out of Next's data cache.
   cache: "no-store",
+});
+
+// Session forwarding (phase 13 CP3): the browser's session cookie names the
+// user, and Go is the only place that resolves it — so every server-side
+// call carries it upstream. Exactly one cookie crosses the boundary: Go has
+// no use for any other, and not forwarding the rest keeps the API boundary
+// as narrow as the architecture drawing says it is. A route handler that
+// sets its own cookie header (the auth callback forwarding the state
+// cookie) wins — the middleware only fills silence.
+api.use({
+  async onRequest({ request }) {
+    if (request.headers.has("cookie")) return request;
+    const session = (await cookies()).get("roadbook_session");
+    if (session?.value) {
+      request.headers.set("cookie", `roadbook_session=${session.value}`);
+    }
+    return request;
+  },
 });
