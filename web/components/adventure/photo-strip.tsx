@@ -1,25 +1,28 @@
-// The photo-import strip (phase 11 CP4): records whose capture falls inside
-// this candidate's span, joined at read time — never stored, never deletable
-// here (they belong to their import; DECISIONS 2026-08-26). Rendered for any
-// candidate, not only confirmed ones: during triage the photos are evidence
-// of what the trip was. Tiles mirror the attached-photo strip; a record with
-// no thumbnail (HEIC) renders its facts as a tile rather than vanishing.
+// A read-only strip of photo tiles: thumbnail (or the honest no-preview
+// tile for HEIC records), capture time with its source, and the placement
+// statement against the drawn route. Two consumers with different words
+// around the same tiles: the owner's photo-import strip (phase 11 CP4 —
+// records ride their import, never deletable here) and the shared view
+// (phase 13 CP4), where both provenances render read-only for a stranger
+// and the copy says whose photos they are. Attached photos on the owner's
+// own page keep their upload/delete island (photos-section.tsx).
 import { fmtDistanceM, placeStatement } from "@/lib/format";
 import type { DisplayPhoto } from "@/lib/photo-display";
 
-export function ImportPhotosStrip({ photos }: { photos: DisplayPhoto[] }) {
+export function PhotoStrip({
+  heading,
+  intro,
+  photos,
+}: {
+  heading: string;
+  intro: React.ReactNode;
+  photos: DisplayPhoto[];
+}) {
   if (photos.length === 0) return null;
   return (
     <section className="mt-10">
-      <h2 className="font-display text-xl font-semibold">
-        From your photo imports
-      </h2>
-      <p className="mt-1 max-w-[58ch] text-sm text-ink-2">
-        {photos.length === 1 ? "One photo" : `${photos.length} photos`} from
-        your photo imports {photos.length === 1 ? "was" : "were"} taken inside
-        this journey&apos;s window — placed by capture time against the drawn
-        route. They stay with their import; deleting is not done from here.
-      </p>
+      <h2 className="font-display text-xl font-semibold">{heading}</h2>
+      <p className="mt-1 max-w-[58ch] text-sm text-ink-2">{intro}</p>
       <div className="mt-4 flex flex-wrap gap-4">
         {photos.map((p) => (
           <figure key={p.key} className="w-36">
@@ -71,5 +74,27 @@ export function ImportPhotosStrip({ photos }: { photos: DisplayPhoto[] }) {
         ))}
       </div>
     </section>
+  );
+}
+
+// The owner's photo-import strip: records whose capture falls inside this
+// candidate's span, joined at read time (DECISIONS 2026-08-26). Rendered
+// for any candidate, not only confirmed ones: during triage the photos are
+// evidence of what the trip was.
+export function ImportPhotosStrip({ photos }: { photos: DisplayPhoto[] }) {
+  return (
+    <PhotoStrip
+      heading="From your photo imports"
+      intro={
+        <>
+          {photos.length === 1 ? "One photo" : `${photos.length} photos`} from
+          your photo imports {photos.length === 1 ? "was" : "were"} taken
+          inside this journey&apos;s window — placed by capture time against
+          the drawn route. They stay with their import; deleting is not done
+          from here.
+        </>
+      }
+      photos={photos}
+    />
   );
 }

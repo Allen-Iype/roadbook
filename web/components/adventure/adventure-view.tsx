@@ -1,10 +1,17 @@
 "use client";
 
-// The adventure page below its masthead: cover, day narrative, photos, and
-// the map plate — one client component because the selected day is shared
-// state between the narrative (which sets it) and the map (which dims
-// everything else). Everything it renders comes from props the server
-// component already fetched; no data logic lives here.
+// The adventure plate below its masthead: cover, day narrative, photos, and
+// the map — one client component because the selected day is shared state
+// between the narrative (which sets it) and the map (which dims everything
+// else). Everything it renders comes from props the server component
+// already fetched; no data logic lives here.
+//
+// Two consumers (phase 13 CP4): the owner's page (app shell) and the
+// read-only shared view (public shell). The plate is the same — a stranger
+// sees exactly the legs, kinds, and photos the owner sees — and the two
+// differ only in what surrounds it, which arrives as props: the owner's
+// islands (photo upload, share controls) as slots, and `shared` carrying
+// the cover facts the shared read provides instead of a candidate.
 import { useMemo, useState } from "react";
 
 import { LegKindLegend } from "@/components/legend";
@@ -12,16 +19,27 @@ import { ProvenanceBar } from "@/components/provenance-bar";
 import { fmtMode } from "@/lib/format";
 import { fmtDateRange, isFixLeg, sliceDays } from "@/lib/slice-days";
 import { DayNarrative } from "./day-narrative";
-import { ImportPhotosStrip } from "./import-photos-strip";
-import { PhotosSection } from "./photos-section";
+import { ImportPhotosStrip, PhotoStrip } from "./photo-strip";
 import { RouteMap } from "./route-map";
-import { displayAttached, displayImported } from "@/lib/photo-display";
+import {
+  OWNER_THUMBS,
+  displayAttached,
+  displayImported,
+  type ThumbRoots,
+} from "@/lib/photo-display";
 import type { components } from "@/lib/api/schema";
 
 type Journey = components["schemas"]["Journey"];
 type Candidate = components["schemas"]["Candidate"];
 type Photo = components["schemas"]["Photo"];
 type ImportPhoto = components["schemas"]["ImportPhoto"];
+
+/** What the shared view knows about the adventure instead of a candidate. */
+export type SharedCover = {
+  name: string;
+  start_truncated: boolean;
+  end_truncated: boolean;
+};
 
 export function AdventureView({
   journey,
@@ -30,6 +48,10 @@ export function AdventureView({
   importPhotos,
   styleUrl,
   plate,
+  shared,
+  thumbs = OWNER_THUMBS,
+  photosSection,
+  shareControls,
 }: {
   journey: Journey;
   candidate?: Candidate;
@@ -40,18 +62,31 @@ export function AdventureView({
   styleUrl: string;
   /** Position among confirmed adventures in date order; null if unconfirmed. */
   plate: number | null;
+  /** Set on the shared view: the cover facts, and read-only everywhere. */
+  shared?: SharedCover;
+  /** Which thumbnail proxies the tiles and markers load through. */
+  thumbs?: ThumbRoots;
+  /** The owner's photo upload/delete island; absent on the shared view. */
+  photosSection?: React.ReactNode;
+  /** The owner's share-link controls; absent on the shared view. */
+  shareControls?: React.ReactNode;
 }) {
   // Memoised: these feed effect dependencies in RouteMap, and a fresh array
   // identity per render would tear the map down on every day selection.
   const days = useMemo(() => sliceDays(journey), [journey]);
   // Both provenances flatten to one display list for the map and the
-  // narrative — the strip below keeps them apart, where capability differs.
+  // narrative — the strips below keep them apart, where capability differs.
+  const attachedList = useMemo(
+    () => (photos ?? []).map((p) => displayAttached(p, thumbs)),
+    [photos, thumbs],
+  );
+  const importedList = useMemo(
+    () => importPhotos.map((p) => displayImported(p, thumbs)),
+    [importPhotos, thumbs],
+  );
   const photoList = useMemo(
-    () => [
-      ...(photos ?? []).map(displayAttached),
-      ...importPhotos.map(displayImported),
-    ],
-    [photos, importPhotos],
+    () => [...attachedList, ...importedList],
+    [attachedList, importedList],
   );
   const [selected, setSelected] = useState<number | null>(null);
 
@@ -63,19 +98,52 @@ export function AdventureView({
           candidate={candidate}
           dayCount={days.length}
           plate={plate}
+          shared={shared}
         />
+        {shareControls}
         <DayNarrative
           days={days}
           journey={journey}
-          candidate={candidate}
+          candidate={shared ?? candidate}
           photos={photoList}
           selected={selected}
           onSelect={(i) => setSelected((cur) => (cur === i ? null : i))}
         />
-        {photos !== null && candidate && (
-          <PhotosSection candidateId={candidate.id} photos={photos} />
+        {photosSection}
+        {shared ? (
+          <>
+            <PhotoStrip
+              heading="Photos"
+              intro={
+                <>
+                  {attachedList.length === 1
+                    ? "One photo"
+                    : `${attachedList.length} photos`}{" "}
+                  the owner added to this adventure, placed by capture time
+                  against the drawn route.
+                </>
+              }
+              photos={attachedList}
+            />
+            <PhotoStrip
+              heading="From the owner's photo imports"
+              intro={
+                <>
+                  {importedList.length === 1
+                    ? "One photo"
+                    : `${importedList.length} photos`}{" "}
+                  from the owner&apos;s photo imports{" "}
+                  {importedList.length === 1 ? "was" : "were"} taken inside
+                  this journey&apos;s window — placed by capture time against
+                  the drawn route.
+                </>
+              }
+              photos={importedList}
+            />
+          </>
+        ) : (
+          <ImportPhotosStrip photos={importedList} />
         )}
-        <ImportPhotosStrip photos={importPhotos.map(displayImported)} />
       </article>
 
       {journey.legs.length > 0 && (
@@ -130,23 +198,31 @@ function Cover({
   candidate,
   dayCount,
   plate,
+  shared,
 }: {
   journey: Journey;
   candidate?: Candidate;
   dayCount: number;
   plate: number | null;
+  shared?: SharedCover;
 }) {
   const decision = candidate?.decision;
   const confirmed = decision?.action === "confirmed";
-  const name =
-    confirmed && decision.name
+  const name = shared
+    ? shared.name
+    : confirmed && decision.name
       ? decision.name
       : `Journey of ${journey.window_start.slice(0, 10)}`;
-  const eyebrow = confirmed
-    ? `CONFIRMED ADVENTURE${plate !== null ? ` · PLATE ${roman(plate)}` : ""}`
-    : decision?.action === "dismissed"
-      ? "DISMISSED CANDIDATE"
-      : "CANDIDATE";
+  // The shared eyebrow names what a stranger is looking at; the plate
+  // number is the owner's atlas register and stays theirs.
+  const eyebrow = shared
+    ? "SHARED ADVENTURE"
+    : confirmed
+      ? `CONFIRMED ADVENTURE${plate !== null ? ` · PLATE ${roman(plate)}` : ""}`
+      : decision?.action === "dismissed"
+        ? "DISMISSED CANDIDATE"
+        : "CANDIDATE";
+  const truncation = shared ?? candidate;
   const pctObserved =
     journey.total_km > 0
       ? Math.round((journey.observed_km / journey.total_km) * 100)
@@ -166,7 +242,7 @@ function Cover({
         · {dayCount} {dayCount === 1 ? "day" : "days"} · {journey.merged_points}{" "}
         fixes
       </p>
-      {(candidate?.start_truncated || candidate?.end_truncated) && (
+      {(truncation?.start_truncated || truncation?.end_truncated) && (
         // Truncation as words (bug 4 made visible), not markers. The amber
         // stays on the flag glyph: the token passes contrast as a mark but
         // not as sentence text (the CP4 a11y pass), so words are ink.
@@ -174,9 +250,9 @@ function Cover({
           <span className="font-bold text-flag" aria-hidden>
             ⚑
           </span>{" "}
-          {candidate.start_truncated &&
+          {truncation.start_truncated &&
             "The record starts mid-journey — it began before the imported window. "}
-          {candidate.end_truncated &&
+          {truncation.end_truncated &&
             "Still in progress at the window's edge — the end shown is the cut, not the return."}
         </p>
       )}
@@ -216,15 +292,21 @@ function Cover({
 
       <Divergence journey={journey} />
 
-      <p className="mb-8 mt-4 text-[11.5px] uppercase tracking-[0.18em] text-ink-2">
-        {decision ? (
-          <>
-            {decision.action} {shortDate(decision.updated_at)}
-          </>
-        ) : (
-          <>Undecided — confirm or dismiss in the candidates table</>
-        )}
-      </p>
+      {shared ? (
+        <p className="mb-8 mt-4 text-[11.5px] uppercase tracking-[0.18em] text-ink-2">
+          Read-only · shared by its owner
+        </p>
+      ) : (
+        <p className="mb-8 mt-4 text-[11.5px] uppercase tracking-[0.18em] text-ink-2">
+          {decision ? (
+            <>
+              {decision.action} {shortDate(decision.updated_at)}
+            </>
+          ) : (
+            <>Undecided — confirm or dismiss in the candidates table</>
+          )}
+        </p>
+      )}
     </header>
   );
 }

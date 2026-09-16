@@ -6,7 +6,9 @@ import { MAP_STYLE_URL } from "@/lib/basemap";
 import { SiteHeader } from "@/components/site-header";
 import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
-import { AdventureView } from "./adventure-view";
+import { AdventureView } from "@/components/adventure/adventure-view";
+import { ShareLinks } from "@/components/share-links";
+import { PhotosSection } from "./photos-section";
 
 // Server component for one adventure. Next 16 dynamic route: the [id] folder
 // segment arrives via `params`, which is a Promise here (async request APIs,
@@ -61,7 +63,9 @@ export default async function AdventurePage({
   // list call is skipped otherwise rather than made to 409. Import-photo
   // records are different (CP4): span-joined at read time for any candidate,
   // because during triage they are evidence of what the trip was.
-  const [photos, importPhotos] = await Promise.all([
+  // Share links (phase 13 CP4) exist for confirmed adventures only, like
+  // photos; the list is fetched alongside them.
+  const [photos, importPhotos, shares] = await Promise.all([
     confirmed
       ? api
           .GET("/candidates/{id}/photos", { params: { path: { id } } })
@@ -70,6 +74,11 @@ export default async function AdventurePage({
     api
       .GET("/candidates/{id}/import-photos", { params: { path: { id } } })
       .then((r) => r.data?.photos ?? []),
+    confirmed
+      ? api
+          .GET("/candidates/{id}/shares", { params: { path: { id } } })
+          .then((r) => r.data?.shares ?? [])
+      : Promise.resolve([]),
   ]);
 
   // The plate number: this adventure's position among confirmed adventures
@@ -97,6 +106,20 @@ export default async function AdventurePage({
         importPhotos={importPhotos}
         styleUrl={MAP_STYLE_URL}
         plate={plate}
+        photosSection={
+          photos !== null && candidate ? (
+            <PhotosSection candidateId={candidate.id} photos={photos} />
+          ) : undefined
+        }
+        shareControls={
+          confirmed && candidate ? (
+            <ShareLinks
+              candidateId={candidate.id}
+              shares={shares}
+              photoCount={(photos?.length ?? 0) + importPhotos.length}
+            />
+          ) : undefined
+        }
       />
     </main>
   );

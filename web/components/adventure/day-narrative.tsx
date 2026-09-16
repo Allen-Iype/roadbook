@@ -15,6 +15,10 @@ import type { components } from "@/lib/api/schema";
 
 type Journey = components["schemas"]["Journey"];
 type Candidate = components["schemas"]["Candidate"];
+// The narrative needs exactly the truncation flags of the candidate — so
+// the shared view (CP4), which carries no candidate at all, can pass just
+// those (they ride the SharedAdventure schema).
+export type Truncation = Pick<Candidate, "start_truncated" | "end_truncated">;
 
 export function DayNarrative({
   days,
@@ -26,7 +30,7 @@ export function DayNarrative({
 }: {
   days: Day[];
   journey: Journey;
-  candidate?: Candidate;
+  candidate?: Truncation;
   photos: DisplayPhoto[];
   selected: number | null;
   onSelect: (dayIndex: number) => void;
@@ -69,7 +73,7 @@ function DaySection({
 }: {
   day: Day;
   journey: Journey;
-  candidate?: Candidate;
+  candidate?: Truncation;
   byLeg: Map<number, DisplayPhoto[]>;
   byStop: Map<number, DisplayPhoto[]>;
   active: boolean;
@@ -187,7 +191,7 @@ function EventRow({
   event: DayEvent;
   day: Day;
   journey: Journey;
-  candidate?: Candidate;
+  candidate?: Truncation;
   byLeg: Map<number, DisplayPhoto[]>;
   byStop: Map<number, DisplayPhoto[]>;
 }) {
@@ -227,7 +231,7 @@ function eventBits(
   e: DayEvent,
   day: Day,
   journey: Journey,
-  candidate: Candidate | undefined,
+  candidate: Truncation | undefined,
   byLeg: Map<number, DisplayPhoto[]>,
   byStop: Map<number, DisplayPhoto[]>,
 ): { time: string; chip: string; body: React.ReactNode; photos?: DisplayPhoto[] } {

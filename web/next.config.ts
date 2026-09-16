@@ -27,6 +27,22 @@ const nextConfig: NextConfig = {
     // stays: client errors belong in the terminal where they are seen.
     browserToTerminal: true,
   },
+  // Share links (phase 13 CP4) are for the people they were sent to, never
+  // for a crawler that finds one: every response under /shared carries the
+  // robots directive as a header, in addition to the page's own <meta>
+  // (the header covers the thumbnail proxies too, which have no HTML).
+  async headers() {
+    return [
+      {
+        source: "/shared/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/api/shared/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ];
+  },
   experimental: {
     serverActions: {
       // Photo uploads travel through a server action as multipart FormData;

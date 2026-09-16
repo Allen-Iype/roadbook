@@ -179,3 +179,47 @@ export async function deletePhoto(
   revalidatePath(`/adventure/${candidateId}`);
   return { ok: true };
 }
+
+type ShareLinkCreated = components["schemas"]["ShareLinkCreated"];
+
+export type CreateShareResult =
+  | { ok: true; link: ShareLinkCreated }
+  | { ok: false; error: string };
+
+// Share links (phase 13 CP4). The action returns the raw token exactly
+// once — the server keeps only its hash — and the island composes the URL
+// on the browser's own origin, so nothing here assumes a public hostname.
+export async function createShareLink(
+  candidateId: number,
+): Promise<CreateShareResult> {
+  const { data, error, response } = await api.POST("/candidates/{id}/shares", {
+    params: { path: { id: candidateId } },
+  });
+  if (error || !data) {
+    return {
+      ok: false,
+      error: error?.error ?? `creating the link failed (HTTP ${response.status})`,
+    };
+  }
+  revalidatePath(`/adventure/${candidateId}`);
+  return { ok: true, link: data };
+}
+
+export type RevokeShareResult = { ok: true } | { ok: false; error: string };
+
+export async function revokeShareLink(
+  shareId: number,
+  candidateId: number,
+): Promise<RevokeShareResult> {
+  const { error, response } = await api.DELETE("/shares/{id}", {
+    params: { path: { id: shareId } },
+  });
+  if (error) {
+    return {
+      ok: false,
+      error: error.error ?? `revoking failed (HTTP ${response.status})`,
+    };
+  }
+  revalidatePath(`/adventure/${candidateId}`);
+  return { ok: true };
+}

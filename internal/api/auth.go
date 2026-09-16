@@ -25,14 +25,18 @@ const (
 )
 
 // authExempt are the operations that must answer without a session: the
-// health probe, and the auth surface itself (you cannot sign in from
-// behind the sign-in wall).
+// health probe, the auth surface itself (you cannot sign in from behind
+// the sign-in wall), and the share-token reads (CP4) — there the token is
+// the credential, and the requester is nobody by design.
 var authExempt = map[string]bool{
-	"GetHealth":      true,
-	"GetAuthSession": true,
-	"StartSignIn":    true,
-	"CompleteSignIn": true,
-	"SignOut":        true,
+	"GetHealth":                     true,
+	"GetAuthSession":                true,
+	"StartSignIn":                   true,
+	"CompleteSignIn":                true,
+	"SignOut":                       true,
+	"GetSharedAdventure":            true,
+	"GetSharedPhotoThumbnail":       true,
+	"GetSharedImportPhotoThumbnail": true,
 }
 
 // AuthMiddleware is the one place a request becomes a user. Mode off

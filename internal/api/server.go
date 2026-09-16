@@ -119,14 +119,27 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 	if cand == nil {
 		return GetCandidateJourney404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
 	}
-	j, obs, err := s.assembledJourney(ctx, cand)
+	out, _, err := s.journeyFor(ctx, s.currentUser(ctx), cand)
 	if err != nil {
 		return nil, err
 	}
+	return GetCandidateJourney200JSONResponse(out), nil
+}
 
+// journeyFor is the full contract-shaped journey for one candidate: the
+// assembled, route-applied legs plus the two derived lines the page prints
+// beside them — the source-asserted mode breakdown and the countries
+// crossed. One function because two consumers render the same plate: the
+// owner's page (GetCandidateJourney) and the shared view (CP4), and a
+// stranger must see exactly what the owner sees, legs and kinds included.
+func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.CandidateRow) (Journey, journey.Journey, error) {
+	j, obs, err := s.assembledJourney(ctx, userID, cand)
+	if err != nil {
+		return Journey{}, j, err
+	}
 	out, err := toAPIJourney(j)
 	if err != nil {
-		return nil, err
+		return Journey{}, j, err
 	}
 
 	// Source-asserted mode figures (phase 11 §6.2): absent — not empty —
@@ -152,13 +165,13 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 	}
 	crossed, err := s.Store.CountriesForPoints(ctx, pts)
 	if err != nil {
-		return nil, err
+		return Journey{}, j, err
 	}
 	out.Countries = make([]Country, 0, len(crossed))
 	for _, c := range crossed {
 		out.Countries = append(out.Countries, Country{IsoCode: c.ISOCode, Name: c.Name})
 	}
-	return GetCandidateJourney200JSONResponse(out), nil
+	return out, j, nil
 }
 
 // assembledJourney is the one journey pipeline both consumers run —
@@ -170,8 +183,8 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 // assembledJourney also hands back the window's raw observations: the journey
 // handler derives the source-asserted mode breakdown from their activities —
 // deliberately outside Assemble, whose output the golden contract pins.
-func (s *Server) assembledJourney(ctx context.Context, cand *store.CandidateRow) (journey.Journey, domain.Observations, error) {
-	obs, err := s.Store.LoadJourneyInputs(ctx, s.currentUser(ctx), cand.SpanStart, cand.SpanEnd)
+func (s *Server) assembledJourney(ctx context.Context, userID string, cand *store.CandidateRow) (journey.Journey, domain.Observations, error) {
+	obs, err := s.Store.LoadJourneyInputs(ctx, userID, cand.SpanStart, cand.SpanEnd)
 	if err != nil {
 		return journey.Journey{}, obs, err
 	}
@@ -398,11 +411,17 @@ func (s *Server) DecideCandidatesBulk(ctx context.Context, req DecideCandidatesB
 // recomputed candidate→decision association (BRIEF §3.1: matching is derived,
 // never stored).
 func (s *Server) matchedState(ctx context.Context) (*store.Run, []store.CandidateRow, []store.DecisionRow, map[int64]int64, error) {
-	run, cands, err := s.Store.LatestRun(ctx, s.currentUser(ctx))
+	return s.matchedStateFor(ctx, s.currentUser(ctx))
+}
+
+// matchedStateFor is matchedState for an explicit owner — the shared view
+// (CP4) reads as the link's owner, not as the requester, who has no session.
+func (s *Server) matchedStateFor(ctx context.Context, userID string) (*store.Run, []store.CandidateRow, []store.DecisionRow, map[int64]int64, error) {
+	run, cands, err := s.Store.LatestRun(ctx, userID)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	decs, err := s.Store.ListDecisions(ctx, s.currentUser(ctx))
+	decs, err := s.Store.ListDecisions(ctx, userID)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

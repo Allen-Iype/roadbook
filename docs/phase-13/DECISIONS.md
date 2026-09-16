@@ -104,3 +104,45 @@ decisions are made, per the working agreement.
   ugly boundary errors instead of the signin redirect (then data fetches
   gain a 401→redirect helper); a real marketing landing replacing
   /welcome's pitch role (then /welcome may move behind the gate).
+
+## 2026-09-16 — CP4: share links
+
+- **Chosen:** a link is a row in `share_links` tied to the adventure's
+  DECISION (its durable identity — links ride re-detection the way photos
+  do), storing only the token's SHA-256 exactly like sessions: the raw
+  128-bit token is returned once at creation, the web island composes the
+  URL on the browser's own origin (no public hostname assumed anywhere),
+  and a lost link is replaced, never recovered. Revocation is a DELETE.
+  Every way a link can fail to open — unknown, revoked, decision dismissed
+  since, orphaned by re-detection — is one 404 from the API and one
+  not-found page; the outside learns nothing about which. The three
+  token-side reads (view + two thumbnail operations) are the only
+  additions to the auth-exempt set: the token is the credential, the
+  requester is nobody by design, and every read the token unlocks runs as
+  the link's OWNER (`matchedStateFor`, `journeyFor`, `placedPhotos`,
+  `placedImportPhotos` — the same helpers the owner's own page now uses,
+  so a stranger's plate cannot differ from the owner's by construction).
+  On the web the plate components moved from the app route into
+  `components/adventure/` (a public-shell page must not import from the
+  app shell — the phase-9 seam stays a file-layout fact); the owner's
+  islands (photo upload, share controls) arrive as slots; the shared page
+  lives in `(public)`, reads no session, and carries `noindex` both as a
+  header (next.config, covering the thumbnail proxies too) and as page
+  metadata. The e2e share spec is the suite's one writing test —
+  mint/open-as-stranger/revoke, self-cleaning, desktop project only
+  (three projects would race on one adventure's link list; it resizes
+  its own viewport for the phone check).
+- **Rejected:** storing the raw token for later re-copy (a leaked row
+  would be a working link; the once-shown URL with a plain statement is
+  the honest trade); a soft "revoked" state (nothing to reason about, and
+  revoked-vs-never-existed must be indistinguishable anyway); per-link
+  labels or expiry (no evidence yet); the owner's plate number on the
+  shared cover (it is the owner's atlas register, meaningless to a
+  stranger); any owner-identifying field in `SharedAdventure` (no
+  candidate id, no score, no account — nothing about the owner).
+- **Would change our mind:** people losing links repeatedly (then an
+  opaque stored prefix for identification, or a per-link label);
+  a request for expiring links (an `expires_at` column, checked in
+  `ResolveShareLink`); a second consumer of the shared read (a life-map
+  share) — that reopens the deliberately-deferred bigger disclosure at
+  its own STOP.

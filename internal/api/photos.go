@@ -216,16 +216,26 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 		return nil, err
 	}
 
-	// Placement (BRIEF §3G): derived here at read time against the same
-	// assembled, route-applied journey the page draws — never stored. The
-	// assembly is skipped when no photo could place anyway.
+	out, err := s.placedPhotos(ctx, s.currentUser(ctx), cand, rows)
+	if err != nil {
+		return nil, err
+	}
+	return ListCandidatePhotos200JSONResponse(out), nil
+}
+
+// placedPhotos converts attached-photo rows to the contract shape with
+// placement (BRIEF §3G): derived here at read time against the same
+// assembled, route-applied journey the page draws — never stored. The
+// assembly is skipped when no photo could place anyway. Shared with the
+// shared view (CP4), which places the same rows for a stranger.
+func (s *Server) placedPhotos(ctx context.Context, userID string, cand *store.CandidateRow, rows []store.PhotoRow) (PhotoList, error) {
 	var j journey.Journey
 	var haveJourney bool
 	for _, r := range rows {
 		if r.TakenAt != nil && r.Lat != nil {
-			jv, _, err := s.assembledJourney(ctx, cand)
+			jv, _, err := s.assembledJourney(ctx, userID, cand)
 			if err != nil {
-				return nil, err
+				return PhotoList{}, err
 			}
 			j, haveJourney = jv, true
 			break
@@ -258,7 +268,7 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 		}
 		out.Photos[i] = ap
 	}
-	return ListCandidatePhotos200JSONResponse(out), nil
+	return out, nil
 }
 
 func (s *Server) GetPhotoThumbnail(ctx context.Context, req GetPhotoThumbnailRequestObject) (GetPhotoThumbnailResponseObject, error) {

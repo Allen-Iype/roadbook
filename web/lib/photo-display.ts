@@ -31,10 +31,30 @@ export type DisplayPhoto = {
   thumb_h: number;
 };
 
-export function displayAttached(p: Photo): DisplayPhoto {
+// Thumbnail proxy roots. The owner's pages read through the session-scoped
+// proxies; a shared view (phase 13 CP4) reads through the token-scoped
+// ones, where the share token — not a session — is what authorises the
+// bytes. Same tiles, same placements, different door.
+export type ThumbRoots = { attached: string; imported: string };
+export const OWNER_THUMBS: ThumbRoots = {
+  attached: "/api/photos",
+  imported: "/api/import-photos",
+};
+export function sharedThumbs(token: string): ThumbRoots {
+  const t = encodeURIComponent(token);
+  return {
+    attached: `/api/shared/${t}/photos`,
+    imported: `/api/shared/${t}/import-photos`,
+  };
+}
+
+export function displayAttached(
+  p: Photo,
+  roots: ThumbRoots = OWNER_THUMBS,
+): DisplayPhoto {
   return {
     key: `a-${p.id}`,
-    thumb_url: `/api/photos/${p.id}/thumb`,
+    thumb_url: `${roots.attached}/${p.id}/thumb`,
     imported: false,
     original_name: p.original_name,
     taken_at: p.taken_at,
@@ -50,10 +70,13 @@ export function displayAttached(p: Photo): DisplayPhoto {
   };
 }
 
-export function displayImported(p: ImportPhoto): DisplayPhoto {
+export function displayImported(
+  p: ImportPhoto,
+  roots: ThumbRoots = OWNER_THUMBS,
+): DisplayPhoto {
   return {
     key: `i-${p.id}`,
-    thumb_url: p.thumb_w > 0 ? `/api/import-photos/${p.id}/thumb` : null,
+    thumb_url: p.thumb_w > 0 ? `${roots.imported}/${p.id}/thumb` : null,
     imported: true,
     original_name: p.original_name,
     taken_at: p.taken_at,

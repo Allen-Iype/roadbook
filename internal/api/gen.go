@@ -820,6 +820,47 @@ type SessionInfo struct {
 // SessionInfoMode defines model for SessionInfo.Mode.
 type SessionInfoMode string
 
+// ShareLink defines model for ShareLink.
+type ShareLink struct {
+	CreatedAt time.Time `json:"created_at"`
+	Id        int64     `json:"id"`
+}
+
+// ShareLinkCreated defines model for ShareLinkCreated.
+type ShareLinkCreated struct {
+	CreatedAt time.Time `json:"created_at"`
+	Id        int64     `json:"id"`
+
+	// Token The raw 128-bit token, hex. Returned exactly once; the server stores only its hash. The web app composes the URL as /shared/{token} on whatever origin it is served from — the API never assumes a public origin.
+	Token string `json:"token"`
+}
+
+// ShareLinkList defines model for ShareLinkList.
+type ShareLinkList struct {
+	Shares []ShareLink `json:"shares"`
+}
+
+// SharedAdventure Everything the shared plate renders, and nothing about the owner: no candidate id, no score, no account. The photo entries' ids are meaningful only through the token-scoped thumbnail operations.
+type SharedAdventure struct {
+	EndTruncated bool `json:"end_truncated"`
+
+	// ImportPhotos Photo-import records span-joined to the adventure, with placements.
+	ImportPhotos []ImportPhoto `json:"import_photos"`
+	Journey      Journey       `json:"journey"`
+
+	// Name The adventure's confirmed name.
+	Name string `json:"name"`
+
+	// Params The photo placement parameters (invariant 3) — photo_far_warn_m.
+	Params map[string]interface{} `json:"params"`
+
+	// Photos Photos attached to the adventure, with placements.
+	Photos         []Photo   `json:"photos"`
+	SpanEnd        time.Time `json:"span_end"`
+	SpanStart      time.Time `json:"span_start"`
+	StartTruncated bool      `json:"start_truncated"`
+}
+
 // Stop defines model for Stop.
 type Stop struct {
 	// DisplacementKm First-to-last straight line during the halt, not path sum.
@@ -925,6 +966,12 @@ type ServerInterface interface {
 	// UploadCandidatePhotos Upload photos (and Takeout sidecars) to a confirmed adventure
 	// (POST /candidates/{id}/photos)
 	UploadCandidatePhotos(w http.ResponseWriter, r *http.Request, id int64)
+	// ListShareLinks The live share links of a confirmed adventure
+	// (GET /candidates/{id}/shares)
+	ListShareLinks(w http.ResponseWriter, r *http.Request, id int64)
+	// CreateShareLink Mint a share link for a confirmed adventure
+	// (POST /candidates/{id}/shares)
+	CreateShareLink(w http.ResponseWriter, r *http.Request, id int64)
 	// GetHealth Readiness check
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -949,6 +996,18 @@ type ServerInterface interface {
 	// GetPhotoThumbnail The stored thumbnail image
 	// (GET /photos/{id}/thumbnail)
 	GetPhotoThumbnail(w http.ResponseWriter, r *http.Request, id int64)
+	// GetSharedAdventure The read-only view a share link opens
+	// (GET /shared/{token})
+	GetSharedAdventure(w http.ResponseWriter, r *http.Request, token string)
+	// GetSharedImportPhotoThumbnail Thumbnail of a photo-import record, by share token
+	// (GET /shared/{token}/import-photos/{id}/thumbnail)
+	GetSharedImportPhotoThumbnail(w http.ResponseWriter, r *http.Request, token string, id int64)
+	// GetSharedPhotoThumbnail Thumbnail of an attached photo, by share token
+	// (GET /shared/{token}/photos/{id}/thumbnail)
+	GetSharedPhotoThumbnail(w http.ResponseWriter, r *http.Request, token string, id int64)
+	// RevokeShareLink Revoke one share link
+	// (DELETE /shares/{id})
+	RevokeShareLink(w http.ResponseWriter, r *http.Request, id int64)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1245,6 +1304,58 @@ func (siw *ServerInterfaceWrapper) UploadCandidatePhotos(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
+// ListShareLinks operation middleware
+func (siw *ServerInterfaceWrapper) ListShareLinks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListShareLinks(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateShareLink operation middleware
+func (siw *ServerInterfaceWrapper) CreateShareLink(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateShareLink(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
 
@@ -1405,6 +1516,128 @@ func (siw *ServerInterfaceWrapper) GetPhotoThumbnail(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// GetSharedAdventure operation middleware
+func (siw *ServerInterfaceWrapper) GetSharedAdventure(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "token" -------------
+	var token string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", r.PathValue("token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSharedAdventure(w, r, token)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSharedImportPhotoThumbnail operation middleware
+func (siw *ServerInterfaceWrapper) GetSharedImportPhotoThumbnail(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "token" -------------
+	var token string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", r.PathValue("token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSharedImportPhotoThumbnail(w, r, token, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSharedPhotoThumbnail operation middleware
+func (siw *ServerInterfaceWrapper) GetSharedPhotoThumbnail(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "token" -------------
+	var token string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", r.PathValue("token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSharedPhotoThumbnail(w, r, token, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeShareLink operation middleware
+func (siw *ServerInterfaceWrapper) RevokeShareLink(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeShareLink(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -1541,6 +1774,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-photos/{id}/thumbnail", wrapper.GetImportPhotoThumbnail)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/photos/{id}/thumbnail", wrapper.GetPhotoThumbnail)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/photos/{id}", wrapper.DeletePhoto)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/shares", wrapper.ListShareLinks)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/shares", wrapper.CreateShareLink)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/shares/{id}", wrapper.RevokeShareLink)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/shared/{token}", wrapper.GetSharedAdventure)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/shared/{token}/photos/{id}/thumbnail", wrapper.GetSharedPhotoThumbnail)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/shared/{token}/import-photos/{id}/thumbnail", wrapper.GetSharedImportPhotoThumbnail)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/session", wrapper.GetAuthSession)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/signin", wrapper.StartSignIn)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/callback", wrapper.CompleteSignIn)
@@ -2149,6 +2388,134 @@ func (response UploadCandidatePhotos409JSONResponse) VisitUploadCandidatePhotosR
 	return err
 }
 
+type ListShareLinksRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type ListShareLinksResponseObject interface {
+	VisitListShareLinksResponse(w http.ResponseWriter) error
+}
+
+type ListShareLinks200JSONResponse ShareLinkList
+
+func (response ListShareLinks200JSONResponse) VisitListShareLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListShareLinks401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListShareLinks401JSONResponse) VisitListShareLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListShareLinks404JSONResponse Error
+
+func (response ListShareLinks404JSONResponse) VisitListShareLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListShareLinks409JSONResponse Error
+
+func (response ListShareLinks409JSONResponse) VisitListShareLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateShareLinkRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type CreateShareLinkResponseObject interface {
+	VisitCreateShareLinkResponse(w http.ResponseWriter) error
+}
+
+type CreateShareLink201JSONResponse ShareLinkCreated
+
+func (response CreateShareLink201JSONResponse) VisitCreateShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateShareLink401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CreateShareLink401JSONResponse) VisitCreateShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateShareLink404JSONResponse Error
+
+func (response CreateShareLink404JSONResponse) VisitCreateShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateShareLink409JSONResponse Error
+
+func (response CreateShareLink409JSONResponse) VisitCreateShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetHealthRequestObject struct {
 }
 
@@ -2567,6 +2934,182 @@ func (response GetPhotoThumbnail404JSONResponse) VisitGetPhotoThumbnailResponse(
 	return err
 }
 
+type GetSharedAdventureRequestObject struct {
+	Token string `json:"token"`
+}
+
+type GetSharedAdventureResponseObject interface {
+	VisitGetSharedAdventureResponse(w http.ResponseWriter) error
+}
+
+type GetSharedAdventure200ResponseHeaders struct {
+	XRobotsTag *string
+}
+
+type GetSharedAdventure200JSONResponse struct {
+	Body    SharedAdventure
+	Headers GetSharedAdventure200ResponseHeaders
+}
+
+func (response GetSharedAdventure200JSONResponse) VisitGetSharedAdventureResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.XRobotsTag != nil {
+		w.Header().Set("X-Robots-Tag", fmt.Sprint(*response.Headers.XRobotsTag))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSharedAdventure404JSONResponse Error
+
+func (response GetSharedAdventure404JSONResponse) VisitGetSharedAdventureResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSharedImportPhotoThumbnailRequestObject struct {
+	Token string `json:"token"`
+	Id    int64  `json:"id"`
+}
+
+type GetSharedImportPhotoThumbnailResponseObject interface {
+	VisitGetSharedImportPhotoThumbnailResponse(w http.ResponseWriter) error
+}
+
+type GetSharedImportPhotoThumbnail200ImagejpegResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response GetSharedImportPhotoThumbnail200ImagejpegResponse) VisitGetSharedImportPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetSharedImportPhotoThumbnail404JSONResponse Error
+
+func (response GetSharedImportPhotoThumbnail404JSONResponse) VisitGetSharedImportPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSharedPhotoThumbnailRequestObject struct {
+	Token string `json:"token"`
+	Id    int64  `json:"id"`
+}
+
+type GetSharedPhotoThumbnailResponseObject interface {
+	VisitGetSharedPhotoThumbnailResponse(w http.ResponseWriter) error
+}
+
+type GetSharedPhotoThumbnail200ImagejpegResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response GetSharedPhotoThumbnail200ImagejpegResponse) VisitGetSharedPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetSharedPhotoThumbnail404JSONResponse Error
+
+func (response GetSharedPhotoThumbnail404JSONResponse) VisitGetSharedPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeShareLinkRequestObject struct {
+	Id int64 `json:"id"`
+}
+
+type RevokeShareLinkResponseObject interface {
+	VisitRevokeShareLinkResponse(w http.ResponseWriter) error
+}
+
+type RevokeShareLink204Response struct {
+}
+
+func (response RevokeShareLink204Response) VisitRevokeShareLinkResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeShareLink401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RevokeShareLink401JSONResponse) VisitRevokeShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeShareLink404JSONResponse Error
+
+func (response RevokeShareLink404JSONResponse) VisitRevokeShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// CompleteSignIn OIDC provider redirect target
@@ -2605,6 +3148,12 @@ type StrictServerInterface interface {
 	// UploadCandidatePhotos Upload photos (and Takeout sidecars) to a confirmed adventure
 	// (POST /candidates/{id}/photos)
 	UploadCandidatePhotos(ctx context.Context, request UploadCandidatePhotosRequestObject) (UploadCandidatePhotosResponseObject, error)
+	// ListShareLinks The live share links of a confirmed adventure
+	// (GET /candidates/{id}/shares)
+	ListShareLinks(ctx context.Context, request ListShareLinksRequestObject) (ListShareLinksResponseObject, error)
+	// CreateShareLink Mint a share link for a confirmed adventure
+	// (POST /candidates/{id}/shares)
+	CreateShareLink(ctx context.Context, request CreateShareLinkRequestObject) (CreateShareLinkResponseObject, error)
 	// GetHealth Readiness check
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -2629,6 +3178,18 @@ type StrictServerInterface interface {
 	// GetPhotoThumbnail The stored thumbnail image
 	// (GET /photos/{id}/thumbnail)
 	GetPhotoThumbnail(ctx context.Context, request GetPhotoThumbnailRequestObject) (GetPhotoThumbnailResponseObject, error)
+	// GetSharedAdventure The read-only view a share link opens
+	// (GET /shared/{token})
+	GetSharedAdventure(ctx context.Context, request GetSharedAdventureRequestObject) (GetSharedAdventureResponseObject, error)
+	// GetSharedImportPhotoThumbnail Thumbnail of a photo-import record, by share token
+	// (GET /shared/{token}/import-photos/{id}/thumbnail)
+	GetSharedImportPhotoThumbnail(ctx context.Context, request GetSharedImportPhotoThumbnailRequestObject) (GetSharedImportPhotoThumbnailResponseObject, error)
+	// GetSharedPhotoThumbnail Thumbnail of an attached photo, by share token
+	// (GET /shared/{token}/photos/{id}/thumbnail)
+	GetSharedPhotoThumbnail(ctx context.Context, request GetSharedPhotoThumbnailRequestObject) (GetSharedPhotoThumbnailResponseObject, error)
+	// RevokeShareLink Revoke one share link
+	// (DELETE /shares/{id})
+	RevokeShareLink(ctx context.Context, request RevokeShareLinkRequestObject) (RevokeShareLinkResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -2993,6 +3554,58 @@ func (sh *strictHandler) UploadCandidatePhotos(w http.ResponseWriter, r *http.Re
 	}
 }
 
+// ListShareLinks operation middleware
+func (sh *strictHandler) ListShareLinks(w http.ResponseWriter, r *http.Request, id int64) {
+	var request ListShareLinksRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListShareLinks(ctx, request.(ListShareLinksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListShareLinks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListShareLinksResponseObject); ok {
+		if err := validResponse.VisitListShareLinksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateShareLink operation middleware
+func (sh *strictHandler) CreateShareLink(w http.ResponseWriter, r *http.Request, id int64) {
+	var request CreateShareLinkRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateShareLink(ctx, request.(CreateShareLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateShareLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateShareLinkResponseObject); ok {
+		if err := validResponse.VisitCreateShareLinkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetHealth operation middleware
 func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	var request GetHealthRequestObject
@@ -3200,6 +3813,112 @@ func (sh *strictHandler) GetPhotoThumbnail(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetPhotoThumbnailResponseObject); ok {
 		if err := validResponse.VisitGetPhotoThumbnailResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSharedAdventure operation middleware
+func (sh *strictHandler) GetSharedAdventure(w http.ResponseWriter, r *http.Request, token string) {
+	var request GetSharedAdventureRequestObject
+
+	request.Token = token
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSharedAdventure(ctx, request.(GetSharedAdventureRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSharedAdventure")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSharedAdventureResponseObject); ok {
+		if err := validResponse.VisitGetSharedAdventureResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSharedImportPhotoThumbnail operation middleware
+func (sh *strictHandler) GetSharedImportPhotoThumbnail(w http.ResponseWriter, r *http.Request, token string, id int64) {
+	var request GetSharedImportPhotoThumbnailRequestObject
+
+	request.Token = token
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSharedImportPhotoThumbnail(ctx, request.(GetSharedImportPhotoThumbnailRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSharedImportPhotoThumbnail")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSharedImportPhotoThumbnailResponseObject); ok {
+		if err := validResponse.VisitGetSharedImportPhotoThumbnailResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSharedPhotoThumbnail operation middleware
+func (sh *strictHandler) GetSharedPhotoThumbnail(w http.ResponseWriter, r *http.Request, token string, id int64) {
+	var request GetSharedPhotoThumbnailRequestObject
+
+	request.Token = token
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSharedPhotoThumbnail(ctx, request.(GetSharedPhotoThumbnailRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSharedPhotoThumbnail")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSharedPhotoThumbnailResponseObject); ok {
+		if err := validResponse.VisitGetSharedPhotoThumbnailResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeShareLink operation middleware
+func (sh *strictHandler) RevokeShareLink(w http.ResponseWriter, r *http.Request, id int64) {
+	var request RevokeShareLinkRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeShareLink(ctx, request.(RevokeShareLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeShareLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeShareLinkResponseObject); ok {
+		if err := validResponse.VisitRevokeShareLinkResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

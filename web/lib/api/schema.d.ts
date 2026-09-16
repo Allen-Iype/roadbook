@@ -292,6 +292,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/{id}/shares": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The live share links of a confirmed adventure
+         * @description Live links only — a revoked link is gone, not listed as revoked. Tokens are never returned here (hash-only storage); each entry is identified by id and creation time, which is what revocation takes.
+         */
+        get: operations["listShareLinks"];
+        put?: never;
+        /**
+         * Mint a share link for a confirmed adventure
+         * @description A share link is a capability URL (phase 13 BRIEF §1): the token IS the permission. Anyone holding it can read this one adventure — map, legs with their kinds, day narrative, countries, and photos of both provenances — signed in or not, on an authless instance or a hosted one. The raw token appears in this response once; the server keeps only its hash (the sessions rule), so a link that is lost is replaced by a new one, never recovered. The link is tied to the adventure's decision and survives re-detection through the recomputed match.
+         */
+        post: operations["createShareLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke one share link
+         * @description Revocation is a DELETE (the sessions rule): the token stops resolving immediately and the shared page answers 404 from the next request. Only the link's owner can revoke it; another user's link id is exactly as absent as an unknown one.
+         */
+        delete: operations["revokeShareLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The read-only view a share link opens
+         * @description The public read path (phase 13 BRIEF §3C): no session is consulted — the token is the credential, and this operation is exempt from the sign-in wall in every mode. It resolves the token to its decision, requires that decision to be confirmed and matched to a candidate of the owner's latest run, and answers with the same assembled journey the owner's own page draws: every leg carries its kind (invariants 5 and 8 apply to strangers most of all), countries, mode breakdown, and photos of both provenances with their placements. Unknown, revoked, and currently-unreachable links all answer the same 404 — a link that does not open tells nothing about why. The response carries X-Robots-Tag noindex; the page that renders it does too.
+         */
+        get: operations["getSharedAdventure"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/{token}/photos/{id}/thumbnail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Thumbnail of an attached photo, by share token
+         * @description Session-exempt like the shared view. The photo must belong to the adventure the token opens; any other photo id is 404 — the token grants exactly one adventure, never the photo id space.
+         */
+        get: operations["getSharedPhotoThumbnail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/{token}/import-photos/{id}/thumbnail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Thumbnail of a photo-import record, by share token
+         * @description Session-exempt like the shared view. The record must be one the shared adventure lists (its capture inside the adventure's span, the owner's own record); anything else is 404, as is a record with no thumbnail (HEIC).
+         */
+        get: operations["getSharedImportPhotoThumbnail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/session": {
         parameters: {
             query?: never;
@@ -802,6 +906,43 @@ export interface components {
             signed_in: boolean;
             /** @description Present only when signed in and the provider shared one. */
             email?: string;
+        };
+        ShareLink: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ShareLinkCreated: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            created_at: string;
+            /** @description The raw 128-bit token, hex. Returned exactly once; the server stores only its hash. The web app composes the URL as /shared/{token} on whatever origin it is served from — the API never assumes a public origin. */
+            token: string;
+        };
+        ShareLinkList: {
+            shares: components["schemas"]["ShareLink"][];
+        };
+        /** @description Everything the shared plate renders, and nothing about the owner: no candidate id, no score, no account. The photo entries' ids are meaningful only through the token-scoped thumbnail operations. */
+        SharedAdventure: {
+            /** @description The adventure's confirmed name. */
+            name: string;
+            /** Format: date-time */
+            span_start: string;
+            /** Format: date-time */
+            span_end: string;
+            start_truncated: boolean;
+            end_truncated: boolean;
+            journey: components["schemas"]["Journey"];
+            /** @description Photos attached to the adventure, with placements. */
+            photos: components["schemas"]["Photo"][];
+            /** @description Photo-import records span-joined to the adventure, with placements. */
+            import_photos: components["schemas"]["ImportPhoto"][];
+            /** @description The photo placement parameters (invariant 3) — photo_far_warn_m. */
+            params: {
+                [key: string]: unknown;
+            };
         };
     };
     responses: {
@@ -1404,6 +1545,218 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             /** @description No such photo. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listShareLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Candidate id from the latest run. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The links, oldest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareLinkList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The candidate has no confirmed decision. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createShareLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Candidate id from the latest run. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link, with its token — shown once. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareLinkCreated"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The candidate has no confirmed decision — only confirmed adventures are shareable. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    revokeShareLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description No such link of the caller's. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSharedAdventure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The raw token from the link. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The shared adventure. */
+            200: {
+                headers: {
+                    /** @description Always "noindex, nofollow". */
+                    "X-Robots-Tag"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedAdventure"];
+                };
+            };
+            /** @description This link does not open anything. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSharedPhotoThumbnail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The thumbnail. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description The link does not open, or the photo is not on the shared adventure. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSharedImportPhotoThumbnail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The thumbnail. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description The link does not open, the record is not on the shared adventure, or it has no thumbnail. */
             404: {
                 headers: {
                     [name: string]: unknown;

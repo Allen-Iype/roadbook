@@ -6,6 +6,7 @@ import (
 
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
+	"roadbook/internal/store"
 )
 
 // The record→adventure relation is a read-time span join (DECISIONS
@@ -22,9 +23,20 @@ func (s *Server) ListCandidateImportPhotos(ctx context.Context, req ListCandidat
 	if cand == nil {
 		return ListCandidateImportPhotos404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
 	}
-	recs, err := s.Store.ListPhotoRecordsInSpan(ctx, s.currentUser(ctx), cand.SpanStart, cand.SpanEnd)
+	out, err := s.placedImportPhotos(ctx, s.currentUser(ctx), cand)
 	if err != nil {
 		return nil, err
+	}
+	return ListCandidateImportPhotos200JSONResponse(out), nil
+}
+
+// placedImportPhotos span-joins the owner's records to the candidate and
+// places them against the assembled journey. Shared with the shared view
+// (CP4).
+func (s *Server) placedImportPhotos(ctx context.Context, userID string, cand *store.CandidateRow) (ImportPhotoList, error) {
+	recs, err := s.Store.ListPhotoRecordsInSpan(ctx, userID, cand.SpanStart, cand.SpanEnd)
+	if err != nil {
+		return ImportPhotoList{}, err
 	}
 
 	out := ImportPhotoList{
@@ -34,9 +46,9 @@ func (s *Server) ListCandidateImportPhotos(ctx context.Context, req ListCandidat
 	var j journey.Journey
 	var haveJourney bool
 	if len(recs) > 0 {
-		j, _, err = s.assembledJourney(ctx, cand)
+		j, _, err = s.assembledJourney(ctx, userID, cand)
 		if err != nil {
-			return nil, err
+			return ImportPhotoList{}, err
 		}
 		haveJourney = true
 	}
@@ -74,7 +86,7 @@ func (s *Server) ListCandidateImportPhotos(ctx context.Context, req ListCandidat
 		}
 		out.Photos[i] = ap
 	}
-	return ListCandidateImportPhotos200JSONResponse(out), nil
+	return out, nil
 }
 
 func (s *Server) GetImportPhotoThumbnail(ctx context.Context, req GetImportPhotoThumbnailRequestObject) (GetImportPhotoThumbnailResponseObject, error) {

@@ -620,6 +620,228 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /candidates/{id}/shares:
+    post:
+      operationId: createShareLink
+      summary: Mint a share link for a confirmed adventure
+      description: >
+        A share link is a capability URL (phase 13 BRIEF §1): the token IS
+        the permission. Anyone holding it can read this one adventure —
+        map, legs with their kinds, day narrative, countries, and photos of
+        both provenances — signed in or not, on an authless instance or a
+        hosted one. The raw token appears in this response once; the
+        server keeps only its hash (the sessions rule), so a link that is
+        lost is replaced by a new one, never recovered. The link is tied to
+        the adventure's decision and survives re-detection through the
+        recomputed match.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Candidate id from the latest run.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "201":
+          description: The link, with its token — shown once.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareLinkCreated"
+        "404":
+          description: No such candidate in the latest run (stale id after re-detection).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: The candidate has no confirmed decision — only confirmed adventures are shareable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      operationId: listShareLinks
+      summary: The live share links of a confirmed adventure
+      description: >
+        Live links only — a revoked link is gone, not listed as revoked.
+        Tokens are never returned here (hash-only storage); each entry is
+        identified by id and creation time, which is what revocation
+        takes.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Candidate id from the latest run.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "200":
+          description: The links, oldest first.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareLinkList"
+        "404":
+          description: No such candidate in the latest run (stale id after re-detection).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: The candidate has no confirmed decision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /shares/{id}:
+    delete:
+      operationId: revokeShareLink
+      summary: Revoke one share link
+      description: >
+        Revocation is a DELETE (the sessions rule): the token stops
+        resolving immediately and the shared page answers 404 from the
+        next request. Only the link's owner can revoke it; another user's
+        link id is exactly as absent as an unknown one.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "204":
+          description: Revoked.
+        "404":
+          description: No such link of the caller's.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /shared/{token}:
+    get:
+      operationId: getSharedAdventure
+      summary: The read-only view a share link opens
+      description: >
+        The public read path (phase 13 BRIEF §3C): no session is consulted
+        — the token is the credential, and this operation is exempt from
+        the sign-in wall in every mode. It resolves the token to its
+        decision, requires that decision to be confirmed and matched to a
+        candidate of the owner's latest run, and answers with the same
+        assembled journey the owner's own page draws: every leg carries its
+        kind (invariants 5 and 8 apply to strangers most of all), countries,
+        mode breakdown, and photos of both provenances with their
+        placements. Unknown, revoked, and currently-unreachable links all
+        answer the same 404 — a link that does not open tells nothing
+        about why. The response carries X-Robots-Tag noindex; the page
+        that renders it does too.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: The raw token from the link.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The shared adventure.
+          headers:
+            X-Robots-Tag:
+              schema: {type: string}
+              description: Always "noindex, nofollow".
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedAdventure"
+        "404":
+          description: This link does not open anything.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /shared/{token}/photos/{id}/thumbnail:
+    get:
+      operationId: getSharedPhotoThumbnail
+      summary: Thumbnail of an attached photo, by share token
+      description: >
+        Session-exempt like the shared view. The photo must belong to the
+        adventure the token opens; any other photo id is 404 — the token
+        grants exactly one adventure, never the photo id space.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: The thumbnail.
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: The link does not open, or the photo is not on the shared adventure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /shared/{token}/import-photos/{id}/thumbnail:
+    get:
+      operationId: getSharedImportPhotoThumbnail
+      summary: Thumbnail of a photo-import record, by share token
+      description: >
+        Session-exempt like the shared view. The record must be one the
+        shared adventure lists (its capture inside the adventure's span,
+        the owner's own record); anything else is 404, as is a record
+        with no thumbnail (HEIC).
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: The thumbnail.
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: The link does not open, the record is not on the shared adventure, or it has no thumbnail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /auth/session:
     get:
       operationId: getAuthSession
@@ -1545,3 +1767,81 @@ components:
         email:
           type: string
           description: Present only when signed in and the provider shared one.
+
+    ShareLink:
+      type: object
+      required: [id, created_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+
+    ShareLinkCreated:
+      type: object
+      required: [id, created_at, token]
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        token:
+          type: string
+          description: >
+            The raw 128-bit token, hex. Returned exactly once; the server
+            stores only its hash. The web app composes the URL as
+            /shared/{token} on whatever origin it is served from — the
+            API never assumes a public origin.
+
+    ShareLinkList:
+      type: object
+      required: [shares]
+      properties:
+        shares:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShareLink"
+
+    SharedAdventure:
+      type: object
+      description: >
+        Everything the shared plate renders, and nothing about the owner:
+        no candidate id, no score, no account. The photo entries' ids are
+        meaningful only through the token-scoped thumbnail operations.
+      required:
+        [name, span_start, span_end, start_truncated, end_truncated, journey,
+         photos, import_photos, params]
+      properties:
+        name:
+          type: string
+          description: The adventure's confirmed name.
+        span_start:
+          type: string
+          format: date-time
+        span_end:
+          type: string
+          format: date-time
+        start_truncated:
+          type: boolean
+        end_truncated:
+          type: boolean
+        journey:
+          $ref: "#/components/schemas/Journey"
+        photos:
+          type: array
+          description: Photos attached to the adventure, with placements.
+          items:
+            $ref: "#/components/schemas/Photo"
+        import_photos:
+          type: array
+          description: Photo-import records span-joined to the adventure, with placements.
+          items:
+            $ref: "#/components/schemas/ImportPhoto"
+        params:
+          type: object
+          additionalProperties: true
+          description: The photo placement parameters (invariant 3) — photo_far_warn_m.
