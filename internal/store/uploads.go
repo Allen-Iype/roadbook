@@ -62,17 +62,17 @@ func (f UploadFiles) Remove(tmpPath string) error {
 // BeginUploadImport records an upload-path attempt, status 'running', with
 // the retained file's content hash (migration 00009). Upload imports have
 // no date window: the whole file imports, as the front door promises.
-func (s *Store) BeginUploadImport(ctx context.Context, label, contentHash string) (int64, error) {
+func (s *Store) BeginUploadImport(ctx context.Context, userID, label, contentHash string) (int64, error) {
 	var id int64
-	err := s.pool.QueryRow(ctx, `INSERT INTO imports (source_label, visits, activities, points, raw_positions, skipped, status, content_hash)
-		VALUES ($1,0,0,0,0,0,'running',$2) RETURNING id`,
-		label, contentHash).Scan(&id)
+	err := s.pool.QueryRow(ctx, `INSERT INTO imports (user_id, source_label, visits, activities, points, raw_positions, skipped, status, content_hash)
+		VALUES ($1,$2,0,0,0,0,0,'running',$3) RETURNING id`,
+		userID, label, contentHash).Scan(&id)
 	return id, err
 }
 
 // GetImport is the polling read (BRIEF §1.2). Nil means no such import.
-func (s *Store) GetImport(ctx context.Context, id int64) (*ImportRow, error) {
-	rows, err := s.pool.Query(ctx, importSelect+` WHERE id = $1`, id)
+func (s *Store) GetImport(ctx context.Context, userID string, id int64) (*ImportRow, error) {
+	rows, err := s.pool.Query(ctx, importSelect+` WHERE user_id = $1 AND id = $2`, userID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +92,7 @@ func (s *Store) GetImport(ctx context.Context, id int64) (*ImportRow, error) {
 // died with the process, and a row that says running forever is a lie. The
 // known edge is accepted and documented: a CLI import in flight at serve
 // startup would be swept too; the CLI operator is watching a terminal.
+// Deliberately NOT user-scoped: the crash killed every user's goroutine.
 func (s *Store) SweepRunningImports(ctx context.Context, errMsg string) (int64, error) {
 	ct, err := s.pool.Exec(ctx,
 		`UPDATE imports SET status = 'failed', error = $1 WHERE status = 'running'`, errMsg)
@@ -105,8 +106,8 @@ func (s *Store) SweepRunningImports(ctx context.Context, errMsg string) (int64, 
 // (BRIEF §3D): running before detection starts, completed/failed after. It
 // never touches status — a detection failure must not mark the import
 // failed.
-func (s *Store) SetImportDetectStatus(ctx context.Context, importID int64, status string) error {
+func (s *Store) SetImportDetectStatus(ctx context.Context, userID string, importID int64, status string) error {
 	_, err := s.pool.Exec(ctx,
-		`UPDATE imports SET detect_status = $2 WHERE id = $1`, importID, status)
+		`UPDATE imports SET detect_status = $2 WHERE id = $1 AND user_id = $3`, importID, status, userID)
 	return err
 }

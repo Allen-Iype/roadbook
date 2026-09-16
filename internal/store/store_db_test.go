@@ -31,13 +31,13 @@ func candidate(start, end time.Time, dest domain.LatLng) detect.Candidate {
 func saveRun(t *testing.T, s *store.Store, cands ...detect.Candidate) []store.CandidateRow {
 	t.Helper()
 	ctx := context.Background()
-	_, err := s.SaveRun(ctx, detect.DefaultParams(), detect.Result{
+	_, err := s.SaveRun(ctx, store.SelfUser, detect.DefaultParams(), detect.Result{
 		Bases: []detect.Base{}, Candidates: cands,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, rows, err := s.LatestRun(ctx)
+	_, rows, err := s.LatestRun(ctx, store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,11 +81,11 @@ func TestDecisionsSurviveRedetection(t *testing.T) {
 	)
 
 	nameA := "Trip A"
-	decA, err := s.InsertDecision(ctx, "confirmed", &nameA, run1[0])
+	decA, err := s.InsertDecision(ctx, store.SelfUser, "confirmed", &nameA, run1[0])
 	if err != nil {
 		t.Fatal(err)
 	}
-	decB, err := s.InsertDecision(ctx, "dismissed", nil, run1[1])
+	decB, err := s.InsertDecision(ctx, store.SelfUser, "dismissed", nil, run1[1])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestDecisionsSurviveRedetection(t *testing.T) {
 		candidate(at(2026, 5, 1, 8), at(2026, 5, 2, 20), domain.LatLng{Lat: 16, Lon: 49}), // new
 	)
 
-	decs, err := s.ListDecisions(ctx)
+	decs, err := s.ListDecisions(ctx, store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,11 +167,11 @@ func TestImportIdempotency(t *testing.T) {
 		},
 	}
 
-	id1, err := s.BeginImport(ctx, "test", nil, nil)
+	id1, err := s.BeginImport(ctx, store.SelfUser, "test", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	first, err := s.ImportObservations(ctx, id1, "phone-timeline", obs, 0)
+	first, err := s.ImportObservations(ctx, store.SelfUser, id1, "phone-timeline", obs, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,11 +179,11 @@ func TestImportIdempotency(t *testing.T) {
 		t.Errorf("first import parsed/inserted = %d/%d, want 6/6", first.Parsed, first.Inserted)
 	}
 
-	id2, err := s.BeginImport(ctx, "test-again", nil, nil)
+	id2, err := s.BeginImport(ctx, store.SelfUser, "test-again", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.ImportObservations(ctx, id2, "phone-timeline", obs, 0)
+	second, err := s.ImportObservations(ctx, store.SelfUser, id2, "phone-timeline", obs, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func TestImportIdempotency(t *testing.T) {
 		t.Errorf("re-import inserted %d rows, want 0 — idempotency is the point", second.Inserted)
 	}
 
-	back, err := s.LoadObservations(ctx)
+	back, err := s.LoadObservations(ctx, store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,34 +209,34 @@ func TestImportBookkeeping(t *testing.T) {
 	s := storetest.Open(t)
 	ctx := context.Background()
 
-	okID, err := s.BeginImport(ctx, "good.json", nil, nil)
+	okID, err := s.BeginImport(ctx, store.SelfUser, "good.json", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.ImportObservations(ctx, okID, "phone-timeline", domain.Observations{
+	if _, err := s.ImportObservations(ctx, store.SelfUser, okID, "phone-timeline", domain.Observations{
 		Visits: []domain.Visit{{Start: at(2026, 3, 1, 9), End: at(2026, 3, 1, 10)}},
 	}, 2); err != nil {
 		t.Fatal(err)
 	}
 
-	failID, err := s.BeginImport(ctx, "old-takeout.json", nil, nil)
+	failID, err := s.BeginImport(ctx, store.SelfUser, "old-takeout.json", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.FailImport(ctx, failID, "records-json", "this is Records.json — not supported"); err != nil {
+	if err := s.FailImport(ctx, store.SelfUser, failID, "records-json", "this is Records.json — not supported"); err != nil {
 		t.Fatal(err)
 	}
 
 	// A failure before the input was recognised stores NULL, not "".
-	blindID, err := s.BeginImport(ctx, "garbage.bin", nil, nil)
+	blindID, err := s.BeginImport(ctx, store.SelfUser, "garbage.bin", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.FailImport(ctx, blindID, "", "not JSON"); err != nil {
+	if err := s.FailImport(ctx, store.SelfUser, blindID, "", "not JSON"); err != nil {
 		t.Fatal(err)
 	}
 
-	rows, err := s.ListImports(ctx)
+	rows, err := s.ListImports(ctx, store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,7 +261,7 @@ func TestImportBookkeeping(t *testing.T) {
 	}
 
 	// Finalising a row that is not running is a loud error, not a silent no-op.
-	if _, err := s.ImportObservations(ctx, failID, "phone-timeline", domain.Observations{}, 0); err == nil {
+	if _, err := s.ImportObservations(ctx, store.SelfUser, failID, "phone-timeline", domain.Observations{}, 0); err == nil {
 		t.Error("ImportObservations on a failed row succeeded — want an error")
 	}
 }
@@ -272,7 +272,7 @@ func TestPhotoRoundTrip(t *testing.T) {
 
 	rows := saveRun(t, s, candidate(at(2026, 3, 1, 8), at(2026, 3, 4, 20), domain.LatLng{Lat: 12.3, Lon: 45.6}))
 	name := "Trip"
-	dec, err := s.InsertDecision(ctx, "confirmed", &name, rows[0])
+	dec, err := s.InsertDecision(ctx, store.SelfUser, "confirmed", &name, rows[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +285,7 @@ func TestPhotoRoundTrip(t *testing.T) {
 		TakenAt: &taken, TakenOffsetSec: &off, TimeSource: "gps",
 		Lat: &lat, Lon: &lon, PosSource: "exif", ThumbW: 512, ThumbH: 384,
 	}
-	stored, inserted, err := s.InsertPhoto(ctx, full)
+	stored, inserted, err := s.InsertPhoto(ctx, store.SelfUser, full)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -304,7 +304,7 @@ func TestPhotoRoundTrip(t *testing.T) {
 	// the refetch must find the original, not error.)
 	dup := full
 	dup.OriginalName = "renamed.jpg"
-	got, inserted, err := s.InsertPhoto(ctx, dup)
+	got, inserted, err := s.InsertPhoto(ctx, store.SelfUser, dup)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,10 +317,10 @@ func TestPhotoRoundTrip(t *testing.T) {
 		DecisionID: dec.ID, ContentHash: "hash-bare", OriginalName: "b.jpg",
 		TimeSource: "none", PosSource: "none", ThumbW: 100, ThumbH: 80,
 	}
-	if _, _, err := s.InsertPhoto(ctx, bare); err != nil {
+	if _, _, err := s.InsertPhoto(ctx, store.SelfUser, bare); err != nil {
 		t.Fatal(err)
 	}
-	list, err := s.ListPhotos(ctx, dec.ID)
+	list, err := s.ListPhotos(ctx, store.SelfUser, dec.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,19 +332,19 @@ func TestPhotoRoundTrip(t *testing.T) {
 	}
 
 	// Get / delete / gone.
-	p, err := s.GetPhoto(ctx, stored.ID)
+	p, err := s.GetPhoto(ctx, store.SelfUser, stored.ID)
 	if err != nil || p == nil || p.ContentHash != "hash-full" {
 		t.Fatalf("GetPhoto = %+v, %v", p, err)
 	}
-	okDel, err := s.DeletePhoto(ctx, stored.ID)
+	okDel, err := s.DeletePhoto(ctx, store.SelfUser, stored.ID)
 	if err != nil || !okDel {
 		t.Fatalf("delete: %v ok=%v", err, okDel)
 	}
-	p, err = s.GetPhoto(ctx, stored.ID)
+	p, err = s.GetPhoto(ctx, store.SelfUser, stored.ID)
 	if err != nil || p != nil {
 		t.Errorf("photo still readable after delete: %+v, %v", p, err)
 	}
-	okDel, err = s.DeletePhoto(ctx, stored.ID)
+	okDel, err = s.DeletePhoto(ctx, store.SelfUser, stored.ID)
 	if err != nil || okDel {
 		t.Errorf("second delete reported ok=%v, want false", okDel)
 	}

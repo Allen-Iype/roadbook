@@ -34,7 +34,7 @@ type uploadEntry struct {
 }
 
 func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidatePhotosRequestObject) (UploadCandidatePhotosResponseObject, error) {
-	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	cand, err := s.Store.LatestCandidate(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -193,11 +193,11 @@ func (s *Server) storePhoto(ctx context.Context, decisionID int64, spanOffsetSec
 	if err := s.Photos.WriteThumb(hash, thumb); err != nil {
 		return store.PhotoRow{}, false, err
 	}
-	return s.Store.InsertPhoto(ctx, row)
+	return s.Store.InsertPhoto(ctx, s.currentUser(ctx), row)
 }
 
 func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhotosRequestObject) (ListCandidatePhotosResponseObject, error) {
-	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	cand, err := s.Store.LatestCandidate(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 	if dec == nil {
 		return ListCandidatePhotos409JSONResponse{Error: "photos attach to confirmed adventures — confirm this candidate first"}, nil
 	}
-	rows, err := s.Store.ListPhotos(ctx, dec.ID)
+	rows, err := s.Store.ListPhotos(ctx, s.currentUser(ctx), dec.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 }
 
 func (s *Server) GetPhotoThumbnail(ctx context.Context, req GetPhotoThumbnailRequestObject) (GetPhotoThumbnailResponseObject, error) {
-	p, err := s.Store.GetPhoto(ctx, req.Id)
+	p, err := s.Store.GetPhoto(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +282,7 @@ func (s *Server) GetPhotoThumbnail(ctx context.Context, req GetPhotoThumbnailReq
 }
 
 func (s *Server) DeletePhoto(ctx context.Context, req DeletePhotoRequestObject) (DeletePhotoResponseObject, error) {
-	p, err := s.Store.GetPhoto(ctx, req.Id)
+	p, err := s.Store.GetPhoto(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +290,7 @@ func (s *Server) DeletePhoto(ctx context.Context, req DeletePhotoRequestObject) 
 		return DeletePhoto404JSONResponse{Error: "no such photo"}, nil
 	}
 	// Row first, then file (BRIEF §3B): fail toward unreachable garbage.
-	if _, err := s.Store.DeletePhoto(ctx, p.ID); err != nil {
+	if _, err := s.Store.DeletePhoto(ctx, s.currentUser(ctx), p.ID); err != nil {
 		return nil, err
 	}
 	if err := s.Photos.DeleteThumb(p.ContentHash); err != nil {

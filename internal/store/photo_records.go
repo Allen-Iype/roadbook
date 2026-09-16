@@ -40,7 +40,7 @@ type PhotoIngest struct {
 // by the fix's content hash. The imports row is finalised the same way
 // ImportObservations finalises it; Inserted counts new fixes, the number that
 // means "new observations" everywhere else.
-func (s *Store) ImportPhotos(ctx context.Context, importID int64, items []PhotoIngest) (ImportResult, error) {
+func (s *Store) ImportPhotos(ctx context.Context, userID string, importID int64, items []PhotoIngest) (ImportResult, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return ImportResult{}, err
@@ -72,14 +72,14 @@ func (s *Store) ImportPhotos(ctx context.Context, importID int64, items []PhotoI
 	for _, it := range items {
 		rp := it.Fix
 		fixHash := hashRawPosition(rp)
-		fixes.Queue(`INSERT INTO raw_positions (ts, ts_offset_sec, lat, lon, accuracy_m, source, content_hash)
-			VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (content_hash) DO NOTHING`,
-			rp.Time, offsetOf(rp.Time), latOf(rp.Loc), lonOf(rp.Loc), rp.AccuracyM, rp.Source, fixHash)
+		fixes.Queue(`INSERT INTO raw_positions (user_id, ts, ts_offset_sec, lat, lon, accuracy_m, source, content_hash)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (user_id, content_hash) DO NOTHING`,
+			userID, rp.Time, offsetOf(rp.Time), latOf(rp.Loc), lonOf(rp.Loc), rp.AccuracyM, rp.Source, fixHash)
 		r := it.Record
-		records.Queue(`INSERT INTO photo_records (import_id, content_hash, original_name, taken_at, taken_offset_sec,
+		records.Queue(`INSERT INTO photo_records (user_id, import_id, content_hash, original_name, taken_at, taken_offset_sec,
 			time_source, lat, lon, pos_source, thumb_w, thumb_h, fix_content_hash)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (content_hash) DO NOTHING`,
-			importID, r.ContentHash, r.OriginalName, rp.Time, offsetOf(rp.Time),
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT (user_id, content_hash) DO NOTHING`,
+			userID, importID, r.ContentHash, r.OriginalName, rp.Time, offsetOf(rp.Time),
 			r.TimeSource, latOf(rp.Loc), lonOf(rp.Loc), r.PosSource, r.ThumbW, r.ThumbH, fixHash)
 		if fixes.Len() >= batchSize {
 			if err := flush(fixes, true); err != nil {
@@ -100,8 +100,8 @@ func (s *Store) ImportPhotos(ctx context.Context, importID int64, items []PhotoI
 
 	ct, err := tx.Exec(ctx, `UPDATE imports SET raw_positions = $2, status = 'completed',
 		detected_format = 'photos', inserted = $3
-		WHERE id = $1 AND status = 'running'`,
-		importID, len(items), res.Inserted)
+		WHERE id = $1 AND user_id = $4 AND status = 'running'`,
+		importID, len(items), res.Inserted, userID)
 	if err != nil {
 		return res, err
 	}
@@ -140,8 +140,8 @@ func (s *Store) photoRecordsWhere(ctx context.Context, clause string, args ...an
 }
 
 // ListPhotoRecords returns one import's records in upload order.
-func (s *Store) ListPhotoRecords(ctx context.Context, importID int64) ([]PhotoRecord, error) {
-	return s.photoRecordsWhere(ctx, `WHERE import_id = $1 ORDER BY id`, importID)
+func (s *Store) ListPhotoRecords(ctx context.Context, userID string, importID int64) ([]PhotoRecord, error) {
+	return s.photoRecordsWhere(ctx, `WHERE user_id = $1 AND import_id = $2 ORDER BY id`, userID, importID)
 }
 
 // ListPhotoRecordsInSpan returns the records whose capture instant falls
@@ -149,13 +149,13 @@ func (s *Store) ListPhotoRecords(ctx context.Context, importID int64) ([]PhotoRe
 // relation (DECISIONS 2026-08-26): records are never anchored to candidates,
 // so re-detection has nothing to orphan and deletion stays the import's
 // concern.
-func (s *Store) ListPhotoRecordsInSpan(ctx context.Context, from, to time.Time) ([]PhotoRecord, error) {
-	return s.photoRecordsWhere(ctx, `WHERE taken_at >= $1 AND taken_at <= $2 ORDER BY taken_at, id`, from, to)
+func (s *Store) ListPhotoRecordsInSpan(ctx context.Context, userID string, from, to time.Time) ([]PhotoRecord, error) {
+	return s.photoRecordsWhere(ctx, `WHERE user_id = $1 AND taken_at >= $2 AND taken_at <= $3 ORDER BY taken_at, id`, userID, from, to)
 }
 
 // GetPhotoRecord returns one record by id, nil when absent.
-func (s *Store) GetPhotoRecord(ctx context.Context, id int64) (*PhotoRecord, error) {
-	recs, err := s.photoRecordsWhere(ctx, `WHERE id = $1`, id)
+func (s *Store) GetPhotoRecord(ctx context.Context, userID string, id int64) (*PhotoRecord, error) {
+	recs, err := s.photoRecordsWhere(ctx, `WHERE user_id = $1 AND id = $2`, userID, id)
 	if err != nil || len(recs) == 0 {
 		return nil, err
 	}

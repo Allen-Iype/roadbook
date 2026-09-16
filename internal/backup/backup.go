@@ -85,14 +85,17 @@ type archivedPhoto struct {
 // is excluded from the archive with a warning: a row without its file is a
 // permanently broken image (the phase 4 delete-order reasoning), and a backup
 // must not preserve a state it would be a bug to create.
-func Write(ctx context.Context, s *store.Store, files store.PhotoFiles, w io.Writer, now time.Time) (Manifest, []string, error) {
+// The archive has no user column by design: it is one person's data, and
+// which person is the caller's userID — single-user instances pass
+// store.SelfUser, and the CP5 per-user export will pass the session user.
+func Write(ctx context.Context, s *store.Store, files store.PhotoFiles, w io.Writer, now time.Time, userID string) (Manifest, []string, error) {
 	var warnings []string
 
-	decs, err := s.ListDecisions(ctx)
+	decs, err := s.ListDecisions(ctx, userID)
 	if err != nil {
 		return Manifest{}, nil, err
 	}
-	photos, err := s.ListAllPhotos(ctx)
+	photos, err := s.ListAllPhotos(ctx, userID)
 	if err != nil {
 		return Manifest{}, nil, err
 	}
@@ -208,7 +211,7 @@ type Report struct {
 // first; each photo's thumbnail file is written before its row (the mirror
 // of delete's row-first ordering: both fail toward a sweepable orphan file,
 // never a row without its file).
-func Restore(ctx context.Context, s *store.Store, files store.PhotoFiles, r io.Reader) (Report, error) {
+func Restore(ctx context.Context, s *store.Store, files store.PhotoFiles, r io.Reader, userID string) (Report, error) {
 	var rep Report
 
 	gz, err := gzip.NewReader(r)
@@ -231,7 +234,7 @@ func Restore(ctx context.Context, s *store.Store, files store.PhotoFiles, r io.R
 				AnchorDest: domain.LatLng{Lat: d.DestLat, Lon: d.DestLon},
 				CreatedAt:  d.CreatedAt, UpdatedAt: d.UpdatedAt,
 			}
-			id, inserted, err := s.RestoreDecision(ctx, row)
+			id, inserted, err := s.RestoreDecision(ctx, userID, row)
 			if err != nil {
 				return err
 			}
@@ -250,7 +253,7 @@ func Restore(ctx context.Context, s *store.Store, files store.PhotoFiles, r io.R
 		if !ok {
 			return fmt.Errorf("photo %q references a decision absent from the archive", p.OriginalName)
 		}
-		inserted, err := s.RestorePhoto(ctx, store.PhotoRow{
+		inserted, err := s.RestorePhoto(ctx, userID, store.PhotoRow{
 			DecisionID: id, ContentHash: p.ContentHash, OriginalName: p.OriginalName,
 			TakenAt: p.TakenAt, TakenOffsetSec: p.TakenOffsetSec, TimeSource: p.TimeSource,
 			Lat: p.Lat, Lon: p.Lon, PosSource: p.PosSource,

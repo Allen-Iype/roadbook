@@ -37,11 +37,11 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	confirmed, err := src.InsertDecision(ctx, "confirmed", str("March hills"), anchor(1))
+	confirmed, err := src.InsertDecision(ctx, store.SelfUser, "confirmed", str("March hills"), anchor(1))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.InsertDecision(ctx, "dismissed", nil, anchor(10)); err != nil {
+	if _, err := src.InsertDecision(ctx, store.SelfUser, "dismissed", nil, anchor(10)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -52,7 +52,7 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	taken := time.Date(2026, 3, 2, 12, 30, 0, 0, ist)
 	off := 19800
 	lat, lon := 12.35, 45.68
-	if _, _, err := src.InsertPhoto(ctx, store.PhotoRow{
+	if _, _, err := src.InsertPhoto(ctx, store.SelfUser, store.PhotoRow{
 		DecisionID: confirmed.ID, ContentHash: "hash1", OriginalName: "IMG_1.jpg",
 		TakenAt: &taken, TakenOffsetSec: &off, TimeSource: "gps",
 		Lat: &lat, Lon: &lon, PosSource: "exif", ThumbW: 512, ThumbH: 384,
@@ -61,7 +61,7 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	man, warnings, err := backup.Write(ctx, src, srcFiles, &buf, time.Date(2026, 8, 7, 10, 0, 0, 0, time.UTC))
+	man, warnings, err := backup.Write(ctx, src, srcFiles, &buf, time.Date(2026, 8, 7, 10, 0, 0, 0, time.UTC), store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	if err := dstFiles.Init(); err != nil {
 		t.Fatal(err)
 	}
-	rep, err := backup.Restore(ctx, dst, dstFiles, bytes.NewReader(archive))
+	rep, err := backup.Restore(ctx, dst, dstFiles, bytes.NewReader(archive), store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 		t.Fatalf("restore = %+v, want 2 decisions, 1 photo, 1 thumbnail restored", rep)
 	}
 
-	decs, err := dst.ListDecisions(ctx)
+	decs, err := dst.ListDecisions(ctx, store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 			got.AnchorStart, confirmed.AnchorStart, got.CreatedAt, confirmed.CreatedAt)
 	}
 
-	photos, err := dst.ListAllPhotos(ctx)
+	photos, err := dst.ListAllPhotos(ctx, store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	}
 
 	// Restoring the same archive again is a reported no-op.
-	rep2, err := backup.Restore(ctx, dst, dstFiles, bytes.NewReader(archive))
+	rep2, err := backup.Restore(ctx, dst, dstFiles, bytes.NewReader(archive), store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	}
 
 	// Restoring into the source is equally a no-op — merge by identity.
-	rep3, err := backup.Restore(ctx, src, srcFiles, bytes.NewReader(archive))
+	rep3, err := backup.Restore(ctx, src, srcFiles, bytes.NewReader(archive), store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,11 +153,11 @@ func TestBackupSkipsPhotoWithoutThumbnail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	d, err := s.InsertDecision(ctx, "confirmed", str("trip"), anchor(1))
+	d, err := s.InsertDecision(ctx, store.SelfUser, "confirmed", str("trip"), anchor(1))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := s.InsertPhoto(ctx, store.PhotoRow{
+	if _, _, err := s.InsertPhoto(ctx, store.SelfUser, store.PhotoRow{
 		DecisionID: d.ID, ContentHash: "gone", OriginalName: "lost.jpg",
 		TimeSource: "none", PosSource: "none", ThumbW: 1, ThumbH: 1,
 	}); err != nil {
@@ -165,7 +165,7 @@ func TestBackupSkipsPhotoWithoutThumbnail(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	man, warnings, err := backup.Write(ctx, s, files, &buf, time.Date(2026, 8, 7, 10, 0, 0, 0, time.UTC))
+	man, warnings, err := backup.Write(ctx, s, files, &buf, time.Date(2026, 8, 7, 10, 0, 0, 0, time.UTC), store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}

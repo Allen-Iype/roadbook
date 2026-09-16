@@ -112,7 +112,7 @@ func TestPhotoImportEndToEnd(t *testing.T) {
 	pollImport(t, ts, res.Import.Id, func(i api.Import) bool {
 		return i.DetectStatus != nil && *i.DetectStatus == "completed"
 	})
-	run, cands, err := s.LatestRun(ctx)
+	run, cands, err := s.LatestRun(ctx, store.SelfUser)
 	if err != nil || run == nil {
 		t.Fatalf("latest run: %v, %v", run, err)
 	}
@@ -121,7 +121,7 @@ func TestPhotoImportEndToEnd(t *testing.T) {
 	}
 
 	// Records: one per fix; the HEIC pair carries no thumbnail dims.
-	recs, err := s.ListPhotoRecords(ctx, res.Import.Id)
+	recs, err := s.ListPhotoRecords(ctx, store.SelfUser, res.Import.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestPhotoImportEndToEnd(t *testing.T) {
 	if res2.Import.Inserted == nil || *res2.Import.Inserted != 0 {
 		t.Errorf("duplicate batch inserted = %v, want 0", res2.Import.Inserted)
 	}
-	dupRecs, err := s.ListPhotoRecords(ctx, res2.Import.Id)
+	dupRecs, err := s.ListPhotoRecords(ctx, store.SelfUser, res2.Import.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -282,7 +282,7 @@ func TestBulkDecisions(t *testing.T) {
 	pollImport(t, ts, res.Import.Id, func(i api.Import) bool {
 		return i.DetectStatus != nil && *i.DetectStatus == "completed"
 	})
-	_, cands, err := s.LatestRun(ctx)
+	_, cands, err := s.LatestRun(ctx, store.SelfUser)
 	if err != nil || len(cands) != 2 {
 		t.Fatalf("corpus candidates: %d, %v", len(cands), err)
 	}
@@ -315,7 +315,7 @@ func TestBulkDecisions(t *testing.T) {
 	if resp404.StatusCode != http.StatusNotFound {
 		t.Errorf("stale-id batch status %d, want 404", resp404.StatusCode)
 	}
-	if decs, _ := s.ListDecisions(ctx); len(decs) != 0 {
+	if decs, _ := s.ListDecisions(ctx, store.SelfUser); len(decs) != 0 {
 		t.Errorf("failed batch left %d decisions — atomicity broken", len(decs))
 	}
 
@@ -349,7 +349,7 @@ func TestBulkDecisions(t *testing.T) {
 	if respRe.StatusCode != http.StatusOK {
 		t.Fatalf("bulk re-decide status %d: %s", respRe.StatusCode, bodyRe)
 	}
-	if decs, _ := s.ListDecisions(ctx); len(decs) != 2 {
+	if decs, _ := s.ListDecisions(ctx, store.SelfUser); len(decs) != 2 {
 		t.Errorf("re-decide created rows: %d decisions, want 2", len(decs))
 	}
 }

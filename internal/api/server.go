@@ -41,6 +41,12 @@ type Server struct {
 
 var _ StrictServerInterface = (*Server)(nil)
 
+// currentUser names the owner of the request's data. CP1: every request
+// belongs to the single-user owner — the authless self-host reference
+// (PRODUCT.md). CP2 replaces this body with the session's user; call
+// sites stay put, which is the point of routing every handler through it.
+func (s *Server) currentUser(_ context.Context) string { return store.SelfUser }
+
 func (s *Server) GetHealth(ctx context.Context, _ GetHealthRequestObject) (GetHealthResponseObject, error) {
 	// Readiness, not liveness: compose gates dependent services on this
 	// answer (phase 5 BRIEF §3A), so a listening socket with a dead database
@@ -52,7 +58,7 @@ func (s *Server) GetHealth(ctx context.Context, _ GetHealthRequestObject) (GetHe
 }
 
 func (s *Server) ListImports(ctx context.Context, _ ListImportsRequestObject) (ListImportsResponseObject, error) {
-	rows, err := s.Store.ListImports(ctx)
+	rows, err := s.Store.ListImports(ctx, s.currentUser(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +113,7 @@ func (s *Server) ListCandidates(ctx context.Context, _ ListCandidatesRequestObje
 // derived data over immutable observations, never persisted (BRIEF §3B), so a
 // parameter change is free and nothing can drift out of date.
 func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourneyRequestObject) (GetCandidateJourneyResponseObject, error) {
-	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	cand, err := s.Store.LatestCandidate(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +172,7 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 // handler derives the source-asserted mode breakdown from their activities —
 // deliberately outside Assemble, whose output the golden contract pins.
 func (s *Server) assembledJourney(ctx context.Context, cand *store.CandidateRow) (journey.Journey, domain.Observations, error) {
-	obs, err := s.Store.LoadJourneyInputs(ctx, cand.SpanStart, cand.SpanEnd)
+	obs, err := s.Store.LoadJourneyInputs(ctx, s.currentUser(ctx), cand.SpanStart, cand.SpanEnd)
 	if err != nil {
 		return journey.Journey{}, obs, err
 	}
@@ -259,7 +265,7 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 // never applied automatically; the null suggester's empty answer renders as
 // exactly today's empty input.
 func (s *Server) SuggestCandidateName(ctx context.Context, req SuggestCandidateNameRequestObject) (SuggestCandidateNameResponseObject, error) {
-	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	cand, err := s.Store.LatestCandidate(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +303,7 @@ func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequest
 		name = &trimmed
 	}
 
-	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	cand, err := s.Store.LatestCandidate(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -314,9 +320,9 @@ func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequest
 	}
 	var row store.DecisionRow
 	if did, ok := matched[cand.ID]; ok {
-		row, err = s.Store.UpdateDecision(ctx, did, string(action), name, *cand)
+		row, err = s.Store.UpdateDecision(ctx, s.currentUser(ctx), did, string(action), name, *cand)
 	} else {
-		row, err = s.Store.InsertDecision(ctx, string(action), name, *cand)
+		row, err = s.Store.InsertDecision(ctx, s.currentUser(ctx), string(action), name, *cand)
 	}
 	if err != nil {
 		return nil, err
@@ -383,7 +389,7 @@ func (s *Server) DecideCandidatesBulk(ctx context.Context, req DecideCandidatesB
 		return DecideCandidatesBulk404JSONResponse{Error: "not in the latest run (re-detection may have replaced them; reload the list): candidates " + strings.Join(missing, ", ")}, nil
 	}
 
-	if err := s.Store.DecideBulk(ctx, bulk); err != nil {
+	if err := s.Store.DecideBulk(ctx, s.currentUser(ctx), bulk); err != nil {
 		return nil, err
 	}
 	return DecideCandidatesBulk200JSONResponse(BulkDecisionResult{Decided: len(bulk)}), nil
@@ -393,11 +399,11 @@ func (s *Server) DecideCandidatesBulk(ctx context.Context, req DecideCandidatesB
 // recomputed candidate→decision association (BRIEF §3.1: matching is derived,
 // never stored).
 func (s *Server) matchedState(ctx context.Context) (*store.Run, []store.CandidateRow, []store.DecisionRow, map[int64]int64, error) {
-	run, cands, err := s.Store.LatestRun(ctx)
+	run, cands, err := s.Store.LatestRun(ctx, s.currentUser(ctx))
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	decs, err := s.Store.ListDecisions(ctx)
+	decs, err := s.Store.ListDecisions(ctx, s.currentUser(ctx))
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

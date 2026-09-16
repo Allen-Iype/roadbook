@@ -51,14 +51,14 @@ func scanPhoto(row interface{ Scan(...any) error }) (PhotoRow, error) {
 // InsertPhoto stores one photo's metadata. Idempotent by content hash (the
 // imports precedent): identical bytes return the existing row with
 // inserted=false, and nothing changes.
-func (s *Store) InsertPhoto(ctx context.Context, p PhotoRow) (PhotoRow, bool, error) {
+func (s *Store) InsertPhoto(ctx context.Context, userID string, p PhotoRow) (PhotoRow, bool, error) {
 	row, err := scanPhoto(s.pool.QueryRow(ctx, `
-		INSERT INTO photos (decision_id, content_hash, original_name, taken_at,
+		INSERT INTO photos (user_id, decision_id, content_hash, original_name, taken_at,
 			taken_offset_sec, time_source, lat, lon, pos_source, thumb_w, thumb_h)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-		ON CONFLICT (content_hash) DO NOTHING
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+		ON CONFLICT (user_id, content_hash) DO NOTHING
 		RETURNING `+photoCols,
-		p.DecisionID, p.ContentHash, p.OriginalName, p.TakenAt, p.TakenOffsetSec,
+		userID, p.DecisionID, p.ContentHash, p.OriginalName, p.TakenAt, p.TakenOffsetSec,
 		p.TimeSource, p.Lat, p.Lon, p.PosSource, p.ThumbW, p.ThumbH))
 	if err == nil {
 		return row, true, nil
@@ -68,7 +68,7 @@ func (s *Store) InsertPhoto(ctx context.Context, p PhotoRow) (PhotoRow, bool, er
 	}
 	// DO NOTHING returned no row: the hash already exists — fetch the original.
 	existing, ferr := scanPhoto(s.pool.QueryRow(ctx,
-		`SELECT `+photoCols+` FROM photos WHERE content_hash = $1`, p.ContentHash))
+		`SELECT `+photoCols+` FROM photos WHERE user_id = $1 AND content_hash = $2`, userID, p.ContentHash))
 	if ferr != nil {
 		return PhotoRow{}, false, fmt.Errorf("photo insert conflicted but original not found: %w", ferr)
 	}
@@ -76,9 +76,9 @@ func (s *Store) InsertPhoto(ctx context.Context, p PhotoRow) (PhotoRow, bool, er
 }
 
 // ListPhotos returns a decision's photos in upload order.
-func (s *Store) ListPhotos(ctx context.Context, decisionID int64) ([]PhotoRow, error) {
+func (s *Store) ListPhotos(ctx context.Context, userID string, decisionID int64) ([]PhotoRow, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT `+photoCols+` FROM photos WHERE decision_id = $1 ORDER BY id`, decisionID)
+		`SELECT `+photoCols+` FROM photos WHERE user_id = $1 AND decision_id = $2 ORDER BY id`, userID, decisionID)
 	if err != nil {
 		return nil, err
 	}
@@ -95,9 +95,9 @@ func (s *Store) ListPhotos(ctx context.Context, decisionID int64) ([]PhotoRow, e
 }
 
 // GetPhoto returns one photo, or nil when it does not exist.
-func (s *Store) GetPhoto(ctx context.Context, id int64) (*PhotoRow, error) {
+func (s *Store) GetPhoto(ctx context.Context, userID string, id int64) (*PhotoRow, error) {
 	p, err := scanPhoto(s.pool.QueryRow(ctx,
-		`SELECT `+photoCols+` FROM photos WHERE id = $1`, id))
+		`SELECT `+photoCols+` FROM photos WHERE user_id = $1 AND id = $2`, userID, id))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -110,8 +110,8 @@ func (s *Store) GetPhoto(ctx context.Context, id int64) (*PhotoRow, error) {
 // DeletePhoto removes the row. The caller then removes the file — row first,
 // so a mid-failure leaves unreachable garbage, never a broken image
 // (BRIEF §3B). Returns false when the photo did not exist.
-func (s *Store) DeletePhoto(ctx context.Context, id int64) (bool, error) {
-	tag, err := s.pool.Exec(ctx, `DELETE FROM photos WHERE id = $1`, id)
+func (s *Store) DeletePhoto(ctx context.Context, userID string, id int64) (bool, error) {
+	tag, err := s.pool.Exec(ctx, `DELETE FROM photos WHERE user_id = $1 AND id = $2`, userID, id)
 	if err != nil {
 		return false, err
 	}

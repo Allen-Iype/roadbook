@@ -35,11 +35,11 @@ func TestImportPhotos(t *testing.T) {
 		},
 	}
 
-	importID, err := s.BeginImport(ctx, "photo batch", nil, nil)
+	importID, err := s.BeginImport(ctx, store.SelfUser, "photo batch", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := s.ImportPhotos(ctx, importID, items)
+	res, err := s.ImportPhotos(ctx, store.SelfUser, importID, items)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestImportPhotos(t *testing.T) {
 		t.Errorf("first import = %+v, want parsed 2 inserted 2", res)
 	}
 
-	row, err := s.GetImport(ctx, importID)
+	row, err := s.GetImport(ctx, store.SelfUser, importID)
 	if err != nil || row == nil {
 		t.Fatalf("GetImport: %v, %v", row, err)
 	}
@@ -56,7 +56,7 @@ func TestImportPhotos(t *testing.T) {
 		t.Errorf("imports row = %+v — want completed, 2 raw positions, format photos", row)
 	}
 
-	recs, err := s.ListPhotoRecords(ctx, importID)
+	recs, err := s.ListPhotoRecords(ctx, store.SelfUser, importID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestImportPhotos(t *testing.T) {
 
 	// The observation stratum received the fixes — and detection sees them
 	// as photo-sourced.
-	obs, err := s.LoadObservations(ctx)
+	obs, err := s.LoadObservations(ctx, store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,18 +87,18 @@ func TestImportPhotos(t *testing.T) {
 	}
 
 	// Duplicate batch: full idempotency, records included.
-	dupID, err := s.BeginImport(ctx, "photo batch again", nil, nil)
+	dupID, err := s.BeginImport(ctx, store.SelfUser, "photo batch again", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	dup, err := s.ImportPhotos(ctx, dupID, items)
+	dup, err := s.ImportPhotos(ctx, store.SelfUser, dupID, items)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if dup.Inserted != 0 {
 		t.Errorf("duplicate batch inserted %d fixes, want 0", dup.Inserted)
 	}
-	dupRecs, err := s.ListPhotoRecords(ctx, dupID)
+	dupRecs, err := s.ListPhotoRecords(ctx, store.SelfUser, dupID)
 	if err != nil {
 		t.Fatal(err)
 	}

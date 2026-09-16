@@ -1,0 +1,54 @@
+# Phase 13 — decision log
+
+Three lines each: chosen, rejected, what would change our mind. Written as
+decisions are made, per the working agreement.
+
+## 2026-09-16 — Gate 1: brief approved as written
+
+- **Chosen:** all three §3 recommendations stand — row-scoped tenancy in
+  one instance; OIDC with a configurable issuer, Google first; share links
+  in-phase as CP4. Checkpoints and verification plan as briefed.
+- **Rejected:** automated instance-per-user (signup as infrastructure
+  orchestration — the torn-down pilot is the lived evidence of that
+  model's ceiling); hand-rolled passwords (charter); magic-link email
+  (SMTP deliverability on sign-in's critical path); life-map sharing
+  (categorically bigger disclosure, own decision later).
+- **Would change our mind:** the §7 tripwires — scoping pressure reaching
+  the pure core stops the phase; Google-at-localhost friction demotes
+  live-Google proof to the hosting phase's checklist; share links
+  stalling detach into their own phase intact.
+
+## 2026-09-16 — Tenancy scoping boundary: which tables carry an owner
+
+- **Chosen:** `user_id` on every user-data table (imports, raw_positions,
+  visits, activities, path_points, detection_runs, candidates, decisions,
+  photos, photo_records); `countries` and `route_cache` stay global.
+  Uniqueness that expressed "one per instance" becomes "one per user"
+  (content-hash dedupe scopes to the owner; two users may hold the same
+  photo or export).
+- **Rejected:** scoping the route cache per user — it is derived road
+  geometry keyed by rounded coordinate pairs, never exposed per-user, and
+  sharing it warms routing across users.
+- **Would change our mind:** any API response that would surface route
+  cache contents attributable to a user — the moment that exists, the
+  cache joins the scoped set.
+
+## 2026-09-16 — CP1: the shape of the sweep
+
+- **Chosen:** every user-data store method takes `userID` as its first
+  data argument and every statement filters or sets it — uniformity over
+  cleverness, so a missed filter is visible in the diff, not hidden in a
+  helper. The API routes all handlers through one `currentUser(ctx)` seam
+  returning `store.SelfUser`; CP2 swaps that one body for the session
+  lookup and no call site moves. Backup `Write`/`Restore` take `userID`
+  explicitly (the archive stays one person's data; CP5's per-user export
+  reuses it). Background import goroutines capture the user at request
+  time — a session must never be read from inside `context.Background()`.
+- **Rejected:** scoping `SweepRunningImports` (a crash killed every
+  user's goroutine — the startup sweep is global by meaning, documented
+  in place); a per-user thumbnail namespace (files stay content-addressed
+  and shared — identical bytes are one file regardless of owner).
+- **Would change our mind:** if CP2's session plumbing can't reach the
+  seam through ctx cleanly, the seam moves to the generated middleware
+  layer — the uniformity rule (one place decides the user) survives
+  either way.

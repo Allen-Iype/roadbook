@@ -164,7 +164,7 @@ func TestUploadImportEndToEnd(t *testing.T) {
 
 	// Auto-detect landed a real run: the demo pins 3 candidates
 	// (internal/detect/demo_test.go).
-	run, cands, err := s.LatestRun(context.Background())
+	run, cands, err := s.LatestRun(context.Background(), store.SelfUser)
 	if err != nil || run == nil {
 		t.Fatalf("latest run: %v, %v", run, err)
 	}
@@ -235,7 +235,7 @@ func TestUploadImportRejection(t *testing.T) {
 	if n := len(uploadsDirEntries(t, uploads.Dir)); n != 0 {
 		t.Errorf("uploads dir holds %d files after a rejection, want 0 — rejected bytes are not retained", n)
 	}
-	rows, err := s.ListImports(context.Background())
+	rows, err := s.ListImports(context.Background(), store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +266,7 @@ func TestUploadImportAbortMidStream(t *testing.T) {
 	if n := uploadsDirEntries(t, uploads.Dir); len(n) != 0 {
 		t.Errorf("uploads dir holds %v after an aborted upload, want empty — no temp litter", n)
 	}
-	rows, err := s.ListImports(context.Background())
+	rows, err := s.ListImports(context.Background(), store.SelfUser)
 	if err != nil {
 		t.Fatal(err)
 	}

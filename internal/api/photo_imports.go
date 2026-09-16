@@ -126,12 +126,13 @@ func (s *Server) UploadPhotoImport(ctx context.Context, req UploadPhotoImportReq
 		items = append(items, store.PhotoIngest{Fix: *r.Fix, Record: rec})
 	}
 
-	importID, err := s.Store.BeginImport(ctx, label, nil, nil)
+	user := s.currentUser(ctx)
+	importID, err := s.Store.BeginImport(ctx, user, label, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.Store.ImportPhotos(ctx, importID, items); err != nil {
-		if ferr := s.Store.FailImport(ctx, importID, "photos", "storing the photo batch failed: "+err.Error()); ferr != nil {
+	if _, err := s.Store.ImportPhotos(ctx, user, importID, items); err != nil {
+		if ferr := s.Store.FailImport(ctx, user, importID, "photos", "storing the photo batch failed: "+err.Error()); ferr != nil {
 			log.Printf("photo import %d: recording failure: %v", importID, ferr)
 		}
 		return nil, err
@@ -145,10 +146,10 @@ func (s *Server) UploadPhotoImport(ctx context.Context, req UploadPhotoImportReq
 				log.Printf("photo import %d: detect panic: %v", importID, r)
 			}
 		}()
-		s.runAutoDetect(context.Background(), importID)
+		s.runAutoDetect(context.Background(), user, importID)
 	}()
 
-	row, err := s.Store.GetImport(ctx, importID)
+	row, err := s.Store.GetImport(ctx, user, importID)
 	if err != nil || row == nil {
 		return nil, fmt.Errorf("reading back import %d: %w", importID, err)
 	}

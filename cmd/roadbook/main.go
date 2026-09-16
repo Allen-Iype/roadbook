@@ -193,7 +193,7 @@ func runImport(args []string) error {
 	if lbl == "" {
 		lbl = filepath.Base(*src)
 	}
-	importID, err := s.BeginImport(ctx, lbl, winStart, winEnd)
+	importID, err := s.BeginImport(ctx, store.SelfUser, lbl, winStart, winEnd)
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func runImport(args []string) error {
 		if errors.As(err, &ue) {
 			kind = ue.Kind
 		}
-		if ferr := s.FailImport(ctx, importID, kind, err.Error()); ferr != nil {
+		if ferr := s.FailImport(ctx, store.SelfUser, importID, kind, err.Error()); ferr != nil {
 			return fmt.Errorf("cannot import %s: %w (and recording the failure also failed: %v)", filepath.Base(*src), err, ferr)
 		}
 		return fmt.Errorf("cannot import %s: %w", filepath.Base(*src), err)
@@ -219,9 +219,9 @@ func runImport(args []string) error {
 			len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions))
 	}
 
-	res, err := s.ImportObservations(ctx, importID, st.Format, obs, st.Skipped)
+	res, err := s.ImportObservations(ctx, store.SelfUser, importID, st.Format, obs, st.Skipped)
 	if err != nil {
-		if ferr := s.FailImport(ctx, importID, st.Format, err.Error()); ferr != nil {
+		if ferr := s.FailImport(ctx, store.SelfUser, importID, st.Format, err.Error()); ferr != nil {
 			return fmt.Errorf("import failed: %w (and recording the failure also failed: %v)", err, ferr)
 		}
 		return err
@@ -477,7 +477,7 @@ func runDetect(args []string) error {
 			return err
 		}
 		defer s.Close()
-		obs, err = s.LoadObservations(ctx)
+		obs, err = s.LoadObservations(ctx, store.SelfUser)
 		if err != nil {
 			return err
 		}
@@ -505,7 +505,7 @@ func runDetect(args []string) error {
 	res := detect.Run(obs, p)
 
 	if s != nil {
-		runID, err := s.SaveRun(ctx, p, res)
+		runID, err := s.SaveRun(ctx, store.SelfUser, p, res)
 		if err != nil {
 			return err
 		}
@@ -606,14 +606,14 @@ func runJourney(args []string) error {
 			return err
 		}
 		defer s.Close()
-		cand, err := s.LatestCandidate(ctx, *candidateID)
+		cand, err := s.LatestCandidate(ctx, store.SelfUser, *candidateID)
 		if err != nil {
 			return err
 		}
 		if cand == nil {
 			return fmt.Errorf("candidate %d is not in the latest run", *candidateID)
 		}
-		obs, err := s.LoadJourneyInputs(ctx, cand.SpanStart, cand.SpanEnd)
+		obs, err := s.LoadJourneyInputs(ctx, store.SelfUser, cand.SpanStart, cand.SpanEnd)
 		if err != nil {
 			return err
 		}
@@ -763,7 +763,7 @@ func runRoute(args []string) error {
 	}
 	defer s.Close()
 
-	run, cands, err := s.LatestRun(ctx)
+	run, cands, err := s.LatestRun(ctx, store.SelfUser)
 	if err != nil {
 		return err
 	}
@@ -773,7 +773,7 @@ func runRoute(args []string) error {
 
 	// Scope: one candidate > all > confirmed (the default — confirmed
 	// adventures are the product; routing dismissable rows multiplies load).
-	decs, err := s.ListDecisions(ctx)
+	decs, err := s.ListDecisions(ctx, store.SelfUser)
 	if err != nil {
 		return err
 	}
@@ -828,7 +828,7 @@ func runRoute(args []string) error {
 	var keys []route.Key
 	seen := map[route.Key]bool{}
 	for i, tg := range targets {
-		obs, err := s.LoadJourneyInputs(ctx, tg.cand.SpanStart, tg.cand.SpanEnd)
+		obs, err := s.LoadJourneyInputs(ctx, store.SelfUser, tg.cand.SpanStart, tg.cand.SpanEnd)
 		if err != nil {
 			return err
 		}

@@ -48,7 +48,7 @@ type CandidateRow struct {
 // SaveRun records a detection run and its candidates. Candidates are derived
 // and disposable; previous runs' candidates are retained so runs can be
 // compared, and the UI reads only the latest run.
-func (s *Store) SaveRun(ctx context.Context, p detect.Params, res detect.Result) (int64, error) {
+func (s *Store) SaveRun(ctx context.Context, userID string, p detect.Params, res detect.Result) (int64, error) {
 	paramsJSON, err := json.Marshal(p)
 	if err != nil {
 		return 0, err
@@ -64,8 +64,8 @@ func (s *Store) SaveRun(ctx context.Context, p detect.Params, res detect.Result)
 	defer tx.Rollback(ctx)
 
 	var runID int64
-	if err := tx.QueryRow(ctx, `INSERT INTO detection_runs (params, outliers_dropped, bases)
-		VALUES ($1,$2,$3) RETURNING id`, paramsJSON, res.OutliersDropped, basesJSON).Scan(&runID); err != nil {
+	if err := tx.QueryRow(ctx, `INSERT INTO detection_runs (user_id, params, outliers_dropped, bases)
+		VALUES ($1,$2,$3,$4) RETURNING id`, userID, paramsJSON, res.OutliersDropped, basesJSON).Scan(&runID); err != nil {
 		return 0, err
 	}
 
@@ -79,11 +79,11 @@ func (s *Store) SaveRun(ctx context.Context, p detect.Params, res detect.Result)
 		if err != nil {
 			return 0, err
 		}
-		b.Queue(`INSERT INTO candidates (run_id, seq, span_start, span_start_offset_sec, span_end, span_end_offset_sec,
+		b.Queue(`INSERT INTO candidates (user_id, run_id, seq, span_start, span_start_offset_sec, span_end, span_end_offset_sec,
 			days, dest_lat, dest_lon, dest_km, track_km, stop_count, repeat_count, obs_count,
 			start_truncated, end_truncated, modes, score, score_breakdown)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
-			runID, i, c.Start, offsetOf(c.Start), c.End, offsetOf(c.End),
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+			userID, runID, i, c.Start, offsetOf(c.Start), c.End, offsetOf(c.End),
 			c.Days, c.Dest.Lat, c.Dest.Lon, c.DestKm, c.TrackKm, c.Stops, c.Repeat, c.ObsCount,
 			c.StartTruncated, c.EndTruncated, modesJSON, c.Score, breakdownJSON)
 	}
@@ -102,10 +102,10 @@ func (s *Store) SaveRun(ctx context.Context, p detect.Params, res detect.Result)
 
 // LatestRun returns the most recent run and its candidates in rank order, or
 // (nil, nil, nil) when no run exists yet.
-func (s *Store) LatestRun(ctx context.Context) (*Run, []CandidateRow, error) {
+func (s *Store) LatestRun(ctx context.Context, userID string) (*Run, []CandidateRow, error) {
 	var r Run
 	err := s.pool.QueryRow(ctx, `SELECT id, ran_at, params, outliers_dropped
-		FROM detection_runs ORDER BY id DESC LIMIT 1`).Scan(&r.ID, &r.RanAt, &r.Params, &r.OutliersDropped)
+		FROM detection_runs WHERE user_id = $1 ORDER BY id DESC LIMIT 1`, userID).Scan(&r.ID, &r.RanAt, &r.Params, &r.OutliersDropped)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil, nil
 	}
@@ -119,8 +119,9 @@ func (s *Store) LatestRun(ctx context.Context) (*Run, []CandidateRow, error) {
 // LatestCandidate returns one candidate by id, but only if it belongs to the
 // latest run — after re-detection, older ids are stale and must 404, never
 // silently decide the wrong span.
-func (s *Store) LatestCandidate(ctx context.Context, id int64) (*CandidateRow, error) {
-	rows, err := s.pool.Query(ctx, candidateSelect+`WHERE id = $1 AND run_id = (SELECT max(id) FROM detection_runs)`, id)
+func (s *Store) LatestCandidate(ctx context.Context, userID string, id int64) (*CandidateRow, error) {
+	rows, err := s.pool.Query(ctx, candidateSelect+`WHERE id = $1 AND user_id = $2
+		AND run_id = (SELECT max(id) FROM detection_runs WHERE user_id = $2)`, id, userID)
 	if err != nil {
 		return nil, err
 	}

@@ -128,15 +128,16 @@ func (s *Server) UploadImport(ctx context.Context, req UploadImportRequestObject
 	if label == "" {
 		label = "browser upload"
 	}
-	importID, err := s.Store.BeginUploadImport(ctx, label, contentHash)
+	user := s.currentUser(ctx)
+	importID, err := s.Store.BeginUploadImport(ctx, user, label, contentHash)
 	if err != nil {
 		return nil, err
 	}
 
 	handed = true
-	go s.runUploadImport(importID, retained)
+	go s.runUploadImport(user, importID, retained)
 
-	row, err := s.Store.GetImport(ctx, importID)
+	row, err := s.Store.GetImport(ctx, user, importID)
 	if err != nil || row == nil {
 		// The row was just inserted; a read miss here is a real failure.
 		return nil, fmt.Errorf("reading back import %d: %w", importID, err)
@@ -149,7 +150,7 @@ func (s *Server) UploadImport(ctx context.Context, req UploadImportRequestObject
 // runs on a background context — the upload response has long returned —
 // and owns the single-import lock. Failures land on the imports row, the
 // only status channel; log lines carry messages, never content.
-func (s *Server) runUploadImport(importID int64, path string) {
+func (s *Server) runUploadImport(userID string, importID int64, path string) {
 	ctx := context.Background()
 	defer s.importMu.Unlock()
 	defer func() {
@@ -157,14 +158,14 @@ func (s *Server) runUploadImport(importID int64, path string) {
 		// a panic must become a visible failed import, not a dead serve.
 		if r := recover(); r != nil {
 			log.Printf("import %d: panic: %v", importID, r)
-			if err := s.Store.FailImport(ctx, importID, "", "internal error during import — the server log has details"); err != nil {
+			if err := s.Store.FailImport(ctx, userID, importID, "", "internal error during import — the server log has details"); err != nil {
 				log.Printf("import %d: recording panic failure: %v", importID, err)
 			}
 		}
 	}()
 
 	fail := func(format, msg string) {
-		if err := s.Store.FailImport(ctx, importID, format, msg); err != nil {
+		if err := s.Store.FailImport(ctx, userID, importID, format, msg); err != nil {
 			log.Printf("import %d: recording failure: %v", importID, err)
 		}
 	}
@@ -188,26 +189,26 @@ func (s *Server) runUploadImport(importID int64, path string) {
 		fail(kind, err.Error())
 		return
 	}
-	if _, err := s.Store.ImportObservations(ctx, importID, st.Format, obs, st.Skipped); err != nil {
+	if _, err := s.Store.ImportObservations(ctx, userID, importID, st.Format, obs, st.Skipped); err != nil {
 		fail(st.Format, "storing observations failed: "+err.Error())
 		return
 	}
 
-	s.runAutoDetect(ctx, importID)
+	s.runAutoDetect(ctx, userID, importID)
 }
 
 // runAutoDetect runs detection with default parameters after a successful
 // import, reporting through detect_status only — a detect failure never
 // marks the import failed (BRIEF §3D). Shared by the Timeline and photo
 // upload paths.
-func (s *Server) runAutoDetect(ctx context.Context, importID int64) {
+func (s *Server) runAutoDetect(ctx context.Context, userID string, importID int64) {
 	setDetect := func(status string) {
-		if err := s.Store.SetImportDetectStatus(ctx, importID, status); err != nil {
+		if err := s.Store.SetImportDetectStatus(ctx, userID, importID, status); err != nil {
 			log.Printf("import %d: recording detect status %q: %v", importID, status, err)
 		}
 	}
 	setDetect("running")
-	all, err := s.Store.LoadObservations(ctx)
+	all, err := s.Store.LoadObservations(ctx, userID)
 	if err != nil {
 		log.Printf("import %d: auto-detect load: %v", importID, err)
 		setDetect("failed")
@@ -215,7 +216,7 @@ func (s *Server) runAutoDetect(ctx context.Context, importID int64) {
 	}
 	p := detect.DefaultParams()
 	res := detect.Run(all, p)
-	if _, err := s.Store.SaveRun(ctx, p, res); err != nil {
+	if _, err := s.Store.SaveRun(ctx, userID, p, res); err != nil {
 		log.Printf("import %d: auto-detect save: %v", importID, err)
 		setDetect("failed")
 		return
@@ -224,7 +225,7 @@ func (s *Server) runAutoDetect(ctx context.Context, importID int64) {
 }
 
 func (s *Server) GetImport(ctx context.Context, req GetImportRequestObject) (GetImportResponseObject, error) {
-	row, err := s.Store.GetImport(ctx, req.Id)
+	row, err := s.Store.GetImport(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

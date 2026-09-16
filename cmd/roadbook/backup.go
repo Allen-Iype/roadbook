@@ -47,7 +47,7 @@ func runBackup(args []string) error {
 	}
 	defer s.Close()
 
-	man, warnings, err := backup.Write(ctx, s, store.PhotoFiles{Dir: *photosDir}, f, time.Now())
+	man, warnings, err := backup.Write(ctx, s, store.PhotoFiles{Dir: *photosDir}, f, time.Now(), store.SelfUser)
 	if err != nil {
 		// A partial archive must not look like a backup.
 		f.Close()
@@ -93,7 +93,7 @@ func runRestore(args []string) error {
 		return err
 	}
 
-	rep, err := backup.Restore(ctx, s, files, f)
+	rep, err := backup.Restore(ctx, s, files, f, store.SelfUser)
 	if err != nil {
 		return err
 	}

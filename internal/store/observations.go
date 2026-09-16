@@ -53,11 +53,11 @@ const batchSize = 2000
 // so a failure is visible in the product rather than only in a closed terminal
 // (phase 5 BRIEF §3B). Counters are zero until ImportObservations finalises the
 // row; FailImport finalises the other path.
-func (s *Store) BeginImport(ctx context.Context, label string, winStart, winEnd *time.Time) (int64, error) {
+func (s *Store) BeginImport(ctx context.Context, userID, label string, winStart, winEnd *time.Time) (int64, error) {
 	var id int64
-	err := s.pool.QueryRow(ctx, `INSERT INTO imports (source_label, window_start, window_end, visits, activities, points, raw_positions, skipped, status)
-		VALUES ($1,$2,$3,0,0,0,0,0,'running') RETURNING id`,
-		label, winStart, winEnd).Scan(&id)
+	err := s.pool.QueryRow(ctx, `INSERT INTO imports (user_id, source_label, window_start, window_end, visits, activities, points, raw_positions, skipped, status)
+		VALUES ($1,$2,$3,$4,0,0,0,0,0,'running') RETURNING id`,
+		userID, label, winStart, winEnd).Scan(&id)
 	return id, err
 }
 
@@ -65,9 +65,9 @@ func (s *Store) BeginImport(ctx context.Context, label string, winStart, winEnd 
 // stable slug when the input was recognised ("" stores NULL — the failure
 // happened before recognition); errMsg is the user-facing message, prose that
 // may be reworded and is therefore never the queryable evidence.
-func (s *Store) FailImport(ctx context.Context, importID int64, detectedFormat, errMsg string) error {
+func (s *Store) FailImport(ctx context.Context, userID string, importID int64, detectedFormat, errMsg string) error {
 	_, err := s.pool.Exec(ctx, `UPDATE imports SET status = 'failed', error = $2, detected_format = nullif($3, '')
-		WHERE id = $1`, importID, errMsg, detectedFormat)
+		WHERE id = $1 AND user_id = $4`, importID, errMsg, detectedFormat, userID)
 	return err
 }
 
@@ -78,7 +78,7 @@ func (s *Store) FailImport(ctx context.Context, importID int64, detectedFormat, 
 // (CLAUDE.md invariant 2). The imports row created by BeginImport is finalised
 // to 'completed' in the same transaction, so counters and observations land
 // together or not at all.
-func (s *Store) ImportObservations(ctx context.Context, importID int64, detectedFormat string, obs domain.Observations, skipped int) (ImportResult, error) {
+func (s *Store) ImportObservations(ctx context.Context, userID string, importID int64, detectedFormat string, obs domain.Observations, skipped int) (ImportResult, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return ImportResult{}, err
@@ -115,33 +115,33 @@ func (s *Store) ImportObservations(ctx context.Context, importID int64, detected
 	}
 
 	for _, v := range obs.Visits {
-		if err := queue(`INSERT INTO visits (start_ts, start_offset_sec, end_ts, end_offset_sec, lat, lon, semantic_type, content_hash)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (content_hash) DO NOTHING`,
-			v.Start, offsetOf(v.Start), v.End, offsetOf(v.End),
+		if err := queue(`INSERT INTO visits (user_id, start_ts, start_offset_sec, end_ts, end_offset_sec, lat, lon, semantic_type, content_hash)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (user_id, content_hash) DO NOTHING`,
+			userID, v.Start, offsetOf(v.Start), v.End, offsetOf(v.End),
 			latOf(v.Loc), lonOf(v.Loc), v.SemanticType, hashVisit(v)); err != nil {
 			return res, err
 		}
 	}
 	for _, a := range obs.Activities {
-		if err := queue(`INSERT INTO activities (start_ts, start_offset_sec, end_ts, end_offset_sec, start_lat, start_lon, end_lat, end_lon, distance_m, mode, content_hash)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (content_hash) DO NOTHING`,
-			a.Start, offsetOf(a.Start), a.End, offsetOf(a.End),
+		if err := queue(`INSERT INTO activities (user_id, start_ts, start_offset_sec, end_ts, end_offset_sec, start_lat, start_lon, end_lat, end_lon, distance_m, mode, content_hash)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (user_id, content_hash) DO NOTHING`,
+			userID, a.Start, offsetOf(a.Start), a.End, offsetOf(a.End),
 			latOf(a.From), lonOf(a.From), latOf(a.To), lonOf(a.To),
 			a.DistanceM, a.Mode, hashActivity(a)); err != nil {
 			return res, err
 		}
 	}
 	for _, p := range obs.Points {
-		if err := queue(`INSERT INTO path_points (ts, ts_offset_sec, lat, lon, content_hash)
-			VALUES ($1,$2,$3,$4,$5) ON CONFLICT (content_hash) DO NOTHING`,
-			p.Time, offsetOf(p.Time), latOf(p.Loc), lonOf(p.Loc), hashPoint(p)); err != nil {
+		if err := queue(`INSERT INTO path_points (user_id, ts, ts_offset_sec, lat, lon, content_hash)
+			VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (user_id, content_hash) DO NOTHING`,
+			userID, p.Time, offsetOf(p.Time), latOf(p.Loc), lonOf(p.Loc), hashPoint(p)); err != nil {
 			return res, err
 		}
 	}
 	for _, rp := range obs.RawPositions {
-		if err := queue(`INSERT INTO raw_positions (ts, ts_offset_sec, lat, lon, accuracy_m, source, content_hash)
-			VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (content_hash) DO NOTHING`,
-			rp.Time, offsetOf(rp.Time), latOf(rp.Loc), lonOf(rp.Loc), rp.AccuracyM, rp.Source, hashRawPosition(rp)); err != nil {
+		if err := queue(`INSERT INTO raw_positions (user_id, ts, ts_offset_sec, lat, lon, accuracy_m, source, content_hash)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (user_id, content_hash) DO NOTHING`,
+			userID, rp.Time, offsetOf(rp.Time), latOf(rp.Loc), lonOf(rp.Loc), rp.AccuracyM, rp.Source, hashRawPosition(rp)); err != nil {
 			return res, err
 		}
 	}
@@ -153,8 +153,8 @@ func (s *Store) ImportObservations(ctx context.Context, importID int64, detected
 	res.ImportID = importID
 	ct, err := tx.Exec(ctx, `UPDATE imports SET visits = $2, activities = $3, points = $4, raw_positions = $5, skipped = $6,
 		status = 'completed', detected_format = nullif($7, ''), inserted = $8
-		WHERE id = $1 AND status = 'running'`,
-		importID, len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions), skipped, detectedFormat, res.Inserted)
+		WHERE id = $1 AND user_id = $9 AND status = 'running'`,
+		importID, len(obs.Visits), len(obs.Activities), len(obs.Points), len(obs.RawPositions), skipped, detectedFormat, res.Inserted, userID)
 	if err != nil {
 		return res, err
 	}
@@ -181,8 +181,8 @@ func scanImport(rows pgx.Rows) (ImportRow, error) {
 
 // ListImports returns every import attempt, newest first — the bookkeeping
 // view (phase 5 BRIEF §3B).
-func (s *Store) ListImports(ctx context.Context) ([]ImportRow, error) {
-	rows, err := s.pool.Query(ctx, importSelect+` ORDER BY imported_at DESC, id DESC`)
+func (s *Store) ListImports(ctx context.Context, userID string) ([]ImportRow, error) {
+	rows, err := s.pool.Query(ctx, importSelect+` WHERE user_id = $1 ORDER BY imported_at DESC, id DESC`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -201,11 +201,11 @@ func (s *Store) ListImports(ctx context.Context) ([]ImportRow, error) {
 // LoadObservations reads everything back in (start, id) order — chronological,
 // with insertion order breaking ties, which reproduces source-file order for
 // rows from a single import.
-func (s *Store) LoadObservations(ctx context.Context) (domain.Observations, error) {
+func (s *Store) LoadObservations(ctx context.Context, userID string) (domain.Observations, error) {
 	var obs domain.Observations
 
 	rows, err := s.pool.Query(ctx, `SELECT start_ts, start_offset_sec, end_ts, end_offset_sec, lat, lon, semantic_type
-		FROM visits ORDER BY start_ts, id`)
+		FROM visits WHERE user_id = $1 ORDER BY start_ts, id`, userID)
 	if err != nil {
 		return obs, err
 	}
@@ -227,7 +227,7 @@ func (s *Store) LoadObservations(ctx context.Context) (domain.Observations, erro
 	}
 
 	rows, err = s.pool.Query(ctx, `SELECT start_ts, start_offset_sec, end_ts, end_offset_sec, start_lat, start_lon, end_lat, end_lon, distance_m, mode
-		FROM activities ORDER BY start_ts, id`)
+		FROM activities WHERE user_id = $1 ORDER BY start_ts, id`, userID)
 	if err != nil {
 		return obs, err
 	}
@@ -249,7 +249,7 @@ func (s *Store) LoadObservations(ctx context.Context) (domain.Observations, erro
 		return obs, err
 	}
 
-	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon FROM path_points ORDER BY ts, id`)
+	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon FROM path_points WHERE user_id = $1 ORDER BY ts, id`, userID)
 	if err != nil {
 		return obs, err
 	}
@@ -266,7 +266,7 @@ func (s *Store) LoadObservations(ctx context.Context) (domain.Observations, erro
 		return obs, err
 	}
 
-	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon, accuracy_m, source FROM raw_positions ORDER BY ts, id`)
+	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon, accuracy_m, source FROM raw_positions WHERE user_id = $1 ORDER BY ts, id`, userID)
 	if err != nil {
 		return obs, err
 	}
@@ -290,11 +290,11 @@ func (s *Store) LoadObservations(ctx context.Context) (domain.Observations, erro
 // overlapping the window plus path points and raw positions inside it — so a
 // journey request does not load the whole observation corpus. Visits stay
 // empty; assembly does not use them.
-func (s *Store) LoadJourneyInputs(ctx context.Context, winStart, winEnd time.Time) (domain.Observations, error) {
+func (s *Store) LoadJourneyInputs(ctx context.Context, userID string, winStart, winEnd time.Time) (domain.Observations, error) {
 	var obs domain.Observations
 
 	rows, err := s.pool.Query(ctx, `SELECT start_ts, start_offset_sec, end_ts, end_offset_sec, start_lat, start_lon, end_lat, end_lon, distance_m, mode
-		FROM activities WHERE end_ts >= $1 AND start_ts <= $2 ORDER BY start_ts, id`, winStart, winEnd)
+		FROM activities WHERE user_id = $3 AND end_ts >= $1 AND start_ts <= $2 ORDER BY start_ts, id`, winStart, winEnd, userID)
 	if err != nil {
 		return obs, err
 	}
@@ -317,7 +317,7 @@ func (s *Store) LoadJourneyInputs(ctx context.Context, winStart, winEnd time.Tim
 	}
 
 	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon FROM path_points
-		WHERE ts BETWEEN $1 AND $2 ORDER BY ts, id`, winStart, winEnd)
+		WHERE user_id = $3 AND ts BETWEEN $1 AND $2 ORDER BY ts, id`, winStart, winEnd, userID)
 	if err != nil {
 		return obs, err
 	}
@@ -335,7 +335,7 @@ func (s *Store) LoadJourneyInputs(ctx context.Context, winStart, winEnd time.Tim
 	}
 
 	rows, err = s.pool.Query(ctx, `SELECT ts, ts_offset_sec, lat, lon, accuracy_m, source FROM raw_positions
-		WHERE ts BETWEEN $1 AND $2 ORDER BY ts, id`, winStart, winEnd)
+		WHERE user_id = $3 AND ts BETWEEN $1 AND $2 ORDER BY ts, id`, winStart, winEnd, userID)
 	if err != nil {
 		return obs, err
 	}

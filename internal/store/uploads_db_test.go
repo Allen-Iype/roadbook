@@ -17,11 +17,11 @@ func TestUploadImportBookkeeping(t *testing.T) {
 	s := storetest.Open(t)
 	ctx := context.Background()
 
-	id, err := s.BeginUploadImport(ctx, "Timeline.json", "cafe0000")
+	id, err := s.BeginUploadImport(ctx, store.SelfUser, "Timeline.json", "cafe0000")
 	if err != nil {
 		t.Fatal(err)
 	}
-	row, err := s.GetImport(ctx, id)
+	row, err := s.GetImport(ctx, store.SelfUser, id)
 	if err != nil || row == nil {
 		t.Fatalf("GetImport: %v, %v", row, err)
 	}
@@ -34,11 +34,11 @@ func TestUploadImportBookkeeping(t *testing.T) {
 
 	// The sweep: a crash left this row running; startup marks it failed and
 	// says why. A completed CLI-style row must be untouched.
-	cliID, err := s.BeginImport(ctx, "cli.json", nil, nil)
+	cliID, err := s.BeginImport(ctx, store.SelfUser, "cli.json", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.FailImport(ctx, cliID, "gzip", "already finalised"); err != nil {
+	if err := s.FailImport(ctx, store.SelfUser, cliID, "gzip", "already finalised"); err != nil {
 		t.Fatal(err)
 	}
 	swept, err := s.SweepRunningImports(ctx, "interrupted by a server restart")
@@ -48,22 +48,22 @@ func TestUploadImportBookkeeping(t *testing.T) {
 	if swept != 1 {
 		t.Fatalf("swept %d rows, want exactly the one running row", swept)
 	}
-	row, _ = s.GetImport(ctx, id)
+	row, _ = s.GetImport(ctx, store.SelfUser, id)
 	if row.Status != "failed" || row.Error == nil || *row.Error != "interrupted by a server restart" {
 		t.Errorf("swept row = %+v — want failed with the interruption message", row)
 	}
-	cli, _ := s.GetImport(ctx, cliID)
+	cli, _ := s.GetImport(ctx, store.SelfUser, cliID)
 	if cli.Error == nil || *cli.Error != "already finalised" {
 		t.Errorf("sweep touched an already-finalised row: %+v", cli)
 	}
 
 	// detect_status is its own channel: setting it never changes status.
 	for _, st := range []string{"running", "completed"} {
-		if err := s.SetImportDetectStatus(ctx, id, st); err != nil {
+		if err := s.SetImportDetectStatus(ctx, store.SelfUser, id, st); err != nil {
 			t.Fatal(err)
 		}
 	}
-	row, _ = s.GetImport(ctx, id)
+	row, _ = s.GetImport(ctx, store.SelfUser, id)
 	if row.DetectStatus == nil || *row.DetectStatus != "completed" {
 		t.Errorf("detect_status = %v, want completed", row.DetectStatus)
 	}
@@ -72,7 +72,7 @@ func TestUploadImportBookkeeping(t *testing.T) {
 	}
 
 	// GetImport for an id that never existed is nil, not an error.
-	missing, err := s.GetImport(ctx, 999999)
+	missing, err := s.GetImport(ctx, store.SelfUser, 999999)
 	if err != nil || missing != nil {
 		t.Errorf("missing import = %v, %v — want nil, nil", missing, err)
 	}

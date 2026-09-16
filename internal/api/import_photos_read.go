@@ -15,14 +15,14 @@ import (
 // placement that positions attached photos positions these, against the same
 // assembled, route-applied journey the page draws.
 func (s *Server) ListCandidateImportPhotos(ctx context.Context, req ListCandidateImportPhotosRequestObject) (ListCandidateImportPhotosResponseObject, error) {
-	cand, err := s.Store.LatestCandidate(ctx, req.Id)
+	cand, err := s.Store.LatestCandidate(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
 	if cand == nil {
 		return ListCandidateImportPhotos404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
 	}
-	recs, err := s.Store.ListPhotoRecordsInSpan(ctx, cand.SpanStart, cand.SpanEnd)
+	recs, err := s.Store.ListPhotoRecordsInSpan(ctx, s.currentUser(ctx), cand.SpanStart, cand.SpanEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (s *Server) ListCandidateImportPhotos(ctx context.Context, req ListCandidat
 }
 
 func (s *Server) GetImportPhotoThumbnail(ctx context.Context, req GetImportPhotoThumbnailRequestObject) (GetImportPhotoThumbnailResponseObject, error) {
-	r, err := s.Store.GetPhotoRecord(ctx, req.Id)
+	r, err := s.Store.GetPhotoRecord(ctx, s.currentUser(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}

@@ -25,8 +25,8 @@ type DecisionRow struct {
 const decisionCols = `id, action, name, anchor_span_start, anchor_span_end,
 	anchor_dest_lat, anchor_dest_lon, created_at, updated_at`
 
-func (s *Store) ListDecisions(ctx context.Context) ([]DecisionRow, error) {
-	rows, err := s.pool.Query(ctx, `SELECT `+decisionCols+` FROM decisions ORDER BY id`)
+func (s *Store) ListDecisions(ctx context.Context, userID string) ([]DecisionRow, error) {
+	rows, err := s.pool.Query(ctx, `SELECT `+decisionCols+` FROM decisions WHERE user_id = $1 ORDER BY id`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -44,11 +44,11 @@ func (s *Store) ListDecisions(ctx context.Context) ([]DecisionRow, error) {
 }
 
 // InsertDecision records a new decision with its anchor snapshot.
-func (s *Store) InsertDecision(ctx context.Context, action string, name *string, anchor CandidateRow) (DecisionRow, error) {
+func (s *Store) InsertDecision(ctx context.Context, userID, action string, name *string, anchor CandidateRow) (DecisionRow, error) {
 	var d DecisionRow
-	err := s.pool.QueryRow(ctx, `INSERT INTO decisions (action, name, anchor_span_start, anchor_span_end, anchor_dest_lat, anchor_dest_lon)
-		VALUES ($1,$2,$3,$4,$5,$6) RETURNING `+decisionCols,
-		action, name, anchor.SpanStart, anchor.SpanEnd, anchor.Dest.Lat, anchor.Dest.Lon).
+	err := s.pool.QueryRow(ctx, `INSERT INTO decisions (user_id, action, name, anchor_span_start, anchor_span_end, anchor_dest_lat, anchor_dest_lon)
+		VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING `+decisionCols,
+		userID, action, name, anchor.SpanStart, anchor.SpanEnd, anchor.Dest.Lat, anchor.Dest.Lon).
 		Scan(&d.ID, &d.Action, &d.Name, &d.AnchorStart, &d.AnchorEnd,
 			&d.AnchorDest.Lat, &d.AnchorDest.Lon, &d.CreatedAt, &d.UpdatedAt)
 	return d, err
@@ -67,7 +67,7 @@ type BulkDecision struct {
 
 // DecideBulk applies every item or none: a mid-list failure rolls the whole
 // batch back, so "some of your sweep landed" is a state that cannot exist.
-func (s *Store) DecideBulk(ctx context.Context, items []BulkDecision) error {
+func (s *Store) DecideBulk(ctx context.Context, userID string, items []BulkDecision) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -76,13 +76,13 @@ func (s *Store) DecideBulk(ctx context.Context, items []BulkDecision) error {
 	for _, it := range items {
 		if it.UpdateID != nil {
 			_, err = tx.Exec(ctx, `UPDATE decisions SET action=$2, name=$3, anchor_span_start=$4, anchor_span_end=$5,
-				anchor_dest_lat=$6, anchor_dest_lon=$7, updated_at=now() WHERE id=$1`,
+				anchor_dest_lat=$6, anchor_dest_lon=$7, updated_at=now() WHERE id=$1 AND user_id=$8`,
 				*it.UpdateID, it.Action, it.Name, it.Anchor.SpanStart, it.Anchor.SpanEnd,
-				it.Anchor.Dest.Lat, it.Anchor.Dest.Lon)
+				it.Anchor.Dest.Lat, it.Anchor.Dest.Lon, userID)
 		} else {
-			_, err = tx.Exec(ctx, `INSERT INTO decisions (action, name, anchor_span_start, anchor_span_end, anchor_dest_lat, anchor_dest_lon)
-				VALUES ($1,$2,$3,$4,$5,$6)`,
-				it.Action, it.Name, it.Anchor.SpanStart, it.Anchor.SpanEnd,
+			_, err = tx.Exec(ctx, `INSERT INTO decisions (user_id, action, name, anchor_span_start, anchor_span_end, anchor_dest_lat, anchor_dest_lon)
+				VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+				userID, it.Action, it.Name, it.Anchor.SpanStart, it.Anchor.SpanEnd,
 				it.Anchor.Dest.Lat, it.Anchor.Dest.Lon)
 		}
 		if err != nil {
@@ -95,11 +95,11 @@ func (s *Store) DecideBulk(ctx context.Context, items []BulkDecision) error {
 // UpdateDecision re-decides in place, refreshing the anchor to the candidate
 // the user is looking at now (BRIEF §3.1). The user overwriting their own
 // decision is the one legitimate mutation of user data.
-func (s *Store) UpdateDecision(ctx context.Context, id int64, action string, name *string, anchor CandidateRow) (DecisionRow, error) {
+func (s *Store) UpdateDecision(ctx context.Context, userID string, id int64, action string, name *string, anchor CandidateRow) (DecisionRow, error) {
 	var d DecisionRow
 	err := s.pool.QueryRow(ctx, `UPDATE decisions SET action=$2, name=$3, anchor_span_start=$4, anchor_span_end=$5,
-		anchor_dest_lat=$6, anchor_dest_lon=$7, updated_at=now() WHERE id=$1 RETURNING `+decisionCols,
-		id, action, name, anchor.SpanStart, anchor.SpanEnd, anchor.Dest.Lat, anchor.Dest.Lon).
+		anchor_dest_lat=$6, anchor_dest_lon=$7, updated_at=now() WHERE id=$1 AND user_id=$8 RETURNING `+decisionCols,
+		id, action, name, anchor.SpanStart, anchor.SpanEnd, anchor.Dest.Lat, anchor.Dest.Lon, userID).
 		Scan(&d.ID, &d.Action, &d.Name, &d.AnchorStart, &d.AnchorEnd,
 			&d.AnchorDest.Lat, &d.AnchorDest.Lon, &d.CreatedAt, &d.UpdatedAt)
 	return d, err

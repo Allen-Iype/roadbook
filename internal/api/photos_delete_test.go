@@ -28,7 +28,7 @@ func TestDeletePhotoOrderingUnderFileFailure(t *testing.T) {
 	ist := time.FixedZone("", 19800)
 	start := time.Date(2026, 3, 1, 8, 0, 0, 0, ist)
 	end := time.Date(2026, 3, 4, 20, 0, 0, 0, ist)
-	if _, err := s.SaveRun(ctx, detect.DefaultParams(), detect.Result{
+	if _, err := s.SaveRun(ctx, store.SelfUser, detect.DefaultParams(), detect.Result{
 		Bases: []detect.Base{},
 		Candidates: []detect.Candidate{{
 			Start: start, End: end, Days: 3.5,
@@ -38,19 +38,19 @@ func TestDeletePhotoOrderingUnderFileFailure(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	_, rows, err := s.LatestRun(ctx)
+	_, rows, err := s.LatestRun(ctx, store.SelfUser)
 	if err != nil || len(rows) != 1 {
 		t.Fatalf("latest run: %v, %d rows", err, len(rows))
 	}
 	name := "Trip"
-	dec, err := s.InsertDecision(ctx, "confirmed", &name, rows[0])
+	dec, err := s.InsertDecision(ctx, store.SelfUser, "confirmed", &name, rows[0])
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	photos := store.PhotoFiles{Dir: t.TempDir()}
 	const hash = "deadbeef"
-	row, _, err := s.InsertPhoto(ctx, store.PhotoRow{
+	row, _, err := s.InsertPhoto(ctx, store.SelfUser, store.PhotoRow{
 		DecisionID: dec.ID, ContentHash: hash, OriginalName: "x.jpg",
 		TimeSource: "none", PosSource: "none", ThumbW: 10, ThumbH: 10,
 	})
@@ -72,7 +72,7 @@ func TestDeletePhotoOrderingUnderFileFailure(t *testing.T) {
 	}
 
 	// Row first: the row must be gone even though the file step failed…
-	p, gerr := s.GetPhoto(ctx, row.ID)
+	p, gerr := s.GetPhoto(ctx, store.SelfUser, row.ID)
 	if gerr != nil || p != nil {
 		t.Errorf("row survived the failed delete: %+v, %v — a row without its file is a broken page", p, gerr)
 	}
