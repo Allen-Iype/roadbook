@@ -72,3 +72,31 @@ Written as decisions are made, not reconstructed.
   entries file is deliberately NOT in nightly backups so the deletion
   promise stays absolute — if losing pending entries to a host failure ever
   stings, that trade-off gets revisited openly.
+
+## 2026-09-09 — hosting torn down; phase 12 closes early; product-first re-charter
+
+- **Chosen (maintainer's call at a STOP):** deliberate teardown of the
+  Oracle bridge host three days ahead of trial reclaim (migrate-by
+  2026-09-12), after a final verified backup of every instance (all
+  archives decrypt on the laptop; decisions, photos, and retained uploads
+  all present). The A1 Always Free escape never materialised — three weeks
+  of 15-minute attempts, zero capacity in the single-AD home region, PAYG
+  upgrade button never activated. New sequence: build the remaining
+  product (per-user accounts, share links, the planned backlog) with the
+  laptop as the only runtime, then return to hosting a finished product
+  on a platform chosen when money returns. Phase 12 closes with CP1–CP3
+  delivered and proven (landing, waitlist, entry drill) and CP4 (a real
+  stranger enters) explicitly not reached — its §0 opening condition
+  (durable hosting) was never satisfiable on trial credits.
+- **Rejected:** paying to keep the host (zero-cash constraint stands);
+  laptop re-hosting of the pilot (reviving the funnel's known problems to
+  serve six mostly-idle instances is upkeep without product progress);
+  letting the trial reclaim the host with services still nominally up
+  (an unmanaged end to a custodial promise).
+- **Would change our mind:** nothing to reverse — the landing, waitlist,
+  and entry machinery are all committed and redeploy onto any future host
+  in minutes (deploy-landing.sh, setup-waitlist.sh, new-instance.sh);
+  DuckDNS re-points; testers' data restores by durable identity. The
+  accounts/share-links work pulled forward from phase 13 replaces its
+  demand gate ("cap filled + waitlist") with the maintainer's
+  product-first judgement — recorded openly, decided at this STOP.
