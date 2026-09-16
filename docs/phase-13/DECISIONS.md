@@ -52,3 +52,29 @@ decisions are made, per the working agreement.
   seam through ctx cleanly, the seam moves to the generated middleware
   layer — the uniformity rule (one place decides the user) survives
   either way.
+
+## 2026-09-16 — CP2: auth mechanics
+
+- **Chosen:** all four auth operations live in openapi.yaml and the strict
+  generated server — including the redirect endpoints, via declared 302
+  response headers (Location, Set-Cookie) — so invariant 10 holds with no
+  hand-mounted HTTP anywhere. Cookies reach strict handlers through the
+  one AuthMiddleware (it stashes request cookies in ctx and resolves the
+  session), which is also where 401 enforcement lives; exempt operations
+  are exactly healthz + the auth surface. Session TTL 30 days, table
+  stores only the token's SHA-256 (a leaked row cannot be replayed), state
+  and nonce ride one 10-minute HttpOnly cookie. Client secret is env-only
+  (ROADBOOK_OIDC_CLIENT_SECRET) — flags land in `ps` output. x/oauth2
+  pinned v0.36.0 (v0.37 requires go 1.26; the module stays 1.25.7 with
+  the Dockerfile's golang:1.25 pin). Existing API e2e tests now run
+  through AuthMiddleware, so the whole prior suite doubles as the
+  auth-off regression.
+- **Rejected:** hand-mounted auth routes beside the generated mux
+  (invariant 10 says the interface is generated, so it is); PKCE (a
+  confidential client with a secret; add it if a public-client flow ever
+  appears); refresh tokens (a 30-day opaque session re-minted by
+  sign-in is enough machinery for this product).
+- **Would change our mind:** a second provider whose claims differ
+  (Google's email is enough today — a provider without email would make
+  the account slot show nothing and force a display-name claim);
+  session-fixation-grade issues found at CP3's browser walk.

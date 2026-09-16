@@ -12,9 +12,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"roadbook/internal/api"
+	"roadbook/internal/auth"
 	"roadbook/internal/countries"
 	"roadbook/internal/detect"
 	"roadbook/internal/domain"
@@ -347,6 +349,14 @@ func runServe(args []string) error {
 		"thumbnail directory (default $ROADBOOK_PHOTOS_DIR) — under gitignored data/ by default; photos are user data")
 	uploadsDir := fs.String("uploads-dir", envOr("ROADBOOK_UPLOADS_DIR", "data/uploads"),
 		"retained-uploads directory (default $ROADBOOK_UPLOADS_DIR) — under gitignored data/ by default; exports are real location history")
+	authMode := fs.String("auth", envOr("ROADBOOK_AUTH", "off"),
+		"auth mode: off (single-user, the self-host reference) | oidc (default $ROADBOOK_AUTH)")
+	oidcIssuer := fs.String("oidc-issuer", envOr("ROADBOOK_OIDC_ISSUER", ""),
+		"OIDC issuer URL, e.g. https://accounts.google.com (default $ROADBOOK_OIDC_ISSUER)")
+	oidcClientID := fs.String("oidc-client-id", envOr("ROADBOOK_OIDC_CLIENT_ID", ""),
+		"OIDC client id (default $ROADBOOK_OIDC_CLIENT_ID)")
+	publicURL := fs.String("public-url", envOr("ROADBOOK_PUBLIC_URL", "http://127.0.0.1:3000"),
+		"browser-facing origin, the base of the OIDC redirect (default $ROADBOOK_PUBLIC_URL)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -390,7 +400,37 @@ func runServe(args []string) error {
 	}
 
 	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Suggester: sug, Photos: photos, Uploads: uploads}
-	handler := api.HandlerFromMux(api.NewStrictHandler(srv, nil), http.NewServeMux())
+
+	// The auth mode switch (phase 13 BRIEF §2): off is the default and the
+	// self-host reference — no auth service, no sign-in surface, everything
+	// owned by store.SelfUser exactly as before. oidc turns on delegated
+	// sign-in; the client secret is env-only ($ROADBOOK_OIDC_CLIENT_SECRET),
+	// never a flag — flags land in `ps` output.
+	switch *authMode {
+	case "off":
+	case "oidc":
+		svc, err := auth.New(ctx, auth.Config{
+			IssuerURL:     *oidcIssuer,
+			ClientID:      *oidcClientID,
+			ClientSecret:  os.Getenv("ROADBOOK_OIDC_CLIENT_SECRET"),
+			RedirectURL:   strings.TrimRight(*publicURL, "/") + "/api/auth/callback",
+			SecureCookies: strings.HasPrefix(*publicURL, "https://"),
+		})
+		if err != nil {
+			return err
+		}
+		srv.Auth = svc
+		if swept, err := s.DeleteExpiredSessions(ctx); err != nil {
+			return fmt.Errorf("sweeping expired sessions: %w", err)
+		} else if swept > 0 {
+			fmt.Printf("swept %d expired session(s)\n", swept)
+		}
+		fmt.Printf("auth: oidc via %s\n", *oidcIssuer)
+	default:
+		return fmt.Errorf("unknown -auth %q: use off or oidc", *authMode)
+	}
+
+	handler := api.HandlerFromMux(api.NewStrictHandler(srv, []api.StrictMiddlewareFunc{srv.AuthMiddleware}), http.NewServeMux())
 	fmt.Printf("roadbook API listening on %s\n", *addr)
 	return http.ListenAndServe(*addr, handler)
 }

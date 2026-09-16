@@ -292,6 +292,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who is signed in, and whether sign-in exists at all
+         * @description The one auth read the web app needs (phase 13 BRIEF §2). mode "off" is the authless single-user reference: no sign-in surface should be rendered anywhere. mode "oidc" with signed_in false is the signed-out state of a multi-user instance.
+         */
+        get: operations["getAuthSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/signin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Begin the OIDC sign-in redirect dance
+         * @description Issues the provider redirect with a fresh state+nonce pair, carried in a short-lived HttpOnly cookie the callback verifies. A browser navigation target, not an API call — the generated client never invokes it.
+         */
+        get: operations["startSignIn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OIDC provider redirect target
+         * @description Exchanges the provider's code (server-to-server, with the client secret), verifies the ID token and nonce, upserts the user by subject, and mints an opaque session recorded in Postgres — the cookie carries the token, the table its hash.
+         */
+        get: operations["completeSignIn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/signout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End the session
+         * @description Deletes the session row (revocation is a DELETE, observable — the sessions-in-Postgres decision) and clears the cookie. Signed-out or mode-off callers get the same 204: the goal is absence.
+         */
+        post: operations["signOut"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -716,8 +796,25 @@ export interface components {
         Error: {
             error: string;
         };
+        SessionInfo: {
+            /** @enum {string} */
+            mode: "off" | "oidc";
+            signed_in: boolean;
+            /** @description Present only when signed in and the provider shared one. */
+            email?: string;
+        };
     };
-    responses: never;
+    responses: {
+        /** @description No valid session (multi-user mode only; an authless instance never answers this). The web app treats it as "show the sign-in page." */
+        Unauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+    };
     parameters: never;
     requestBodies: never;
     headers: never;
@@ -772,6 +869,7 @@ export interface operations {
                     "application/json": components["schemas"]["ImportList"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
         };
     };
     uploadImport: {
@@ -813,6 +911,7 @@ export interface operations {
                     "application/json": components["schemas"]["ImportRejection"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description An import is already running on this instance. */
             409: {
                 headers: {
@@ -869,6 +968,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description An import is already running on this instance. */
             409: {
                 headers: {
@@ -900,6 +1000,7 @@ export interface operations {
                     "application/json": components["schemas"]["Import"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such import. */
             404: {
                 headers: {
@@ -929,6 +1030,7 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateList"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
         };
     };
     decideCandidatesBulk: {
@@ -962,6 +1064,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description One or more ids are not in the latest run (stale after re-detection). Nothing was applied; the message names them. */
             404: {
                 headers: {
@@ -994,6 +1097,7 @@ export interface operations {
                     "application/json": components["schemas"]["Journey"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such candidate in the latest run (stale id after re-detection). */
             404: {
                 headers: {
@@ -1026,6 +1130,7 @@ export interface operations {
                     "application/json": components["schemas"]["NameSuggestion"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such candidate in the latest run (stale id after re-detection). */
             404: {
                 headers: {
@@ -1080,6 +1185,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such candidate in the latest run (stale id after re-detection). */
             404: {
                 headers: {
@@ -1112,6 +1218,7 @@ export interface operations {
                     "application/json": components["schemas"]["PhotoList"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such candidate in the latest run (stale id after re-detection). */
             404: {
                 headers: {
@@ -1159,6 +1266,7 @@ export interface operations {
                     "application/json": components["schemas"]["PhotoUploadResults"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such candidate in the latest run (stale id after re-detection). */
             404: {
                 headers: {
@@ -1200,6 +1308,7 @@ export interface operations {
                     "application/json": components["schemas"]["ImportPhotoList"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such candidate in the latest run (stale id after re-detection). */
             404: {
                 headers: {
@@ -1231,6 +1340,7 @@ export interface operations {
                     "image/jpeg": string;
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such record, or the record has no thumbnail. */
             404: {
                 headers: {
@@ -1262,6 +1372,7 @@ export interface operations {
                     "image/jpeg": string;
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such photo. */
             404: {
                 headers: {
@@ -1291,6 +1402,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
             /** @description No such photo. */
             404: {
                 headers: {
@@ -1299,6 +1411,120 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Error"];
                 };
+            };
+        };
+    };
+    getAuthSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionInfo"];
+                };
+            };
+        };
+    };
+    startSignIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to the configured OIDC provider. */
+            302: {
+                headers: {
+                    Location?: string;
+                    /** @description The state cookie (10 minutes, HttpOnly). */
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This instance runs authless (mode off). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    completeSignIn: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+                /** @description Provider-reported failure (user denied, etc.). */
+                error?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed in; back to the app. */
+            302: {
+                headers: {
+                    Location?: string;
+                    /** @description The session cookie (HttpOnly, SameSite=Lax). */
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description State mismatch, missing code, or a token that does not verify. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This instance runs authless (mode off). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    signOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session ended. */
+            204: {
+                headers: {
+                    /** @description The clearing cookie. */
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

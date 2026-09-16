@@ -43,6 +43,8 @@ paths:
         format label — evidence that stays queryable while user-facing error
         prose gets reworded.
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: All import attempts.
           content:
@@ -83,6 +85,8 @@ paths:
                     Provenance label; defaults to the uploaded file's name
                     (the source_label convention).
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "202":
           description: >
             Accepted — the upload is on disk and the import is running.
@@ -152,6 +156,8 @@ paths:
                   type: string
                   description: Provenance label; defaults to "photo upload".
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "202":
           description: >
             The batch is imported (the import row is already completed) and
@@ -190,6 +196,8 @@ paths:
             type: integer
             format: int64
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: The import attempt.
           content:
@@ -214,6 +222,8 @@ paths:
         lost (BRIEF §3.1). When no detection run exists yet, `run` is omitted,
         `candidates` is empty, and every decision is an orphan.
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: Candidates and orphaned decisions.
           content:
@@ -239,6 +249,8 @@ paths:
             schema:
               $ref: "#/components/schemas/BulkDecisionRequest"
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: Every decision applied.
           content:
@@ -283,6 +295,8 @@ paths:
             type: integer
             format: int64
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: The assembled journey.
           content:
@@ -315,6 +329,8 @@ paths:
             type: integer
             format: int64
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: The suggestion, possibly empty.
           content:
@@ -358,6 +374,8 @@ paths:
             schema:
               $ref: "#/components/schemas/DecisionRequest"
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: The decision as stored.
           content:
@@ -411,6 +429,8 @@ paths:
                     type: string
                     format: binary
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: One result per uploaded file, in upload order.
           content:
@@ -448,6 +468,8 @@ paths:
             type: integer
             format: int64
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: The photos, in upload order.
           content:
@@ -490,6 +512,8 @@ paths:
             type: integer
             format: int64
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: The records, in capture order.
           content:
@@ -520,6 +544,8 @@ paths:
             type: integer
             format: int64
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: The thumbnail.
           content:
@@ -551,6 +577,8 @@ paths:
             type: integer
             format: int64
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: The thumbnail.
           content:
@@ -581,6 +609,8 @@ paths:
             type: integer
             format: int64
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "204":
           description: Deleted.
         "404":
@@ -590,7 +620,116 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /auth/session:
+    get:
+      operationId: getAuthSession
+      summary: Who is signed in, and whether sign-in exists at all
+      description: >
+        The one auth read the web app needs (phase 13 BRIEF §2). mode "off"
+        is the authless single-user reference: no sign-in surface should be
+        rendered anywhere. mode "oidc" with signed_in false is the signed-out
+        state of a multi-user instance.
+      responses:
+        "200":
+          description: The session state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionInfo"
+
+  /auth/signin:
+    get:
+      operationId: startSignIn
+      summary: Begin the OIDC sign-in redirect dance
+      description: >
+        Issues the provider redirect with a fresh state+nonce pair, carried
+        in a short-lived HttpOnly cookie the callback verifies. A browser
+        navigation target, not an API call — the generated client never
+        invokes it.
+      responses:
+        "302":
+          description: Redirect to the configured OIDC provider.
+          headers:
+            Location:
+              schema: {type: string}
+            Set-Cookie:
+              description: The state cookie (10 minutes, HttpOnly).
+              schema: {type: string}
+        "409":
+          description: This instance runs authless (mode off).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/callback:
+    get:
+      operationId: completeSignIn
+      summary: OIDC provider redirect target
+      description: >
+        Exchanges the provider's code (server-to-server, with the client
+        secret), verifies the ID token and nonce, upserts the user by
+        subject, and mints an opaque session recorded in Postgres — the
+        cookie carries the token, the table its hash.
+      parameters:
+        - name: code
+          in: query
+          schema: {type: string}
+        - name: state
+          in: query
+          schema: {type: string}
+        - name: error
+          in: query
+          description: Provider-reported failure (user denied, etc.).
+          schema: {type: string}
+      responses:
+        "302":
+          description: Signed in; back to the app.
+          headers:
+            Location:
+              schema: {type: string}
+            Set-Cookie:
+              description: The session cookie (HttpOnly, SameSite=Lax).
+              schema: {type: string}
+        "400":
+          description: State mismatch, missing code, or a token that does not verify.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: This instance runs authless (mode off).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/signout:
+    post:
+      operationId: signOut
+      summary: End the session
+      description: >
+        Deletes the session row (revocation is a DELETE, observable — the
+        sessions-in-Postgres decision) and clears the cookie. Signed-out or
+        mode-off callers get the same 204: the goal is absence.
+      responses:
+        "204":
+          description: Session ended.
+          headers:
+            Set-Cookie:
+              description: The clearing cookie.
+              schema: {type: string}
+
 components:
+  responses:
+    Unauthorized:
+      description: >
+        No valid session (multi-user mode only; an authless instance never
+        answers this). The web app treats it as "show the sign-in page."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     Health:
       type: object
@@ -1392,3 +1531,17 @@ components:
       properties:
         error:
           type: string
+
+    SessionInfo:
+      type: object
+      required: [mode, signed_in]
+      properties:
+        mode:
+          type: string
+          enum: [off, oidc]
+          x-enum-varnames: [AuthModeOff, AuthModeOIDC]
+        signed_in:
+          type: boolean
+        email:
+          type: string
+          description: Present only when signed in and the provider shared one.

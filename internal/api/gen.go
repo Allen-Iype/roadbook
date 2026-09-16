@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -349,6 +350,24 @@ func (e PhotoUploadResultStatus) Valid() bool {
 	case PhotoUploadResultStatusSidecarPaired:
 		return true
 	case PhotoUploadResultStatusSidecarUnpaired:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SessionInfoMode.
+const (
+	AuthModeOIDC SessionInfoMode = "oidc"
+	AuthModeOff  SessionInfoMode = "off"
+)
+
+// Valid indicates whether the value is a known member of the SessionInfoMode enum.
+func (e SessionInfoMode) Valid() bool {
+	switch e {
+	case AuthModeOIDC:
+		return true
+	case AuthModeOff:
 		return true
 	default:
 		return false
@@ -790,6 +809,17 @@ type ScoreComponent struct {
 	Weight float64 `json:"weight"`
 }
 
+// SessionInfo defines model for SessionInfo.
+type SessionInfo struct {
+	// Email Present only when signed in and the provider shared one.
+	Email    *string         `json:"email,omitempty"`
+	Mode     SessionInfoMode `json:"mode"`
+	SignedIn bool            `json:"signed_in"`
+}
+
+// SessionInfoMode defines model for SessionInfo.Mode.
+type SessionInfoMode string
+
 // Stop defines model for Stop.
 type Stop struct {
 	// DisplacementKm First-to-last straight line during the halt, not path sum.
@@ -805,6 +835,18 @@ type TimedPoint struct {
 	Lat float64   `json:"lat"`
 	Lon float64   `json:"lon"`
 	T   time.Time `json:"t"`
+}
+
+// Unauthorized defines model for Unauthorized.
+type Unauthorized = Error
+
+// CompleteSignInParams defines parameters for CompleteSignIn.
+type CompleteSignInParams struct {
+	Code  *string `form:"code,omitempty" json:"code,omitempty"`
+	State *string `form:"state,omitempty" json:"state,omitempty"`
+
+	// Error Provider-reported failure (user denied, etc.).
+	Error *string `form:"error,omitempty" json:"error,omitempty"`
 }
 
 // UploadCandidatePhotosMultipartBody defines parameters for UploadCandidatePhotos.
@@ -847,6 +889,18 @@ type UploadPhotoImportMultipartRequestBody UploadPhotoImportMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// CompleteSignIn OIDC provider redirect target
+	// (GET /auth/callback)
+	CompleteSignIn(w http.ResponseWriter, r *http.Request, params CompleteSignInParams)
+	// GetAuthSession Who is signed in, and whether sign-in exists at all
+	// (GET /auth/session)
+	GetAuthSession(w http.ResponseWriter, r *http.Request)
+	// StartSignIn Begin the OIDC sign-in redirect dance
+	// (GET /auth/signin)
+	StartSignIn(w http.ResponseWriter, r *http.Request)
+	// SignOut End the session
+	// (POST /auth/signout)
+	SignOut(w http.ResponseWriter, r *http.Request)
 	// ListCandidates The latest detection run's candidates, with decision state attached
 	// (GET /candidates)
 	ListCandidates(w http.ResponseWriter, r *http.Request)
@@ -905,6 +959,107 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// CompleteSignIn operation middleware
+func (siw *ServerInterfaceWrapper) CompleteSignIn(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CompleteSignInParams
+
+	// ------------- Optional query parameter "code" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "code", r.URL.Query(), &params.Code, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "code"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "error" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "error", r.URL.Query(), &params.Error, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "error"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "error", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CompleteSignIn(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAuthSession operation middleware
+func (siw *ServerInterfaceWrapper) GetAuthSession(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAuthSession(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StartSignIn operation middleware
+func (siw *ServerInterfaceWrapper) StartSignIn(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StartSignIn(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SignOut operation middleware
+func (siw *ServerInterfaceWrapper) SignOut(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SignOut(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ListCandidates operation middleware
 func (siw *ServerInterfaceWrapper) ListCandidates(w http.ResponseWriter, r *http.Request) {
@@ -1386,8 +1541,155 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-photos/{id}/thumbnail", wrapper.GetImportPhotoThumbnail)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/photos/{id}/thumbnail", wrapper.GetPhotoThumbnail)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/photos/{id}", wrapper.DeletePhoto)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/session", wrapper.GetAuthSession)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/signin", wrapper.StartSignIn)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/callback", wrapper.CompleteSignIn)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/auth/signout", wrapper.SignOut)
 
 	return m
+}
+
+type UnauthorizedJSONResponse Error
+
+type CompleteSignInRequestObject struct {
+	Params CompleteSignInParams
+}
+
+type CompleteSignInResponseObject interface {
+	VisitCompleteSignInResponse(w http.ResponseWriter) error
+}
+
+type CompleteSignIn302ResponseHeaders struct {
+	Location  *string
+	SetCookie *string
+}
+
+type CompleteSignIn302Response struct {
+	Headers CompleteSignIn302ResponseHeaders
+}
+
+func (response CompleteSignIn302Response) VisitCompleteSignInResponse(w http.ResponseWriter) error {
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(302)
+	return nil
+}
+
+type CompleteSignIn400JSONResponse Error
+
+func (response CompleteSignIn400JSONResponse) VisitCompleteSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteSignIn409JSONResponse Error
+
+func (response CompleteSignIn409JSONResponse) VisitCompleteSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAuthSessionRequestObject struct {
+}
+
+type GetAuthSessionResponseObject interface {
+	VisitGetAuthSessionResponse(w http.ResponseWriter) error
+}
+
+type GetAuthSession200JSONResponse SessionInfo
+
+func (response GetAuthSession200JSONResponse) VisitGetAuthSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StartSignInRequestObject struct {
+}
+
+type StartSignInResponseObject interface {
+	VisitStartSignInResponse(w http.ResponseWriter) error
+}
+
+type StartSignIn302ResponseHeaders struct {
+	Location  *string
+	SetCookie *string
+}
+
+type StartSignIn302Response struct {
+	Headers StartSignIn302ResponseHeaders
+}
+
+func (response StartSignIn302Response) VisitStartSignInResponse(w http.ResponseWriter) error {
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(302)
+	return nil
+}
+
+type StartSignIn409JSONResponse Error
+
+func (response StartSignIn409JSONResponse) VisitStartSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SignOutRequestObject struct {
+}
+
+type SignOutResponseObject interface {
+	VisitSignOutResponse(w http.ResponseWriter) error
+}
+
+type SignOut204ResponseHeaders struct {
+	SetCookie *string
+}
+
+type SignOut204Response struct {
+	Headers SignOut204ResponseHeaders
+}
+
+func (response SignOut204Response) VisitSignOutResponse(w http.ResponseWriter) error {
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(204)
+	return nil
 }
 
 type ListCandidatesRequestObject struct {
@@ -1407,6 +1709,20 @@ func (response ListCandidates200JSONResponse) VisitListCandidatesResponse(w http
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCandidates401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListCandidates401JSONResponse) VisitListCandidatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1443,6 +1759,20 @@ func (response DecideCandidatesBulk400JSONResponse) VisitDecideCandidatesBulkRes
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DecideCandidatesBulk401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DecideCandidatesBulk401JSONResponse) VisitDecideCandidatesBulkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1498,6 +1828,20 @@ func (response DecideCandidate400JSONResponse) VisitDecideCandidateResponse(w ht
 	return err
 }
 
+type DecideCandidate401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DecideCandidate401JSONResponse) VisitDecideCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DecideCandidate404JSONResponse Error
 
 func (response DecideCandidate404JSONResponse) VisitDecideCandidateResponse(w http.ResponseWriter) error {
@@ -1530,6 +1874,20 @@ func (response ListCandidateImportPhotos200JSONResponse) VisitListCandidateImpor
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCandidateImportPhotos401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListCandidateImportPhotos401JSONResponse) VisitListCandidateImportPhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1570,6 +1928,20 @@ func (response GetCandidateJourney200JSONResponse) VisitGetCandidateJourneyRespo
 	return err
 }
 
+type GetCandidateJourney401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetCandidateJourney401JSONResponse) VisitGetCandidateJourneyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetCandidateJourney404JSONResponse Error
 
 func (response GetCandidateJourney404JSONResponse) VisitGetCandidateJourneyResponse(w http.ResponseWriter) error {
@@ -1602,6 +1974,20 @@ func (response SuggestCandidateName200JSONResponse) VisitSuggestCandidateNameRes
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestCandidateName401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SuggestCandidateName401JSONResponse) VisitSuggestCandidateNameResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1656,6 +2042,20 @@ func (response ListCandidatePhotos200JSONResponse) VisitListCandidatePhotosRespo
 	return err
 }
 
+type ListCandidatePhotos401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListCandidatePhotos401JSONResponse) VisitListCandidatePhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListCandidatePhotos404JSONResponse Error
 
 func (response ListCandidatePhotos404JSONResponse) VisitListCandidatePhotosResponse(w http.ResponseWriter) error {
@@ -1703,6 +2103,20 @@ func (response UploadCandidatePhotos200JSONResponse) VisitUploadCandidatePhotosR
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadCandidatePhotos401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UploadCandidatePhotos401JSONResponse) VisitUploadCandidatePhotosResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1798,6 +2212,20 @@ func (response GetImportPhotoThumbnail200ImagejpegResponse) VisitGetImportPhotoT
 	return err
 }
 
+type GetImportPhotoThumbnail401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetImportPhotoThumbnail401JSONResponse) VisitGetImportPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetImportPhotoThumbnail404JSONResponse Error
 
 func (response GetImportPhotoThumbnail404JSONResponse) VisitGetImportPhotoThumbnailResponse(w http.ResponseWriter) error {
@@ -1829,6 +2257,20 @@ func (response ListImports200JSONResponse) VisitListImportsResponse(w http.Respo
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListImports401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListImports401JSONResponse) VisitListImportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1865,6 +2307,20 @@ func (response UploadImport400JSONResponse) VisitUploadImportResponse(w http.Res
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadImport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UploadImport401JSONResponse) VisitUploadImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1933,6 +2389,20 @@ func (response UploadPhotoImport400JSONResponse) VisitUploadPhotoImportResponse(
 	return err
 }
 
+type UploadPhotoImport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UploadPhotoImport401JSONResponse) VisitUploadPhotoImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type UploadPhotoImport409JSONResponse Error
 
 func (response UploadPhotoImport409JSONResponse) VisitUploadPhotoImportResponse(w http.ResponseWriter) error {
@@ -1969,6 +2439,20 @@ func (response GetImport200JSONResponse) VisitGetImportResponse(w http.ResponseW
 	return err
 }
 
+type GetImport401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetImport401JSONResponse) VisitGetImportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetImport404JSONResponse Error
 
 func (response GetImport404JSONResponse) VisitGetImportResponse(w http.ResponseWriter) error {
@@ -1997,6 +2481,20 @@ type DeletePhoto204Response struct {
 func (response DeletePhoto204Response) VisitDeletePhotoResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
+}
+
+type DeletePhoto401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeletePhoto401JSONResponse) VisitDeletePhotoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type DeletePhoto404JSONResponse Error
@@ -2041,6 +2539,20 @@ func (response GetPhotoThumbnail200ImagejpegResponse) VisitGetPhotoThumbnailResp
 	return err
 }
 
+type GetPhotoThumbnail401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetPhotoThumbnail401JSONResponse) VisitGetPhotoThumbnailResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetPhotoThumbnail404JSONResponse Error
 
 func (response GetPhotoThumbnail404JSONResponse) VisitGetPhotoThumbnailResponse(w http.ResponseWriter) error {
@@ -2057,6 +2569,18 @@ func (response GetPhotoThumbnail404JSONResponse) VisitGetPhotoThumbnailResponse(
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// CompleteSignIn OIDC provider redirect target
+	// (GET /auth/callback)
+	CompleteSignIn(ctx context.Context, request CompleteSignInRequestObject) (CompleteSignInResponseObject, error)
+	// GetAuthSession Who is signed in, and whether sign-in exists at all
+	// (GET /auth/session)
+	GetAuthSession(ctx context.Context, request GetAuthSessionRequestObject) (GetAuthSessionResponseObject, error)
+	// StartSignIn Begin the OIDC sign-in redirect dance
+	// (GET /auth/signin)
+	StartSignIn(ctx context.Context, request StartSignInRequestObject) (StartSignInResponseObject, error)
+	// SignOut End the session
+	// (POST /auth/signout)
+	SignOut(ctx context.Context, request SignOutRequestObject) (SignOutResponseObject, error)
 	// ListCandidates The latest detection run's candidates, with decision state attached
 	// (GET /candidates)
 	ListCandidates(ctx context.Context, request ListCandidatesRequestObject) (ListCandidatesResponseObject, error)
@@ -2144,6 +2668,104 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// CompleteSignIn operation middleware
+func (sh *strictHandler) CompleteSignIn(w http.ResponseWriter, r *http.Request, params CompleteSignInParams) {
+	var request CompleteSignInRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CompleteSignIn(ctx, request.(CompleteSignInRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CompleteSignIn")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CompleteSignInResponseObject); ok {
+		if err := validResponse.VisitCompleteSignInResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAuthSession operation middleware
+func (sh *strictHandler) GetAuthSession(w http.ResponseWriter, r *http.Request) {
+	var request GetAuthSessionRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAuthSession(ctx, request.(GetAuthSessionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAuthSession")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAuthSessionResponseObject); ok {
+		if err := validResponse.VisitGetAuthSessionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StartSignIn operation middleware
+func (sh *strictHandler) StartSignIn(w http.ResponseWriter, r *http.Request) {
+	var request StartSignInRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StartSignIn(ctx, request.(StartSignInRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StartSignIn")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StartSignInResponseObject); ok {
+		if err := validResponse.VisitStartSignInResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SignOut operation middleware
+func (sh *strictHandler) SignOut(w http.ResponseWriter, r *http.Request) {
+	var request SignOutRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SignOut(ctx, request.(SignOutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SignOut")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SignOutResponseObject); ok {
+		if err := validResponse.VisitSignOutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ListCandidates operation middleware

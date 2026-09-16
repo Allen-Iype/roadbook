@@ -32,7 +32,7 @@ func newPhotoImportServer(t *testing.T) (*httptest.Server, *store.Store, string)
 		t.Fatal(err)
 	}
 	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Photos: photos}
-	ts := httptest.NewServer(api.HandlerFromMux(api.NewStrictHandler(srv, nil), http.NewServeMux()))
+	ts := httptest.NewServer(api.HandlerFromMux(api.NewStrictHandler(srv, []api.StrictMiddlewareFunc{srv.AuthMiddleware}), http.NewServeMux()))
 	t.Cleanup(ts.Close)
 	return ts, s, photosDir
 }

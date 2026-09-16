@@ -33,7 +33,7 @@ func newUploadServer(t *testing.T) (*httptest.Server, *store.Store, store.Upload
 		t.Fatal(err)
 	}
 	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Uploads: uploads}
-	ts := httptest.NewServer(api.HandlerFromMux(api.NewStrictHandler(srv, nil), http.NewServeMux()))
+	ts := httptest.NewServer(api.HandlerFromMux(api.NewStrictHandler(srv, []api.StrictMiddlewareFunc{srv.AuthMiddleware}), http.NewServeMux()))
 	t.Cleanup(ts.Close)
 	return ts, s, uploads
 }

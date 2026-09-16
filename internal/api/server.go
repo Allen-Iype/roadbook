@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"roadbook/internal/auth"
 	"roadbook/internal/detect"
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
@@ -37,15 +38,13 @@ type Server struct {
 	// importMu is the one-import-at-a-time guard (phase 7 BRIEF §1.2):
 	// held from an accepted upload until its background import finalises.
 	importMu sync.Mutex
+	// Auth is the OIDC service in multi-user mode; nil is mode off — the
+	// authless single-user reference (phase 13 BRIEF §2), in which no auth
+	// surface exists and every request is store.SelfUser.
+	Auth *auth.Service
 }
 
 var _ StrictServerInterface = (*Server)(nil)
-
-// currentUser names the owner of the request's data. CP1: every request
-// belongs to the single-user owner — the authless self-host reference
-// (PRODUCT.md). CP2 replaces this body with the session's user; call
-// sites stay put, which is the point of routing every handler through it.
-func (s *Server) currentUser(_ context.Context) string { return store.SelfUser }
 
 func (s *Server) GetHealth(ctx context.Context, _ GetHealthRequestObject) (GetHealthResponseObject, error) {
 	// Readiness, not liveness: compose gates dependent services on this
