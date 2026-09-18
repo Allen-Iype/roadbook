@@ -56,6 +56,15 @@ services:
       ROADBOOK_UPLOADS_DIR: /uploads
       ROADBOOK_GEOCODER: ${ROADBOOK_GEOCODER:-none}
       ROADBOOK_NOMINATIM_URL: ${ROADBOOK_NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+      # Accounts (phase 13): off is the default and the reference — one
+      # person, no sign-in surface. oidc turns on delegated sign-in with
+      # the four variables below (see .env.example); the secret is passed
+      # through the environment only, never a flag.
+      ROADBOOK_AUTH: ${ROADBOOK_AUTH:-off}
+      ROADBOOK_OIDC_ISSUER: ${ROADBOOK_OIDC_ISSUER:-}
+      ROADBOOK_OIDC_CLIENT_ID: ${ROADBOOK_OIDC_CLIENT_ID:-}
+      ROADBOOK_OIDC_CLIENT_SECRET: ${ROADBOOK_OIDC_CLIENT_SECRET:-}
+      ROADBOOK_PUBLIC_URL: ${ROADBOOK_PUBLIC_URL:-http://127.0.0.1:3000}
     volumes:
       # Thumbnails are irreplaceable user data (originals are discarded at
       # upload) — a named volume, covered by `roadbook backup`.

@@ -467,6 +467,18 @@ type DecisionRequest struct {
 // DecisionRequestAction defines model for DecisionRequest.Action.
 type DecisionRequestAction string
 
+// DeletionReport defines model for DeletionReport.
+type DeletionReport struct {
+	// Rows Rows deleted, by table.
+	Rows map[string]int64 `json:"rows"`
+
+	// ThumbnailsRemoved Thumbnail files removed (those no remaining row referenced).
+	ThumbnailsRemoved int `json:"thumbnails_removed"`
+
+	// UploadsRemoved Retained upload files removed (same rule).
+	UploadsRemoved int `json:"uploads_removed"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Error string `json:"error"`
@@ -990,6 +1002,9 @@ type ServerInterface interface {
 	// GetImport One import attempt, by id
 	// (GET /imports/{id})
 	GetImport(w http.ResponseWriter, r *http.Request, id int64)
+	// DeleteMyData Delete everything of mine
+	// (DELETE /me)
+	DeleteMyData(w http.ResponseWriter, r *http.Request)
 	// DeletePhoto Delete one photo
 	// (DELETE /photos/{id})
 	DeletePhoto(w http.ResponseWriter, r *http.Request, id int64)
@@ -1464,6 +1479,20 @@ func (siw *ServerInterfaceWrapper) GetImport(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteMyData operation middleware
+func (siw *ServerInterfaceWrapper) DeleteMyData(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteMyData(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeletePhoto operation middleware
 func (siw *ServerInterfaceWrapper) DeletePhoto(w http.ResponseWriter, r *http.Request) {
 
@@ -1780,6 +1809,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/shared/{token}", wrapper.GetSharedAdventure)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/shared/{token}/photos/{id}/thumbnail", wrapper.GetSharedPhotoThumbnail)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/shared/{token}/import-photos/{id}/thumbnail", wrapper.GetSharedImportPhotoThumbnail)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/me", wrapper.DeleteMyData)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/session", wrapper.GetAuthSession)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/signin", wrapper.StartSignIn)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/auth/callback", wrapper.CompleteSignIn)
@@ -2834,6 +2864,65 @@ func (response GetImport404JSONResponse) VisitGetImportResponse(w http.ResponseW
 	return err
 }
 
+type DeleteMyDataRequestObject struct {
+}
+
+type DeleteMyDataResponseObject interface {
+	VisitDeleteMyDataResponse(w http.ResponseWriter) error
+}
+
+type DeleteMyData200ResponseHeaders struct {
+	SetCookie *string
+}
+
+type DeleteMyData200JSONResponse struct {
+	Body    DeletionReport
+	Headers DeleteMyData200ResponseHeaders
+}
+
+func (response DeleteMyData200JSONResponse) VisitDeleteMyDataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteMyData401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteMyData401JSONResponse) VisitDeleteMyDataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteMyData409JSONResponse Error
+
+func (response DeleteMyData409JSONResponse) VisitDeleteMyDataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeletePhotoRequestObject struct {
 	Id int64 `json:"id"`
 }
@@ -3172,6 +3261,9 @@ type StrictServerInterface interface {
 	// GetImport One import attempt, by id
 	// (GET /imports/{id})
 	GetImport(ctx context.Context, request GetImportRequestObject) (GetImportResponseObject, error)
+	// DeleteMyData Delete everything of mine
+	// (DELETE /me)
+	DeleteMyData(ctx context.Context, request DeleteMyDataRequestObject) (DeleteMyDataResponseObject, error)
 	// DeletePhoto Delete one photo
 	// (DELETE /photos/{id})
 	DeletePhoto(ctx context.Context, request DeletePhotoRequestObject) (DeletePhotoResponseObject, error)
@@ -3761,6 +3853,30 @@ func (sh *strictHandler) GetImport(w http.ResponseWriter, r *http.Request, id in
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetImportResponseObject); ok {
 		if err := validResponse.VisitGetImportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteMyData operation middleware
+func (sh *strictHandler) DeleteMyData(w http.ResponseWriter, r *http.Request) {
+	var request DeleteMyDataRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteMyData(ctx, request.(DeleteMyDataRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteMyData")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteMyDataResponseObject); ok {
+		if err := validResponse.VisitDeleteMyDataResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

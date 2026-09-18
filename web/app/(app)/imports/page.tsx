@@ -7,6 +7,7 @@ import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
 import { PhotoUploadImport } from "@/components/photo-upload-import";
 import { UploadImport } from "@/components/upload-import";
+import { DeleteMyData } from "@/components/delete-my-data";
 
 // Server component, same shape as the home page: runs per request on the
 // server, calls the Go API, ships HTML. Nothing here is interactive, so no
@@ -55,6 +56,14 @@ export default async function ImportsPage() {
       ) : (
         <ImportTable imports={data.imports} />
       )}
+      {/* Self-serve deletion (phase 13 CP5) lives where the data story
+          lives: the page that shows what came in is the page that lets it
+          all go. Present in both modes; empty instances show it too — an
+          empty instance has nothing to lose, and the control says so. */}
+      <DeleteMyData
+        multiUser={session?.mode === "oidc"}
+        hasData={data.imports.length > 0}
+      />
     </Shell>
   );
 }

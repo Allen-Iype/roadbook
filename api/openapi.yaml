@@ -842,6 +842,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /me:
+    delete:
+      operationId: deleteMyData
+      summary: Delete everything of mine
+      description: >
+        Self-serve deletion (phase 13 BRIEF §1 "Data lifecycle"): every row
+        the requesting user owns — imports and their observations, runs and
+        candidates, decisions, photos and photo records, share links,
+        sessions — in one transaction, then the files no remaining row of
+        anyone's references (thumbnails, retained uploads). On a multi-user
+        instance the account itself is forgotten too and the session cookie
+        is cleared; the next sign-in starts from nothing. On the authless
+        instance the single user's data goes and the instance is empty
+        again, exactly as after a fresh `docker compose up`. Refused while an
+        import is running (409) — the import would write rows after the
+        deletion.
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "200":
+          description: Deleted; the counts are what went.
+          headers:
+            Set-Cookie:
+              description: The clearing session cookie (multi-user mode only).
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionReport"
+        "409":
+          description: An import is in progress — wait for it to finish.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /auth/session:
     get:
       operationId: getAuthSession
@@ -1845,3 +1881,20 @@ components:
           type: object
           additionalProperties: true
           description: The photo placement parameters (invariant 3) — photo_far_warn_m.
+
+    DeletionReport:
+      type: object
+      required: [rows, thumbnails_removed, uploads_removed]
+      properties:
+        rows:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+          description: Rows deleted, by table.
+        thumbnails_removed:
+          type: integer
+          description: Thumbnail files removed (those no remaining row referenced).
+        uploads_removed:
+          type: integer
+          description: Retained upload files removed (same rule).

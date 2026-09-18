@@ -160,12 +160,12 @@ its capture time.
 
 `docker compose up` runs three services: Postgres (with PostGIS), the Go API,
 and the web frontend. Only the frontend is published to the host, and only on
-loopback — `127.0.0.1:3000`. This is deliberate: the product has no
-authentication, so exposing it beyond the machine it runs on is a decision
-you must make explicitly, behind your own reverse proxy with access control.
-The API and the database are not reachable from outside the compose network
-at all; the browser talks only to the frontend, the frontend only to the API,
-the API only to the database.
+loopback — `127.0.0.1:3000`. This is deliberate: by default the product has
+no sign-in, so exposing it beyond the machine it runs on is a decision you
+must make explicitly, behind your own reverse proxy with access control — or
+by turning accounts on (below). The API and the database are not reachable
+from outside the compose network at all; the browser talks only to the
+frontend, the frontend only to the API, the API only to the database.
 
 The database schema migrates automatically when the API container starts.
 User data lives in named volumes (`pgdata` for the database, `photos` for
@@ -180,9 +180,13 @@ default — an empty or absent `.env` brings the stack up.
 | variable | default | meaning |
 |---|---|---|
 | `POSTGRES_PASSWORD` | `roadbook` | compose-internal database password |
-| `ROADBOOK_MAP_STYLE` | OpenFreeMap liberty | map style URL |
+| `ROADBOOK_MAP_STYLE` | bundled Roadbook style | map style URL |
 | `ROADBOOK_GEOCODER` | `none` | name suggestion at confirm time (`nominatim` to opt in) |
 | `ROADBOOK_NOMINATIM_URL` | nominatim.openstreetmap.org | geocoder endpoint when opted in |
+| `ROADBOOK_INSTANCE_LABEL` | empty | label in the header when you run several instances |
+| `ROADBOOK_AUTH` | `off` | `oidc` turns on accounts (below) |
+| `ROADBOOK_OIDC_ISSUER`, `ROADBOOK_OIDC_CLIENT_ID`, `ROADBOOK_OIDC_CLIENT_SECRET` | empty | the provider registration, used only with `oidc` |
+| `ROADBOOK_PUBLIC_URL` | `http://127.0.0.1:3000` | the origin browsers use — the OIDC redirect is built on it |
 
 Map tiles are the one thing the browser fetches from a third party — the
 viewport you look at leaks to the style's tile host. Point
@@ -190,20 +194,63 @@ viewport you look at leaks to the style's tile host. Point
 geocoder is off by default for the same reason: a self-hosted product makes
 no surprise network calls.
 
-### Hosting for more than yourself
+### One person or several: the two modes
 
-Roadbook has no accounts: one instance is one person's data. The supported
-way to host for a few people is therefore one compose stack per person —
-fully separate databases and volumes, so no cross-user bug can exist —
-each published on its own loopback port behind your own authenticated
-front. `scripts/pilot/` holds the tooling this project uses for exactly
-that: a per-instance compose override, stamp/reset/rotate scripts, a Caddy
-config template with per-person basic auth, and encrypted backup scripts.
-The operating procedure — including handover between testers and why the
-credential, not the URL, is the secret — is documented in
-`docs/phase-8/RUNBOOK.md`. Multi-user tenancy with real authentication is
-deliberately out of scope until the product needs strangers to sign
-themselves up.
+Roadbook runs in one of two modes, and the first is the reference.
+
+**Off (the default).** One instance is one person. There is no sign-in
+surface anywhere, nothing asks who you are, and every page works exactly as
+the quickstart shows. This is the self-host shape, and every feature must
+work here first.
+
+**`ROADBOOK_AUTH=oidc`.** The same instance holds several people's data,
+each row owned by the person who imported it, and every read and write is
+scoped to the signed-in user in the API — the frontend makes no trust
+decisions. Identity is delegated to an OpenID Connect provider (Google is
+the one this project has configured; any issuer works): Roadbook never
+stores or checks a password. Sessions are rows in Postgres behind an
+HTTP-only cookie, so signing out revokes the session server-side, and a
+restart forgets nothing it should remember. Turning the mode on needs a
+registered OAuth client at your provider with the redirect URI
+`<ROADBOOK_PUBLIC_URL>/api/auth/callback`; the four variables in
+`.env.example` carry it. Data imported in off mode belongs to the built-in
+single user and is not visible to signed-in accounts — switching modes on
+an instance with data is a migration you plan, not a flag you flip.
+
+### Sharing an adventure
+
+A confirmed adventure can be shared by link: from its page, "Create a share
+link" mints a URL that opens the plate read-only for anyone who has it —
+the map with every leg still marked observed, routed, unknown, or air, the
+day-by-day narrative, countries, and the adventure's photos, including
+the ones that came in through the photo import. No account is needed to
+open it, in either mode. The link is the whole permission: the server
+keeps only a fingerprint of it, so the URL is shown once at creation, and
+revoking it (one tap on the same page) makes it stop opening immediately.
+Shared pages carry a `noindex` directive. Nothing else of yours is
+reachable through a link — not the life map, not other adventures.
+
+### Deleting your data
+
+The imports page ends with "Delete everything": every import and its
+observations, every run, candidate and decision, every photo thumbnail and
+photo record, every share link and session — in one transaction, followed
+by the files no remaining row references. In `oidc` mode the account is
+forgotten too and the next sign-in starts from nothing; in off mode the
+instance is empty again, as after a fresh `docker compose up`. Your own
+export files, wherever you keep them, are never touched: they are the
+canonical copy of your history.
+
+### Hosting for more than yourself, the older way
+
+Before accounts existed, the supported way to host for a few people was
+one compose stack per person, each on its own loopback port behind an
+authenticated front. `scripts/pilot/` still holds that tooling (a
+per-instance compose override, stamp/reset/rotate scripts, a Caddy
+template with per-person basic auth, encrypted backup scripts), and
+`docs/phase-8/RUNBOOK.md` the operating procedure. It remains a valid
+shape — isolation by construction — and is what the `oidc` mode replaces
+when one instance for everyone is the better trade.
 
 ## Routing, and what happens without it
 

@@ -396,6 +396,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete everything of mine
+         * @description Self-serve deletion (phase 13 BRIEF §1 "Data lifecycle"): every row the requesting user owns — imports and their observations, runs and candidates, decisions, photos and photo records, share links, sessions — in one transaction, then the files no remaining row of anyone's references (thumbnails, retained uploads). On a multi-user instance the account itself is forgotten too and the session cookie is cleared; the next sign-in starts from nothing. On the authless instance the single user's data goes and the instance is empty again, exactly as after a fresh `docker compose up`. Refused while an import is running (409) — the import would write rows after the deletion.
+         */
+        delete: operations["deleteMyData"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/session": {
         parameters: {
             query?: never;
@@ -943,6 +963,16 @@ export interface components {
             params: {
                 [key: string]: unknown;
             };
+        };
+        DeletionReport: {
+            /** @description Rows deleted, by table. */
+            rows: {
+                [key: string]: number;
+            };
+            /** @description Thumbnail files removed (those no remaining row referenced). */
+            thumbnails_removed: number;
+            /** @description Retained upload files removed (same rule). */
+            uploads_removed: number;
         };
     };
     responses: {
@@ -1758,6 +1788,38 @@ export interface operations {
             };
             /** @description The link does not open, the record is not on the shared adventure, or it has no thumbnail. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteMyData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted; the counts are what went. */
+            200: {
+                headers: {
+                    /** @description The clearing session cookie (multi-user mode only). */
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletionReport"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description An import is in progress — wait for it to finish. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -146,3 +146,42 @@ decisions are made, per the working agreement.
   `ResolveShareLink`); a second consumer of the shared read (a life-map
   share) — that reopens the deliberately-deferred bigger disclosure at
   its own STOP.
+
+## 2026-09-18 — CP5: deletion, and the close
+
+- **Chosen:** self-serve deletion is one store transaction that deletes
+  table by table, in foreign-key order, from an exported list
+  (`store.UserDataTables`) — cascades were available and deliberately not
+  used, because the list IS the statement of what "everything of yours"
+  means, and the deletion test counts every table on it to zero (a new
+  user-data table missing from the list fails at review, the cross-tenant
+  family's rule applied to deletion). Files go after the commit and only
+  when no remaining row of anyone's names the hash — identical bytes are
+  one file on disk regardless of owner, so a photo two people hold
+  survives one person's deletion. Mode off keeps the `self` row (every
+  table's DEFAULT names it; the instance is "empty again"); mode oidc
+  drops the user row so a re-sign-in starts from nothing, and the response
+  clears the cookie. The operation takes the import lock and answers 409
+  while an import runs — the goroutine would write rows behind the
+  deletion otherwise. The control lives on the imports page (where the
+  data story lives), behind a native dialog with a typed "delete" — the
+  one typed confirmation in the product, warranted by no-undo on a
+  person's history. Compose now passes the five auth variables through;
+  `.env.example` documents the Google registration shape; the README
+  carries the two-modes statement with off as the reference. The e2e
+  suite gained the auth-surface spec (authless: /signin redirects home, no
+  sign-out anywhere, the deletion dialog arms only on the typed word and
+  is never submitted — Go owns the deletion proof).
+- **Rejected:** `ON DELETE CASCADE` from `users` as the deletion mechanism
+  (hides the list; a forgotten table would silently keep rows or silently
+  lose them); deleting files inside the transaction (a rollback after an
+  unlink is a row pointing at nothing — the photos rule); a per-user
+  export bundled with deletion (backup already covers it for the operator;
+  a user-facing export is its own item); a "delete this import" partial
+  deletion (observations from overlapping exports dedupe by content hash,
+  so per-import removal is not well-defined — all-or-nothing is honest).
+- **Would change our mind:** a hosted instance where users ask to remove
+  one export's contribution (then imports need an ownership graph over
+  observations, a schema change); deletion taking long enough to need a
+  background job (tens of thousands of rows delete in well under a second
+  today — measured on the archive-scale scratch data).

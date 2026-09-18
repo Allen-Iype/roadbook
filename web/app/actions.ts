@@ -8,6 +8,7 @@
 // no API access ever ships to the client (CLAUDE.md invariant 11).
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 
@@ -222,4 +223,36 @@ export async function revokeShareLink(
   }
   revalidatePath(`/adventure/${candidateId}`);
   return { ok: true };
+}
+
+export type DeleteMyDataResult =
+  | { ok: true; rows: number; thumbnails: number; uploads: number }
+  | { ok: false; error: string };
+
+// Self-serve deletion (phase 13 CP5). Go deletes every row and every file
+// of the requesting user's in one operation; this action then drops the
+// session cookie on the site origin (Go cleared its own copy and the row
+// behind it — on a multi-user instance the account no longer exists) and
+// the island navigates to "/", which lands on /welcome (an empty authless
+// instance) or /signin (a signed-out multi-user one) by the existing
+// rules. Nothing is confirmed here: the island owns the typed
+// confirmation, and the API call is the irreversible step.
+export async function deleteMyData(): Promise<DeleteMyDataResult> {
+  const { data, error, response } = await api.DELETE("/me");
+  if (error || !data) {
+    return {
+      ok: false,
+      error: error?.error ?? `deletion failed (HTTP ${response.status})`,
+    };
+  }
+  (await cookies()).delete("roadbook_session");
+  revalidatePath("/", "layout");
+  let rows = 0;
+  for (const n of Object.values(data.rows)) rows += n;
+  return {
+    ok: true,
+    rows,
+    thumbnails: data.thumbnails_removed,
+    uploads: data.uploads_removed,
+  };
 }
