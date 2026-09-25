@@ -19,6 +19,30 @@ export function fmtDuration(minutes: number): string {
   return `${h} h ${m} min`;
 }
 
+/** "1 d 14 h" · "9 h 40 min" · "35 min" — a span in hours, days first once
+ * it is longer than one (the summary's "away" and dwell figures). Minutes
+ * drop out above a day: a span that long is not a minutes-precision
+ * claim. */
+export function fmtHours(hours: number): string {
+  const totalMin = Math.round(hours * 60);
+  if (totalMin < 24 * 60) return fmtDuration(totalMin);
+  const d = Math.floor(totalMin / (24 * 60));
+  const h = Math.round((totalMin - d * 24 * 60) / 60);
+  if (h === 24) return `${d + 1} d`;
+  return h === 0 ? `${d} d` : `${d} d ${h} h`;
+}
+
+/** A named assembly parameter off the echoed params object, or undefined:
+ * the object is typed open (additionalProperties), so the value is checked
+ * before it is read as a number. */
+export function numberParam(
+  params: { [key: string]: unknown },
+  key: string,
+): number | undefined {
+  const v = params[key];
+  return typeof v === "number" ? v : undefined;
+}
+
 /**
  * "IN_PASSENGER_VEHICLE" → "passenger vehicle" — the source's mode label
  * made readable without editorialising: strip the IN_/ON_ prefix, lowercase,

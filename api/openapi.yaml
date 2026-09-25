@@ -1423,7 +1423,7 @@ components:
     Journey:
       type: object
       required:
-        [window_start, window_end, params, legs, stops, countries, states, total_km,
+        [window_start, window_end, params, legs, stops, countries, states, summary, total_km,
          observed_km, inferred_km, air_km, unknown_km, routed_km, ground_km,
          google_km, google_ground_km, merged_points, trace_points_kept,
          raw_points_kept]
@@ -1467,6 +1467,8 @@ components:
             been run. Reproduction: `roadbook journey -candidate N`.
           items:
             $ref: "#/components/schemas/State"
+        summary:
+          $ref: "#/components/schemas/JourneySummary"
         total_km:
           type: number
           format: double
@@ -1681,7 +1683,7 @@ components:
 
     ModeKm:
       type: object
-      required: [mode, km]
+      required: [mode, km, hours]
       properties:
         mode:
           type: string
@@ -1689,6 +1691,57 @@ components:
         km:
           type: number
           format: double
+        hours:
+          type: number
+          format: double
+          description: >
+            The activity records' own start-to-end spans, summed whole
+            (phase 14 CP2) — the same kind of claim as km: the source's
+            assertion of time in transit, never a measured duration.
+
+    JourneySummary:
+      type: object
+      description: >
+        The journey summary (phase 14 BRIEF §2a): derived figures beside the
+        assembly, every one printed identically by
+        `roadbook journey -candidate N`. Measured figures only; the
+        source-asserted per-mode time rides on mode_breakdown.
+      required: [span_hours, civil_days, stops, dwell_hours]
+      properties:
+        span_hours:
+          type: number
+          format: double
+          description: Window end minus start — time away. A truncated window is a truncated span.
+        civil_days:
+          type: integer
+          description: >
+            Civil dates touched, each timestamp in its own recorded offset:
+            the earliest to the latest date among window edges, leg
+            endpoints, and stop endpoints, inclusive — the narrative's day
+            count, by the same rule.
+        stops:
+          type: integer
+        dwell_hours:
+          type: number
+          format: double
+          description: Summed duration of the reported stops.
+        observed_hours:
+          type: number
+          format: double
+          description: >
+            Summed duration of moving observed legs (more than one point,
+            non-zero distance — a fix is not a stretch). Present exactly
+            when observed_pace_kmh is.
+        observed_pace_kmh:
+          type: number
+          format: double
+          description: >
+            Observed km over observed hours — the average pace across
+            recorded stretches only. Pauses shorter than the assembly's
+            gap_threshold_minutes sit inside an observed leg and are
+            included (the display names that parameter); gaps of every
+            kind are excluded. Absent when no moving observed leg exists
+            (a fix-only journey) — absent, never zero.
 
     ImportPhoto:
       type: object

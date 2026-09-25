@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 
 import { LegKindLegend } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
-import { fmtMode } from "@/lib/format";
+import { fmtHours, fmtMode } from "@/lib/format";
 import { fmtDateRange, isFixLeg, sliceDays } from "@/lib/slice-days";
 import { DayNarrative } from "./day-narrative";
 import { ImportPhotosStrip, PhotoStrip } from "./photo-strip";
@@ -96,7 +96,6 @@ export function AdventureView({
         <Cover
           journey={journey}
           candidate={candidate}
-          dayCount={days.length}
           plate={plate}
           shared={shared}
         />
@@ -196,16 +195,19 @@ export function AdventureView({
 function Cover({
   journey,
   candidate,
-  dayCount,
   plate,
   shared,
 }: {
   journey: Journey;
   candidate?: Candidate;
-  dayCount: number;
   plate: number | null;
   shared?: SharedCover;
 }) {
+  // The day count is the SERVED figure (phase 14 CP2): the same rule the
+  // narrative's sliceDays applies, computed in Go and printed by the CLI.
+  // A vitest asserts the two agree on real journeys, so the cover can
+  // never say three days over a narrative of four.
+  const dayCount = journey.summary.civil_days;
   const decision = candidate?.decision;
   const confirmed = decision?.action === "confirmed";
   const name = shared
@@ -301,6 +303,8 @@ function Cover({
         <ModeLine journey={journey} />
       </div>
 
+      <SummaryBlock journey={journey} candidate={shared ? undefined : candidate} />
+
       <Divergence journey={journey} />
 
       {shared ? (
@@ -322,6 +326,101 @@ function Cover({
   );
 }
 
+// The summary block (phase 14 BRIEF §2a, reworded at the CP2 review): what
+// the trip was, in the traveller's words — time away, time on the move,
+// stops, the places passed through, distance from home. The pipeline's
+// own vocabulary (observed, routed, unknown, fixes) stays on the provenance
+// lines above, where the headline distance is explained; here it would
+// answer a question nobody asked. Every figure is served by the API and
+// printed identically by `roadbook journey -candidate N`. "On the move" is
+// the source's own transit time — the sum of its activity durations, the
+// same claim as the mode line — chosen at review over span-minus-dwell
+// (DECISIONS 2026-09-25); the average speed beside it is measured, over
+// recorded driving only. The one home-relative figure appears for the
+// owner only: the shared view never names home (BRIEF §3E), so
+// `candidate` is withheld there. Labels quiet sans, figures mono (DESIGN §6).
+function SummaryBlock({
+  journey,
+  candidate,
+}: {
+  journey: Journey;
+  candidate?: Candidate;
+}) {
+  const s = journey.summary;
+  const bd = journey.mode_breakdown;
+  const transitHours =
+    bd === undefined ? undefined : bd.reduce((acc, m) => acc + m.hours, 0);
+  const through = [
+    journey.countries.map((c) => c.name).join(" · "),
+    journey.states.map((r) => r.name).join(", "),
+  ].filter((part) => part !== "");
+  return (
+    <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-1.5 text-[13px] leading-snug">
+      <dt className="text-ink-2">Time away</dt>
+      <dd>
+        <span className="font-mono">{fmtHours(s.span_hours)}</span>
+        {" — "}
+        {dayWord(s.civil_days)}
+      </dd>
+      <dt className="text-ink-2">On the move</dt>
+      <dd>
+        {transitHours === undefined ? (
+          "no transit record — this journey's evidence carries no activity data"
+        ) : (
+          <>
+            <span className="font-mono">{fmtHours(transitHours)}</span>
+            {s.observed_pace_kmh !== undefined && (
+              <>
+                {" · "}
+                <span className="font-mono">
+                  {s.observed_pace_kmh.toFixed(0)} km/h
+                </span>
+                {" average"}
+              </>
+            )}
+            <span className="text-ink-2">
+              {" — by the source's account"}
+              {s.observed_pace_kmh !== undefined &&
+                "; speed over recorded driving"}
+            </span>
+          </>
+        )}
+      </dd>
+      <dt className="text-ink-2">Stopped</dt>
+      <dd>
+        {s.stops === 0 ? (
+          "no stops recorded"
+        ) : (
+          <>
+            <span className="font-mono">{s.stops}</span>
+            {s.stops === 1 ? " stop · " : " stops · "}
+            <span className="font-mono">{fmtHours(s.dwell_hours)}</span>
+          </>
+        )}
+      </dd>
+      {through.length > 0 && (
+        <>
+          <dt className="text-ink-2">Through</dt>
+          <dd>{through.join(" — ")}</dd>
+        </>
+      )}
+      {candidate && (
+        <>
+          <dt className="text-ink-2">Farthest</dt>
+          <dd>
+            <span className="font-mono">{candidate.dest_km} km</span>
+            {" from home"}
+          </dd>
+        </>
+      )}
+    </dl>
+  );
+}
+
+function dayWord(n: number): string {
+  return `${n} ${n === 1 ? "day" : "days"}`;
+}
+
 // The source-asserted mode line (phase 11 §6.2): Google's own labels and
 // distances, visually subordinate to the measured figures above it and never
 // summed with them — the source's guesses have recorded failures (a 1,023 km
@@ -340,6 +439,8 @@ function ModeLine({ journey }: { journey: Journey }) {
     );
   }
   if (bd.length === 0) return null;
+  // Per-mode hours (phase 14 CP2) ride beside the km — the same claim, the
+  // source's own; their sum is the summary's "on the move" row.
   return (
     <p className="mt-1.5 text-xs text-ink-2">
       By mode, as the source recorded it (modes are guesses):{" "}
@@ -347,7 +448,9 @@ function ModeLine({ journey }: { journey: Journey }) {
         <span key={m.mode}>
           {i > 0 && " · "}
           {fmtMode(m.mode)}{" "}
-          <span className="font-mono">{m.km.toFixed(1)} km</span>
+          <span className="font-mono">
+            {m.km.toFixed(1)} km, {fmtHours(m.hours)}
+          </span>
         </span>
       ))}
     </p>

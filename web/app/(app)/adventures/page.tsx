@@ -3,7 +3,7 @@ import Link from "next/link";
 import { api } from "@/lib/api/client";
 import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
-import { fmtDateRange, sliceDays } from "@/lib/slice-days";
+import { fmtDateRange } from "@/lib/slice-days";
 import { LegKindLegend } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
 import { RouteThumb } from "@/components/route-thumb";
@@ -161,7 +161,9 @@ function Shell({
 function PlateCover({ cover }: { cover: Cover }) {
   const { candidate, journey, plate } = cover;
   const name = candidate.decision?.name ?? "Unnamed adventure";
-  const days = sliceDays(journey).length;
+  // The served day count (phase 14 CP2) — the same figure the cover and
+  // the CLI print, never a second derivation.
+  const days = journey.summary.civil_days;
   const countries = journey.countries.map((c) => c.name).join(" · ");
 
   return (

@@ -7,10 +7,14 @@ import (
 	"roadbook/internal/domain"
 )
 
-// ModeKm is one mode's summed distance, in the source's own labels.
+// ModeKm is one mode's summed distance and duration, in the source's own
+// labels. Hours (phase 14 CP2) is the same kind of claim as Km: the
+// activity records' own start-to-end spans, summed whole — the summary's
+// "in transit, as the source recorded it", never a measured figure.
 type ModeKm struct {
-	Mode string
-	Km   float64
+	Mode  string
+	Km    float64
+	Hours float64
 }
 
 // ModeBreakdown sums activity distance by mode over the window — the
@@ -29,7 +33,7 @@ type ModeKm struct {
 // dropped. Pure: same inputs, same output; order is km-descending, ties by
 // mode name for determinism.
 func ModeBreakdown(acts []domain.Activity, winStart, winEnd time.Time) []ModeKm {
-	byMode := map[string]float64{}
+	byMode := map[string]ModeKm{}
 	for _, a := range acts {
 		if a.DistanceM <= 0 {
 			continue
@@ -41,11 +45,15 @@ func ModeBreakdown(acts []domain.Activity, winStart, winEnd time.Time) []ModeKm 
 		if mode == "" {
 			mode = "UNKNOWN"
 		}
-		byMode[mode] += a.DistanceM / 1000
+		m := byMode[mode]
+		m.Mode = mode
+		m.Km += a.DistanceM / 1000
+		m.Hours += a.End.Sub(a.Start).Hours()
+		byMode[mode] = m
 	}
 	out := make([]ModeKm, 0, len(byMode))
-	for m, km := range byMode {
-		out = append(out, ModeKm{Mode: m, Km: km})
+	for _, m := range byMode {
+		out = append(out, m)
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Km != out[j].Km {

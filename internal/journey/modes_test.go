@@ -19,7 +19,7 @@ func TestModeBreakdown(t *testing.T) {
 		name     string
 		acts     []domain.Activity
 		from, to time.Time
-		want     []ModeKm
+		want     []ModeKm // hours: each activity spans whole hours in this table
 	}{
 		{
 			name: "sums by mode, km-descending",
@@ -29,7 +29,7 @@ func TestModeBreakdown(t *testing.T) {
 				act(5, 6, "IN_BUS", 30),
 			},
 			from: at(0), to: at(10),
-			want: []ModeKm{{"IN_PASSENGER_VEHICLE", 120}, {"IN_BUS", 80}},
+			want: []ModeKm{{"IN_PASSENGER_VEHICLE", 120, 1}, {"IN_BUS", 80, 2}},
 		},
 		{
 			name: "overlap in full, never pro-rated; outside dropped",
@@ -40,7 +40,7 @@ func TestModeBreakdown(t *testing.T) {
 				act(11, 13, "WALKING", 10), // entirely after: dropped
 			},
 			from: at(0), to: at(10),
-			want: []ModeKm{{"FLYING", 500}, {"IN_BUS", 40}},
+			want: []ModeKm{{"FLYING", 500, 3}, {"IN_BUS", 40, 3}},
 		},
 		{
 			name: "zero distance contributes nothing; empty mode buckets as UNKNOWN",
@@ -49,7 +49,7 @@ func TestModeBreakdown(t *testing.T) {
 				act(3, 4, "", 15),
 			},
 			from: at(0), to: at(10),
-			want: []ModeKm{{"UNKNOWN", 15}},
+			want: []ModeKm{{"UNKNOWN", 15, 1}},
 		},
 		{
 			name: "equal km ties break by mode name",
@@ -58,7 +58,7 @@ func TestModeBreakdown(t *testing.T) {
 				act(3, 4, "IN_BUS", 25),
 			},
 			from: at(0), to: at(10),
-			want: []ModeKm{{"IN_BUS", 25}, {"IN_TRAIN", 25}},
+			want: []ModeKm{{"IN_BUS", 25, 1}, {"IN_TRAIN", 25, 1}},
 		},
 		{
 			name: "no activities (a photo-sourced journey): empty, not zeros",

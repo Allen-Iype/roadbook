@@ -709,6 +709,9 @@ func runJourney(args []string) error {
 	var crossed []store.CountryRef
 	var regions []store.StateRef
 	attributed := false
+	// The candidate's home-relative figure (owner surfaces only, BRIEF
+	// §3E); -1 in file mode, where there is no candidate.
+	destKm := -1
 	switch {
 	case *candidateID != 0:
 		// DB mode mirrors the API handler exactly — Assemble, then apply the
@@ -752,6 +755,7 @@ func runJourney(args []string) error {
 			return err
 		}
 		attributed = true
+		destKm = cand.DestKm
 	case *src != "" && *from != "" && *to != "":
 		winStart, err := time.Parse(time.RFC3339, *from)
 		if err != nil {
@@ -805,17 +809,41 @@ func runJourney(args []string) error {
 	if j.GoogleDistanceKm > 0 {
 		fmt.Printf("google's own figure %.1f km total\n", j.GoogleDistanceKm)
 	}
-	// Source-asserted per-mode figures (phase 11 §6.2) — the reproduction
-	// command for the adventure page's mode line. Absent activities (a
-	// photo-sourced journey) print as the absence they are, never zeros.
-	if bd := journey.ModeBreakdown(acts, j.WindowStart, j.WindowEnd); len(bd) > 0 {
+	// The summary block (phase 14 CP2) — the reproduction command for the
+	// cover's summary, in the same traveller's words. Measured figures,
+	// except "on the move", which is the source's own transit time (the
+	// sum of its activity durations — DECISIONS 2026-09-25); the pace
+	// caveat names the parameter it depends on (invariant 3).
+	sum := journey.Summarize(j)
+	bd := journey.ModeBreakdown(acts, j.WindowStart, j.WindowEnd)
+	fmt.Printf("summary: time away %.1f h (%d civil day(s)) · stopped %d time(s) for %.1f h\n",
+		sum.SpanHours, sum.CivilDays, sum.Stops, sum.DwellHours)
+	if len(bd) > 0 {
+		var transit float64
+		for _, m := range bd {
+			transit += m.Hours
+		}
+		fmt.Printf("on the move: %.1f h by the source's account", transit)
+	} else {
+		fmt.Printf("on the move: no transit record — the window's evidence carries no activity data")
+	}
+	if sum.PaceOK {
+		fmt.Printf(" · %.0f km/h average over recorded stretches (%.1f h observed; pauses under %.0f min included)\n",
+			sum.ObservedPaceKmh, sum.ObservedHours, p.GapThresholdMinutes)
+	} else {
+		fmt.Println(" · no average speed — no moving observed leg (fixes only)")
+	}
+	if destKm >= 0 {
+		fmt.Printf("farthest: %d km from home (the candidate's dest_km — farthest place dwelt)\n", destKm)
+	}
+	// Source-asserted per-mode figures (phase 11 §6.2; hours since phase
+	// 14 CP2) — the reproduction command for the adventure page's mode
+	// line. Absent activities (a photo-sourced journey) print as the
+	// absence they are, never zeros.
+	if len(bd) > 0 {
 		fmt.Printf("modes, source-asserted (Google's labels, guesses):")
 		for i, m := range bd {
-			sep := " "
-			if i > 0 {
-				sep = " · "
-			}
-			fmt.Printf("%s%s %.1f km", sep, m.Mode, m.Km)
+			fmt.Printf("%s%s %.1f km (%.1f h)", sep(i), m.Mode, m.Km, m.Hours)
 		}
 		fmt.Println()
 	} else {
@@ -828,7 +856,7 @@ func runJourney(args []string) error {
 		if len(crossed) == 0 {
 			fmt.Println("countries: none attributed — is the countries table loaded? (roadbook countries)")
 		} else {
-			fmt.Printf("countries, derived from route points:")
+			fmt.Printf("through (countries, derived from route points):")
 			for i, c := range crossed {
 				fmt.Printf("%s%s", sep(i), c.Name)
 			}
@@ -837,7 +865,7 @@ func runJourney(args []string) error {
 		if len(regions) == 0 {
 			fmt.Println("states: none attributed — is the states table loaded? (roadbook states)")
 		} else {
-			fmt.Printf("states, derived from route points:")
+			fmt.Printf("through (regions, derived from route points):")
 			for i, r := range regions {
 				fmt.Printf("%s%s (%s)", sep(i), r.Name, r.CountryCode)
 			}

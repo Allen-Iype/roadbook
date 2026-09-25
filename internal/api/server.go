@@ -149,7 +149,7 @@ func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.Cand
 		bd := journey.ModeBreakdown(obs.Activities, cand.SpanStart, cand.SpanEnd)
 		apiBd := make([]ModeKm, len(bd))
 		for i, m := range bd {
-			apiBd[i] = ModeKm{Mode: m.Mode, Km: m.Km}
+			apiBd[i] = ModeKm{Mode: m.Mode, Km: m.Km, Hours: m.Hours}
 		}
 		out.ModeBreakdown = &apiBd
 	}
@@ -278,6 +278,19 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 			Points:         st.Points,
 			DisplacementKm: st.DisplacementKm,
 		})
+	}
+	// The summary block (phase 14 CP2): derived beside the assembly, the
+	// same function the CLI prints from. Pace stays absent, not zero, when
+	// no observed leg has a duration.
+	sum := journey.Summarize(j)
+	out.Summary = JourneySummary{
+		SpanHours: sum.SpanHours, CivilDays: sum.CivilDays,
+		Stops: sum.Stops, DwellHours: sum.DwellHours,
+	}
+	if sum.PaceOK {
+		oh, pace := sum.ObservedHours, sum.ObservedPaceKmh
+		out.Summary.ObservedHours = &oh
+		out.Summary.ObservedPaceKmh = &pace
 	}
 	return out, nil
 }

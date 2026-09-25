@@ -626,15 +626,37 @@ type Journey struct {
 	RoutedKm float64 `json:"routed_km"`
 
 	// States Admin-1 regions the route's points fall in, ordered by first appearance along the journey — the same local point-in-polygon derivation as countries, against the embedded Natural Earth 1:10m admin-1 polygons. Empty when `roadbook states` has not been run. Reproduction: `roadbook journey -candidate N`.
-	States          []State `json:"states"`
-	Stops           []Stop  `json:"stops"`
-	TotalKm         float64 `json:"total_km"`
-	TracePointsKept int     `json:"trace_points_kept"`
+	States []State `json:"states"`
+	Stops  []Stop  `json:"stops"`
+
+	// Summary The journey summary (phase 14 BRIEF §2a): derived figures beside the assembly, every one printed identically by `roadbook journey -candidate N`. Measured figures only; the source-asserted per-mode time rides on mode_breakdown.
+	Summary         JourneySummary `json:"summary"`
+	TotalKm         float64        `json:"total_km"`
+	TracePointsKept int            `json:"trace_points_kept"`
 
 	// UnknownKm Chord sum over gaps still unknown after the routing cache was consulted — the visibly-unfilled remainder. A router that cannot fill a gap leaves it here by design (patchy OSM coverage is the expected case, not an error).
 	UnknownKm   float64   `json:"unknown_km"`
 	WindowEnd   time.Time `json:"window_end"`
 	WindowStart time.Time `json:"window_start"`
+}
+
+// JourneySummary The journey summary (phase 14 BRIEF §2a): derived figures beside the assembly, every one printed identically by `roadbook journey -candidate N`. Measured figures only; the source-asserted per-mode time rides on mode_breakdown.
+type JourneySummary struct {
+	// CivilDays Civil dates touched, each timestamp in its own recorded offset: the earliest to the latest date among window edges, leg endpoints, and stop endpoints, inclusive — the narrative's day count, by the same rule.
+	CivilDays int `json:"civil_days"`
+
+	// DwellHours Summed duration of the reported stops.
+	DwellHours float64 `json:"dwell_hours"`
+
+	// ObservedHours Summed duration of moving observed legs (more than one point, non-zero distance — a fix is not a stretch). Present exactly when observed_pace_kmh is.
+	ObservedHours *float64 `json:"observed_hours,omitempty"`
+
+	// ObservedPaceKmh Observed km over observed hours — the average pace across recorded stretches only. Pauses shorter than the assembly's gap_threshold_minutes sit inside an observed leg and are included (the display names that parameter); gaps of every kind are excluded. Absent when no moving observed leg exists (a fix-only journey) — absent, never zero.
+	ObservedPaceKmh *float64 `json:"observed_pace_kmh,omitempty"`
+
+	// SpanHours Window end minus start — time away. A truncated window is a truncated span.
+	SpanHours float64 `json:"span_hours"`
+	Stops     int     `json:"stops"`
 }
 
 // LatLng defines model for LatLng.
@@ -679,7 +701,9 @@ type ModeCount struct {
 
 // ModeKm defines model for ModeKm.
 type ModeKm struct {
-	Km float64 `json:"km"`
+	// Hours The activity records' own start-to-end spans, summed whole (phase 14 CP2) — the same kind of claim as km: the source's assertion of time in transit, never a measured duration.
+	Hours float64 `json:"hours"`
+	Km    float64 `json:"km"`
 
 	// Mode The source's own label (IN_BUS, FLYING, …), unreworded.
 	Mode string `json:"mode"`

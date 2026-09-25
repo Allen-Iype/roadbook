@@ -141,3 +141,59 @@ what the brief's drafting settled; the gate's own entry follows the review.
   the plate would then have to explain on every surface).
 - **Would change our mind:** an explicitly labelled "routed through" line
   if a real user asks — never merged into the attributed list.
+
+## 2026-09-25 — CP2: the summary's shape and where its figures come from
+
+- **Chosen:** `journey.Summarize` beside `Assemble`: span hours, civil days
+  (the narrative's rule ported — min to max civil date over window edges,
+  leg and stop endpoints, each in its own offset), stop count and dwell
+  hours, observed hours and pace (observed km over observed leg hours;
+  zero-duration legs contribute nothing; absent, never zero, when no leg
+  has a duration). `ModeKm` gains `Hours`, summed whole like km, and their
+  sum is the "in transit" figure — the source's account, labelled so on
+  every surface. The cover's day count now reads the SERVED `civil_days`
+  (was the web's own `sliceDays` length), with a vitest parity assertion on
+  real demo journeys so the two rules cannot drift; the adventures grid
+  follows. The home-relative figure is the candidate's `dest_km`, rendered
+  by the owner's cover and the CLI's candidate mode only.
+- **Rejected:** any new field on `Assemble`'s output (goldens byte-identical
+  is the phase's standing regression — proven by the untouched golden
+  tests); computing pace from Google's activity durations (a guessed
+  denominator under a measured numerator); an observed-leg "moving time"
+  headline (excludes every gap, so it under-counts sparse journeys — it is
+  pace's denominator, where its meaning is exact).
+- **Would change our mind:** a real journey where the served day count and
+  the narrative's disagree — the parity test is the tripwire, and the Go
+  rule would follow the narrative's, never the reverse.
+
+## 2026-09-25 — CP2: the screenshot record, captured at the checkpoint
+
+- **Chosen:** `docs/screens/phase14-cp2-*` captured now, from the scratch
+  demo stack, rather than waiting for CP4 as the brief scheduled — the
+  record is cheapest at the moment the surface changes. `capture.js` gains
+  `ROADBOOK_SCREENS_URL` (default unchanged: the compose demo on 3000) so a
+  scratch demo stack on another loopback port can be captured without
+  editing the script. Same rule as ever: demo data only, whichever port.
+- **Rejected:** a per-phase copy of the script; capturing from the
+  maintainer's real instance (never — pixels are location data too).
+- **Would change our mind:** nothing; CP3's image work adds its own set.
+
+## 2026-09-25 — CP2 review: the summary speaks the traveller's language
+
+- **Chosen:** at the maintainer's review the block was reworded from the
+  pipeline's vocabulary (observed stretches, dwelling, fixes) to the
+  traveller's: Time away · On the move · Stopped · Through · Farthest. The
+  honesty terms stay on the provenance lines above the block, where the
+  headline distance is explained. "On the move" = the source's own transit
+  time (the sum of its activity durations, the mode line's figure) —
+  Allen's choice between the two honest candidates; the alternative,
+  span minus dwell, is measured but counts an unrecorded overnight as
+  moving. The average speed beside it stays the measured pace over
+  recorded driving. The CLI prints the same lines in the same words.
+- **Rejected:** a separate "Distance" row (the headline figure with its
+  provenance bar sits directly above and IS that row); switching the
+  distance to Google's figure when nothing is routed (the drawn figure with
+  its bar is the honest one — the Westfjords loop reads 197 km, 0%
+  measured, and says so).
+- **Would change our mind:** photo-sourced journeys gaining a measured
+  moving-time source — none exists today, so they read "no transit record".

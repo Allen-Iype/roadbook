@@ -13,7 +13,10 @@ const fs = require('fs');
 const path = require('path');
 
 const OUT = __dirname;
-const BASE = 'http://127.0.0.1:3000';
+// The compose demo instance by default; ROADBOOK_SCREENS_URL points the
+// capture at a demo stack published elsewhere (a scratch project on another
+// loopback port). Demo data only, whichever port — the README's rule.
+const BASE = process.env.ROADBOOK_SCREENS_URL || 'http://127.0.0.1:3000';
 const PAGES = [
   { path: '/', name: 'home' },
   { path: '/welcome', name: 'welcome' },

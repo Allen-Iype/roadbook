@@ -745,6 +745,7 @@ export interface components {
             countries: components["schemas"]["Country"][];
             /** @description Admin-1 regions the route's points fall in, ordered by first appearance along the journey — the same local point-in-polygon derivation as countries, against the embedded Natural Earth 1:10m admin-1 polygons. Empty when `roadbook states` has not been run. Reproduction: `roadbook journey -candidate N`. */
             states: components["schemas"]["State"][];
+            summary: components["schemas"]["JourneySummary"];
             /** Format: double */
             total_km: number;
             /** Format: double */
@@ -861,6 +862,37 @@ export interface components {
             mode: string;
             /** Format: double */
             km: number;
+            /**
+             * Format: double
+             * @description The activity records' own start-to-end spans, summed whole (phase 14 CP2) — the same kind of claim as km: the source's assertion of time in transit, never a measured duration.
+             */
+            hours: number;
+        };
+        /** @description The journey summary (phase 14 BRIEF §2a): derived figures beside the assembly, every one printed identically by `roadbook journey -candidate N`. Measured figures only; the source-asserted per-mode time rides on mode_breakdown. */
+        JourneySummary: {
+            /**
+             * Format: double
+             * @description Window end minus start — time away. A truncated window is a truncated span.
+             */
+            span_hours: number;
+            /** @description Civil dates touched, each timestamp in its own recorded offset: the earliest to the latest date among window edges, leg endpoints, and stop endpoints, inclusive — the narrative's day count, by the same rule. */
+            civil_days: number;
+            stops: number;
+            /**
+             * Format: double
+             * @description Summed duration of the reported stops.
+             */
+            dwell_hours: number;
+            /**
+             * Format: double
+             * @description Summed duration of moving observed legs (more than one point, non-zero distance — a fix is not a stretch). Present exactly when observed_pace_kmh is.
+             */
+            observed_hours?: number;
+            /**
+             * Format: double
+             * @description Observed km over observed hours — the average pace across recorded stretches only. Pauses shorter than the assembly's gap_threshold_minutes sit inside an observed leg and are included (the display names that parameter); gaps of every kind are excluded. Absent when no moving observed leg exists (a fix-only journey) — absent, never zero.
+             */
+            observed_pace_kmh?: number;
         };
         /** @description One photo-import record (phase 11 §4D), distinct from Photo deliberately: records ride imports and are never deletable from an adventure, while attached photos ride decisions and are — one schema for both would blur what each id can do. Records exist only for usable photos, so position and instant are always present. */
         ImportPhoto: {
