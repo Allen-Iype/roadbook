@@ -721,6 +721,15 @@ export interface components {
             iso_code: string;
             name: string;
         };
+        /** @description An admin-1 region — state, province, région — from Natural Earth's 1:10m file, the only scale that covers the world (phase 14 BRIEF §1). */
+        State: {
+            /** @description Natural Earth's adm1_code — unique, where ISO 3166-2 is not. */
+            code: string;
+            /** @description The local Latin-script name with its diacritics ("Vestfirðir", "Suðurland") — the name on the road sign, not the file's English gloss. */
+            name: string;
+            /** @description Aligns with Country.iso_code by the same two-letter-else-ADM0_A3 fallback; a label, not a join key. */
+            country_code: string;
+        };
         Journey: {
             /** Format: date-time */
             window_start: string;
@@ -734,6 +743,8 @@ export interface components {
             stops: components["schemas"]["Stop"][];
             /** @description Countries the route's points fall in, ordered by first appearance along the journey. Derived locally by point-in-polygon against bundled Natural Earth polygons — never a network lookup. Empty when `roadbook countries` has not been run. Border-adjacent points can misattribute at 1:110m resolution; the UI labels this line as derived. */
             countries: components["schemas"]["Country"][];
+            /** @description Admin-1 regions the route's points fall in, ordered by first appearance along the journey — the same local point-in-polygon derivation as countries, against the embedded Natural Earth 1:10m admin-1 polygons. Empty when `roadbook states` has not been run. Reproduction: `roadbook journey -candidate N`. */
+            states: components["schemas"]["State"][];
             /** Format: double */
             total_km: number;
             /** Format: double */

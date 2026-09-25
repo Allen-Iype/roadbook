@@ -623,7 +623,10 @@ type Journey struct {
 	RawPointsKept int                    `json:"raw_points_kept"`
 
 	// RoutedKm Routed road distance summed over road legs. 0 when nothing is routed — the product is fully usable without a router.
-	RoutedKm        float64 `json:"routed_km"`
+	RoutedKm float64 `json:"routed_km"`
+
+	// States Admin-1 regions the route's points fall in, ordered by first appearance along the journey — the same local point-in-polygon derivation as countries, against the embedded Natural Earth 1:10m admin-1 polygons. Empty when `roadbook states` has not been run. Reproduction: `roadbook journey -candidate N`.
+	States          []State `json:"states"`
 	Stops           []Stop  `json:"stops"`
 	TotalKm         float64 `json:"total_km"`
 	TracePointsKept int     `json:"trace_points_kept"`
@@ -871,6 +874,18 @@ type SharedAdventure struct {
 	SpanEnd        time.Time `json:"span_end"`
 	SpanStart      time.Time `json:"span_start"`
 	StartTruncated bool      `json:"start_truncated"`
+}
+
+// State An admin-1 region — state, province, région — from Natural Earth's 1:10m file, the only scale that covers the world (phase 14 BRIEF §1).
+type State struct {
+	// Code Natural Earth's adm1_code — unique, where ISO 3166-2 is not.
+	Code string `json:"code"`
+
+	// CountryCode Aligns with Country.iso_code by the same two-letter-else-ADM0_A3 fallback; a label, not a join key.
+	CountryCode string `json:"country_code"`
+
+	// Name The local Latin-script name with its diacritics ("Vestfirðir", "Suðurland") — the name on the road sign, not the file's English gloss.
+	Name string `json:"name"`
 }
 
 // Stop defines model for Stop.

@@ -23,6 +23,7 @@ import (
 	"roadbook/internal/journey"
 	"roadbook/internal/photosource"
 	"roadbook/internal/route"
+	"roadbook/internal/states"
 	"roadbook/internal/store"
 	"roadbook/internal/suggest"
 	"roadbook/internal/timeline"
@@ -51,6 +52,8 @@ func main() {
 		err = runImport(os.Args[2:])
 	case "countries":
 		err = runCountries(os.Args[2:])
+	case "states":
+		err = runStates(os.Args[2:])
 	case "serve":
 		err = runServe(os.Args[2:])
 	case "backup":
@@ -72,6 +75,7 @@ func usage() {
   roadbook migrate [-db url]
   roadbook import  -src <timeline export.json> [-db url] [-from date] [-to date] [-label name]
   roadbook countries [-src <admin-0 geojson[.gz]>] [-if-empty] [-db url]
+  roadbook states  [-src <admin-1 geojson[.gz]>] [-if-empty] [-db url]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
   roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
   roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh]
@@ -86,6 +90,8 @@ func usage() {
 'countries' loads country polygons for point-in-polygon attribution: the
 bundled Natural Earth 1:110m set by default, or a higher-resolution admin-0
 file from disk via -src. Replaces the table wholesale; never fetches.
+'states' does the same for admin-1 regions (states, provinces): the embedded
+Natural Earth 1:10m set by default — the only scale that covers the world.
 'detect' finds adventure candidates: from a file (prints only) or from the
 database (persists a run and its candidates, then prints).
 'journey' assembles one window of observations into observed and gap legs and
@@ -334,6 +340,69 @@ func runCountries(args []string) error {
 		return err
 	}
 	fmt.Printf("loaded %d countries from %s\n", len(list), label)
+	return nil
+}
+
+// sep is the list separator for the journey command's derived lines: a
+// space before the first item, a middle dot between the rest.
+func sep(i int) string {
+	if i == 0 {
+		return " "
+	}
+	return " · "
+}
+
+// runStates mirrors runCountries for admin-1 polygons (phase 14 CP1).
+func runStates(args []string) error {
+	fs := flag.NewFlagSet("states", flag.ExitOnError)
+	src := fs.String("src", "", "Natural Earth admin-1 GeoJSON, .geojson or .gz (default: embedded 1:10m)")
+	ifEmpty := fs.Bool("if-empty", false, "load only when the states table is empty (startup-safe: never overwrites an existing load)")
+	db := dbFlag(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	var list []states.State
+	label := "embedded Natural Earth 1:10m"
+	if *src == "" {
+		var err error
+		list, err = states.Bundled()
+		if err != nil {
+			return err
+		}
+	} else {
+		f, err := os.Open(*src)
+		if err != nil {
+			return err
+		}
+		list, err = states.Parse(f)
+		f.Close()
+		if err != nil {
+			return fmt.Errorf("cannot load %s: %w", filepath.Base(*src), err)
+		}
+		label = filepath.Base(*src)
+	}
+
+	ctx := context.Background()
+	s, err := openStore(ctx, *db)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+	if *ifEmpty {
+		n, err := s.CountStates(ctx)
+		if err != nil {
+			return err
+		}
+		if n > 0 {
+			fmt.Printf("states table already holds %d rows; -if-empty leaves it untouched\n", n)
+			return nil
+		}
+	}
+	if err := s.ReplaceStates(ctx, list); err != nil {
+		return err
+	}
+	fmt.Printf("loaded %d states from %s\n", len(list), label)
 	return nil
 }
 
@@ -634,6 +703,12 @@ func runJourney(args []string) error {
 	// The window's activities, kept for the source-asserted mode breakdown —
 	// computed outside Assemble (the golden contract pins assembly's output).
 	var acts []domain.Activity
+	// Countries and states crossed — a database attribution, so DB mode
+	// only; file mode has no polygons and prints no line (phase 14 CP1: the
+	// cover's derived lines gain their reproduction command here).
+	var crossed []store.CountryRef
+	var regions []store.StateRef
+	attributed := false
 	switch {
 	case *candidateID != 0:
 		// DB mode mirrors the API handler exactly — Assemble, then apply the
@@ -664,6 +739,19 @@ func runJourney(args []string) error {
 			return err
 		}
 		j = route.Apply(j, api.RouteProfile, lookup)
+		var pts []domain.LatLng
+		for _, l := range j.Legs {
+			for _, p := range l.Points {
+				pts = append(pts, p.Loc)
+			}
+		}
+		if crossed, err = s.CountriesForPoints(ctx, pts); err != nil {
+			return err
+		}
+		if regions, err = s.StatesForPoints(ctx, pts); err != nil {
+			return err
+		}
+		attributed = true
 	case *src != "" && *from != "" && *to != "":
 		winStart, err := time.Parse(time.RFC3339, *from)
 		if err != nil {
@@ -732,6 +820,29 @@ func runJourney(args []string) error {
 		fmt.Println()
 	} else {
 		fmt.Println("no mode record — the window's evidence carries no activity data")
+	}
+	// The cover's derived lines, in journey order (first appearance along
+	// the drawn route). Empty means no polygon contained any point — most
+	// often an unloaded table, so the line says which command loads it.
+	if attributed {
+		if len(crossed) == 0 {
+			fmt.Println("countries: none attributed — is the countries table loaded? (roadbook countries)")
+		} else {
+			fmt.Printf("countries, derived from route points:")
+			for i, c := range crossed {
+				fmt.Printf("%s%s", sep(i), c.Name)
+			}
+			fmt.Println()
+		}
+		if len(regions) == 0 {
+			fmt.Println("states: none attributed — is the states table loaded? (roadbook states)")
+		} else {
+			fmt.Printf("states, derived from route points:")
+			for i, r := range regions {
+				fmt.Printf("%s%s (%s)", sep(i), r.Name, r.CountryCode)
+			}
+			fmt.Println()
+		}
 	}
 	if pct, ok := j.DivergencePct(); ok {
 		flag := ""

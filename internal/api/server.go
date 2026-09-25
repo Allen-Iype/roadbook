@@ -171,6 +171,16 @@ func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.Cand
 	for _, c := range crossed {
 		out.Countries = append(out.Countries, Country{IsoCode: c.ISOCode, Name: c.Name})
 	}
+	// Admin-1 regions the same way (phase 14 CP1). Empty, never absent:
+	// an unloaded states table reads as "no regions" on every surface.
+	regions, err := s.Store.StatesForPoints(ctx, pts)
+	if err != nil {
+		return Journey{}, j, err
+	}
+	out.States = make([]State, 0, len(regions))
+	for _, r := range regions {
+		out.States = append(out.States, State{Code: r.Code, Name: r.Name, CountryCode: r.CountryCode})
+	}
 	return out, j, nil
 }
 

@@ -365,37 +365,34 @@ none is scheduled:
   backlog item: a route editor, a creation path bypassing detection, and a
   PRODUCT.md amendment — a product-identity decision to take deliberately.
   Trigger: real users that photo and GPX ingestion still leave stranded
-- Self-serve data deletion — a user-facing "delete my data" removing
-  observations, imports, decisions, photos (rows and files), and retained
-  uploads in one act. Deferred deliberately: on an authless instance a
-  destructive control is a hazard, and for hand-provisioned instances the
-  operator's volume-level reset is structurally complete where row-chasing
-  can silently miss a file. Becomes user-facing — and, for location data,
-  legally required — when accounts arrive. Trigger: the multi-user tenancy
-  phase (phase 13 in the roadmap below)
+- ~~Self-serve data deletion~~ — **done, phase 13 CP5** (`DELETE /me`: one
+  transaction over every user-data table, files swept after commit only when
+  no remaining row of any user names them, both auth modes). The original
+  reasoning stands as history: deferred while instances were authless, made
+  user-facing — and, for location data, legally required — by accounts
 - Per-adventure GPX/GeoJSON export, with the observed/inferred distinction preserved
-- Bulk triage actions — first non-operator pilot report (2026-08-24): confirming
-  candidates one at a time is a real workload at full-archive scale (the
-  triage-friction-at-scale evidence phase 9 anticipated). In-system answers to
-  design from: multi-select confirm/dismiss, a quick-confirm that never opens the
-  card, a score-ordered sweep flow. The reported *solution* — auto-confirm
-  everything, edit later — is recorded but is not a UI fix: the detector
-  over-produces deliberately (rank, don't filter), so auto-confirmation would put
-  known noise on the life map and invert the curation stance that defines the
-  product; adopting it would be a PRODUCT.md amendment taken deliberately at a
-  gate. Trigger: already fired; schedule the friction work in the next UI/product
-  refinement phase
-- Per-mode distance breakdown (air / road / rail / water) — pilot request
-  (2026-08-24). Activities carry mode and distance, so a per-journey breakdown is
-  computable from existing data. Constraint: source modes are guesses with
-  recorded failures at the extremes, and the pipeline already trusts speed over
-  mode for flight detection — so any breakdown must be labelled as
-  source-asserted, never presented with the confidence of measured geometry
-  (invariant 8's spirit applied to labels). Fits the day-narrative/stats seam
-  alongside leg-average speed
   in the output (separate track segments per confidence class) — an export that
   flattens it silently violates the honesty principle
-- Poster / print view of an adventure
+- ~~Bulk triage actions~~ — **done, phase 11 CP4** (multi-select with
+  "select all undecided", atomic bulk confirm/dismiss, score-ordered sweep,
+  date-fallback names on bulk confirm). Recorded for history: the first
+  non-operator pilot report (2026-08-24) found one-at-a-time confirmation a
+  real workload at full-archive scale. The reported *solution* — auto-confirm
+  everything, edit later — was declined at the phase 11 gate: the detector
+  over-produces deliberately (rank, don't filter), so auto-confirmation would
+  put known noise on the life map and invert the curation stance that defines
+  the product; adopting it would be a PRODUCT.md amendment taken deliberately
+- ~~Per-mode distance breakdown~~ — **done, phase 11 CP4**
+  (`journey.ModeBreakdown`, pure and outside `Assemble`; labelled
+  source-asserted on the cover and printed by `roadbook journey`; absent, never
+  zero, for photo-sourced journeys). The constraint that shaped it stands:
+  source modes are guesses with recorded failures at the extremes, and the
+  pipeline trusts speed over mode for flight detection, so the figures are never
+  presented with the confidence of measured geometry. Phase 14 extends the same
+  seam with per-mode time and the journey summary
+- Poster / print view of an adventure — partly absorbed by phase 14's
+  "download as image" (the atlas plate as a PNG); a print-sized or paper-format
+  poster stays here on appetite
 - Adventure replay animation
 - Elevation profile per adventure
 - OSM amenity overlay along a route (fuel, food, hospitals, restrooms) from bundled
@@ -408,7 +405,7 @@ trigger conditions, all of which must hold before it is even reconsidered.
 
 ---
 
-## The road to strangers — phases 10–13 (roadmap, 2026-08-18; resequenced 2026-08-24)
+## The road to strangers — phases 10–15 (roadmap, 2026-08-18; resequenced 2026-08-24 and 2026-09-18)
 
 Phases 6–9 (life-map UI and design system, browser import as the front door, pilot
 hosting, UI refinement) are recorded in their own `docs/phase-N/` artifacts and are
@@ -531,6 +528,11 @@ no Timeline data — then the ingestion phase moves ahead of this one, because a
 gate that turns away most entrants converts the waitlist into a disappointment
 list. (This fired 2026-08-24 — hence this phase's move from 11 to 12.)
 
+*Outcome (2026-09-09).* Checkpoints 1–3 delivered and proven; checkpoint 4
+never reached — the durability condition its brief set could not be met on
+trial credits, and the hosting was torn down deliberately ahead of the trial's
+reclaim. The proof moves to phase 15: `docs/phase-12/DECISIONS.md`.
+
 ### Phase 13 — Accounts and tenancy (gated)
 
 **Goal.** Strangers sign themselves up and the waitlist drains without per-person
@@ -556,6 +558,49 @@ reserved header slot mean an auth gate drops in without moving pages.
 **Excludes.** Social features, live sharing, community content — still banned
 outright.
 
+*Outcome (2026-09-18).* Ran and closed as chartered under the 2026-09-09
+product-first re-charter, with the first form (row-scoped tenancy, OIDC,
+opaque sessions) and share links as its CP4: `docs/phase-13/LOG.md`. The
+live-Google browser walk rides the hosting phase's checklist.
+
+### Phase 14 — Route image and journey summary (chartered 2026-09-18)
+
+**Goal.** Two features the maintainer wants in hand before hosting resumes:
+a confirmed adventure's atlas plate downloadable as a PNG — map, route, and
+the printed margin with name, dates, distance with its provenance bar, the
+legend (invariant 8 is not optional on an image that travels), and the tile
+attribution line the basemap licence requires — and a journey summary block
+that states, from the assembled journey alone, what the trip was: drawn
+distance with its provenance split, span and civil days, countries and
+states, stops and dwell, source-asserted per-mode distance and time, and
+leg-average pace with its caveat. Every figure on the cover, the shared view,
+and the image traces to `roadbook journey -candidate N` (invariant 13).
+Design brief: `docs/phase-14/BRIEF.md`.
+
+**Charter basis.** The "somewhat finished product" mandate (2026-08-18): the
+sharing item split there into a hosted share link (delivered in phase 13) and
+a static export (this phase). States are worldwide or not at all (invariant
+9) — the brief decides where the admin-1 dataset lives.
+
+**Excludes.** Hosting; GPX/GeoJSON export (own backlog entry, same honesty
+rule); poster paper formats; any change to the pure detection/journey core
+beyond derived, tested summary functions that leave the goldens
+byte-identical.
+
+### Phase 15 — Hosting on a real platform
+
+**Goal.** The finished product reachable by strangers on a money-returning
+platform: the front-gate proof phase 12 never reached (its §0 durability
+condition was unsatisfiable on trial credits — `docs/phase-12/DECISIONS.md`),
+the live-Google sign-in walk from phase 13's checklist, off-machine backups
+with a staleness alarm (the phase 12 teardown lesson), and the landing,
+waitlist, and entry drill re-deployed on a durable host. Its brief opens
+with the provider decision that the zero-cash constraint deferred; nothing
+is committed to here.
+
+**Excludes.** New product features — the target is a zero product-code diff,
+as phase 10's was.
+
 ### Gated alongside — not in the sequence until their evidence arrives
 
 - **Ingestion (photos as a source, GPX).** Photos-as-source was chartered
@@ -570,16 +615,19 @@ outright.
   gate; deliberately not bundled into the dual-mode amendment. Sequenced after
   ingestion.
 - **Refinements (non-gating).** GPX/GeoJSON export preserving confidence
-  classes, poster/print, a reproducible stats panel, leg-average speed in the
-  day narrative (instantaneous speed stays rejected — the observation density
-  cannot support it honestly), dark theme, unified timeline. These ride along
-  when evidence or appetite says so; none blocks strangers.
+  classes, poster paper formats, dark theme, unified timeline. These ride
+  along when evidence or appetite says so; none blocks strangers. (The
+  reproducible stats panel and leg-average speed moved into phase 14;
+  instantaneous speed stays rejected — the observation density cannot support
+  it honestly.)
 
 ### The sequence, and what would change it
 
-Phase 10 (complete), then 11 (ingestion), then 12 (front gate), then 13 when
-its trigger binds; recalled adventures after ingestion on its own trigger;
-refinements ride along.
+Phase 10 (complete), then 11 (ingestion, complete), then 12 (front gate,
+closed early with hosting torn down), then 13 (accounts and share links,
+complete under the product-first re-charter), then 14 (route image and
+summary), then 15 (hosting on a real platform); recalled adventures after
+ingestion on its own trigger; refinements ride along.
 
 - Audit returns mostly without Timeline data → ingestion moves ahead of the
   front gate. **Fired 2026-08-24**: the pilot itself returned the answer —

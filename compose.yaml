@@ -49,7 +49,8 @@ services:
     # instance browser-complete (country attribution) with zero CLI steps
     # (phase 8 §3E): the bundled set is go:embed'ed so nothing is fetched,
     # and -if-empty never overwrites an operator's higher-resolution load.
-    command: sh -c "roadbook migrate && roadbook countries -if-empty && exec roadbook serve"
+    # states -if-empty is the same step for admin-1 regions (phase 14 CP1).
+    command: sh -c "roadbook migrate && roadbook countries -if-empty && roadbook states -if-empty && exec roadbook serve"
     environment:
       DATABASE_URL: postgres://roadbook:${POSTGRES_PASSWORD:-roadbook}@db:5432/roadbook
       ROADBOOK_PHOTOS_DIR: /photos

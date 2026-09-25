@@ -132,6 +132,10 @@ prototype/   detect_fixture.py — the reference detector.
   an unanticipated path. The rule exists because vigilance alone failed.
 - **Run `git add -A --dry-run` before every commit** and confirm that nothing from
   `data/` and no file over 1 MB appears. A standing rule, not a one-time check.
+  One named exception (phase 14, 2026-09-25): the committed reference dataset
+  `internal/states/ne_10m_admin_1_states_provinces.geojson.gz` (Natural Earth
+  admin-1, public domain, 12.2 MB gzipped, checksummed against its upstream
+  commit in the package doc). Any other file over 1 MB is still a stop.
 - **Never modify or delete anything in `data/`.** Files there can be irreplaceable:
   a Timeline export's `rawSignals` window expires at the source and cannot be
   re-downloaded.

@@ -238,6 +238,12 @@ function Cover({
         {fmtDateRange(journey.window_start, journey.window_end)}
         {journey.countries.length > 0 && (
           <> · {journey.countries.map((c) => c.name).join(" · ")}</>
+        )}
+        {/* Regions after their countries, comma-joined so the two levels
+            read apart: "Iceland · Vestfirðir, Suðurland" (phase 14 CP1).
+            Local names with their diacritics — what the road sign said. */}
+        {journey.states.length > 0 && (
+          <> · {journey.states.map((s) => s.name).join(", ")}</>
         )}{" "}
         · {dayCount} {dayCount === 1 ? "day" : "days"} · {journey.merged_points}{" "}
         fixes
@@ -284,7 +290,12 @@ function Cover({
             <> · Google&apos;s own figure {journey.google_km.toFixed(1)} km</>
           )}
           {journey.countries.length > 0 && (
-            <> · countries derived from route points</>
+            <>
+              {" · "}
+              {journey.states.length > 0
+                ? "countries and regions derived from route points"
+                : "countries derived from route points"}
+            </>
           )}
         </p>
         <ModeLine journey={journey} />

@@ -183,6 +183,15 @@ func TestUploadImportEndToEnd(t *testing.T) {
 	}
 	jd := decodeJSON[api.Journey](t, jresp.Body)
 	jresp.Body.Close()
+	// Derived attribution lines are empty, never absent, before the
+	// countries and states tables are loaded (phase 14 CP1): an unloaded
+	// table reads as "no regions" on every surface, not as a missing field.
+	if jd.Countries == nil || len(jd.Countries) != 0 {
+		t.Errorf("countries before load = %v, want empty non-nil", jd.Countries)
+	}
+	if jd.States == nil || len(jd.States) != 0 {
+		t.Errorf("states before load = %v, want empty non-nil", jd.States)
+	}
 	if jd.ModeBreakdown == nil || len(*jd.ModeBreakdown) == 0 {
 		t.Errorf("Timeline journey mode_breakdown = %v, want non-empty", jd.ModeBreakdown)
 	} else {
