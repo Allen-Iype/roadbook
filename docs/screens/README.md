@@ -19,6 +19,13 @@ new page (a new URL), add it to the `PAGES` list in `capture.js` in the
 same change, so no page's history starts late. (Pages the deployed image
 does not serve yet are skipped automatically — the script logs the 404.)
 
+Phase 14 CP3 adds the exported plate itself: `phase14-cp3-plate-<id>.png`
+is the demo adventure's "Download as image" output, downscaled to
+1200×800 — the real export is 2400×1600 and two of the three exceed the
+informal 400 KB note at full size (the phase-14 decision log records the
+sizes). Reproduction: the control on `/adventure/<id>` of the demo stack,
+then `sips -Z 1200`.
+
 To compare one page over time, list it across sets:
 `ls docs/screens/*-home*.png`.
 

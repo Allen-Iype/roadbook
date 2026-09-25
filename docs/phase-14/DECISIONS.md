@@ -197,3 +197,115 @@ what the brief's drafting settled; the gate's own entry follows the review.
   measured, and says so).
 - **Would change our mind:** photo-sourced journeys gaining a measured
   moving-time source — none exists today, so they read "no transit record".
+
+## 2026-09-25 — CP3: one layer list for the plate and its image
+
+- **Chosen:** the route features, the seven style layers, the fit padding,
+  and the day-highlight paint moved out of the map island into the pure
+  `lib/route-layers.ts`; the on-screen map and the offscreen export map
+  both consume it unchanged, and `route-layers.test.ts` pins the list —
+  paint order, the non-color channel per kind, no zoom expression, dim
+  never hide. The legend's fixed wording moved the same way into
+  `lib/legend.ts`, read by the legend component and the image builder.
+- **Rejected:** copying the layer list into the exporter (the two maps
+  would drift the first time one was touched); reading the on-screen map's
+  layers back through `getStyle()` (ties the export to a mounted map and
+  to whatever the page had already done to it).
+- **Would change our mind:** nothing foreseeable; a third map would join
+  the same list.
+
+## 2026-09-25 — CP3: the image is an op-list first, pixels second
+
+- **Chosen:** `lib/plate-image.ts` is a pure layout builder — served
+  Journey plus the page's facts (name, plate number, truncation flags,
+  highlighted day, the loaded style's attribution, the fitted view) in,
+  an op-list of fills, rules, text, the map slot, the provenance bar, and
+  the legend row out. `lib/plate-export.ts` paints it. The split exists so
+  vitest can assert what the image WILL say without a browser: the
+  legend is present in the fixed wording for every input (the invariant-8
+  regression — there is no input that omits it), the attribution line is
+  present whenever a source declared one, the dateline truncates regions
+  with "+ n more", the truncation sentences are the cover's verbatim, the
+  scale-bar formula rounds as MapLibre's control does. Every figure is a
+  string the cover already prints from the same served values, so
+  `roadbook journey -candidate N` reproduces each one; the builder
+  computes no figure of the journey's own.
+- **Rejected:** drawing straight from the component (nothing to test but
+  pixels); measuring text in the builder (needs a canvas — the one line
+  that can overflow, the name, shrinks in the painter; the dateline is
+  mono so its character budget is exact without measuring).
+- **Would change our mind:** a second format (poster, square) — the
+  builder would take the format as a parameter; the ops stay.
+
+## 2026-09-25 — CP3: composition follows the cover, not the wireframe's bar
+
+- **Chosen:** the provenance bar runs full-width under the headline
+  distance with the split line beneath it — the cover's own arrangement —
+  rather than the wireframe's bar beside the figure. People already read
+  the cover that way; the image should not teach a second layout of the
+  same three lines. Otherwise the wireframe as drawn: map full-width in
+  the double rule with the scale bar inside it bottom-left; name in the
+  display serif with the plate label right-aligned in tracked capitals;
+  the dateline in mono; the legend row with drawn samples and the full
+  fixed wording (the image has room the phone margin does not); the
+  basemap credit and ROADBOOK on the foot line. The dateline drops the
+  cover's fix count: the image has no line to explain it. The name at
+  38 px and a lighter scale chip were the two changes after looking at
+  the first render.
+- **Rejected:** a translucent stats card over the map and a logo mark
+  (the fitness-app export the plate is not — BRIEF §4); the summary
+  block (time away, on the move, stopped) on the image — the brief's
+  list is name, dates, distance with split, places, day count, legend,
+  credit, and adding rows the image cannot caveat would crowd it.
+- **Would change our mind:** the maintainer's eyeball at the STOP.
+
+## 2026-09-25 — CP3: the offscreen map is the map slot's size, not the plate's
+
+- **Chosen:** the export map is created at the slot's logical size
+  (1136×528) with `pixelRatio: 2`, so its canvas lands pixel for pixel in
+  the 2400×1600 composition; the plate's margin is paper drawn by the
+  painter. The kickoff note said "at 1200×800 logical" — that is the
+  plate; the map inside it is smaller by the margin, as the brief's
+  wireframe draws it. Same style URL, same bounds, same fit padding as
+  the on-screen map; `preserveDrawingBuffer` on this instance only;
+  `fadeDuration: 0` so `idle` means every tile is at full opacity;
+  destroyed in `finally`.
+- **Rejected:** reading the on-screen canvas (blank without the buffer
+  kept, and the buffer kept for the page's life is a per-frame cost the
+  interactive map should not pay); rendering the map at 1200×800 and
+  cropping (wastes tiles and shifts the fitted bounds).
+- **Would change our mind:** a real browser where the offscreen readback
+  is blank after the documented remedies — then §3A(3), the rasterised
+  SVG, with the composition unchanged (BRIEF §8).
+
+## 2026-09-25 — CP3: a status-0 fetch is worded as "blocked or unreachable"
+
+- **Chosen:** every basemap error the offscreen map reports aborts the
+  export with words and downloads nothing. A fetch that failed outright
+  (MapLibre's AJAXError with status 0) is what a tile server without CORS
+  headers looks like from inside a browser — and also what an
+  unreachable one looks like; the browser does not distinguish them, so
+  the message names both, the host, and that nothing was downloaded. An
+  HTTP failure names its status (a transient 429 from the public tiles is
+  the expected case; the message says to try again). A tainted 2D canvas
+  (SecurityError at toBlob) has its own wording; so do the WebGL and
+  timeout failures. The e2e CORS case aborts every basemap request at the
+  network layer, which is the same status-0 path.
+- **Rejected:** exporting with holes when one tile fails (a partial
+  plate presented as the plate); swallowing basemap errors because the
+  map "mostly" drew.
+- **Would change our mind:** a way to tell CORS refusal from network
+  failure in the browser — none exists.
+
+## 2026-09-25 — CP3: the screenshot record carries half-size copies of the export
+
+- **Chosen:** `docs/screens/phase14-cp3-plate-{1,2,3}.png` are the demo's
+  three exported plates downscaled to 1200×800 — the full 2400×1600 files
+  measure 383 KB, 430 KB, and 549 KB, and two of the three are over the
+  informal 400 KB note, so the record takes the downscaled copy (the
+  brief's own fallback), never an exception. The page captures
+  (`phase14-cp3-*`) come from `capture.js` as usual.
+- **Rejected:** committing the full-size PNGs (two over the note); no
+  record at all (the whole point of the set is to see what the export
+  looked like at this checkpoint).
+- **Would change our mind:** nothing; a future format gets the same rule.

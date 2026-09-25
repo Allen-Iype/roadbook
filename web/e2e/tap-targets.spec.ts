@@ -13,7 +13,7 @@
 // phase 7 verification only ever saw the undecided state's buttons.
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-import { clickUntil, viewportWidth } from "./helpers";
+import { clickUntil, openSummonedList, viewportWidth } from "./helpers";
 
 const MIN_TARGET_PX = 44;
 
@@ -75,4 +75,15 @@ test("adventure: the day-heading map toggles are thumb-sized", async ({ page }) 
   const href = await dialog.getByRole("link").first().getAttribute("href");
   await page.goto(href!);
   await expectThumbSized(page, 'section[aria-label="Days"] h2 button');
+});
+
+test("adventure page: the sharing and image-export controls are thumb-sized", async ({ page }) => {
+  // Reached through the summoned list — ids change with every detection
+  // run. Both buttons are text-xs, the size that measured 42px with py-3
+  // (the phase 9 CP1 finding, met again in phase 14 CP3).
+  await page.goto("/");
+  const dialog = await openSummonedList(page);
+  const href = await dialog.getByRole("link").first().getAttribute("href");
+  await page.goto(href!);
+  await expectThumbSized(page, 'button:has-text("Create a share link"), button:has-text("Download as image")');
 });

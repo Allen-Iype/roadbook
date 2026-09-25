@@ -10,6 +10,10 @@
 // cheap one repaints opacity when the selection changes, addressing the map
 // through a ref. This is the standard split for imperative libraries under
 // React: reconstruction for identity changes, mutation for style changes.
+//
+// The features, layers, and highlight paint come from lib/route-layers.ts
+// (phase 14 CP3) — shared with the offscreen export map, so the image a
+// person downloads is drawn by the same layer list as the plate they see.
 import { useEffect, useRef } from "react";
 // MapLibre 6 is ESM-only with named exports (no default export); MapLibreMap
 // is the library's own alias for its Map class, avoiding the clash with the
@@ -23,15 +27,23 @@ import {
   ScaleControl,
   setWorkerUrl,
 } from "maplibre-gl";
-import type { ExpressionSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { fmtDistanceM, placeStatement } from "@/lib/format";
 // Geometry conversions shared with the life map (extracted checkpoint 2):
 // one implementation of leg→GeoJSON, arcs, and bounds for every map.
-import { bboxOf, legFeatures, lngLat, stopFeatures } from "@/lib/geo";
+import { bboxOf, lngLat } from "@/lib/geo";
+import {
+  DIM_OPACITY,
+  FIT_PADDING,
+  ROUTE_LAYERS,
+  ROUTE_SOURCE,
+  dayLookups,
+  highlightPaint,
+  routeFeatures,
+} from "@/lib/route-layers";
 import { INK } from "@/lib/tokens";
-import { isFixLeg, type Day } from "@/lib/slice-days";
+import type { Day } from "@/lib/slice-days";
 import type { DisplayPhoto } from "@/lib/photo-display";
 import type { components } from "@/lib/api/schema";
 
@@ -46,26 +58,6 @@ setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 type Journey = components["schemas"]["Journey"];
 
-// Everything outside the selected day fades to this opacity — dimmed, never
-// hidden: geometry that vanished would misstate what the journey contains.
-const DIM_OPACITY = 0.15;
-
-const LINE_LAYERS = [
-  "unknown-legs",
-  "air-legs",
-  "road-casing",
-  "road-legs",
-  "observed-legs",
-] as const;
-
-// Day-highlight opacity: legs carry their start day (`day`), stops the list
-// of civil days they overlap (`days`) — both stamped from the same sliceDays
-// output that drives the narrative, so the two cannot disagree.
-const legOpacity = (sel: number | null): number | ExpressionSpecification =>
-  sel === null ? 1 : ["case", ["==", ["get", "day"], sel], 1, DIM_OPACITY];
-const stopOpacity = (sel: number | null): number | ExpressionSpecification =>
-  sel === null ? 1 : ["case", ["in", sel, ["get", "days"]], 1, DIM_OPACITY];
-
 type MarkerInfo = { el: HTMLElement; days: number[] };
 
 function applyHighlight(
@@ -73,17 +65,9 @@ function applyHighlight(
   markers: MarkerInfo[],
   sel: number | null,
 ) {
-  for (const id of LINE_LAYERS) {
-    if (map.getLayer(id)) map.setPaintProperty(id, "line-opacity", legOpacity(sel));
-  }
-  if (map.getLayer("stops")) {
-    map.setPaintProperty("stops", "circle-opacity", stopOpacity(sel));
-    map.setPaintProperty("stops", "circle-stroke-opacity", stopOpacity(sel));
-  }
-  // Fix dots carry a leg's start day, so they dim on the leg rule.
-  if (map.getLayer("fixes")) {
-    map.setPaintProperty("fixes", "circle-opacity", legOpacity(sel));
-    map.setPaintProperty("fixes", "circle-stroke-opacity", legOpacity(sel));
+  for (const change of highlightPaint(sel)) {
+    if (map.getLayer(change.layer))
+      map.setPaintProperty(change.layer, change.property, change.value);
   }
   for (const m of markers) {
     m.el.style.opacity =
@@ -122,50 +106,11 @@ export function RouteMap({
     const container = containerRef.current;
     if (!container) return;
 
-    // Day assignment lookups from the sliceDays output.
-    const legDay = new Map<number, number>();
-    const stopDays = new Map<number, number[]>();
-    for (const d of days) {
-      for (const li of d.legIndices) legDay.set(li, d.index);
-      for (const si of d.stopIndices)
-        stopDays.set(si, [...(stopDays.get(si) ?? []), d.index]);
-    }
+    const { legDay, stopDays } = dayLookups(days);
 
     // Built once per mount: the same FeatureCollection feeds both the source
-    // and the bounds, so an air leg's arc — which bulges away from the
-    // straight line between its endpoints — can never fall outside the view.
-    // Legs are converted one at a time because each carries its own day.
-    const data: GeoJSON.FeatureCollection = {
-      type: "FeatureCollection",
-      features: [
-        ...journey.legs.flatMap((leg, i) =>
-          legFeatures([leg], { day: legDay.get(i) ?? 0 }),
-        ),
-        // A fix — a stationary observed leg — is a LineString with nowhere
-        // to go: one point (or two coincident ones) paints nothing, so
-        // observed evidence would render as absence (invariant 8, found in
-        // phase 9 CP2). Each fix additionally becomes a Point feature the
-        // "fixes" layer can draw. Same predicate as the narrative's fix
-        // events, so the map dot and the "Fix —" line always agree.
-        ...journey.legs.flatMap((leg, i) =>
-          isFixLeg(leg)
-            ? [
-                {
-                  type: "Feature" as const,
-                  properties: { kind: "fix", day: legDay.get(i) ?? 0 },
-                  geometry: {
-                    type: "Point" as const,
-                    coordinates: lngLat(leg.points[0]),
-                  },
-                },
-              ]
-            : [],
-        ),
-        ...stopFeatures(journey.stops, (_s, i) => ({
-          days: stopDays.get(i) ?? [],
-        })),
-      ],
-    };
+    // and the bounds (see routeFeatures).
+    const data = routeFeatures(journey, days);
 
     // Placed photos join the map (BRIEF §3G). Only placed ones: a photo
     // with a position but no placeable instant stays in the strip, marked
@@ -187,7 +132,7 @@ export function RouteMap({
       // Real position comes from fitBounds below; without a center MapLibre
       // would flash null island first.
       bounds,
-      fitBoundsOptions: { padding: 48 },
+      fitBoundsOptions: { padding: FIT_PADDING },
     });
     map.addControl(new NavigationControl({ showCompass: false }));
     // The scale bar is plate marginalia the atlas frame promised (DESIGN
@@ -266,105 +211,8 @@ export function RouteMap({
     // Sources and layers only after the style has loaded — adding them
     // synchronously after the constructor is the classic first bug.
     map.on("load", () => {
-      map.addSource("route", { type: "geojson", data });
-
-      // Layer order is paint order, bottom to top: unknown gaps underneath
-      // (a dashed grey guess never covers a measurement), then air, then
-      // routed over its paper casing, observed on top, stop markers above
-      // all. The channel is the Atlas plate encoding (DESIGN §6): kind is
-      // never hue alone — observed is solid and widest and uncased, routed
-      // is solid over its casing, unknown is dashed, air is round-dotted.
-      // Unlike the life map there is no zoom graduation here: the detail
-      // plate keeps the full four-way split at every zoom (DESIGN §2).
-      map.addLayer({
-        id: "unknown-legs",
-        type: "line",
-        source: "route",
-        filter: [
-          "all",
-          ["==", ["get", "kind"], "gap"],
-          ["!=", ["get", "gap_kind"], "air"],
-          ["!=", ["get", "gap_kind"], "road"],
-        ],
-        paint: {
-          "line-color": INK.unknown,
-          "line-width": 2,
-          "line-dasharray": [2, 3],
-        },
-      });
-      map.addLayer({
-        id: "air-legs",
-        type: "line",
-        source: "route",
-        filter: ["==", ["get", "gap_kind"], "air"],
-        layout: { "line-cap": "round" },
-        paint: {
-          "line-color": INK.air,
-          "line-width": 2.2,
-          "line-dasharray": [0.1, 2],
-        },
-      });
-      map.addLayer({
-        id: "road-casing",
-        type: "line",
-        source: "route",
-        filter: ["==", ["get", "gap_kind"], "road"],
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": INK.paper,
-          "line-width": 5.5,
-        },
-      });
-      map.addLayer({
-        id: "road-legs",
-        type: "line",
-        source: "route",
-        filter: ["==", ["get", "gap_kind"], "road"],
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": INK.routed,
-          "line-width": 2.5,
-        },
-      });
-      map.addLayer({
-        id: "observed-legs",
-        type: "line",
-        source: "route",
-        filter: ["==", ["get", "kind"], "observed"],
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": INK.observed,
-          "line-width": 3.5,
-        },
-      });
-      // Fixes wear the observed ink — they ARE measurements — at a smaller
-      // radius than stops, whose black dots stay the page's "you stayed
-      // here" marks. Below stops in paint order: where a dwell and its
-      // gate fix coincide, the stop reads on top.
-      map.addLayer({
-        id: "fixes",
-        type: "circle",
-        source: "route",
-        filter: ["==", ["get", "kind"], "fix"],
-        paint: {
-          "circle-radius": 4,
-          "circle-color": INK.observed,
-          "circle-stroke-color": INK.paper,
-          "circle-stroke-width": 1.25,
-        },
-      });
-      map.addLayer({
-        id: "stops",
-        type: "circle",
-        source: "route",
-        filter: ["==", ["get", "kind"], "stop"],
-        paint: {
-          "circle-radius": 5,
-          "circle-color": INK.ink,
-          "circle-stroke-color": INK.paper,
-          "circle-stroke-width": 1.5,
-        },
-      });
+      map.addSource(ROUTE_SOURCE, { type: "geojson", data });
+      for (const layer of ROUTE_LAYERS) map.addLayer(layer);
 
       // A day may already be selected while the style was loading.
       applyHighlight(map, markersRef.current, selectedRef.current);

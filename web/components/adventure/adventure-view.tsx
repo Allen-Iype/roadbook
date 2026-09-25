@@ -16,10 +16,11 @@ import { useMemo, useState } from "react";
 
 import { LegKindLegend } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
-import { fmtHours, fmtMode } from "@/lib/format";
+import { fmtHours, fmtMode, roman } from "@/lib/format";
 import { fmtDateRange, isFixLeg, sliceDays } from "@/lib/slice-days";
 import { DayNarrative } from "./day-narrative";
 import { ImportPhotosStrip, PhotoStrip } from "./photo-strip";
+import { PlateExport } from "./plate-export";
 import { RouteMap } from "./route-map";
 import {
   OWNER_THUMBS,
@@ -89,6 +90,10 @@ export function AdventureView({
     [attachedList, importedList],
   );
   const [selected, setSelected] = useState<number | null>(null);
+  // One name for the cover and the exported image (phase 14 CP3): the
+  // decision's, or the date fallback the confirm-all sweep also uses.
+  const name = adventureName(journey, candidate, shared);
+  const truncation = shared ?? candidate;
 
   return (
     <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(24rem,32rem)_minmax(0,1fr)]">
@@ -98,6 +103,7 @@ export function AdventureView({
           candidate={candidate}
           plate={plate}
           shared={shared}
+          name={name}
         />
         {shareControls}
         <DayNarrative
@@ -160,7 +166,7 @@ export function AdventureView({
               className="h-[26rem] w-full lg:h-[min(76vh,52rem)]"
             />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border border-t-0 border-ink bg-paper px-4 py-2.5 [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 border border-t-0 border-ink bg-paper px-4 py-2.5 [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
             <span className="font-display text-[11.5px] font-semibold tracking-[0.22em]">
               {selected !== null
                 ? `DAY ${selected} HIGHLIGHTED`
@@ -181,6 +187,19 @@ export function AdventureView({
                 <span className="font-semibold tracking-wide">Stop</span>
               </span>
             )}
+            {/* The image export (phase 14 CP3) — a second margin row, on
+                the owner's page and the shared view alike. It renders what
+                this plate shows: a highlighted day exports highlighted. */}
+            <PlateExport
+              journey={journey}
+              days={days}
+              selectedDay={selected}
+              styleUrl={styleUrl}
+              name={name}
+              plate={plate}
+              startTruncated={truncation?.start_truncated ?? false}
+              endTruncated={truncation?.end_truncated ?? false}
+            />
           </div>
         </aside>
       )}
@@ -197,11 +216,13 @@ function Cover({
   candidate,
   plate,
   shared,
+  name,
 }: {
   journey: Journey;
   candidate?: Candidate;
   plate: number | null;
   shared?: SharedCover;
+  name: string;
 }) {
   // The day count is the SERVED figure (phase 14 CP2): the same rule the
   // narrative's sliceDays applies, computed in Go and printed by the CLI.
@@ -210,11 +231,6 @@ function Cover({
   const dayCount = journey.summary.civil_days;
   const decision = candidate?.decision;
   const confirmed = decision?.action === "confirmed";
-  const name = shared
-    ? shared.name
-    : confirmed && decision.name
-      ? decision.name
-      : `Journey of ${journey.window_start.slice(0, 10)}`;
   // The shared eyebrow names what a stranger is looking at; the plate
   // number is the owner's atlas register and stays theirs.
   const eyebrow = shared
@@ -517,24 +533,17 @@ function shortDate(iso: string): string {
   return `${d} ${SHORT_MONTHS[m - 1]} ${y}`;
 }
 
-// Plate numbers are roman numerals in date order — atlas convention. Tens of
-// adventures at most (the charter's scale), so the compact form suffices.
-function roman(n: number): string {
-  const table: [number, string][] = [
-    [40, "XL"],
-    [10, "X"],
-    [9, "IX"],
-    [5, "V"],
-    [4, "IV"],
-    [1, "I"],
-  ];
-  let out = "";
-  let rest = n;
-  for (const [value, glyph] of table) {
-    while (rest >= value) {
-      out += glyph;
-      rest -= value;
-    }
-  }
-  return out;
+/** The cover's name: the decision's own, else the date fallback — the same
+ * string the confirm-all sweep stores, so an unnamed adventure reads the
+ * same everywhere. The shared view carries its name ready-made. */
+function adventureName(
+  journey: Journey,
+  candidate: Candidate | undefined,
+  shared: SharedCover | undefined,
+): string {
+  if (shared) return shared.name;
+  const decision = candidate?.decision;
+  return decision?.action === "confirmed" && decision.name
+    ? decision.name
+    : `Journey of ${journey.window_start.slice(0, 10)}`;
 }

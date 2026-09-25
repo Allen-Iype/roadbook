@@ -1,14 +1,10 @@
 // The leg-kind legend as a permanent fixture (DESIGN §6, treatment T3), with
-// the fixed wording used everywhere a legend appears. The samples draw the
+// the fixed wording used everywhere a legend appears (lib/legend.ts — shared
+// with the exported image's margin since phase 14 CP3). The samples draw the
 // actual channel: observed solid, routed solid over its casing, unknown
 // dashed, air round-dotted — so the legend teaches the map's language, not
 // just its colors.
-const ENTRIES = [
-  { key: "observed", label: "Observed", desc: "recorded fixes" },
-  { key: "routed", label: "Routed", desc: "inferred along roads" },
-  { key: "unknown", label: "Unknown", desc: "straight line, nothing inferred" },
-  { key: "air", label: "Air", desc: "great-circle arc" },
-] as const;
+import { LEGEND_ENTRIES as ENTRIES } from "@/lib/legend";
 
 // Class names are spelled out per kind: Tailwind extracts utilities from
 // source text statically, so a constructed `stroke-${kind}` would silently

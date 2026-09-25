@@ -86,11 +86,12 @@ export function ShareLinks({
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
         <h2 className="font-display text-base font-semibold">Sharing</h2>
         {/* Negative-margin padding grows the control to a 44px target
-            without moving its text (the site-wide pattern). */}
+            without moving its text (the site-wide pattern; py-3.5 because
+            text-xs is a 16px line — py-3 measured 42px, phase 14 CP3). */}
         <button
           type="button"
           onClick={open}
-          className="-my-3 cursor-pointer border border-ink px-3 py-3 text-xs font-semibold tracking-[0.06em] text-ink hover:bg-paper-2"
+          className="-my-3.5 cursor-pointer border border-ink px-3 py-3.5 text-xs font-semibold tracking-[0.06em] text-ink hover:bg-paper-2"
         >
           Create a share link
         </button>
