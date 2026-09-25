@@ -26,6 +26,12 @@ informal 400 KB note at full size (the phase-14 decision log records the
 sizes). Reproduction: the control on `/adventure/<id>` of the demo stack,
 then `sips -Z 1200`.
 
+Phase 14 CP4 adds the second format: `phase14-cp4-overlay-<id>.png` is the
+demo adventure's "Download as overlay" output at full size (1080×1920,
+transparent ground — small files, under the note). Viewers show it on
+white or a checkerboard; the composite it was judged on lives in the phase
+14 decision log's description, not in git.
+
 To compare one page over time, list it across sets:
 `ls docs/screens/*-home*.png`.
 

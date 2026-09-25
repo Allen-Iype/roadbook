@@ -332,3 +332,59 @@ what the brief's drafting settled; the gate's own entry follows the review.
 - **Would change our mind:** nothing about the scope; the overlay's own
   design questions (figures shown, wordmark treatment, aspect ratios for
   story formats) are decided at its checkpoint, brief addendum first.
+
+## 2026-09-25 — CP4: the overlay's shape (addendum recommendations taken)
+
+- **Chosen:** BRIEF §9 as written — figures = the plate's margin minus
+  the licence line (provenance bar and split included); one format, story
+  portrait 1080×1920; transparent ground with a translucent paper halo
+  under the route and paper casing around every glyph; a highlighted day
+  exports highlighted. Implementation on CP3's seams: the pure builder
+  gains a format parameter, the projection is the route thumbnail's
+  (lifted out of `routeThumb` into an exported function), the drawing
+  input is the SAME `routeFeatures` collection both maps draw, and the
+  painter grows three ops (path, point, wrapped row) and a halo flag on
+  text. No offscreen map, no network, nothing a tile server can block.
+- **Rejected:** Strava's three-big-numbers treatment (an uncaveated
+  total); a paper panel behind the figures (the card — recorded fallback
+  for the figure block only); square and landscape formats now; a scale
+  bar over a photo.
+- **Would change our mind:** the maintainer's eyeball of the overlay on a
+  real photo — if halos fail there, the figure-block panel; if the story
+  band clips the figures, the row positions move (constants, not
+  structure).
+
+## 2026-09-25 — CP4 built: what the composite showed
+
+- **Chosen:** the overlay was judged over two synthetic grounds — a dark,
+  striped, mottled one and a bright one — before any real photo: on the
+  dark ground the translucent paper halo lifts the dotted air arc and the
+  thin dashed unknown off the background, and the paper casing keeps
+  every figure legible; on the bright ground the inks read on their own
+  and the halo all but vanishes, as it should. Two changes after looking:
+  the dateline set at 11.5 px (a 66-character budget — the demo's two
+  regions were one character over at 12 px and truncated to "+ 1 more");
+  the casing thinned to max(2.4, 0.18 × size) so small sans text does not
+  fill its counters. The legend wraps to two lines plus the Fix/Stop line
+  at the overlay's width, full wording kept.
+- **Rejected:** the figure-block panel (the recorded fallback) — not
+  needed on either ground; white text à la Strava (the inks and ink are
+  the identity, and white on a bright photo is the same failure in the
+  other direction).
+- **Would change our mind:** the maintainer's overlay on a real photo at
+  the STOP — the panel stays one op away.
+
+## 2026-09-25 — CP4: the download walks carry their own e2e budget
+
+- **Chosen:** the two download walks in `plate-image.spec.ts` set a
+  120 s test timeout. A plate export loads the basemap once more at the
+  export size, and the shared-view walk mints, opens, renders, and revokes
+  on top of that; on a freshly restarted stack the whole walk passed the
+  suite's 30 s per-test budget twice (once as the share spec's Revoke
+  waiting on a pending transition, once as this spec's) while the
+  download wait alone already allowed 90 s — the two limits disagreed.
+- **Rejected:** raising the suite-wide timeout (the layout specs are
+  sub-second and a 30 s red is information there); retries (they hide
+  the first-run-after-rebuild pattern the phase 13 log already records).
+- **Would change our mind:** the walks failing under the new budget —
+  that would be a real regression, not a budget.

@@ -470,3 +470,70 @@ the image should make).
 - If invalid geometry surfaces at states load (an upstream ring that
   `ST_Contains` rejects), `ST_MakeValid` at insert is the fix, recorded
   with the feature that needed it.
+
+## 9. CP4 addendum — the overlay (2026-09-25)
+
+Added at the CP3 review on the maintainer's decision that the product
+offers both image formats. The plate (§4) is a picture: basemap, route,
+margin, licence line. The overlay is the other object — what Strava's
+export actually is: a transparent PNG carrying the route, a few figures,
+and the wordmark, made to be dropped onto the person's own photo or story.
+Nothing here changes CP3's plate; the overlay is a second format of the
+same pure builder, drawn tile-free.
+
+**Concept: an image with no ground of its own.** The plate is legible
+because the margin is paper and the map is a tuned basemap. The overlay
+lands on a photograph nobody has seen — dark, bright, busy — so every mark
+must bring its own ground. Two techniques, both borrowed from map labelling:
+a *halo* (a soft translucent paper glow under the route, wide enough to
+lift thin inks off any background) and *text casing* (a paper stroke around
+each glyph before the ink fill — the printed-label look, not a card). Both
+are ground, not encoding: the leg kinds keep exactly their plate channels
+(observed solid and widest, routed solid over its crisp opaque paper casing,
+unknown dashed, air round-dotted), and routed's casing still reads as a
+casing on top of the soft halo because the halo is translucent and wider.
+
+**The choices, with the recommendation taken as the leaning (Gate-1
+precedent):**
+
+- **A. Figures.** *(1) The plate's margin minus the licence line —
+  recommended.* Name; the dateline (dates · countries · regions "+ n more"
+  · day count); the headline distance with its provenance bar and split
+  line; the legend in the fixed wording; the plate label ("PLATE III ·
+  FULL ROUTE" / "DAY 2 HIGHLIGHTED") as a small line above the name; the
+  wordmark. Every string is one the plate already prints from served
+  values, so the CLI reproduces each. The provenance bar and split stay
+  because DESIGN §6 attaches them to every headline distance — a total
+  never appears without its measurement share, least of all on a stranger's
+  photo. *(2) Strava's three big numbers* — rejected: a bare "700 km" is
+  the confident undifferentiated figure. *(3) The summary block too* —
+  rejected as before: rows the image cannot caveat.
+- **B. Format.** *(1) One: story portrait, 1080×1920 (a 540×960 canvas
+  at pixel ratio 2) — recommended.* The use case named at review is the
+  story; a portrait canvas gives the route the upper two-thirds and the
+  figures the lower third, clear of the story UI's top and bottom bands.
+  *(2) Square 1080×1080 as well* — deferred, one constant away in the
+  parameterised builder, added when someone posts to a feed rather than a
+  story. *(3) Landscape like the plate* — rejected: it is the plate.
+- **C. Ground.** *(1) Fully transparent with halo and casing —
+  recommended.* The atlas register survives on any photo; nothing looks like
+  a card. *(2) A translucent paper panel behind the figures* — rejected: the
+  fitness-app card the plate identity is not (§4); if halos prove
+  illegible on real photos, this is the recorded fallback, applied to the
+  figure block only, never under the route.
+- **D. Highlight.** A highlighted day exports highlighted, as the plate
+  does: the rest of the route at the plate's dim opacity (alpha on a
+  transparent ground), the label saying so.
+
+**Not on the overlay, by construction:** the basemap (so no tile credit is
+owed — there is nothing to credit), the scale bar (no ground to measure
+against — a bar over a photo would assert a scale the photo does not
+have), photos (as on the plate), the home-relative figure (§3E).
+
+**Verification.** The op-list tests extend to the overlay: legend
+unconditional in the fixed wording; no attribution op and no scale op ever;
+figures identical to the plate's for the same journey; every path carries
+its kind and the projection keeps everything inside the route box. e2e:
+the overlay download is 1080×1920, its corners are fully transparent, and
+it contains opaque route-ink and text pixels. The projection is the route
+thumbnail's, lifted into an exported function so the two cannot differ.

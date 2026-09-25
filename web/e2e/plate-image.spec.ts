@@ -101,16 +101,23 @@ async function downloadPlate(page: Page): Promise<Sample> {
   return sample;
 }
 
+// A plate export loads the basemap once more at the export size; on a
+// freshly restarted stack the whole walk can pass the suite's 30 s
+// per-test budget (seen at CP4), so the two download walks carry their own.
+const DOWNLOAD_WALK_MS = 120_000;
+
 test("owner page: Download as image yields a 2400×1600 plate", async ({ page }) => {
   test.skip(viewportWidth(page) !== 1280, "runs once, at the desktop project");
+  test.setTimeout(DOWNLOAD_WALK_MS);
   await gotoAdventure(page, "first");
   // The control states, before anything renders, what the image carries.
-  await expect(page.getByText("Photos are not drawn.")).toBeVisible();
+  await expect(page.getByText("Photos are not drawn in either.")).toBeVisible();
   await downloadPlate(page);
 });
 
 test("shared view: the same control, signed out", async ({ page, browser }) => {
   test.skip(viewportWidth(page) !== 1280, "runs once, at the desktop project");
+  test.setTimeout(DOWNLOAD_WALK_MS);
   await gotoAdventure(page, "last");
 
   const dialog = page.locator('dialog[aria-label="Share this adventure"]');
@@ -143,6 +150,55 @@ test("shared view: the same control, signed out", async ({ page, browser }) => {
       .toBe(true);
     await stranger.close();
   }
+});
+
+// The overlay (CP4, BRIEF §9): transparent story portrait, drawn with no
+// map at all. Sampled the same way — corners fully transparent, opaque
+// route ink and text somewhere, and no dependence on the tile server: the
+// walk blocks every basemap request first, and the overlay still downloads.
+test("overlay: a transparent 1080×1920 with route and figures, needing no basemap", async ({ page }) => {
+  test.skip(viewportWidth(page) !== 1280, "runs once, at the desktop project");
+  await page.route("**/tiles.openfreemap.org/**", (route) => route.abort("failed"));
+  await gotoAdventure(page, "first");
+  await expect(page.getByText("Photos are not drawn in either.")).toBeVisible();
+  const status = page.getByTestId("plate-export-status").filter({ hasText: /./ });
+  const downloadPromise = page.waitForEvent("download", { timeout: 60_000 });
+  await clickUntil(page.getByRole("button", { name: "Download as overlay" }), status);
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^roadbook-overlay-[a-z0-9-]+\.png$/);
+  await expect(status).toContainText(`Downloaded ${download.suggestedFilename()}`);
+  const file = (await download.path())!;
+  const b64 = readFileSync(file).toString("base64");
+  const sample = await page.evaluate(async (data) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${data}`;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const ctx = c.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    const alphaAt = (x: number, y: number) => ctx.getImageData(x, y, 1, 1).data[3];
+    const all = ctx.getImageData(0, 0, c.width, c.height).data;
+    let opaque = 0;
+    let observedInk = 0;
+    for (let i = 0; i < all.length; i += 4) {
+      if (all[i + 3] === 255) opaque++;
+      // the observed ink #a81e22, within a tolerance
+      if (all[i + 3] > 200 && Math.abs(all[i] - 0xa8) < 12 && Math.abs(all[i + 1] - 0x1e) < 12 && Math.abs(all[i + 2] - 0x22) < 12) observedInk++;
+    }
+    return {
+      width: c.width,
+      height: c.height,
+      corners: [alphaAt(0, 0), alphaAt(c.width - 1, 0), alphaAt(0, c.height - 1), alphaAt(c.width - 1, c.height - 1)],
+      opaqueFraction: opaque / (all.length / 4),
+      observedInk,
+    };
+  }, b64);
+  expect([sample.width, sample.height]).toEqual([1080, 1920]);
+  expect(sample.corners, "the ground is transparent").toEqual([0, 0, 0, 0]);
+  expect(sample.opaqueFraction, "mostly transparent").toBeLessThan(0.5);
+  expect(sample.observedInk, "the observed ink is drawn").toBeGreaterThan(500);
 });
 
 test("a basemap the browser cannot read is a worded error, not a silent nothing", async ({ page }) => {

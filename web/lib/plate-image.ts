@@ -21,9 +21,16 @@
 // PLATE_SCALE for the 2400×1600 file. Positions are fixed by row, not
 // measured: the painter measures text where flow matters (rows) and
 // shrinks the one line that can overflow (the name).
+//
+// Two formats since CP4 (BRIEF §9): the PLATE, a picture with a basemap
+// slot and a licence line; and the OVERLAY, a transparent story-portrait
+// image with the route drawn tile-free from the same features both maps
+// draw, the same figures, and its own ground under every mark (a halo
+// under the route, paper casing around every glyph). `layoutFor` picks.
 import { fmtDateRange } from "@/lib/slice-days";
 import { roman } from "@/lib/format";
 import { LEGEND_ENTRIES, type LegendKind } from "@/lib/legend";
+import { fitProjection } from "@/lib/route-thumb";
 import { INK } from "@/lib/tokens";
 import type { components } from "@/lib/api/schema";
 
@@ -79,6 +86,18 @@ export const FRAME_OFFSET = 3;
 /** The scale bar's longest allowed length, logical px. */
 export const SCALE_MAX_PX = 140;
 
+export type PlateFormat = "plate" | "overlay";
+
+// The overlay: story portrait, 1080×1920 at pixel ratio 2 (BRIEF §9B). The
+// route takes the upper part of the canvas; the figures the lower part,
+// clear of a story UI's top and bottom bands.
+export const OVERLAY_W = 540;
+export const OVERLAY_H = 960;
+/** Where the route is fitted on the overlay (pad inside it on every side). */
+export const ROUTE_BOX = { x: 40, y: 110, w: 460, h: 440, pad: 24 } as const;
+/** Everything outside a highlighted day at this alpha — the plate's dim. */
+export const OVERLAY_DIM = 0.15;
+
 // Grounds and inks beyond the leg inks — the DOM reads them from the theme
 // (globals.css); the canvas cannot, so they are named here once, matching.
 export const PLATE_COLORS = {
@@ -98,6 +117,8 @@ export type TextStyle = {
   color: string;
   /** Letter-spacing in em (the tracked capitals of the plate label). */
   tracking?: number;
+  /** Paper casing around the glyphs — the overlay's own ground for text. */
+  halo?: boolean;
 };
 
 export type RowItem =
@@ -119,7 +140,18 @@ export type Op =
       /** The painter shrinks the size until the text fits this width. */
       maxWidth?: number;
     } & TextStyle)
-  | { op: "row"; x: number; y: number; items: RowItem[] }
+  | {
+      op: "row";
+      x: number;
+      y: number;
+      items: RowItem[];
+      /** When set, items flow onto further lines within maxWidth. */
+      wrap?: { maxWidth: number; lineHeight: number };
+    }
+  // The overlay's route: one path per leg in its kind, projected into the
+  // route box; `alpha` is 1 or the dim for a highlighted day.
+  | { op: "path"; kind: LegendKind; points: [number, number][]; alpha: number }
+  | { op: "point"; kind: "fix" | "stop"; x: number; y: number; alpha: number }
   | {
       op: "bar";
       x: number;
@@ -522,4 +554,254 @@ export function layoutStrings(layout: PlateLayout): string[] {
       for (const it of op.items) if (it.item === "text") out.push(it.text);
   }
   return out;
+}
+
+// ---- the overlay (CP4) ----
+
+// The kind a drawn feature carries, in legend terms. Mirrors the map
+// layers' filters: a gap that is neither air nor road is unknown.
+function featureKind(props: GeoJSON.GeoJsonProperties): LegendKind | null {
+  const kind = props?.kind;
+  if (kind === "observed") return "observed";
+  if (kind !== "gap") return null;
+  const gap = props?.gap_kind;
+  return gap === "air" ? "air" : gap === "road" ? "routed" : "unknown";
+}
+
+const PAINT_ORDER: LegendKind[] = ["unknown", "air", "routed", "observed"];
+
+/** The overlay's op-list. `features` is the SAME collection the maps draw
+ * (lib/route-layers routeFeatures) — legs stamped with their day, fix
+ * points, stops with their days — so the overlay cannot draw a route the
+ * plate does not. */
+export function overlayLayout(
+  input: Omit<PlateInput, "attribution" | "mapView">,
+  features: GeoJSON.FeatureCollection,
+): PlateLayout {
+  const { journey: j } = input;
+  const C = PLATE_COLORS;
+  const left = 40;
+  const right = OVERLAY_W - 40;
+  const width = right - left;
+  const ops: Op[] = [];
+  const sel = input.selectedDay;
+
+  // The route, projected by the thumbnail's own projection into the box.
+  const coords: [number, number][] = [];
+  for (const f of features.features) {
+    if (f.geometry.type === "LineString")
+      for (const c of f.geometry.coordinates) coords.push([c[0], c[1]]);
+    else if (f.geometry.type === "Point")
+      coords.push([f.geometry.coordinates[0], f.geometry.coordinates[1]]);
+  }
+  if (coords.length > 0) {
+    const project = fitProjection(coords, ROUTE_BOX.w, ROUTE_BOX.h, ROUTE_BOX.pad);
+    const px = (c: GeoJSON.Position): [number, number] => {
+      const [x, y] = project(c[0], c[1]);
+      return [ROUTE_BOX.x + x, ROUTE_BOX.y + y];
+    };
+    const legAlpha = (day: unknown) =>
+      sel === null || day === sel ? 1 : OVERLAY_DIM;
+    const paths: Extract<Op, { op: "path" }>[] = [];
+    const points: Extract<Op, { op: "point" }>[] = [];
+    for (const f of features.features) {
+      const props = f.properties ?? {};
+      if (f.geometry.type === "LineString") {
+        const kind = featureKind(props);
+        if (!kind || f.geometry.coordinates.length < 2) continue;
+        paths.push({
+          op: "path",
+          kind,
+          points: f.geometry.coordinates.map(px),
+          alpha: legAlpha(props.day),
+        });
+      } else if (f.geometry.type === "Point") {
+        const [x, y] = px(f.geometry.coordinates);
+        if (props.kind === "fix")
+          points.push({ op: "point", kind: "fix", x, y, alpha: legAlpha(props.day) });
+        else if (props.kind === "stop") {
+          const days = Array.isArray(props.days) ? (props.days as number[]) : [];
+          points.push({
+            op: "point",
+            kind: "stop",
+            x,
+            y,
+            alpha: sel === null || days.includes(sel) ? 1 : OVERLAY_DIM,
+          });
+        }
+      }
+    }
+    // Paint order as on the maps: unknown under everything, observed on
+    // top; fixes then stops above the lines.
+    paths.sort((a, b) => PAINT_ORDER.indexOf(a.kind) - PAINT_ORDER.indexOf(b.kind));
+    ops.push(...paths, ...points.filter((p) => p.kind === "fix"), ...points.filter((p) => p.kind === "stop"));
+  }
+
+  // The figures, in the plate's order, every glyph with its paper casing.
+  let y = ROUTE_BOX.y + ROUTE_BOX.h + 64;
+  ops.push({
+    op: "text",
+    x: left,
+    y,
+    text: plateLabel(input.plate, sel),
+    align: "left",
+    role: "display",
+    size: 11,
+    weight: 600,
+    color: C.ink,
+    tracking: 0.22,
+    halo: true,
+  });
+  y += 36;
+  ops.push({
+    op: "text",
+    x: left,
+    y,
+    text: input.name,
+    align: "left",
+    role: "display",
+    size: 32,
+    weight: 600,
+    color: C.ink,
+    maxWidth: width,
+    halo: true,
+  });
+  y += 24;
+  // 11.5 px mono over 460 px is a 66-character budget — the demo's two
+  // regions fit; at 12 px they were one character over and truncated.
+  const datelineSize = 11.5;
+  ops.push({
+    op: "text",
+    x: left,
+    y,
+    text: datelineText(j, Math.floor(width / (datelineSize * MONO_ADVANCE_EM))),
+    align: "left",
+    role: "mono",
+    size: datelineSize,
+    weight: 500,
+    color: C.ink,
+    halo: true,
+  });
+  const trunc = truncationText(input.startTruncated, input.endTruncated);
+  if (trunc) {
+    y += 20;
+    ops.push({
+      op: "row",
+      x: left,
+      y,
+      wrap: { maxWidth: width, lineHeight: 16 },
+      items: [
+        { item: "text", text: "⚑", role: "sans", size: 11.5, weight: 700, color: C.flag, halo: true },
+        { item: "space", px: 5 },
+        ...trunc.split(" ").flatMap((w, i): RowItem[] => [
+          ...(i > 0 ? [{ item: "space" as const, px: 3.5 }] : []),
+          { item: "text", text: w, role: "sans", size: 11.5, weight: 400, color: C.ink, halo: true },
+        ]),
+      ],
+    });
+    y += 4;
+  }
+  const pct = j.total_km > 0 ? Math.round((j.observed_km / j.total_km) * 100) : 0;
+  y += 38;
+  ops.push({
+    op: "row",
+    x: left,
+    y,
+    items: [
+      { item: "text", text: `${j.total_km.toFixed(0)} km`, role: "display", size: 26, weight: 600, color: C.ink, halo: true },
+      { item: "space", px: 8 },
+      { item: "text", text: `drawn — ${pct}% of it measured`, role: "sans", size: 12.5, weight: 400, color: C.ink, halo: true },
+    ],
+  });
+  y += 9;
+  const total = j.observed_km + j.routed_km + j.unknown_km + j.air_km;
+  ops.push({
+    op: "bar",
+    x: left,
+    y,
+    w: width,
+    h: 3,
+    track: C.rule,
+    segments:
+      total > 0
+        ? (
+            [
+              ["observed", j.observed_km],
+              ["routed", j.routed_km],
+              ["unknown", j.unknown_km],
+              ["air", j.air_km],
+            ] as [LegendKind, number][]
+          )
+            .map(([kind, km]) => ({ kind, fraction: km / total }))
+            .filter((s) => s.fraction > 0.002)
+        : [],
+  });
+  y += 18;
+  ops.push({
+    op: "text",
+    x: left,
+    y,
+    text:
+      `observed ${j.observed_km.toFixed(1)} km · routed ${j.routed_km.toFixed(1)} km · ` +
+      `unknown ${j.unknown_km.toFixed(1)} km · air ${j.air_km.toFixed(1)} km`,
+    align: "left",
+    role: "mono",
+    size: 10.5,
+    weight: 500,
+    color: C.ink,
+    halo: true,
+  });
+
+  // The legend, unconditional, full wording, wrapping to the width.
+  y += 30;
+  const legend: RowItem[] = [];
+  for (const e of LEGEND_ENTRIES) {
+    if (legend.length > 0) legend.push({ item: "space", px: 18 });
+    legend.push(
+      { item: "sample", kind: e.key },
+      { item: "space", px: 7 },
+      { item: "text", text: e.label, role: "sans", size: 11.5, weight: 700, color: C.ink, halo: true },
+      { item: "space", px: 4 },
+      { item: "text", text: `— ${e.desc}`, role: "sans", size: 11.5, weight: 400, color: C.ink, halo: true },
+    );
+  }
+  if (hasFix(j)) {
+    legend.push(
+      { item: "space", px: 18 },
+      { item: "dot", kind: "fix" },
+      { item: "space", px: 7 },
+      { item: "text", text: "Fix", role: "sans", size: 11.5, weight: 700, color: C.ink, halo: true },
+    );
+  }
+  if (hasStop(j)) {
+    legend.push(
+      { item: "space", px: 18 },
+      { item: "dot", kind: "stop" },
+      { item: "space", px: 7 },
+      { item: "text", text: "Stop", role: "sans", size: 11.5, weight: 700, color: C.ink, halo: true },
+    );
+  }
+  ops.push({ op: "row", x: left, y, items: legend, wrap: { maxWidth: width, lineHeight: 22 } });
+
+  // The foot: the wordmark, and nothing to credit — there is no basemap.
+  ops.push({
+    op: "text",
+    x: right,
+    y: OVERLAY_H - 56,
+    text: "ROADBOOK",
+    align: "right",
+    role: "display",
+    size: 12,
+    weight: 600,
+    color: C.ink,
+    tracking: 0.28,
+    halo: true,
+  });
+
+  return { width: OVERLAY_W, height: OVERLAY_H, scale: PLATE_SCALE, ops };
+}
+
+/** roadbook-overlay-<slug>.png */
+export function overlayFilename(name: string): string {
+  return `roadbook-overlay-${plateSlug(name)}.png`;
 }

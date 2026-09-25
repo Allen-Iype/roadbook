@@ -50,6 +50,39 @@ function lineOf(leg: Leg): [number, number][] {
   return leg.points.map(lngLat);
 }
 
+/** A [lon, lat] → [x, y] projection fitting every given coordinate inside
+ * a width×height box with `pad` clear on each side, aspect preserved,
+ * centred. Equirectangular with the longitude axis compressed by
+ * cos(mid-lat) — the same first-order flattening every small-extent web
+ * map effectively shows, so the shape matches what the map shows. Y is
+ * negated: canvas y grows downward, latitude grows upward. Shared by the
+ * thumbnail and the transparent overlay (phase 14 CP4), so the two cannot
+ * project differently. A degenerate input (one point) draws centred. */
+export function fitProjection(
+  coords: [number, number][],
+  width: number,
+  height: number,
+  pad: number,
+): (lon: number, lat: number) => [number, number] {
+  let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+  for (const [lon, lat] of coords) {
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+  }
+  const k = Math.cos((((minLat + maxLat) / 2) * Math.PI) / 180);
+  const spanX = (maxLon - minLon) * k;
+  const spanY = maxLat - minLat;
+  const scale =
+    spanX === 0 && spanY === 0
+      ? 1
+      : Math.min((width - 2 * pad) / (spanX || 1e-9), (height - 2 * pad) / (spanY || 1e-9));
+  const offX = (width - spanX * scale) / 2;
+  const offY = (height - spanY * scale) / 2;
+  return (lon, lat) => [offX + (lon - minLon) * k * scale, offY + (maxLat - lat) * scale];
+}
+
 export function routeThumb(
   legs: Leg[],
   width = 224,
@@ -61,34 +94,12 @@ export function routeThumb(
     .filter((l) => l.coords.length >= 2);
   if (lines.length === 0) return null;
 
-  // Equirectangular with the longitude axis compressed by cos(mid-lat) —
-  // the same first-order flattening every small-extent web map effectively
-  // shows, so the thumbnail's shape matches what the map will show. Y is
-  // negated: SVG y grows downward, latitude grows upward.
-  let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
-  for (const l of lines)
-    for (const [lon, lat] of l.coords) {
-      if (lat < minLat) minLat = lat;
-      if (lat > maxLat) maxLat = lat;
-      if (lon < minLon) minLon = lon;
-      if (lon > maxLon) maxLon = lon;
-    }
-  const k = Math.cos((((minLat + maxLat) / 2) * Math.PI) / 180);
-  const spanX = (maxLon - minLon) * k;
-  const spanY = maxLat - minLat;
-  // A journey is never a point, but a degenerate input must not divide by
-  // zero — it draws centered instead.
-  const scale =
-    spanX === 0 && spanY === 0
-      ? 1
-      : Math.min((width - 2 * pad) / (spanX || 1e-9), (height - 2 * pad) / (spanY || 1e-9));
-  const offX = (width - spanX * scale) / 2;
-  const offY = (height - spanY * scale) / 2;
-
-  const px = (lon: number, lat: number): [number, number] => [
-    offX + (lon - minLon) * k * scale,
-    offY + (maxLat - lat) * scale,
-  ];
+  const px = fitProjection(
+    lines.flatMap((l) => l.coords),
+    width,
+    height,
+    pad,
+  );
 
   const paths = lines
     .map(({ kind, coords }) => ({

@@ -23,6 +23,8 @@ import {
   MAP_RECT,
   PLATE_SCALE,
   joinAttributions,
+  overlayFilename,
+  overlayLayout,
   plateFilename,
   plateLayout,
   type FontRole,
@@ -239,6 +241,48 @@ export async function exportPlateImage(
   }
 }
 
+/** Renders the transparent overlay (CP4, BRIEF §9) and returns the PNG.
+ * Tile-free: no map instance, no network — the route is projected from
+ * the same features the maps draw. Throws PlateExportError only. */
+export async function exportOverlayImage(
+  spec: ExportSpec,
+): Promise<{ blob: Blob; filename: string }> {
+  const data = routeFeatures(spec.journey, spec.days);
+  if (!bboxOf(data.features)) {
+    throw new PlateExportError(
+      "encode",
+      "This journey has nothing drawn, so there is no route to export.",
+    );
+  }
+  const layout = overlayLayout(
+    {
+      journey: spec.journey,
+      name: spec.name,
+      plate: spec.plate,
+      startTruncated: spec.startTruncated,
+      endTruncated: spec.endTruncated,
+      selectedDay: spec.selectedDay,
+    },
+    data,
+  );
+  const fonts = await plateFonts(layout);
+  const canvas = document.createElement("canvas");
+  canvas.width = layout.width * layout.scale;
+  canvas.height = layout.height * layout.scale;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new PlateExportError(
+      "encode",
+      "This browser could not create a drawing surface for the export. Nothing was downloaded.",
+    );
+  }
+  ctx.scale(layout.scale, layout.scale);
+  // No fill op in the overlay's list: the ground stays transparent.
+  paint(ctx, layout, fonts, null);
+  const blob = await toBlob(canvas);
+  return { blob, filename: overlayFilename(spec.name) };
+}
+
 /** Hands the blob to the browser as a download. */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
@@ -371,17 +415,86 @@ function paint(
   ctx: CanvasRenderingContext2D,
   layout: PlateLayout,
   fonts: FontFamilies,
-  mapCanvas: HTMLCanvasElement,
+  mapCanvas: HTMLCanvasElement | null,
 ) {
   ctx.textBaseline = "alphabetic";
+  // The overlay's route halo: one translucent paper pass under EVERY leg
+  // before any ink — the route's own ground on a photo nobody has seen
+  // (BRIEF §9). Ground, not encoding: routed's crisp opaque casing is
+  // painted afterwards, per leg, and still reads as a casing on top.
+  const paths = layout.ops.filter((op): op is Extract<Op, { op: "path" }> => op.op === "path");
+  if (paths.length > 0) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(245,242,232,0.7)";
+    ctx.lineWidth = 11;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    for (const p of paths) {
+      ctx.globalAlpha = p.alpha;
+      strokePolyline(ctx, p.points);
+    }
+    ctx.restore();
+  }
   for (const op of layout.ops) paintOp(ctx, op, fonts, mapCanvas);
+}
+
+function strokePolyline(ctx: CanvasRenderingContext2D, pts: [number, number][]) {
+  ctx.beginPath();
+  pts.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+  ctx.stroke();
+}
+
+// The overlay's line channel per kind, the map layers' numbers (widths in
+// px, MapLibre dash units × width): observed solid 3.5, routed 2.5 over a
+// 5.5 paper casing, unknown 2 dashed [4,6], air 2.2 round-dotted.
+function strokeKind(ctx: CanvasRenderingContext2D, kind: Extract<Op, { op: "path" }>["kind"], pts: [number, number][]) {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  if (kind === "routed") {
+    ctx.strokeStyle = INK.paper;
+    ctx.lineWidth = 5.5;
+    ctx.setLineDash([]);
+    strokePolyline(ctx, pts);
+  }
+  ctx.strokeStyle = INK[kind];
+  ctx.lineWidth = kind === "observed" ? 3.5 : kind === "routed" ? 2.5 : kind === "air" ? 2.2 : 2;
+  ctx.setLineDash(kind === "unknown" ? [4, 6] : kind === "air" ? [0.1, 4.4] : []);
+  strokePolyline(ctx, pts);
+  ctx.setLineDash([]);
+}
+
+// Paper casing around the glyphs — the overlay's ground for text: a wide
+// round-joined paper stroke first, the ink fill on top.
+function fillTextHalo(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  size: number,
+  halo: boolean | undefined,
+  maxWidth?: number,
+) {
+  if (halo) {
+    ctx.save();
+    ctx.strokeStyle = INK.paper;
+    // Proportional to the type size: thick enough to isolate the glyph
+    // from a busy photo, thin enough not to fill small counters.
+    ctx.lineWidth = Math.max(2.4, size * 0.18);
+    ctx.lineJoin = "round";
+    ctx.miterLimit = 2;
+    if (maxWidth !== undefined) ctx.strokeText(text, x, y, maxWidth);
+    else ctx.strokeText(text, x, y);
+    ctx.restore();
+  }
+  if (maxWidth !== undefined) ctx.fillText(text, x, y, maxWidth);
+  else ctx.fillText(text, x, y);
 }
 
 function paintOp(
   ctx: CanvasRenderingContext2D,
   op: Op,
   fonts: FontFamilies,
-  mapCanvas: HTMLCanvasElement,
+  mapCanvas: HTMLCanvasElement | null,
 ) {
   switch (op.op) {
     case "fill":
@@ -390,9 +503,22 @@ function paintOp(
       return;
     case "map":
       // The offscreen canvas is the slot's size at the plate's pixel ratio;
-      // drawn into the slot it lands pixel for pixel.
-      ctx.drawImage(mapCanvas, op.x, op.y, op.w, op.h);
+      // drawn into the slot it lands pixel for pixel. Absent on the overlay.
+      if (mapCanvas) ctx.drawImage(mapCanvas, op.x, op.y, op.w, op.h);
       return;
+    case "path":
+      ctx.save();
+      ctx.globalAlpha = op.alpha;
+      strokeKind(ctx, op.kind, op.points);
+      ctx.restore();
+      return;
+    case "point": {
+      ctx.save();
+      ctx.globalAlpha = op.alpha;
+      paintDot(ctx, op.kind, op.x, op.y);
+      ctx.restore();
+      return;
+    }
     case "frame":
       ctx.strokeStyle = op.color;
       ctx.lineWidth = 1;
@@ -413,23 +539,34 @@ function paintOp(
       // Shrink-to-fit for the one line that can overflow (the name): step
       // the size down until it fits, to a floor, then let maxWidth compress
       // whatever is left.
+      let size = op.size;
       if (op.maxWidth !== undefined) {
-        let size = op.size;
         while (size > 18 && ctx.measureText(op.text).width > op.maxWidth) {
           size -= 1;
           ctx.font = font(fonts, { ...op, size });
         }
-        ctx.fillText(op.text, op.x, op.y, op.maxWidth);
-      } else {
-        ctx.fillText(op.text, op.x, op.y);
       }
+      fillTextHalo(ctx, op.text, op.x, op.y, size, op.halo, op.maxWidth);
       setTracking(ctx, undefined, op.size);
       return;
     }
     case "row": {
+      // Inline flow; with `wrap`, an item that would cross maxWidth starts
+      // the next line (leading spaces are dropped at a line start).
       let x = op.x;
+      let y = op.y;
       ctx.textAlign = "left";
-      for (const it of op.items) x = paintRowItem(ctx, it, x, op.y, fonts);
+      for (const it of op.items) {
+        if (op.wrap) {
+          const w = measureRowItem(ctx, it, fonts);
+          if (x > op.x && x + w > op.x + op.wrap.maxWidth) {
+            x = op.x;
+            y += op.wrap.lineHeight;
+            if (it.item === "space") continue;
+          }
+        }
+        x = paintRowItem(ctx, it, x, y, fonts);
+      }
       return;
     }
     case "bar": {
@@ -484,7 +621,7 @@ function paintRowItem(
       ctx.font = font(fonts, it);
       setTracking(ctx, it.tracking, it.size);
       ctx.fillStyle = it.color;
-      ctx.fillText(it.text, x, y);
+      fillTextHalo(ctx, it.text, x, y, it.size, it.halo);
       const w = ctx.measureText(it.text).width;
       setTracking(ctx, undefined, it.size);
       return x + w;
@@ -517,21 +654,48 @@ function paintRowItem(
     }
     case "dot": {
       const r = it.kind === "fix" ? 4 : 5;
-      const cx = x + r;
-      const cy = y - 4;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = it.kind === "fix" ? INK.observed : INK.ink;
-      ctx.fill();
-      ctx.lineWidth = 1.25;
-      ctx.strokeStyle = INK.paper;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(cx, cy, r + 1, 0, Math.PI * 2);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = it.kind === "fix" ? INK.observed : INK.ink;
-      ctx.stroke();
+      paintDot(ctx, it.kind, x + r, y - 4);
       return x + 2 * r + 2;
     }
   }
+}
+
+/** The width an inline item takes, for wrapping. */
+function measureRowItem(ctx: CanvasRenderingContext2D, it: RowItem, fonts: FontFamilies): number {
+  switch (it.item) {
+    case "space":
+      return it.px;
+    case "sample":
+      return 44;
+    case "dot":
+      return (it.kind === "fix" ? 4 : 5) * 2 + 2;
+    case "text": {
+      ctx.font = font(fonts, it);
+      setTracking(ctx, it.tracking, it.size);
+      const w = ctx.measureText(it.text).width;
+      setTracking(ctx, undefined, it.size);
+      return w;
+    }
+  }
+}
+
+// A fix or stop mark: the map layers' circles — fix in the observed ink
+// at radius 4, stop in ink at radius 5, each with a paper stroke and an
+// outer ring so it reads on any ground. Shared by the legend samples and
+// the overlay's route points.
+function paintDot(ctx: CanvasRenderingContext2D, kind: "fix" | "stop", cx: number, cy: number) {
+  const r = kind === "fix" ? 4 : 5;
+  const ink = kind === "fix" ? INK.observed : INK.ink;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = ink;
+  ctx.fill();
+  ctx.lineWidth = 1.25;
+  ctx.strokeStyle = INK.paper;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 1, 0, Math.PI * 2);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = ink;
+  ctx.stroke();
 }
