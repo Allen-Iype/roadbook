@@ -309,3 +309,26 @@ what the brief's drafting settled; the gate's own entry follows the review.
   record at all (the whole point of the set is to see what the export
   looked like at this checkpoint).
 - **Would change our mind:** nothing; a future format gets the same rule.
+
+## 2026-09-25 — CP3 review: the Strava export is an overlay, not a picture
+
+- **Chosen:** the maintainer noted at review that Strava's downloadable
+  PNG is transparent — route, a few figures, the badge, nothing else — an
+  overlay for the person's own photo or story, which is why it carries no
+  map and no map credit. The plate is the other object: a self-contained
+  picture with basemap and licence line. First recorded as a backlog
+  entry; then, in the same review, the maintainer decided **the product
+  offers both** — so the overlay joins phase 14 as its own checkpoint
+  (CP4) ahead of close (CP5), on the seams CP3 left: the format becomes a
+  parameter of the pure builder, the thumbnail's tile-free SVG is the
+  drawing, the figures are the same served ones. The brief's "other
+  formats are a follow-up on request" clause is what fired: this is the
+  request.
+- **Rejected:** leaving it evidence-gated in the backlog (the
+  maintainer's call, made explicitly); dropping the legend from the
+  transparent variant to match Strava (invariant 8 — four inks over a
+  stranger's photo with no key is the undifferentiated line); a basemap
+  credit on an image with no basemap.
+- **Would change our mind:** nothing about the scope; the overlay's own
+  design questions (figures shown, wordmark treatment, aspect ratios for
+  story formats) are decided at its checkpoint, brief addendum first.

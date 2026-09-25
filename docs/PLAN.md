@@ -393,6 +393,19 @@ none is scheduled:
 - Poster / print view of an adventure — partly absorbed by phase 14's
   "download as image" (the atlas plate as a PNG); a print-sized or paper-format
   poster stays here on appetite
+- ~~Transparent route overlay~~ — **moved into phase 14 as its own checkpoint**
+  at the CP3 review (2026-09-25). Noted there: Strava's downloadable PNG is
+  not a picture but an overlay — transparent background, the route line, a
+  few figures, the badge — made to be dropped onto the person's own photo or
+  story, which is why it carries no map and no map credit. Roadbook's plate is
+  the opposite object, a self-contained picture with basemap and licence line.
+  The maintainer's decision: the product offers both. Shape: the pure layout
+  builder takes the format as a parameter; the route thumbnail's tile-free
+  SVG rendering is the drawing (no basemap, so no tile credit is owed); the
+  figures come from the same served Journey. What does not change: the legend
+  stays on the overlay in its fixed wording (invariant 8 — four inks on a
+  stranger's photo with no key is the undifferentiated line), and the inks
+  keep their non-color channels
 - Adventure replay animation
 - Elevation profile per adventure
 - OSM amenity overlay along a route (fuel, food, hospitals, restrooms) from bundled
@@ -581,6 +594,13 @@ Design brief: `docs/phase-14/BRIEF.md`.
 sharing item split there into a hosted share link (delivered in phase 13) and
 a static export (this phase). States are worldwide or not at all (invariant
 9) — the brief decides where the admin-1 dataset lives.
+
+**Amended at the CP3 review (2026-09-25).** A second image format joins the
+phase: the transparent overlay — route, figures, legend, wordmark on a
+transparent ground, no basemap — for posting over the person's own photo,
+the object Strava's export actually is. The plate (picture) and the overlay
+are both offered; neither replaces the other. Its own checkpoint before
+close.
 
 **Excludes.** Hosting; GPX/GeoJSON export (own backlog entry, same honesty
 rule); poster paper formats; any change to the pure detection/journey core

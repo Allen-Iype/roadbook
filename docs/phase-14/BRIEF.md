@@ -149,6 +149,8 @@ exports highlighted and labelled so. Photos are not drawn (they are DOM
 markers, not map layers; the control's copy says so). One format: 2400×1600
 pixels (a 1200×800 plate at pixel ratio 2), landscape like the on-screen
 plate. Other aspect ratios are a follow-up on request, not a guess.
+*Amended at the CP3 review:* a second format, the transparent overlay,
+joins the phase as CP4 (§7) — the request arrived.
 
 **(c) The states dataset**, wherever §3B puts it, loaded by `roadbook states`
 with the same `-src` / `-if-empty` shape as countries, and the compose
@@ -434,7 +436,20 @@ the image should make).
    "Download as image" on both pages with busy and error states; e2e
    download spec. *Visible: a PNG from the demo, opened, every margin
    element present; the same from a share link, signed out.*
-4. **CP4 — close.** README (image export, summary, the states statement,
+4. **CP4 — the overlay** (amendment at the CP3 review, 2026-09-25, on
+   the maintainer's decision that both formats are offered). A second
+   "download" produces a transparent PNG for posting over the person's own
+   photo — the object Strava's export is: route in the four inks with their
+   non-color channels, a few figures from the served Journey, the legend in
+   its fixed wording (non-negotiable — invariant 8 applies hardest to an
+   image that lands on someone else's picture), the wordmark; no basemap,
+   hence no tile credit. Drawn tile-free from the route thumbnail's SVG
+   rendering (§3A option 3's machinery), so nothing offscreen is needed and
+   nothing can be blocked by a tile server. Format becomes a parameter of
+   the pure layout builder; its op-list tests extend to the overlay. The
+   overlay's own choices — which figures, story aspect ratios, wordmark
+   weight — are settled in a short addendum to this brief before code.
+5. **CP5 — close.** README (image export in both formats, summary, the states statement,
    the CLAUDE.md rule amendment if taken), cold `make test`, e2e vs a demo
    stack, `docs/screens` record where size allows, LOG.md — the phase is
    not complete until the log exists.
