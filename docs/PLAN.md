@@ -595,6 +595,13 @@ sharing item split there into a hosted share link (delivered in phase 13) and
 a static export (this phase). States are worldwide or not at all (invariant
 9) — the brief decides where the admin-1 dataset lives.
 
+*Outcome (2026-09-26).* Complete: BRIEF, DECISIONS, LOG all exist. Regions
+embedded (CP1), the summary on cover, shared view, and CLI (CP2), the
+plate as a 2400×1600 image (CP3), the transparent 1080×1920 overlay (CP4),
+README and close (CP5). Pure core untouched all phase; the image needed no
+contract change. Carried: the overlay on a real photo (maintainer's check),
+square overlay on request, poster formats on appetite.
+
 **Amended at the CP3 review (2026-09-25).** A second image format joins the
 phase: the transparent overlay — route, figures, legend, wordmark on a
 transparent ground, no basemap — for posting over the person's own photo,

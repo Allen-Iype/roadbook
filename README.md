@@ -68,6 +68,20 @@ fetch. An operator with a higher-resolution admin-0 file can replace it any
 time with `docker compose run --rm api roadbook countries -src <file>`;
 the automatic load never overwrites an existing table.
 
+Regions load the same way: the "Suðurland, Austurland" that follows the
+country on a cover is admin-1 attribution — states, provinces, régions,
+whatever a country calls its first subdivision — from Natural Earth's
+1:10m admin-1 file, the only scale that covers the whole world (the
+coarser scales cover a handful of countries, and a region line that
+appears for some journeys and vanishes for others would be a regional
+assumption dressed as a feature). The file ships inside the binary
+verbatim, gzipped, 12 MB — the one named exception to this repository's
+1 MB rule, checksummed against its upstream commit in
+`internal/states/`. Regions are attributed from measured points only,
+never from routed road geometry: inference does not testify to where a
+person was. `roadbook states -src <file>` replaces the table; `-if-empty`
+is what the compose startup runs.
+
 The home page is the life map: one map
 holding every confirmed adventure's route. Nothing is confirmed yet, so it
 points you at the **Candidates** page, where the 3 detected candidates
@@ -82,16 +96,25 @@ countries), newest first, numbered in the order travelled. Click a route on
 the map (or use the List control — everything on
 the map is equally reachable by keyboard) to open the adventure page: a
 cover of honest figures — distance with its measured/inferred composition,
-dates, countries, and any warnings in words — and the journey sliced into
-civil days, each with its fixes, transits, and dwells. Days the record
+dates, countries and regions, any warnings in words, and a summary in the
+traveller's words (time away, time on the move by the source's account,
+stops, places passed through, farthest from home) — and the journey
+sliced into civil days, each with its fixes, transits, and dwells. Days the record
 cannot describe say so: the Westfjords trip's middle day reads "no movement
 observed" rather than inventing one. The Höfn drive renders mostly observed
 legs; the Ísafjörður trip is dominated by honestly unknown gaps (a handful
 of fixes across 455 road-km); the Akureyri weekend draws its two flights as
 arcs, excluded from road-distance validation.
 
+The plate margin under the map offers the adventure as a file, in two
+formats: "Download as image" renders the plate as a 2400×1600 PNG — the
+map with its route, and the margin printed below it; "Download as
+overlay" renders a transparent 1080×1920 PNG of the route and figures
+alone, for dropping onto your own photo or story. See "The plate as a
+file" below for what each carries.
+
 A visual record of these screens, captured from this demo dataset, lives in
-`docs/screens/`.
+`docs/screens/`, including the exported plates and overlays.
 
 Every number above reproduces from the repository:
 
@@ -104,7 +127,18 @@ prints the parse counts (253 visits, 166 activities, 301 path points) and the
 3 candidates with 1 home base and 0 outliers dropped;
 `go run ./testdata/demo/gen` regenerates `testdata/demo/demo.json`
 byte-identically. The regression test for these exact values is
-`internal/detect/demo_test.go`.
+`internal/detect/demo_test.go`. Every figure on an adventure's cover, its
+shared view, and both exported files — the distance and its split, the
+day count, the summary lines, countries and regions — is printed by
+
+```
+docker compose run --rm api roadbook journey -candidate 3
+```
+
+for the running instance (the Akureyri weekend on the demo: 628.6 km
+drawn of which 52.7 observed, 3 civil days, Suðurnes and Norðurland
+eystra, two flights totalling 567.8 km of air). The web layer computes
+no figure of its own; what it shows, the command prints.
 
 ## Run it against your own export
 
@@ -229,6 +263,44 @@ keeps only a fingerprint of it, so the URL is shown once at creation, and
 revoking it (one tap on the same page) makes it stop opening immediately.
 Shared pages carry a `noindex` directive. Nothing else of yours is
 reachable through a link — not the life map, not other adventures.
+
+### The plate as a file
+
+Every confirmed adventure — on the owner's page and on a share link
+alike — can be downloaded in two formats, both rendered in the browser
+from the same figures the page shows and the same route layers the map
+draws, so neither can drift from the plate on screen.
+
+**The image** (`roadbook-plate-<name>.png`, 2400×1600) is the plate as a
+picture: the basemap with the route in its four inks, stops and fixes,
+and the margin below — name, dates, countries and regions, day count,
+the distance with its provenance bar and split, the legend in its fixed
+wording, and the basemap's own credit line. The last two are not
+optional. An image travels without the page that would have explained
+its four inks, so the legend goes with it; and the default basemap is
+OpenFreeMap serving OpenMapTiles over OpenStreetMap data, whose licences
+require the credit to travel with any derived image. That credit is read
+from the loaded map style at export time, never hardcoded — a self-hoster
+whose `ROADBOOK_MAP_STYLE` points elsewhere gets that basemap's own
+credit. The render happens in a second, hidden map at the export's size,
+so the file is the same on a phone and a desktop.
+
+**The overlay** (`roadbook-overlay-<name>.png`, 1080×1920, transparent)
+is what fitness apps' "share" images actually are: the route, the
+figures, the legend, and the wordmark on a transparent ground, made to be
+dropped onto your own photo or story. It draws the route without any map
+tiles — so it owes no basemap credit and needs no network — and brings
+its own ground with it: a translucent paper halo under the route and a
+paper casing around every glyph, so the inks read on a dark photo and a
+bright one alike.
+
+On both: a highlighted day exports highlighted and labelled so; photos
+are not drawn (they are markers on the page, not map layers); the
+distance-from-home figure never appears (it is the one figure that names
+home, and it stays on the owner's cover and in the CLI). A basemap the
+browser cannot read — a tile server without CORS headers, or one that is
+down — fails the image export in words and downloads nothing; the overlay
+does not depend on tiles at all.
 
 ### Deleting your data
 

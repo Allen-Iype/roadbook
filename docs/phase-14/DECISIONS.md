@@ -388,3 +388,19 @@ what the brief's drafting settled; the gate's own entry follows the review.
   the first-run-after-rebuild pattern the phase 13 log already records).
 - **Would change our mind:** the walks failing under the new budget —
   that would be a real regression, not a budget.
+
+## 2026-09-26 — CP5: close
+
+- **Chosen:** README gains the regions paragraph (worldwide admin-1, the
+  named 12 MB exception, measured points only), the summary in the demo
+  walkthrough, and "The plate as a file" — both formats, what each
+  carries, what is never on either, the credit read from the style, the
+  worded failure — with the Akureyri figures cited against `roadbook
+  journey -candidate 3`. LOG.md written with twelve what-broke entries.
+  Cold pass green: Go suite uncached with no skips, vitest 107, e2e 97,
+  tsc and build clean, zero Go diff since CP2.
+- **Rejected:** numbers in the README that the command does not print
+  (invariant 13); a README claim about the overlay on real photos before
+  the maintainer has made that check.
+- **Would change our mind:** nothing; the phase is complete once this
+  set is committed.
