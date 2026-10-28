@@ -90,3 +90,14 @@ rejected, what would change our mind.
   element).
 - **Would change our mind:** nothing about the split; the disclosure's
   copy gets its own diet if a walker opens it and is confused.
+
+## 2026-10-28 — Gate 1 passed
+
+- **Chosen:** BRIEF.md approved as written; all §5 recommendations stand
+  (disclosure for the drawing's account, legend wording to be decided at
+  the CP1 STOP, the `Term` popover control, the folded front door). CP1
+  begins in a fresh session from the brief.
+- **Rejected:** continuing straight into CP1 in the planning session —
+  the brief is the source CP1 builds from, and a cold read of it is the
+  check that it is complete.
+- **Would change our mind:** nothing; a process choice.
