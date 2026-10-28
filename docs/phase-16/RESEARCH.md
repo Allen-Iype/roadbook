@@ -338,3 +338,42 @@ final sort.
   diff; `web/scripts/contrast.mjs` over any new token pair; screenshots
   `docs/screens/phase16-*` from demo data under 1 MB; `copy-count.cjs`
   before and after in the LOG.
+
+## 9. The maintainer's response to the findings (2026-10-28)
+
+Read against §2–§4 as a person who has used the app. Inputs to Stage B and
+the brief, not decisions; where one steers a treatment, it says so.
+
+1. **The front door is confirmed as the biggest hassle**, and the bar is
+   higher than "shorter": even the ten invited testers will not be
+   interested in the next step as it stands. The page has to simplify
+   *and* make a person want to see their own map. Excitement here comes
+   from showing the payoff, not from adjectives (the factual-voice rule
+   holds): the plate first, the person's three steps to their own, the
+   walkthroughs on demand. Both `/welcome` treatments in §6 must open
+   with the payoff; a treatment that opens with instructions is out.
+2. **The adventure page is about the adventure, not the reconstruction.**
+   What a person wants on it: the days, the kilometres driven, the states
+   and countries crossed, the stops — their statistics of their trip. Not
+   the fixes, the measurement caveats, the window. Phase 14's summary
+   block (time away, on the move, stopped, through, farthest) already
+   carries those figures; the cover reorganises around it, and the
+   account of how the route was drawn moves behind a disclosure. This
+   steers the adventure page toward §6's treatment 2 (disclosure); the
+   margin-notes treatment is still mocked, as the cover-only variant, so
+   the review compares rather than assumes. The floor from §5 stands:
+   the legend, the provenance bar and the divergence flag stay visible,
+   because the route on the map is still drawn in four kinds.
+3. **The map pages are fine for now.** The life map, `/adventures` and
+   `/candidates` leave phase 16's scope except where the teaching element
+   (plate number, provenance bar caption) lands on them. Their own
+   improvements go to the next iteration. This narrows §7: the candidate
+   card treatment is dropped from Stage B; the `/candidates` copy items
+   stay as refinements only if cheap.
+4. **The phone user gets equal weight.** Every mockup is phone-first (§6
+   already says so); the legend's descriptions visible at phone width and
+   tap-to-explain teaching are the baseline, not options; the closing walk
+   (§1) is on a phone; the Playwright phone project is the one that must
+   pass first.
+5. **The vocabulary split (§4) is agreed** as written: teach the
+   load-bearing terms, cut the leakage.
