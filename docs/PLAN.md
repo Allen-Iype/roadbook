@@ -338,6 +338,8 @@ none is scheduled:
   travelled"), a glossary reachable from the legend, or a short caption under
   the grid heading; decided by a small brief, not mid-walk. Evidence trigger:
   more than one stranger asking. Owner: the next UI phase.
+  *Absorbed 2026-10-28 into phase 16 (below): the research stage carries
+  the vocabulary inventory and the teaching treatments go to mockup.*
 - Legacy Timeline variants — `Records.json` (E7 integer coordinates, raw samples;
   no visit segments, so it needs stay-point visit synthesis and a home-derivation
   pass) and Semantic History `timelineObjects` (monthly files). Cut from phase 5 at
@@ -642,6 +644,29 @@ cap enforced in the product (`ROADBOOK_USER_CAP`, open Google sign-in until
 the cap, the waitlist for the rest), because the phase-12 "cap as process"
 assumed a product without accounts. `docs/phase-15/BRIEF.md` §9.
 
+### Phase 16 — Reading load (planned 2026-10-28, brief pending)
+
+**Goal.** Fewer words between a person and their routes. The first live walk
+of the hosted product found the UI "mostly words": the front door is two
+thousand words before an upload, the adventure page speaks the pipeline's
+language, and the only teaching is a legend whose descriptions phones hide
+and hover text phones never show. The phase teaches the atlas vocabulary in
+place (the backlog entry above moves here), cuts pipeline vocabulary from
+user pages, and puts the thing itself before any sentence about it. The
+Atlas plate direction stays binding; treatments within it go to static
+mockups at a STOP (`docs/phase-16/RESEARCH.md` §6). Measured by one
+reproducible number before and after (`web/scripts/copy-count.cjs`) and by
+a watched walk repeated at the close.
+
+**Sequencing.** Research, mockups and the brief run alongside phase 15 CP3
+on the `phase-16-ux` branch; implementation starts after CP3 lands. The
+brief proposes that phase 15 CP4 (the stranger proof) runs on the improved
+UI.
+
+**Excludes.** Any change to curation (auto-confirm stays declined), any
+hiding of the legend, provenance bar or leg kinds (invariant 8), a dark
+theme, the unified timeline, auth surfaces. Zero Go diff is the target.
+
 ### Gated alongside — not in the sequence until their evidence arrives
 
 - **Ingestion (photos as a source, GPX).** Photos-as-source was chartered
@@ -667,8 +692,9 @@ assumed a product without accounts. `docs/phase-15/BRIEF.md` §9.
 Phase 10 (complete), then 11 (ingestion, complete), then 12 (front gate,
 closed early with hosting torn down), then 13 (accounts and share links,
 complete under the product-first re-charter), then 14 (route image and
-summary), then 15 (hosting on a real platform); recalled adventures after
-ingestion on its own trigger; refinements ride along.
+summary), then 15 (hosting on a real platform), with 16 (reading load) planned
+alongside its durability checkpoint and built after it; recalled
+adventures after ingestion on its own trigger; refinements ride along.
 
 - Audit returns mostly without Timeline data → ingestion moves ahead of the
   front gate. **Fired 2026-08-24**: the pilot itself returned the answer —
