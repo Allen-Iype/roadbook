@@ -88,6 +88,9 @@ right then and does not apply now.)
 
 ### 1.3 The cap: who may sign in
 
+*Superseded 2026-10-28 by §9: the cap moves into the product. Kept as the
+record of the process-shaped reading that lasted from phase 12 to CP1.*
+
 Phase 12 §1.3 set the ten-person cap as **process, not code**: the LEDGER
 roster was the counter and stamping an instance was the gate. In `oidc`
 mode there is no stamp. The sign-in callback creates a user row for any
@@ -178,16 +181,21 @@ provider's web console.
 - **The landing and waitlist redeployed**: `deploy-landing.sh` and
   `setup-waitlist.sh` as committed, re-addressed to the new domain; landing
   copy updated from "your own instance" to the account model (§1.6).
-- **The app stack** in `oidc` mode: a Google OAuth client in Testing
-  status, `ROADBOOK_PUBLIC_URL=https://app.<domain>`, the live-Google
-  sign-in walk phase 13 carried, two real identities proving isolation on
-  the hosted stack, the operator's own archive uploaded from a phone.
+- **The app stack** in `oidc` mode: a Google OAuth client published for
+  any Google account (§9), `ROADBOOK_PUBLIC_URL=https://app.<domain>`,
+  `ROADBOOK_USER_CAP=10`, the live-Google sign-in walk phase 13 carried,
+  two real identities proving isolation on the hosted stack and a third
+  refused by the cap, the operator's own archive uploaded from a phone.
 - **The demo stack** (optional, §3E) in `off` mode behind basic auth with
   the demo dataset — the e2e target and the "see it" link for the entry
   mail.
-- **Entry v2**: the entry-email template rewritten (no credential — "sign
-  in with this Google address"), the runbook's entry process as: oldest
-  waitlist line → add as OAuth test user → send mail → delete line.
+- **Entry v2** (amended 2026-10-28, §9): there is no admission step. A
+  person signs in and has a seat while seats remain; the waitlist is only
+  for when the product is full. The one operator act left is the
+  seats-open mail: when the cap is raised, the operator mails the list
+  from the domain mailbox ("Roadbook has seats again — sign in with
+  Google") and deletes the lines. The phase-12 entry-email template and
+  the runbook's admit-from-the-list process are retired at CP4.
 - **Durability** (§3D): nightly whole-instance archive, encrypted on host,
   pushed off-host with a write-only credential, dead-man alarm, restore
   drill from the off-host copy into a scratch stack, reboot drill.
@@ -243,6 +251,10 @@ decision at this gate (§7) — it is the product's public name, and phase 10
 already recorded that re-homing twice is waste.
 
 ### 3C How the cap is held
+
+*Superseded 2026-10-28 by §9 — the maintainer's model is open sign-in with
+the cap enforced by the product; the Go option below is taken in a
+different shape (a counter, not an allowlist).*
 
 | option | for | against |
 |---|---|---|
@@ -318,8 +330,9 @@ wanting more returns to a STOP. As in phase 10, the number is a leash.
   laptop with the tailnet off) — the phase-10 lesson that validation lied
   and the outside view did not.
 - **The live-Google walk (CP2).** Two real Google identities on the hosted
-  stack: each sees only their own data; a non-test-user identity is refused
-  by Google; sign-out revokes; `DELETE /me` leaves zero rows and empty
+  stack: each sees only their own data; an unknown identity beyond the cap
+  is refused by Roadbook with the full page and reaches the waitlist form
+  from it; a returning identity is never refused; sign-out revokes; `DELETE /me` leaves zero rows and empty
   volumes for that user and nothing else changed. The phase-13 carried item
   closes here.
 - **Scale on the host (CP2).** The operator's real archive uploaded from a
@@ -332,8 +345,9 @@ wanting more returns to a STOP. As in phase 10, the number is a leash.
 - **The proof (CP4).** One real person, zero ad-hoc operator work, from the
   landing to a life map. Recorded in the LEDGER like any pilot entry.
 - Throughout: `git diff --stat` over `cmd/`, `internal/`, `web/`, `api/`,
-  `compose.yaml`, `Dockerfile` empty at close (unless §3F's fallback was
-  taken at a STOP); no real name, address, or credential in anything
+  `compose.yaml`, `Dockerfile` empty at close **except the named §9
+  exception** (the user-cap files listed there) and §3F's fallback if ever
+  taken at a STOP; no real name, address, or credential in anything
   committed.
 
 ## 5 Checkpoints
@@ -345,11 +359,14 @@ wanting more returns to a STOP. As in phase 10, the number is a leash.
    and measured; external port scan clean. *Visible: the landing from a
    phone on cellular; nothing but 80/443 answers from outside.* The spend
    begins here and nowhere earlier.
-2. **CP2 — the app.** OAuth client in Testing status; app stack in `oidc`
-   mode at `app.<domain>`; the live-Google walk; the operator's archive
-   through the phone; landing copy and entry mail rewritten for accounts;
-   entry process v2 drilled on the operator's own second identity. *Visible:
-   two accounts on one stack, each blind to the other; a refused stranger.*
+2. **CP2 — the app** (restated 2026-10-28, §9). The user cap in the product
+   (code, tests, contract text, env plumbing — the named exception); OAuth
+   client published; app stack in `oidc` mode at `app.<domain>` with the
+   cap set; the live-Google walk at cap 1 then cap 10; the operator's
+   archive through the phone; landing copy rewritten for the account model
+   and redeployed. *Visible: two accounts on one stack, each blind to the
+   other; a third identity refused by the full page and landing on the
+   waitlist form; a deleted account freeing its seat.*
 3. **CP3 — durability.** Nightly archive, push, alarm, missed-night test,
    restore drill, reboot drill, unattended upgrades, weekly snapshot.
    *Visible: an archive in the bucket, an alarm mail, a restored scratch
@@ -362,10 +379,10 @@ STOP at each checkpoint per the working agreement.
 
 ## 6 Explicitly excluded
 
-Product features of any kind; lifting the cap or publishing the OAuth
-client (phase 16 territory, needs Google verification and the charter's
-"strangers sign themselves up" decision); per-user export; life-map
-sharing; an allowlist in Go unless §3C's fallback fires; OSRM on the host
+Product features of any kind beyond the §9 exception; lifting the cap
+above ten (a later decision on evidence — the number is an env variable,
+the decision is not); per-user export; life-map sharing; an allowlist in
+Go (§9 chose a counter instead); OSRM on the host
 (the public endpoint batch is the hosted routing story if §3F's flag is
 ever taken); IaC — one host still does not earn Terraform; a status page;
 monitoring beyond the backup alarm and the provider's own.
@@ -520,3 +537,82 @@ its checkpoint. The original list, for the record: §3C (how the cap is held —
 (destination and alarm, see (c)), §3E (keep a demo stack — recommended),
 §3F (unrouted gaps for hosted users this phase — recommended). The §7
 questions 3, 4, 5 are these; questions 1, 2, 6, 7 are answered above.
+
+---
+
+## 9 The cap moves into the product (2026-10-28)
+
+Decided at a STOP after CP1, on the maintainer's statement of the model
+he had meant since August: *onboard people as they arrive through Google
+sign-in; when the tenth seat fills, send the rest to a waitlist.* The
+process-shaped cap (§1.3, §3C: an OAuth client in Testing status whose
+test-user list is the roster, the operator admitting people by hand) was
+phase 12's answer for a product without accounts, carried forward here
+without re-asking whether the process was still needed. It is not. This
+section supersedes §1.3 and §3C and amends §2, §4, §5 and §6 in place.
+
+### 9.1 The model
+
+1. Anyone with a Google account may sign in. No list, no admission step,
+   no entry email.
+2. The product counts accounts. While the count is below the cap, a new
+   identity gets an account on first sign-in. A returning identity is
+   never refused, whatever the count.
+3. At the cap, a new identity is told the product is full and pointed at
+   the landing page's waitlist form. Their sign-in creates nothing — no
+   row, no session, no cookie.
+4. An account that deletes itself (`DELETE /me`, phase 13 CP5) frees its
+   seat; the next new identity takes it.
+5. When the operator raises the cap, he mails the waitlist from the domain
+   mailbox and deletes the lines. The number is an environment variable;
+   raising it is a decision recorded in the LEDGER, not a release.
+
+What this retires: the entry-email template, the test-user list as a
+gate, the runbook's admit-from-the-list process, the "entry drill". What
+it keeps unchanged: the waitlist form and its custody promise (one file,
+nothing else sent, deletable absolutely); the refused identity is shown
+the form, never enrolled from their Google address.
+
+### 9.2 The named zero-diff exception
+
+The brief's target was zero product code. This is the one exception,
+decided here rather than eroded at a checkpoint:
+
+| piece | shape |
+|---|---|
+| store | `UpsertOIDCUser` gains a `cap` argument; one transaction, a named advisory lock to serialise first sign-ins, one statement that inserts only when the cap is 0, the subject already exists, or the count of OIDC accounts (the `self` row never counts) is below the cap; `ErrUserCapReached` otherwise |
+| API | `Server.UserCap`; the callback answers a refused sign-in with the existing 302 and no cookie, `Location: /signin?full=1`; one log line without identity; `openapi.yaml` 302 description names both outcomes — no new status, no type change |
+| CLI / compose | `-user-cap` / `ROADBOOK_USER_CAP` (default 0 = unlimited; consulted in `oidc` mode only, so auth-off and self-host are byte-identical by construction); `ROADBOOK_WAITLIST_URL` for the web; `.env.example`, README |
+| web | the sign-in page's full state: the sentence, the waitlist link when the URL is set, and **no sign-in button** (the auth service requests `openid email` without `prompt=select_account`, so a second press would be auto-picked and refused again in a silent loop); no number on the page — the web does not know the cap |
+| tests | store: cap 0, cap 1 (admit, return, refuse), cap lowered below count, deletion frees a seat, eight concurrent first sign-ins at cap 1 admit exactly one; API: the full flow with a refused B, a returning A, A's deletion admitting B; e2e: `/signin?full=1` redirects home on the authless stack |
+
+Not touched: the pure core, the schema (no migration), the demo stack, the
+per-instance scripts (retired at CP4 as §2 says).
+
+### 9.3 Google's side
+
+The OAuth client is published ("In production"), not left in Testing. The
+scopes the code requests are `openid` and `email`, both non-sensitive;
+whether Google asks for app verification or shows a warning screen at
+that setting is **recorded from the console at the host step**, not
+asserted here. The authorised domain is the bought domain, so §1.2's
+precondition is what makes this possible.
+
+### 9.4 Rejected
+
+- **Testing-status roster** (§3C's recommendation): it is the admission
+  process in another console, and "the operator adds your address" is
+  exactly the step the maintainer's model removes.
+- **An email allowlist in Go** (§3C's fallback): a roster to keep in step
+  with the waitlist; a counter needs no roster.
+- **Enrolling the refused identity's Google address on the waitlist
+  automatically**: convenient, but it would make the landing's custody
+  sentence false (addresses would arrive by a second path, into the
+  database rather than the one file).
+
+### 9.5 What would change our mind
+
+A consent-screen or verification demand from Google that a published
+client cannot satisfy without a process → the Testing-status roster
+returns as the interim gate, recorded as such. Evidence that ten seats
+fill in days → the cap number is revisited at a STOP, not quietly raised.

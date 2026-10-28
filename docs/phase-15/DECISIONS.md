@@ -128,3 +128,24 @@ mind. Written as decisions are made, not reconstructed.
   explicit-hostname block cannot express → revisit the Caddyfile shape at
   CP2 when `app` joins; the 143 s on-host build growing with the image →
   a registry-built image (BRIEF §2 noted swap/registry as the fallback).
+
+## 2026-10-28 — The cap moves into the product (BRIEF §9); the zero-diff target gains its one named exception
+
+- **Chosen:** open Google sign-in with the cap enforced by the product:
+  `ROADBOOK_USER_CAP` (default 0 = unlimited, `oidc` mode only), a
+  counting insert under a named advisory lock in `UpsertOIDCUser`,
+  returning identities never refused, a refused identity sent to the
+  sign-in page's full state with the waitlist link and no cookie, a
+  deleted account freeing its seat; the OAuth client published rather
+  than held in Testing; the entry-email and admit-from-the-list process
+  retired. Decided at a STOP on the maintainer's restatement of the
+  August model — the process-shaped cap was phase 12's answer for a
+  product without accounts and had been carried forward unexamined.
+- **Rejected:** the Testing-status roster (admission by console); a Go
+  email allowlist (a second roster); auto-enrolling a refused identity's
+  address (breaks the landing's one-file custody sentence); any new
+  status code or contract type (the existing 302 carries the refusal).
+- **Would change our mind:** Google demanding verification for a
+  published client with `openid email` → Testing roster as the interim
+  gate, recorded; ten seats filling in days → the number revisited at a
+  STOP.

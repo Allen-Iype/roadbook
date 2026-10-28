@@ -627,6 +627,10 @@ is committed to here.
 
 **Excludes.** New product features — the target is a zero product-code diff,
 as phase 10's was.
+*Amended 2026-10-28:* one named exception, decided at a STOP — the user
+cap enforced in the product (`ROADBOOK_USER_CAP`, open Google sign-in until
+the cap, the waitlist for the rest), because the phase-12 "cap as process"
+assumed a product without accounts. `docs/phase-15/BRIEF.md` §9.
 
 ### Gated alongside — not in the sequence until their evidence arrives
 
