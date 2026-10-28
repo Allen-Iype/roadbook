@@ -328,6 +328,16 @@ specific user or region surfaces the first time someone else's export is importe
 Adopted into the backlog from the Dawarich comparison or moved here from a phase;
 none is scheduled:
 
+- Teaching the atlas vocabulary (added 2026-10-28, phase 15 CP2 walk). The
+  product deliberately speaks in atlas terms — plate, plate number as a
+  chronological register, provenance bar, legend — and the maintainer wants
+  that vocabulary kept, not softened. A first-time user does not know it:
+  the first live walk stopped at "what is this plate written on each tile".
+  Backlog item: a way to teach the terms in place — a first-visit note on the
+  atlas page ("each adventure is a plate, numbered in the order you
+  travelled"), a glossary reachable from the legend, or a short caption under
+  the grid heading; decided by a small brief, not mid-walk. Evidence trigger:
+  more than one stranger asking. Owner: the next UI phase.
 - Legacy Timeline variants — `Records.json` (E7 integer coordinates, raw samples;
   no visit segments, so it needs stay-point visit synthesis and a home-derivation
   pass) and Semantic History `timelineObjects` (monthly files). Cut from phase 5 at

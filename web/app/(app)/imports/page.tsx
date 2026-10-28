@@ -50,8 +50,17 @@ export default async function ImportsPage() {
           >
             how to get one
           </Link>
-          ), or run{" "}
-          <code className="font-mono">roadbook import -src Timeline.json</code>.
+          )
+          {/* The CLI route exists only where the operator is the user:
+              a hosted account cannot run anything on the server. */}
+          {session?.mode === "oidc" ? (
+            "."
+          ) : (
+            <>
+              , or run{" "}
+              <code className="font-mono">roadbook import -src Timeline.json</code>.
+            </>
+          )}
         </p>
       ) : (
         <ImportTable imports={data.imports} />

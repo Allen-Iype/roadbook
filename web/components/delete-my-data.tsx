@@ -22,6 +22,12 @@ export function DeleteMyData({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const armed = typed.trim().toLowerCase() === "delete";
+  // In accounts mode the account itself is deletable even when it holds no
+  // data: it occupies a seat under the user cap (phase 15 BRIEF §9), and
+  // a person who signed in and never uploaded must still be able to leave.
+  // In the authless reference there is no account to forget, so an empty
+  // instance keeps the control disabled as before.
+  const canDelete = hasData || multiUser;
 
   function run() {
     setError(null);
@@ -48,7 +54,9 @@ export function DeleteMyData({
           ? multiUser
             ? "Removes every import, adventure, decision, photo, and share link of yours, and forgets your account. Nothing of anyone else's is touched."
             : "Removes every import, adventure, decision, photo, and share link. The instance is empty again, as if freshly installed."
-          : "Nothing is stored yet — there is nothing to delete."}
+          : multiUser
+            ? "Nothing is stored yet. Deleting forgets your account and frees its seat; you can sign in again any time."
+            : "Nothing is stored yet — there is nothing to delete."}
       </p>
       <p className="mt-3">
         <button
@@ -58,7 +66,7 @@ export function DeleteMyData({
             setError(null);
             dialog.current?.showModal();
           }}
-          disabled={!hasData}
+          disabled={!canDelete}
           className="-my-3 cursor-pointer border border-ink px-3 py-3 text-xs font-semibold tracking-[0.06em] text-ink hover:bg-paper-2 disabled:cursor-default disabled:opacity-50"
         >
           Delete everything…

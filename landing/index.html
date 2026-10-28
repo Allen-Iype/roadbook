@@ -86,6 +86,10 @@ a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 }
 .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; letter-spacing: 0.01em; }
 .masthead .tag { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-2); letter-spacing: 0.08em; }
+.masthead .door { margin-left: auto; min-height: 44px; display: inline-flex; align-items: center; padding: 0 0.9rem; font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; color: var(--ink); border: 1px solid var(--ink); text-decoration: none; }
+.masthead .door:hover { background: var(--ink); color: var(--paper); }
+.hero .cta { margin-top: 1.4rem; display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; align-items: center; }
+.hero .cta .or { font-size: 0.95rem; color: var(--ink-2); }
 
 /* Hero */
 .hero { padding: 2.75rem 0 0.5rem; }
@@ -188,9 +192,9 @@ section > .sheet > p, .prose p { max-width: 58ch; }
 .join input[type="email"] { flex: 1 1 14rem; min-height: 44px; padding: 0.4rem 0.75rem; font: inherit; background: var(--paper); border: 1px solid var(--ink); border-radius: 0; color: var(--ink); }
 .join button { min-height: 44px; padding: 0.4rem 1.2rem; font-family: var(--font-display); font-weight: 600; font-size: 1rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 0; cursor: pointer; }
 .join button:hover { background: var(--paper); color: var(--ink); }
-.join .enter { display: inline-block; min-height: 44px; box-sizing: border-box; padding: 0.6rem 1.2rem; font-family: var(--font-display); font-weight: 600; font-size: 1rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); text-decoration: none; }
-.join .enter:hover { background: var(--paper); color: var(--ink); }
-.join .enter:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.enter { display: inline-block; min-height: 44px; box-sizing: border-box; padding: 0.6rem 1.2rem; font-family: var(--font-display); font-weight: 600; font-size: 1rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); text-decoration: none; }
+.enter:hover { background: var(--paper); color: var(--ink); }
+.enter:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .join input:focus-visible, .join button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 /* Honeypot: off-screen, not display:none — bots skip hidden fields. */
 .hp { position: absolute; left: -9999px; top: auto; }
@@ -206,6 +210,8 @@ footer .fine { margin-top: 0.9rem; font-size: 0.78rem; color: var(--ink-2); max-
   <div class="masthead">
     <span class="wordmark">Roadbook</span>
     <span class="tag">AN ATLAS OF YOUR OWN TRAVELS</span>
+    <!-- {ROADBOOK_DOMAIN} is substituted at deploy time (deploy-landing.sh). -->
+    <a class="door" href="https://app.{ROADBOOK_DOMAIN}/signin">Sign in</a>
   </div>
 </header>
 
@@ -218,6 +224,10 @@ footer .fine { margin-top: 0.9rem; font-size: 0.78rem; color: var(--ink-2); max-
       journeys that stand out, and draws the ones you confirm as plates in an
       atlas. Its one rule: <strong>it never draws a line it cannot
       justify.</strong>
+    </p>
+    <p class="cta">
+      <a class="enter" href="https://app.{ROADBOOK_DOMAIN}/signin">Sign in with Google</a>
+      <span class="or">Ten seats to start — <a href="#in">how the way in works</a>.</span>
     </p>
 
     <figure class="plate">

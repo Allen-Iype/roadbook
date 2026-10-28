@@ -149,3 +149,25 @@ mind. Written as decisions are made, not reconstructed.
   published client with `openid email` → Testing roster as the interim
   gate, recorded; ten seats filling in days → the number revisited at a
   STOP.
+
+## 2026-10-28 — CP2 built and walked: the accounts stack is live behind Google sign-in with the cap
+
+- **Chosen:** the cap landed as BRIEF §9 specified (store, API, CLI,
+  compose, web, tests, landing); the OAuth client was published — the
+  console's own wording recorded in §9.3's spirit: "available to any user
+  with a Google Account"; verification only for more than 10 domains, a
+  logo, or sensitive scopes. The live walk ran at cap 1 then 10: a second
+  identity was refused to the full page and reached the waitlist form; it
+  was admitted after the raise and saw nothing of the first; it deleted
+  itself and the seat count fell. Two findings fixed during the walk: the
+  landing gained a header sign-in link and a hero call to action (the
+  only link had been at the foot of the page), and the delete control is
+  enabled for an empty account in accounts mode (an account holds a seat
+  even with no data). The hosted imports page no longer shows the CLI hint.
+- **Rejected:** keeping the delete control data-gated in accounts mode (a
+  person who never uploads could not leave); a logo on the consent screen
+  (it alone triggers Google's verification process).
+- **Would change our mind:** Google's unverified-app lifetime cap (100
+  users, counted over the app's life) → when the product's cap approaches
+  it, verification becomes a phase-16 task; a stranger stalling at the
+  consent screen → revisit the branding fields.
