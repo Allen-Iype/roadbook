@@ -188,6 +188,9 @@ section > .sheet > p, .prose p { max-width: 58ch; }
 .join input[type="email"] { flex: 1 1 14rem; min-height: 44px; padding: 0.4rem 0.75rem; font: inherit; background: var(--paper); border: 1px solid var(--ink); border-radius: 0; color: var(--ink); }
 .join button { min-height: 44px; padding: 0.4rem 1.2rem; font-family: var(--font-display); font-weight: 600; font-size: 1rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 0; cursor: pointer; }
 .join button:hover { background: var(--paper); color: var(--ink); }
+.join .enter { display: inline-block; min-height: 44px; box-sizing: border-box; padding: 0.6rem 1.2rem; font-family: var(--font-display); font-weight: 600; font-size: 1rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); text-decoration: none; }
+.join .enter:hover { background: var(--paper); color: var(--ink); }
+.join .enter:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .join input:focus-visible, .join button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 /* Honeypot: off-screen, not display:none — bots skip hidden fields. */
 .hp { position: absolute; left: -9999px; top: auto; }
@@ -415,7 +418,7 @@ footer .fine { margin-top: 0.9rem; font-size: 0.78rem; color: var(--ink-2); max-
         <li>
           <h3>Bring your data</h3>
           <p>A Timeline export made on your phone, or geotagged photos straight
-          from your library. Your instance's front door carries per-platform
+          from your library. The front door carries per-platform
           walkthroughs; a wrong file is told apart and pointed the right way.</p>
         </li>
         <li>
@@ -467,23 +470,23 @@ footer .fine { margin-top: 0.9rem; font-size: 0.78rem; color: var(--ink-2); max-
       <p class="eyebrow" style="margin-top:3rem">Custody</p>
       <h2>Where your data lives</h2>
       <dl class="data-list">
-        <dt>Your own instance, alone on it</dt>
-        <dd>Hosted Roadbook is one full instance per person — your own
-        database, your own credential, an unlisted address. Instances share
-        nothing; there is no cross-user anything to go wrong.</dd>
+        <dt>Your rows, and only yours</dt>
+        <dd>Hosted Roadbook is one service with an account per person. You
+        sign in with Google; Roadbook never sees a password. Every row of
+        your data carries your account, every read and write in the service
+        is filtered by it, and a standing family of tests proves that one
+        account cannot see or touch another's. The only way anything of
+        yours becomes visible is a share link you create — and revoke.</dd>
         <dt>Uploads stay put</dt>
-        <dd>Your export streams to your instance and nowhere else, and is
-        retained there because it may be the only copy of your history that
+        <dd>Your export streams to this server and nowhere else, and is
+        retained here because it may be the only copy of your history that
         still exists. Photos are never kept — only their positions, times,
         and small thumbnails.</dd>
-        <dt>Backed up, encrypted, off the host</dt>
-        <dd>Nightly backups leave the server encrypted; the key never lives
-        where the data does.</dd>
         <dt>Deletable, meaning it</dt>
-        <dd>Leaving is one request: the instance and its backups are
-        destroyed. Nothing lingers in a provider's analytics because there
-        are none — this page itself carries no scripts, no cookies, no
-        trackers.</dd>
+        <dd>Leaving is one button on your own page: your account and every
+        row and file that was yours are removed. Nothing lingers in a
+        provider's analytics because there are none — this page itself
+        carries no scripts, no cookies, no trackers.</dd>
       </dl>
       <p class="aside-note">
         There is no public try-it demo, on purpose: an open upload endpoint
@@ -497,13 +500,23 @@ footer .fine { margin-top: 0.9rem; font-size: 0.78rem; color: var(--ink-2); max-
   <section id="in">
     <div class="sheet rule-above">
       <p class="eyebrow" style="margin-top:3rem">The way in</p>
-      <h2>Ten slots, and a list</h2>
+      <h2>Ten seats, then a list</h2>
       <div class="way-in">
-        <p class="slots">SLOTS · HAND-PROVISIONED · TEN</p>
+        <p class="slots">SEATS · TEN · THEN THE LIST</p>
         <p style="margin-top:0.6rem">
-          Roadbook is opening to its first ten people — each with their own
-          private instance, set up personally. Want one of the slots?
-          Leave your email and you're on the list.
+          Roadbook is opening to its first ten people. Sign in with Google
+          and, while a seat is free, it is yours — no waiting, no
+          invitation.
+        </p>
+        <!-- {ROADBOOK_DOMAIN} is substituted at deploy time by
+             scripts/pilot/host/deploy-landing.sh from the host's front.env;
+             the committed page names no domain. -->
+        <p class="join" style="margin-top:1rem">
+          <a class="enter" href="https://app.{ROADBOOK_DOMAIN}/signin">Sign in with Google</a>
+        </p>
+        <p style="margin-top:1.25rem">
+          If Roadbook is full, your sign-in creates nothing and you are
+          sent back here. Leave your email and you're on the list.
         </p>
         <form class="join" method="post" action="/waitlist">
           <label for="email">Email</label>
@@ -519,10 +532,10 @@ footer .fine { margin-top: 0.9rem; font-size: 0.78rem; color: var(--ink-2); max-
         </form>
         <p style="margin-top:1rem">
           Your address lands in one file on this host — no form service, no
-          mailing-list provider. It is used for exactly one thing: an entry
-          email with your private link and credential when a slot opens.
-          Nothing else is ever sent, and if you ask, the line is deleted and
-          you were never here.
+          mailing-list provider. It is used for exactly one thing: one email
+          when seats open again, telling you to sign in. Nothing else is
+          ever sent, and if you ask, the line is deleted and you were never
+          here.
         </p>
       </div>
       <p style="margin-top:1.25rem">

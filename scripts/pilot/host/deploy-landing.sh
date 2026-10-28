@@ -40,7 +40,15 @@ SITE=$LANDING/site
 STAGE=$(mktemp -d "$LANDING.stage.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/fonts" "$STAGE/shots"
-cp "$REPO/landing/index.html" "$REPO/landing/joined.html" "$REPO/landing/oops.html" "$STAGE/"
+# index.html names the app's hostname as {ROADBOOK_DOMAIN} so the committed
+# page stays domain-agnostic (phase 15 BRIEF §9); substitute from front.env
+# and refuse to deploy if the placeholder survives.
+sed "s/{ROADBOOK_DOMAIN}/$ROADBOOK_DOMAIN/g" "$REPO/landing/index.html" > "$STAGE/index.html"
+cp "$REPO/landing/joined.html" "$REPO/landing/oops.html" "$STAGE/"
+if grep -q '{ROADBOOK_DOMAIN}' "$STAGE"/*.html; then
+  echo "placeholder {ROADBOOK_DOMAIN} survived staging — refusing to deploy" >&2
+  exit 1
+fi
 cp -R "$REPO/web/app/fonts/source-serif-4" "$STAGE/fonts/source-serif-4"
 cp -R "$REPO/web/app/fonts/ibm-plex-mono" "$STAGE/fonts/ibm-plex-mono"
 # Screenshot mapping — the page's <img> names on the left, the committed

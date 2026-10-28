@@ -29,6 +29,11 @@ voice CLAUDE.md requires. When the product changes (a new source, a changed
 retention fact, a different cap), this page changes in the same phase —
 same standard as the README.
 
+The sign-in link in "The way in" names the app hostname as
+`{ROADBOOK_DOMAIN}`; `deploy-landing.sh` substitutes the host's
+`front.env` value at staging and refuses to deploy if the placeholder
+survives, so the committed page names no domain (phase 15 BRIEF §9).
+
 The waitlist is a plain HTML form (the page stays zero-JavaScript — a POST
 needs no script): Caddy proxies `/waitlist` to a tiny loopback intake
 service (`scripts/pilot/host/waitlistd.py`, installed by
