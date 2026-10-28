@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -126,6 +127,11 @@ func (s *Server) StartSignIn(ctx context.Context, _ StartSignInRequestObject) (S
 	}}, nil
 }
 
+// signInFullLocation is where a sign-in refused by the user cap lands: the
+// sign-in page's "full" state (phase 15 BRIEF §9). The web layer reads the
+// `full` key; the contract's 302 description names it.
+const signInFullLocation = "/signin?full=1"
+
 func (s *Server) CompleteSignIn(ctx context.Context, req CompleteSignInRequestObject) (CompleteSignInResponseObject, error) {
 	if s.Auth == nil {
 		return CompleteSignIn409JSONResponse{Error: "this instance runs without sign-in"}, nil
@@ -144,7 +150,15 @@ func (s *Server) CompleteSignIn(ctx context.Context, req CompleteSignInRequestOb
 	if err != nil {
 		return CompleteSignIn400JSONResponse{Error: err.Error()}, nil
 	}
-	userID, err := s.Store.UpsertOIDCUser(ctx, ident.Subject, ident.Email)
+	userID, err := s.Store.UpsertOIDCUser(ctx, ident.Subject, ident.Email, s.UserCap)
+	if errors.Is(err, store.ErrUserCapReached) {
+		// No row, no session, no cookie: the identity was verified and
+		// turned away. Logged without the identity — the operator sees
+		// demand, never who.
+		log.Printf("sign-in refused: user cap %d reached", s.UserCap)
+		full := signInFullLocation
+		return CompleteSignIn302Response{Headers: CompleteSignIn302ResponseHeaders{Location: &full}}, nil
+	}
 	if err != nil {
 		return nil, err
 	}

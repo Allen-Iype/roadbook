@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -426,8 +427,17 @@ func runServe(args []string) error {
 		"OIDC client id (default $ROADBOOK_OIDC_CLIENT_ID)")
 	publicURL := fs.String("public-url", envOr("ROADBOOK_PUBLIC_URL", "http://127.0.0.1:3000"),
 		"browser-facing origin, the base of the OIDC redirect (default $ROADBOOK_PUBLIC_URL)")
+	userCapFlag := fs.String("user-cap", envOr("ROADBOOK_USER_CAP", "0"),
+		"account limit in oidc mode: 0 = unlimited; once reached, first sign-ins are refused to the sign-in page's full state (default $ROADBOOK_USER_CAP)")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+	// flag.Int cannot take an env default without parsing it first; the cap
+	// is parsed here so a typo in the environment fails at startup, not at
+	// the tenth sign-in.
+	userCap, err := strconv.Atoi(strings.TrimSpace(*userCapFlag))
+	if err != nil || userCap < 0 {
+		return fmt.Errorf("-user-cap / ROADBOOK_USER_CAP must be a whole number >= 0, got %q", *userCapFlag)
 	}
 
 	// The Suggester seam (BRIEF §1.7): null by default — a self-hosted
@@ -477,6 +487,9 @@ func runServe(args []string) error {
 	// never a flag — flags land in `ps` output.
 	switch *authMode {
 	case "off":
+		if userCap > 0 {
+			fmt.Printf("note: ROADBOOK_USER_CAP=%d is ignored in auth mode off (one implicit user)\n", userCap)
+		}
 	case "oidc":
 		svc, err := auth.New(ctx, auth.Config{
 			IssuerURL:     *oidcIssuer,
@@ -489,12 +502,17 @@ func runServe(args []string) error {
 			return err
 		}
 		srv.Auth = svc
+		srv.UserCap = userCap
 		if swept, err := s.DeleteExpiredSessions(ctx); err != nil {
 			return fmt.Errorf("sweeping expired sessions: %w", err)
 		} else if swept > 0 {
 			fmt.Printf("swept %d expired session(s)\n", swept)
 		}
-		fmt.Printf("auth: oidc via %s\n", *oidcIssuer)
+		if userCap > 0 {
+			fmt.Printf("auth: oidc via %s, user cap %d\n", *oidcIssuer, userCap)
+		} else {
+			fmt.Printf("auth: oidc via %s, no user cap\n", *oidcIssuer)
+		}
 	default:
 		return fmt.Errorf("unknown -auth %q: use off or oidc", *authMode)
 	}

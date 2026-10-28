@@ -1936,11 +1936,11 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Signed in; back to the app. */
+            /** @description Two outcomes share this status. Signed in: Location is the app root and Set-Cookie carries the session. Refused by the user cap (a first sign-in while the instance holds its cap of accounts — ROADBOOK_USER_CAP): Location is the sign-in page's full state, `/signin?full=1`, and no cookie is set; nothing was recorded for that identity. Returning accounts are never refused. */
             302: {
                 headers: {
                     Location?: string;
-                    /** @description The session cookie (HttpOnly, SameSite=Lax). */
+                    /** @description The session cookie (HttpOnly, SameSite=Lax); absent when refused by the cap. */
                     "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };

@@ -11,6 +11,11 @@ test("/signin redirects home on an authless instance", async ({ page }) => {
   await page.goto("/signin");
   await expect(page).not.toHaveURL(/\/signin/);
   await expect(page.getByRole("link", { name: "Sign in to continue" })).toHaveCount(0);
+  // The full state (phase 15) is a query on the same page: on an authless
+  // instance it must redirect the same way, never render.
+  await page.goto("/signin?full=1");
+  await expect(page).not.toHaveURL(/\/signin/);
+  await expect(page.getByText("Roadbook is full for now.")).toHaveCount(0);
 });
 
 test("no account controls on the authless reference", async ({ page }) => {

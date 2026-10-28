@@ -29,8 +29,15 @@ func at(y int, mo time.Month, d, h int) time.Time {
 
 func newAuthServer(t *testing.T, svc *auth.Service) (*httptest.Server, *store.Store) {
 	t.Helper()
+	return newCappedAuthServer(t, svc, 0)
+}
+
+// newCappedAuthServer is newAuthServer with a user cap (phase 15 BRIEF §9);
+// 0 is the unlimited default every other test runs under.
+func newCappedAuthServer(t *testing.T, svc *auth.Service, cap int) (*httptest.Server, *store.Store) {
+	t.Helper()
 	s := storetest.Open(t)
-	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Auth: svc}
+	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Auth: svc, UserCap: cap}
 	ts := httptest.NewServer(api.HandlerFromMux(
 		api.NewStrictHandler(srv, []api.StrictMiddlewareFunc{srv.AuthMiddleware}), http.NewServeMux()))
 	t.Cleanup(ts.Close)
@@ -98,7 +105,11 @@ func TestAuthOffIsTheReference(t *testing.T) {
 // signIn drives the whole dance for one subject and returns the session
 // cookie: signin redirect → state cookie + nonce parsed → code minted at
 // the issuer (the human consent stand-in) → callback → session cookie.
-func signIn(t *testing.T, c *http.Client, baseURL string, iss *authtest.Issuer, subject, email string) *http.Cookie {
+// signInRaw drives the whole dance for one identity and hands back the
+// callback response untouched, so a test can assert a refusal (phase 15:
+// the user cap answers 302 to the sign-in page's full state with no
+// cookie) as easily as a success.
+func signInRaw(t *testing.T, c *http.Client, baseURL string, iss *authtest.Issuer, subject, email string) *http.Response {
 	t.Helper()
 	resp, err := c.Get(baseURL + "/auth/signin")
 	if err != nil {
@@ -138,16 +149,78 @@ func signIn(t *testing.T, c *http.Client, baseURL string, iss *authtest.Issuer, 
 		t.Fatal(err)
 	}
 	resp.Body.Close()
+	return resp
+}
+
+// signIn is signInRaw asserting success: a 302 to the app root carrying a
+// session cookie, which it returns.
+func signIn(t *testing.T, c *http.Client, baseURL string, iss *authtest.Issuer, subject, email string) *http.Cookie {
+	t.Helper()
+	resp := signInRaw(t, c, baseURL, iss, subject, email)
 	if resp.StatusCode != 302 {
 		t.Fatalf("callback: %d — want 302", resp.StatusCode)
 	}
+	if ck := sessionCookie(resp); ck != nil {
+		return ck
+	}
+	t.Fatal("callback set no session cookie")
+	return nil
+}
+
+func sessionCookie(resp *http.Response) *http.Cookie {
 	for _, ck := range resp.Cookies() {
 		if ck.Name == auth.SessionCookie && ck.Value != "" {
 			return ck
 		}
 	}
-	t.Fatal("callback set no session cookie")
 	return nil
+}
+
+// The user cap (phase 15 BRIEF §9), end to end through the mux: at cap 1
+// the first identity is admitted, an unknown second is refused with a 302
+// to the sign-in page's full state and NO cookie, the first keeps
+// returning, the second stays refused, and the first deleting itself
+// frees the seat the second then takes. The cap is observable only through
+// sign-in behaviour — no count endpoint exists.
+func TestUserCapRefusesUnknownAdmitsReturning(t *testing.T) {
+	ctx := context.Background()
+	iss := authtest.New(t)
+	svc, err := auth.New(ctx, auth.Config{
+		IssuerURL: iss.URL, ClientID: "test-client", ClientSecret: "test-secret",
+		RedirectURL: "http://127.0.0.1:3000/api/auth/callback",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts, _ := newCappedAuthServer(t, svc, 1)
+	c := noRedirect()
+
+	sessA := signIn(t, c, ts.URL, iss, "subject-a", "a@example.com")
+
+	refused := signInRaw(t, c, ts.URL, iss, "subject-b", "b@example.com")
+	if refused.StatusCode != 302 || refused.Header.Get("Location") != "/signin?full=1" {
+		t.Fatalf("B at cap: %d %q — want 302 /signin?full=1", refused.StatusCode, refused.Header.Get("Location"))
+	}
+	if sessionCookie(refused) != nil || refused.Header.Get("Set-Cookie") != "" {
+		t.Fatalf("B at cap received a cookie: %q", refused.Header.Get("Set-Cookie"))
+	}
+
+	// A returns; B is still refused.
+	if ck := signIn(t, c, ts.URL, iss, "subject-a", "a@example.com"); ck == nil {
+		t.Fatal("A could not return")
+	}
+	if r := signInRaw(t, c, ts.URL, iss, "subject-b", "b@example.com"); r.Header.Get("Location") != "/signin?full=1" {
+		t.Fatalf("B second attempt: %d %q", r.StatusCode, r.Header.Get("Location"))
+	}
+
+	// A deletes itself → the seat frees → B is admitted.
+	if resp, body := do(t, c, http.MethodDelete, ts.URL+"/me", []*http.Cookie{sessA}); resp.StatusCode != 200 {
+		t.Fatalf("A DELETE /me: %d %s", resp.StatusCode, body)
+	}
+	admitted := signInRaw(t, c, ts.URL, iss, "subject-b", "b@example.com")
+	if admitted.StatusCode != 302 || admitted.Header.Get("Location") != "/" || sessionCookie(admitted) == nil {
+		t.Fatalf("B after A deleted: %d %q cookie=%v", admitted.StatusCode, admitted.Header.Get("Location"), sessionCookie(admitted) != nil)
+	}
 }
 
 func TestOIDCFlowSessionsAndTenancy(t *testing.T) {

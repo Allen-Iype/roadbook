@@ -221,6 +221,8 @@ default — an empty or absent `.env` brings the stack up.
 | `ROADBOOK_AUTH` | `off` | `oidc` turns on accounts (below) |
 | `ROADBOOK_OIDC_ISSUER`, `ROADBOOK_OIDC_CLIENT_ID`, `ROADBOOK_OIDC_CLIENT_SECRET` | empty | the provider registration, used only with `oidc` |
 | `ROADBOOK_PUBLIC_URL` | `http://127.0.0.1:3000` | the origin browsers use — the OIDC redirect is built on it |
+| `ROADBOOK_USER_CAP` | `0` (unlimited) | account limit with `oidc`; at the cap a first sign-in is refused |
+| `ROADBOOK_WAITLIST_URL` | empty | where a refused sign-in is pointed (a waitlist form); empty = no link |
 
 Map tiles are the one thing the browser fetches from a third party — the
 viewport you look at leaks to the style's tile host. Point
@@ -246,8 +248,12 @@ stores or checks a password. Sessions are rows in Postgres behind an
 HTTP-only cookie, so signing out revokes the session server-side, and a
 restart forgets nothing it should remember. Turning the mode on needs a
 registered OAuth client at your provider with the redirect URI
-`<ROADBOOK_PUBLIC_URL>/api/auth/callback`; the four variables in
-`.env.example` carry it. Data imported in off mode belongs to the built-in
+`<ROADBOOK_PUBLIC_URL>/api/auth/callback`; the variables in `.env.example`
+carry it. Anyone the provider identifies gets an account, up to
+`ROADBOOK_USER_CAP` accounts: at the cap a first sign-in is refused to the
+sign-in page's "full" state (pointing at `ROADBOOK_WAITLIST_URL` when set),
+a returning account always signs in, and deleting your data frees your
+seat. Data imported in off mode belongs to the built-in
 single user and is not visible to signed-in accounts — switching modes on
 an instance with data is a migration you plan, not a flag you flip.
 

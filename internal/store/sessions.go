@@ -15,21 +15,53 @@ import (
 // is one indexed read. Revocation is a DELETE — the observable sign-out
 // the brief promised.
 
+// ErrUserCapReached: a first sign-in arrived while the instance already
+// holds its cap of accounts (phase 15 BRIEF §9). The caller turns it into
+// the sign-in page's "full" state; nothing was written.
+var ErrUserCapReached = errors.New("user cap reached")
+
 // UpsertOIDCUser resolves a verified OIDC subject to a user id, creating
 // the user on first sign-in and refreshing the display email on every one.
 // The id is generated here, never the provider subject: subjects are
 // provider-scoped and belong in their own column.
-func (s *Store) UpsertOIDCUser(ctx context.Context, subject, email string) (string, error) {
+//
+// cap is the instance's account limit (phase 15 BRIEF §9): 0 means
+// unlimited; otherwise a NEW subject is admitted only while the count of
+// OIDC accounts is below it. A returning subject is never refused, whatever
+// the count — lowering the cap below the population locks the door, it
+// does not evict. The 'self' row (migration 00011, NULL subject) is the
+// auth-off owner and never counts. First sign-ins are serialised by a
+// named transaction-scoped advisory lock so two simultaneous newcomers
+// cannot both read "one seat left" and both take it.
+func (s *Store) UpsertOIDCUser(ctx context.Context, subject, email string, cap int) (string, error) {
 	var buf [8]byte
 	if _, err := rand.Read(buf[:]); err != nil {
 		return "", err
 	}
 	newID := "u-" + hex.EncodeToString(buf[:])
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('roadbook.users.admission'))`); err != nil {
+		return "", err
+	}
 	var id string
-	err := s.pool.QueryRow(ctx, `INSERT INTO users (id, oidc_subject, email) VALUES ($1,$2,$3)
+	err = tx.QueryRow(ctx, `INSERT INTO users (id, oidc_subject, email)
+		SELECT $1, $2, $3
+		WHERE $4 = 0
+		   OR EXISTS (SELECT 1 FROM users WHERE oidc_subject = $2)
+		   OR (SELECT count(*) FROM users WHERE oidc_subject IS NOT NULL) < $4
 		ON CONFLICT (oidc_subject) DO UPDATE SET email = EXCLUDED.email
-		RETURNING id`, newID, subject, email).Scan(&id)
-	return id, err
+		RETURNING id`, newID, subject, email, cap).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrUserCapReached
+	}
+	if err != nil {
+		return "", err
+	}
+	return id, tx.Commit(ctx)
 }
 
 // GetUserEmail returns the display email for a user, "" when none is known.

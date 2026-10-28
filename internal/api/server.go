@@ -42,6 +42,11 @@ type Server struct {
 	// authless single-user reference (phase 13 BRIEF §2), in which no auth
 	// surface exists and every request is store.SelfUser.
 	Auth *auth.Service
+	// UserCap is the account limit in multi-user mode (phase 15 BRIEF §9):
+	// 0 is unlimited; otherwise a first sign-in is refused once this many
+	// OIDC accounts exist, and the sign-in page shows its "full" state.
+	// Returning accounts are never refused. Unread when Auth is nil.
+	UserCap int
 }
 
 var _ StrictServerInterface = (*Server)(nil)
