@@ -616,3 +616,233 @@ A consent-screen or verification demand from Google that a published
 client cannot satisfy without a process → the Testing-status roster
 returns as the interim gate, recorded as such. Evidence that ten seats
 fill in days → the cap number is revisited at a STOP, not quietly raised.
+
+---
+
+## 10 CP3 durability — addendum (2026-10-28)
+
+Written before any CP3 work, per the working agreement. §3D's recommendation
+and §8.4's acceptance stand; this section turns them into a build with the
+two addenda agreed on 2026-10-28 (check every night, push only on change;
+laptop continuity) and the facts measured on the host today. STOP after the
+maintainer's reading.
+
+### 10.1 Concepts
+
+**The backup unit is the stack, not the person.** Phase 10 backed up
+*people*: `roadbook backup` wrote one person's decisions and photos by
+durable identity, and the uploads volume rode beside it. One shared stack
+holds ten people's rows plus the tables that have no per-person format at
+all — `users`, `sessions`, `share_links`, `photo_records`, `route_cache`.
+The honest unit is therefore the whole stack: one `pg_dump` of the one
+database plus a tar of each of the two file volumes (`photos`: thumbnails;
+`uploads`: retained exports, possibly someone's only copy of an expired
+`rawSignals` window). It restores as a whole into an empty stack. The
+per-person format stays what it is — the CLI's business and phase 13's
+carried user-facing export — and this chain never calls it.
+
+**Push, not pull, and a witness.** Phase 10's chain was host → laptop →
+iCloud and stalled for three weeks because the laptop was the moving part
+(phase-12 LEDGER lesson). Here the host pushes to object storage on its
+own and then tells a dead-man's-switch service "I did it". The service
+holds nothing but a timestamp and a short message; if the next message is
+late, it emails the operator. The laptop is in the loop for exactly two
+things that *should* need a human: decrypting (the age secret never lives
+on the host) and reading the alarm mail.
+
+**"Cannot be erased" is a property of the bucket, not the script.** The
+host holds an API token scoped to one bucket that can upload, list, and —
+because Cloudflare R2 issues no narrower token — delete. What stops a
+compromised host from erasing history is a **bucket lock**: an R2 rule
+that blocks deletion and overwriting of every object for a set age (90
+days here). The lock takes precedence over deletes from any token and over
+lifecycle rules, and changing the lock needs bucket-configuration
+permission the host's token does not carry. A compromised host can add
+noise; it cannot remove anything for 90 days. (The first draft of this
+section chose Backblaze B2 for its add-only application keys; the
+maintainer asked whether the existing Cloudflare account could serve, and
+the bucket-lock feature — read from Cloudflare's own documentation on
+2026-10-28 — makes the protection equivalent with one account fewer.)
+
+**"Changed" is decided by content, not by clocks.** The 2026-10-28 addendum
+said: check every night, push only when the fingerprint changed, ping
+either way. The fingerprint proposed here is the SHA-256 of the plain-text
+dump plus a listing of both volumes (path, size, mtime). The dump is
+produced every night anyway (seconds at today's sizes), and any row
+change — insert, update, delete, in any table — changes it; no table needs
+a timestamp column for the check to be complete. This replaces the
+addendum's "newest row ts across all tables" with something strictly
+stronger and simpler; same intent, stated here so it is a decision and not
+a drift.
+
+### 10.2 What gets built
+
+Host-side, all under `scripts/pilot/host/` (committed, parameterised,
+secret-free), with state and secrets under `/srv/pilot/`:
+
+- **`backup-stack.sh <slug>`** — for one stamped instance: `pg_dump -Fp`
+  run inside that stack's `db` container (PostgreSQL 18.1's `pg_dump` is
+  already there; nothing is installed), excluding the *data* of
+  `countries` and `states` (regenerable: the api's startup `-if-empty`
+  steps refill them on restore; the schema and goose version table are
+  kept), plus `photos.tar` and `uploads.tar` read from the named volumes.
+  Writes a plaintext bundle to a staging directory and prints the
+  fingerprint. Skips with a message when the stack is down.
+- **`backup-nightly.sh`** — the timer's entry point: for every instance
+  directory, call `backup-stack.sh`; compare the fingerprint with
+  `/srv/pilot/backups/<slug>.fingerprint`; if unchanged, discard the
+  bundle; if changed, `tar | age -r <recipient> > <slug>-<UTC stamp>.tar.age`,
+  `rclone copy` it to `<remote>:<bucket>/<slug>/`, record the fingerprint
+  only after the copy returned clean, delete the ciphertext locally. Then
+  one ping to the dead-man URL whose body lists each stack as
+  `pushed <name> <size>` or `unchanged, skipped`; if any stack failed, the
+  `/fail` endpoint is pinged instead and the body carries the error. A
+  `/start` ping opens the run so a hang is visible as a run that never
+  closed. Every line goes to the journal; nothing identifying a person is
+  logged (slugs and sizes only).
+- **`restore-stack.sh <slug> -`** — plaintext bundle on stdin (the laptop
+  decrypts and pipes over ssh, exactly as phase 10's runbook §5): stops
+  `api` and `web`, drops and recreates the database, `psql` the dump,
+  unpacks both volumes, brings the stack up (the api's startup refills
+  `countries`/`states`). Target must be an existing, empty-or-disposable
+  stack; the script refuses to run against a stack whose `users` table has
+  more than the `self` row unless `--force` is given.
+- **`roadbook-backup.service` / `.timer`** — the existing units edited:
+  `ExecStart` becomes `backup-nightly.sh`, `EnvironmentFile=/srv/pilot/
+  backup.env` (0600: the R2 access key and secret, account endpoint, and
+  `no_check_bucket` as rclone's `RCLONE_CONFIG_R2_*` environment variables
+  — rclone speaks to R2 as S3; the bucket-scoped token cannot list buckets,
+  so the existence check is switched off — plus the remote path and the
+  ping URL; no rclone config file at all), 22:00 UTC, `Persistent=true`.
+- **Host packages:** `age` 1.1.1 and `rclone` 1.60 from Ubuntu's own
+  archive (one `apt install`). `/srv/pilot/keys/backup.pub` holds the
+  public half of the phase-10 key pair (derived on the laptop with
+  `age-keygen -y`; the secret stays in `docs/private/pilot/keys/
+  backup.key` and the password manager).
+- **Retired in the same commit:** `backup-instance.sh`, `backup-all.sh`,
+  `pull-backups.sh` — superseded by the three scripts above; git history
+  keeps them (§2 said a dated commit; this is it for the backup trio, the
+  rest of the phase-10 set goes at CP4 as planned).
+
+Off-host, the maintainer's console steps, done once at CP3 kickoff:
+
+- **Cloudflare R2** (the existing account): one private bucket (name
+  chosen by the maintainer, recorded in the LEDGER only); a **bucket lock
+  rule** covering the whole bucket, retention 90 days; a **lifecycle rule**
+  deleting objects 90 days after upload (the lock is satisfied by then, so
+  deletion proceeds); **one API token** for the host, "Object Read &
+  Write" scoped to this bucket only — it reaches the host's `backup.env`
+  and the LEDGER, nothing else. The laptop needs no token of its own for
+  the drill: the dashboard downloads an object, and if a laptop token is
+  wanted later it is a second bucket-scoped token, never the host's. R2's
+  free allowance (10 GB stored, a million writes a month) is well above
+  this chain's use; nothing new recurs.
+- **healthchecks.io:** free account; one check, period 1 day, grace 3 h,
+  email to the domain mailbox; the ping URL goes in `backup.env`.
+
+Laptop-side (private, nothing committed):
+
+- **`docs/private/pilot/continuity.sh`** — tars `docs/private/`,
+  `CLAUDE.local.md`, and the Claude memory directory, encrypts to the same
+  recipient, writes `continuity-<date>.tar.age` into iCloud Drive's
+  `RoadbookBackups/laptop/`. Run by hand at each checkpoint close (the
+  runbook's close checklist gains the line). Its own decryption key is in
+  the password manager as text, with the ssh key — the runbook v3 "new
+  laptop" page lists the five pastes that rebuild the operator seat.
+
+Zero product code. `compose.yaml` untouched (the backup reads the named
+volumes and execs into the db container; nothing in the reference stack
+knows it is being backed up).
+
+### 10.3 The real choices
+
+**A — Retention: who prunes.**
+
+| option | for | against |
+|---|---|---|
+| **Bucket lifecycle rule** (delete 90 days after upload) under a 90-day bucket lock | no human and no laptop in the loop — the phase-12 lesson applied to pruning as well as copying; the host's token can change neither rule; the lock means nothing leaves the bucket early, hostile or accidental | 90 days is the whole history; a problem noticed later than that has no older copy to return to |
+| Laptop-side prune with the operator key (the 2026-10-28 addendum's wording) | nothing on the bucket ever deletes by itself | reintroduces the laptop as a moving part; when it stalls, the free tier fills and pushes start failing — the alarm would fire, but for the wrong reason |
+
+**Decided 2026-10-28: the lifecycle rule**, with the numbers above (90
+days of history; at today's sizes — app dump ~10 MB gzipped, uploads 55 MB,
+most nights "unchanged" — well inside 10 GB). A deliberate deviation from
+the addendum's "pruned laptop-side" wording, taken by the maintainer.
+
+**B — The alarm: one check or one per stack.**
+
+| option | for | against |
+|---|---|---|
+| **One check, body lists every stack** | one email, one URL in one env file; the body carries the detail | a demo failure and an app failure look the same in the subject line |
+| One check per stack | separate subjects | two URLs, two mails for one cause (the host being down) |
+
+**Decided 2026-10-28: one check.** The body is read when the mail arrives.
+
+**C — Unattended reboots after the drill.**
+
+| option | for | against |
+|---|---|---|
+| **Enable `Automatic-Reboot` at 23:30 UTC once the reboot drill passes** | kernel security updates actually take effect on an unattended host; recovery is proven, not hoped (`restart: unless-stopped` everywhere, Caddy and waitlistd under systemd) | a reboot at 05:00 IST while someone in another timezone is mid-upload; the all-or-nothing upload rule makes that a retry, not a corruption |
+| Leave it off, reboot by hand when `/var/run/reboot-required` appears | the operator chooses the moment | the operator forgets; phase 12 showed what an unglanced host looks like |
+
+**Decided 2026-10-28: enable it** after the drill, after the 22:00 backup slot.
+
+**D — The provider snapshot.** §5 said "weekly". Contabo's included
+snapshot is a manual panel action; scheduled snapshots are a paid add-on.
+A weekly panel click is the laptop pull in another costume — it would
+stall. **Recommendation: one snapshot at each checkpoint close** (CP3 now,
+CP4 next), taken after the drills, as the correlated second copy §3D
+described; never the primary. Decided 2026-10-28; §5's "weekly" is amended.
+
+**E — Which key.** Reuse the phase-10 age pair (secret already in the
+password manager and on the laptop; the teardown archives in iCloud already
+decrypt with it) or mint a VPS-era pair. **Decided 2026-10-28: reuse.** Nothing
+about the secret's posture changed; a second key is a second thing to lose.
+
+### 10.4 Verification (CP3's visibles)
+
+Every claim checked from outside the host or from the bucket's side, in
+the order built:
+
+1. **The push.** First nightly run by hand: a `.tar.age` for `app` and one
+   for `demo` visible in the Cloudflare dashboard; sizes in the LEDGER.
+   (The host's token can read its own ciphertext back; that is harmless —
+   the age secret is what reads it, and it is not on the host.)
+2. **The skip path.** A second run the same hour: both stacks report
+   `unchanged, skipped`; nothing new in the bucket; the ping body in the
+   healthchecks log says so.
+3. **The change path.** One decision changed on the demo stack through the
+   UI; the next run pushes `demo` only.
+4. **The lock.** With the host's token: `rclone delete` of one archive is
+   refused; the object is still listed afterwards. Recorded.
+5. **The missed night.** The timer disabled; the check's period temporarily
+   set to one hour so the test fits a session; the alarm mail arrives at
+   the domain mailbox; period restored to one day; timer re-enabled; the
+   next scheduled run lands (seen the following morning in the log).
+6. **Restore from the off-host copy.** Laptop downloads the newest `app`
+   archive from the dashboard, decrypts, pipes into a fresh scratch
+   stack `drill` on the host; counts of `users`, `imports`, `candidates`,
+   `decisions`, `raw_positions`, `photo_records`, `share_links` match the
+   source to the row, the uploads volume's file hashes match, `countries`
+   and `states` are refilled by startup; then `reset-instance.sh drill
+   --retire`.
+7. **Reboot drill.** `sudo reboot`; seconds until `www`, `demo`, `app`
+   answer 200 from the laptop, polled; timers, Caddy, waitlistd active
+   afterwards; recorded. Then choice C applied.
+8. **Continuity.** `continuity.sh` run; the archive decrypted on the
+   laptop into a scratch directory and diffed against the live files.
+9. Snapshot taken (choice D). LEDGER and runbook v3 §4–§6 rewritten for
+   the push chain; the phase-10 pull sections replaced, not kept beside.
+
+### 10.5 Gate closed 2026-10-28
+
+The maintainer answered every §10.3 question (R2 under a bucket lock,
+lifecycle pruning, automatic reboots after the drill, snapshot per
+checkpoint close, key reused, one alarm check, healthchecks.io). Two
+console steps precede the build and are the maintainer's: the R2 bucket
+with its two rules and one bucket-scoped token; the healthchecks.io
+account and its ping URL. Both values go to the LEDGER; the token reaches
+the host by a single write to `backup.env` and nowhere else.
+
+The two deferred console items (Contabo panel firewall 22/80/443; Gmail
+"Send as" for the domain mailbox) are unchanged and unrelated to CP3; the
+alarm mail arrives through Email Routing regardless of the second.

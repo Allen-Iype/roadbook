@@ -156,7 +156,8 @@ mind. Written as decisions are made, not reconstructed.
   compose, web, tests, landing); the OAuth client was published — the
   console's own wording recorded in §9.3's spirit: "available to any user
   with a Google Account"; verification only for more than 10 domains, a
-  logo, or sensitive scopes. The live walk ran at cap 1 then 10: a second
+  logo, or sensitive scopes; the consent screen itself showed no
+  unverified-app warning on the walk. The live walk ran at cap 1 then 10: a second
   identity was refused to the full page and reached the waitlist form; it
   was admitted after the raise and saw nothing of the first; it deleted
   itself and the seat count fell. Two findings fixed during the walk: the
@@ -171,3 +172,63 @@ mind. Written as decisions are made, not reconstructed.
   users, counted over the app's life) → when the product's cap approaches
   it, verification becomes a phase-16 task; a stranger stalling at the
   consent screen → revisit the branding fields.
+
+## 2026-10-28 — CP3 gate: the durability chain's shape (BRIEF §10)
+
+- **Chosen:** whole-stack archive (one `pg_dump` inside the db container
+  with `countries`/`states` data excluded as regenerable, plus both file
+  volumes), checked every night and pushed only when a content
+  fingerprint — SHA-256 of the plain dump plus a volume listing — changed;
+  age-encrypted on the host to the reused phase-10 public key; pushed by
+  rclone to **Cloudflare R2** on the existing account, the bucket under a
+  90-day bucket lock with a lifecycle rule deleting at 90 days; one
+  healthchecks.io check pinged every night with a per-stack body
+  (pushed / unchanged, skipped), `/fail` on any error; automatic reboots
+  enabled after the reboot drill; provider snapshot once per checkpoint
+  close; the phase-10 backup trio retired in the CP3 commit; a private
+  laptop continuity archive (docs/private, CLAUDE.local.md, memory) to
+  iCloud at each checkpoint close.
+- **Rejected:** Backblaze B2 (the first draft's choice for its add-only
+  keys — the maintainer asked for the existing Cloudflare account, and
+  R2's bucket lock gives equivalent protection with one account fewer);
+  laptop-side pruning (the laptop as a moving part is the phase-12
+  lesson); "newest row timestamp" as the fingerprint (the dump hash is
+  complete over every table and costs seconds); one alarm check per
+  stack; a weekly manual snapshot (a chore that would stall); a new key
+  pair for the VPS era.
+- **Would change our mind:** the bucket lock refusing a delete the
+  lifecycle rule needs (the documentation says the lock is satisfied
+  first; CP3 verifies on a real object) → lifecycle set beyond the lock
+  age; archives growing past the free 10 GB inside 90 days → shorter
+  retention or a paid tier at a STOP; a night-time reboot catching a real
+  upload more than once → reboot time moved or disabled.
+
+## 2026-10-28 — CP3 built and drilled: the chain is live and the archive travels in two parts
+
+- **Chosen:** the backup splits into a database part and a files part,
+  each with its own fingerprint and its own object in the bucket, after
+  the maintainer's cost caution at the R2 activation screen: the
+  database is small and moves on every sign-in, the files are large and
+  move only on an upload, so a quiet night costs megabytes against the
+  free 10 GB (measured: app 8.3 MB + 56 MB on the first push, then
+  "unchanged" nights). The fingerprint ignores `pg_dump`'s random
+  `\restrict` guard lines (PostgreSQL 17.6+/18 writes a fresh token into
+  every plain dump — two dumps of identical data differed by exactly
+  those two lines). Every `docker compose exec/run` in the host scripts
+  reads from `/dev/null`: compose forwards stdin, and the first restore
+  lost the bundle on stdin to the population-check query. The
+  missed-night test ran with a 2-minute period so it fit the session;
+  the first attempt produced no mail because the hello@ method was
+  switched on for the check *after* it had already gone down — alerts
+  are sent only at the moment of a status change — so the test was
+  repeated from an "up" state and both mails arrived. Automatic reboots
+  enabled at 23:30 UTC once the reboot drill passed (36 s unattended).
+- **Rejected:** one archive per stack (the §10 draft — pushes the whole
+  uploads volume on every sign-in night); a laptop rclone token for the
+  drill (the host's rclone fetched the object; the documented no-host
+  path is the dashboard download); keeping the `/start` ping out (it
+  makes a hung run visible as a run that never closed).
+- **Would change our mind:** a bucket listing nearing 8 GB → shorter
+  lifecycle at a STOP; the initdb race on a fresh stamp (hit for the
+  third time this phase) → a retry loop inside `new-instance.sh`; a
+  night-time reboot catching a real upload → reboot time moved.

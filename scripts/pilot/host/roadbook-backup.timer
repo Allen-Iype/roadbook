@@ -1,7 +1,7 @@
-# Nightly at 22:00 UTC = 03:30 IST (the quiet hour the laptop-era backup
-# used). Persistent: a missed night runs at next boot.
+# Nightly at 22:00 UTC (03:30 IST), before the 23:30 UTC unattended-reboot
+# slot. Persistent: a missed night runs at next boot.
 [Unit]
-Description=Nightly Roadbook pilot backup
+Description=Nightly Roadbook backup
 
 [Timer]
 OnCalendar=*-*-* 22:00:00

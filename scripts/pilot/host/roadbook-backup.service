@@ -1,17 +1,20 @@
-# Nightly backup unit for the VPS host (phase 10 CP4, BRIEF §3D).
+# Nightly durability job for the host (phase 15 CP3, BRIEF §10).
 # Install: sudo cp roadbook-backup.{service,timer} /etc/systemd/system/
 #          sudo systemctl daemon-reload && sudo systemctl enable --now roadbook-backup.timer
-# Runs backup-all.sh: every stamped instance -> age ciphertext in ~/backups
-# (the host holds only the PUBLIC key; archives are unreadable where they
-# are produced). The operator's machine pulls the ciphertext on its own
-# schedule — see pull-backups.sh.
+# Runs backup-nightly.sh: every stamped instance is staged, fingerprinted,
+# and — only when changed — encrypted to the operator's PUBLIC key and
+# pushed off-host; the dead-man's switch is pinged every run. The host
+# holds no key that can read an archive back.
+# /srv/pilot/backup.env (0600, never committed) supplies the remote, the
+# ping URL, and rclone's env-style remote definition.
 [Unit]
-Description=Roadbook pilot nightly backup (all instances)
-After=docker.service
-Wants=docker.service
+Description=Roadbook nightly backup (whole-stack, pushed off-host)
+After=docker.service network-online.target
+Wants=docker.service network-online.target
 
 [Service]
 Type=oneshot
 User=ubuntu
-ExecStart=/home/ubuntu/roadbook/scripts/pilot/host/backup-all.sh
-TimeoutStartSec=1800
+EnvironmentFile=/srv/pilot/backup.env
+ExecStart=/home/ubuntu/roadbook/scripts/pilot/host/backup-nightly.sh
+TimeoutStartSec=3600
