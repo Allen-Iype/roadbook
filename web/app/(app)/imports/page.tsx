@@ -1,4 +1,3 @@
-import Link from "next/link";
 
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
@@ -39,25 +38,24 @@ export default async function ImportsPage() {
 
   return (
     <Shell accountEmail={accountEmail}>
-      <UploadImport />
-      <PhotoUploadImport />
+      {/* The two doors side by side from lg (CP3 review): at full page
+          width each panel's two-line intro sat in the left third of a
+          wide frame. Half-width panels put the text at a natural measure
+          with no cap; on a phone they stack as before. */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <UploadImport />
+        <PhotoUploadImport />
+      </div>
       {data.imports.length === 0 ? (
-        <p className="mt-6 text-ink-2">
-          No imports yet — upload an export above (
-          <Link
-            href="/welcome"
-            className="underline decoration-rule underline-offset-2 hover:text-ink"
-          >
-            how to get one
-          </Link>
-          )
+        <p className="mt-8 text-sm text-ink-2">
+          Nothing added yet
           {/* The CLI route exists only where the operator is the user:
               a hosted account cannot run anything on the server. */}
           {session?.mode === "oidc" ? (
             "."
           ) : (
             <>
-              , or run{" "}
+              {" "}— upload above, or run{" "}
               <code className="font-mono">roadbook import -src Timeline.json</code>.
             </>
           )}
@@ -88,42 +86,51 @@ function Shell({
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
       <SiteHeader active="imports" instanceLabel={INSTANCE_LABEL}
         accountEmail={accountEmail} />
+      {/* Phase 16 CP3: the heading alone. The paragraph that sat here
+          described the table and pointed at the export walkthrough; the
+          table now carries its own heading, and the walkthrough link
+          lives in the panel whose file it explains. */}
       <h1 className="mt-8 font-display text-2xl font-semibold">Imports</h1>
-      <p className="mt-1 text-sm text-ink-2">
-        Every import attempt, newest first — including the failed ones, with
-        what the file turned out to be. New here?{" "}
-        <Link
-          href="/welcome"
-          className="underline decoration-rule underline-offset-2 hover:text-ink"
-        >
-          How to export your Timeline
-        </Link>
-        .
-      </p>
       {children}
     </main>
   );
 }
 
+// What the sniffer's label means in words (phase 16 CP3). The two formats
+// that import are named for the person; a rejected file keeps the label the
+// sniffer gave it ("pdf", "zip", "kml"), which already says what it was.
+// Presentation only — the label itself travels unchanged from Go.
+const FORMAT_LABELS: Record<string, string> = {
+  "phone-timeline": "Timeline export",
+  photos: "Photos",
+};
+
 function ImportTable({ imports }: { imports: Import[] }) {
   return (
-    <div className="mt-6 overflow-x-auto">
+    <section className="mt-10">
+      <h2 className="font-display text-lg font-semibold">Added so far</h2>
+      <div className="mt-3 overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           {/* The detail columns hide at phone width (small-screen pass,
-              BRIEF §1.5): When/Source/New/Status is the story a thumb
+              BRIEF §1.5): Added/Source/New/Status is the story a thumb
               needs — the status cell already carries any failure prose.
               Format joins from sm:, the full accounting from md:, and
-              overflow-x-auto remains the belt. */}
+              overflow-x-auto remains the belt.
+              Phase 16 CP3: the headers are words, not column names —
+              "Window" was the import's date bounds, "Points" the path
+              points and "Raw" the recorded positions (RESEARCH §4). The
+              figures are unchanged and still what `roadbook import`
+              prints. */}
           <tr className="border-b border-ink/40 text-left text-xs uppercase tracking-wide text-ink-2">
-            <th className="py-2 pr-4">When</th>
+            <th className="py-2 pr-4">Added</th>
             <th className="py-2 pr-4">Source</th>
             <th className="hidden py-2 pr-4 sm:table-cell">Format</th>
-            <th className="hidden py-2 pr-4 md:table-cell">Window</th>
+            <th className="hidden py-2 pr-4 md:table-cell">Dates</th>
             <th className="hidden py-2 pr-4 text-right md:table-cell">Visits</th>
             <th className="hidden py-2 pr-4 text-right md:table-cell">Activities</th>
-            <th className="hidden py-2 pr-4 text-right md:table-cell">Points</th>
-            <th className="hidden py-2 pr-4 text-right md:table-cell">Raw</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Path points</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Positions</th>
             <th className="hidden py-2 pr-4 text-right md:table-cell">Skipped</th>
             <th className="py-2 pr-4 text-right">New</th>
             <th className="py-2 pr-4">Status</th>
@@ -136,10 +143,12 @@ function ImportTable({ imports }: { imports: Import[] }) {
                 {imp.imported_at.slice(0, 10)}
               </td>
               <td className="py-2 pr-4">{imp.source_label}</td>
-              <td className="hidden py-2 pr-4 font-mono text-ink-2 sm:table-cell">
+              <td className="hidden py-2 pr-4 text-ink-2 sm:table-cell">
                 {/* Absent means the input was never recognised (not JSON,
                     unreadable) — different information than a known format. */}
-                {imp.detected_format ?? "—"}
+                {imp.detected_format
+                  ? (FORMAT_LABELS[imp.detected_format] ?? imp.detected_format)
+                  : "—"}
               </td>
               <td className="hidden py-2 pr-4 font-mono whitespace-nowrap text-ink-2 md:table-cell">
                 {windowLabel(imp)}
@@ -161,7 +170,8 @@ function ImportTable({ imports }: { imports: Import[] }) {
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -207,7 +217,7 @@ function StatusCell({ imp }: { imp: Import }) {
 // the meaning; slice instead of new Date() for the same offset-preserving
 // reason as the candidate list.
 function windowLabel(imp: Import): string {
-  if (!imp.window_start && !imp.window_end) return "all";
+  if (!imp.window_start && !imp.window_end) return "everything";
   const d = (s?: string) => (s ? s.slice(0, 10) : "…");
   return `${d(imp.window_start)} → ${d(imp.window_end)}`;
 }

@@ -18,6 +18,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Term } from "@/components/term";
+
 type ImportRow = {
   id: number;
   status: "running" | "completed" | "failed";
@@ -49,10 +51,16 @@ type Phase =
 
 const POLL_MS = 1500;
 
-// `intro` controls the explanatory paragraph: standalone placements
-// (/imports) need it; /welcome embeds the island under a section that has
-// already said all of it, and keeps only the operational line.
-export function PhotoUploadImport({ intro = true }: { intro?: boolean } = {}) {
+// Two placements (phase 16 CP2, the same split as upload-import.tsx):
+// "panel" is the framed section with heading and intro for /imports;
+// "door" is the front door's second door — the button alone, outlined
+// rather than filled because the Timeline picker above it is the one
+// primary action, with the section's single line doing the explaining.
+export type PhotoUploadVariant = "panel" | "door";
+
+export function PhotoUploadImport({
+  variant = "panel",
+}: { variant?: PhotoUploadVariant } = {}) {
   const [phase, setPhase] = useState<Phase>({ k: "idle" });
   const [verdicts, setVerdicts] = useState<FileVerdict[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -137,40 +145,59 @@ export function PhotoUploadImport({ intro = true }: { intro?: boolean } = {}) {
     return () => clearInterval(t);
   }, [phase, router]);
 
+  const input = (
+    <input
+      ref={inputRef}
+      type="file"
+      multiple
+      accept="image/jpeg,image/heic,image/heif,.jpg,.jpeg,.heic,.heif,.json"
+      disabled={busy}
+      className="hidden"
+      onChange={(e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          start(e.target.files);
+        }
+        e.target.value = "";
+      }}
+    />
+  );
+
+  if (variant === "door") {
+    return (
+      <div>
+        {input}
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+          className="w-full border border-ink bg-paper px-5 py-3 font-display text-base font-semibold text-ink hover:bg-land disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        >
+          {phase.k === "idle" ? "Choose photos" : "Choose more photos"}
+        </button>
+        <div aria-live="polite" className="mt-3 text-sm">
+          <PhotoPhaseView phase={phase} />
+        </div>
+        {verdicts && <VerdictSummary verdicts={verdicts} />}
+      </div>
+    );
+  }
+
   return (
-    <section className="mt-6 border border-rule bg-land p-4">
+    <section className="flex flex-col border border-rule bg-land p-4">
       <h2 className="font-display text-lg font-semibold">Add photos</h2>
-      <p className="mt-1 text-sm text-ink-2">
-        {intro ? (
-          <>
-            Geotagged photos become position evidence: pick the trips (and
-            some everyday photos, so home can be worked out), and detection
-            runs on what they show. JPEG and HEIC both work; Google Photos
-            Takeout JSON sidecars fill in photos whose location was stripped.
-            The photos themselves are not kept — only their positions, times,
-            and small thumbnails. Keep the screen on until the upload
-            finishes.
-          </>
-        ) : (
-          <>Keep the screen on until the upload finishes.</>
-        )}
+      {/* Phase 16 CP3: two sentences. Which photos count and the one
+          term worth teaching here; the formats, the Takeout files and
+          the home-from-everyday-photos advice live in the front door's
+          "Which photos work" fold, where a person choosing photos reads
+          them once. */}
+      <p className="mt-1 text-sm leading-relaxed text-ink-2">
+        Photos that carry a time and place; the picker opens your photo
+        library. <Term id="originals">Original photos</Term> work best —
+        keep the screen on while they upload.
       </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept="image/jpeg,image/heic,image/heif,.jpg,.jpeg,.heic,.heif,.json"
-          disabled={busy}
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files && e.target.files.length > 0) {
-              start(e.target.files);
-            }
-            e.target.value = "";
-          }}
-        />
+      <div className="mt-auto flex flex-wrap items-center gap-3 pt-3">
+        {input}
         <button
           type="button"
           disabled={busy}
@@ -296,11 +323,11 @@ function VerdictSummary({ verdicts }: { verdicts: FileVerdict[] }) {
 function reasonFor(status: FileVerdict["status"]): string {
   switch (status) {
     case "no_position":
-      return "no location in the photo (messenger apps strip it; use camera originals or Takeout sidecars)";
+      return "no place in the photo — a copy from a messenger has it stripped; use the original";
     case "no_time":
       return "a location but no readable capture time";
     case "sidecar_unpaired":
-      return "a metadata file naming no photo in this batch — include the photo it describes";
+      return "a Takeout .json file naming no photo in this batch — include the photo it describes";
     default:
       return "not a supported photo format";
   }

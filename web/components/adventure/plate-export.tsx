@@ -58,42 +58,49 @@ export function PlateExport(props: ExportSpec) {
   }
 
   const buttonClass =
-    "-my-3.5 cursor-pointer border border-ink px-3 py-3.5 text-xs font-semibold tracking-[0.06em] text-ink hover:bg-land disabled:cursor-progress disabled:opacity-60";
+    "cursor-pointer border border-ink px-3 py-3.5 text-xs font-semibold tracking-[0.06em] text-ink hover:bg-land disabled:cursor-progress disabled:opacity-60";
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-rule pt-2.5">
-      {/* Negative-margin padding grows each control to a 44px target
-          without moving its text (the site-wide pattern; py-3.5 because
-          text-xs is a 16px line). */}
-      <button
-        type="button"
-        onClick={() => run("image")}
-        disabled={busy}
-        aria-busy={busy && state.format === "image"}
-        className={buttonClass}
-      >
-        {busy && state.format === "image" ? "Rendering…" : "Download as image"}
-      </button>
-      <button
-        type="button"
-        onClick={() => run("overlay")}
-        disabled={busy}
-        aria-busy={busy && state.format === "overlay"}
-        className={buttonClass}
-      >
-        {busy && state.format === "overlay" ? "Rendering…" : "Download as overlay"}
-      </button>
-      <span className="basis-full text-[11.5px] leading-snug text-ink-2 sm:basis-auto sm:flex-1">
+    <div className="border-t border-rule pt-3">
+      {/* py-3.5 on text-xs (a 16px line) is a 44px target. The padding is
+          real, not the negative-margin kind: the buttons share a wrapping
+          row with the description, and a negative margin let the next
+          line paint over their bottom edge (seen in phase 16 CP1's first
+          build). */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <button
+          type="button"
+          onClick={() => run("image")}
+          disabled={busy}
+          aria-busy={busy && state.format === "image"}
+          className={buttonClass}
+        >
+          {busy && state.format === "image"
+            ? "Rendering…"
+            : "Download as image"}
+        </button>
+        <button
+          type="button"
+          onClick={() => run("overlay")}
+          disabled={busy}
+          aria-busy={busy && state.format === "overlay"}
+          className={buttonClass}
+        >
+          {busy && state.format === "overlay"
+            ? "Rendering…"
+            : "Download as overlay"}
+        </button>
+      </div>
+      <span className="mt-2 block text-[11.5px] leading-snug text-ink-2">
         Image: PNG, 2400 × 1600 — the map with its route, and the margin as
-        printed here. Overlay: PNG, 1080 × 1920, transparent — route and
-        figures only, for your own photo or story. Photos are not drawn in
-        either.
+        printed here. Overlay: PNG, 1080 × 1920, transparent — route and figures
+        only, for your own photo or story. Photos are not drawn in either.
       </span>
       <p
         data-testid="plate-export-status"
         role={state.step === "error" ? "alert" : "status"}
         aria-live="polite"
-        className={`basis-full text-[12.5px] ${
+        className={`mt-1.5 text-[12.5px] ${
           state.step === "error" ? "text-red-700" : "text-ink"
         } ${state.step === "idle" ? "hidden" : ""}`}
       >

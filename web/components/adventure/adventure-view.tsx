@@ -1,10 +1,10 @@
 "use client";
 
-// The adventure plate below its masthead: cover, day narrative, photos, and
-// the map — one client component because the selected day is shared state
-// between the narrative (which sets it) and the map (which dims everything
-// else). Everything it renders comes from props the server component
-// already fetched; no data logic lives here.
+// The adventure plate below its masthead: cover, the map plate, day
+// narrative and photos — one client component because the selected day is
+// shared state between the narrative (which sets it) and the map (which
+// dims everything else). Everything it renders comes from props the server
+// component already fetched; no data logic lives here.
 //
 // Two consumers (phase 13 CP4): the owner's page (app shell) and the
 // read-only shared view (public shell). The plate is the same — a stranger
@@ -12,10 +12,21 @@
 // differ only in what surrounds it, which arrives as props: the owner's
 // islands (photo upload, share controls) as slots, and `shared` carrying
 // the cover facts the shared read provides instead of a candidate.
+//
+// Phase 16 CP1 (BRIEF §4, revised at its STOP): the page is the account
+// of the trip, and the account of how the route was drawn is one tap away
+// at the foot. The cover leads with the trip block; each day is a heading,
+// a line and its stays; the reconstruction figures sit in a <details>
+// after everything else; the floor — legend, provenance bar, divergence
+// flag, truncation marks — stays visible. On a phone the map plate comes
+// right after the cover, before the narrative: the thing a person came
+// for, before the words about it. On a wide screen the plate keeps its
+// sticky right column.
 import { useMemo, useState } from "react";
 
-import { LegKindLegend } from "@/components/legend";
+import { FixDot, LegKindLegend, StopDot } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
+import { Term } from "@/components/term";
 import { fmtHours, fmtMode, roman } from "@/lib/format";
 import { fmtDateRange, isFixLeg, sliceDays } from "@/lib/slice-days";
 import { DayNarrative } from "./day-narrative";
@@ -95,16 +106,88 @@ export function AdventureView({
   const name = adventureName(journey, candidate, shared);
   const truncation = shared ?? candidate;
 
+  // Three grid children in reading order — cover, plate, the rest — so a
+  // phone stacks them as DOM order says. From lg: up the plate takes the
+  // right column across both rows and sticks; the cover and the rest share
+  // the left column. items-start keeps the sticky aside's area taller than
+  // the aside itself, which is what lets it stick.
   return (
-    <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(24rem,32rem)_minmax(0,1fr)]">
-      <article>
-        <Cover
-          journey={journey}
-          candidate={candidate}
-          plate={plate}
-          shared={shared}
-          name={name}
-        />
+    <article className="mt-6 lg:grid lg:grid-cols-[minmax(24rem,32rem)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10">
+      <Cover
+        journey={journey}
+        candidate={candidate}
+        plate={plate}
+        shared={shared}
+        name={name}
+      />
+
+      {journey.legs.length > 0 && (
+        <aside className="mt-6 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0">
+          {/* The plate: map framed with a double rule, its margin printed
+              below — legend, scale bar (on the canvas), and plate label as
+              marginalia (DESIGN §6). */}
+          <div className="border border-ink [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
+            <RouteMap
+              journey={journey}
+              styleUrl={styleUrl}
+              photos={photoList}
+              days={days}
+              selectedDay={selected}
+              className="h-[26rem] w-full lg:h-[min(76vh,52rem)]"
+            />
+          </div>
+          <div className="border border-t-0 border-ink bg-paper px-4 py-2.5 [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              <span className="font-display text-[11.5px] font-semibold tracking-[0.22em]">
+                {selected !== null ? (
+                  `DAY ${selected} HIGHLIGHTED`
+                ) : plate !== null ? (
+                  <>
+                    <Term id="plate">PLATE {roman(plate)}</Term> · FULL ROUTE
+                  </>
+                ) : (
+                  "FULL ROUTE"
+                )}
+              </span>
+              <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink">
+                {journey.legs.some(isFixLeg) && (
+                  <span className="inline-flex items-center gap-2">
+                    <FixDot />
+                    <span className="font-semibold tracking-wide">Fix</span>
+                    <span className="text-ink-2">one recorded position</span>
+                  </span>
+                )}
+                {journey.stops.some((s) => !(s.loc.lat === 0 && s.loc.lon === 0)) && (
+                  <span className="inline-flex items-center gap-2">
+                    <StopDot />
+                    <span className="font-semibold tracking-wide">Stop</span>
+                  </span>
+                )}
+              </span>
+            </div>
+            <div className="mt-2.5">
+              <LegKindLegend />
+            </div>
+            <div className="mt-2.5">
+              {/* The image export (phase 14 CP3) — a second margin row, on
+                  the owner's page and the shared view alike. It renders what
+                  this plate shows: a highlighted day exports highlighted. */}
+              <PlateExport
+                journey={journey}
+                days={days}
+                selectedDay={selected}
+                styleUrl={styleUrl}
+                name={name}
+                plate={plate}
+                startTruncated={truncation?.start_truncated ?? false}
+                endTruncated={truncation?.end_truncated ?? false}
+              />
+            </div>
+          </div>
+        </aside>
+      )}
+
+      <div className="lg:col-start-1 lg:row-start-2">
         {shareControls}
         <DayNarrative
           days={days}
@@ -149,68 +232,21 @@ export function AdventureView({
         ) : (
           <ImportPhotosStrip photos={importedList} />
         )}
-      </article>
-
-      {journey.legs.length > 0 && (
-        <aside className="lg:sticky lg:top-6">
-          {/* The plate: map framed with a double rule, its margin printed
-              below — legend, scale bar (on the canvas), and plate label as
-              marginalia (DESIGN §6). */}
-          <div className="border border-ink [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
-            <RouteMap
-              journey={journey}
-              styleUrl={styleUrl}
-              photos={photoList}
-              days={days}
-              selectedDay={selected}
-              className="h-[26rem] w-full lg:h-[min(76vh,52rem)]"
-            />
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 border border-t-0 border-ink bg-paper px-4 py-2.5 [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
-            <span className="font-display text-[11.5px] font-semibold tracking-[0.22em]">
-              {selected !== null
-                ? `DAY ${selected} HIGHLIGHTED`
-                : plate !== null
-                  ? `PLATE ${roman(plate)} · FULL ROUTE`
-                  : "FULL ROUTE"}
-            </span>
-            <LegKindLegend wordy={false} />
-            {journey.legs.some(isFixLeg) && (
-              <span className="inline-flex items-center gap-2 text-xs text-ink">
-                <span className="inline-block h-2 w-2 rounded-full border border-paper bg-observed shadow-[0_0_0_1px_var(--color-observed)]" />
-                <span className="font-semibold tracking-wide">Fix</span>
-              </span>
-            )}
-            {journey.stops.some((s) => !(s.loc.lat === 0 && s.loc.lon === 0)) && (
-              <span className="inline-flex items-center gap-2 text-xs text-ink">
-                <span className="inline-block h-2.5 w-2.5 rounded-full border border-paper bg-ink shadow-[0_0_0_1px_var(--color-ink)]" />
-                <span className="font-semibold tracking-wide">Stop</span>
-              </span>
-            )}
-            {/* The image export (phase 14 CP3) — a second margin row, on
-                the owner's page and the shared view alike. It renders what
-                this plate shows: a highlighted day exports highlighted. */}
-            <PlateExport
-              journey={journey}
-              days={days}
-              selectedDay={selected}
-              styleUrl={styleUrl}
-              name={name}
-              plate={plate}
-              startTruncated={truncation?.start_truncated ?? false}
-              endTruncated={truncation?.end_truncated ?? false}
-            />
-          </div>
-        </aside>
-      )}
-    </div>
+        <DrawingDisclosure journey={journey} />
+      </div>
+    </article>
   );
 }
 
-// The cover (BRIEF §1, DESIGN §4): the honest figures only — distance with
-// its provenance bar, dates, days, fixes, countries, truncation and
-// divergence as words. No score: ranking is triage machinery, and it stays
-// in the candidates table and the confirm cell.
+// The cover (DESIGN §4, reorganised in phase 16 CP1): eyebrow, name, the
+// dateline with the places passed through; then the trip block — days and
+// the headline kilometres over their provenance bar, time away, time on
+// the move, stops, distance from home. The account of the drawing (kind
+// kilometres, point counts, Google's figure, modes, the divergence check)
+// is one <details> at the foot of the page (DrawingDisclosure), closed by
+// default, with a flagged divergence's one line above it.
+// No score: ranking is triage machinery, and it stays in the candidates
+// gallery and the confirm cell.
 function Cover({
   journey,
   candidate,
@@ -231,24 +267,31 @@ function Cover({
   const dayCount = journey.summary.civil_days;
   const decision = candidate?.decision;
   const confirmed = decision?.action === "confirmed";
-  // The shared eyebrow names what a stranger is looking at; the plate
-  // number is the owner's atlas register and stays theirs.
-  const eyebrow = shared
-    ? "SHARED ADVENTURE"
-    : confirmed
-      ? `CONFIRMED ADVENTURE${plate !== null ? ` · PLATE ${roman(plate)}` : ""}`
-      : decision?.action === "dismissed"
-        ? "DISMISSED CANDIDATE"
-        : "CANDIDATE";
   const truncation = shared ?? candidate;
-  const pctObserved =
-    journey.total_km > 0
-      ? Math.round((journey.observed_km / journey.total_km) * 100)
-      : 0;
 
   return (
-    <header>
-      <p className="text-[11.5px] tracking-[0.24em] text-ink-2">{eyebrow}</p>
+    <header className="lg:col-start-1 lg:row-start-1">
+      {/* The shared eyebrow names what a stranger is looking at; the plate
+          number is the owner's atlas register and stays theirs. */}
+      <p className="text-[11.5px] tracking-[0.24em] text-ink-2">
+        {shared ? (
+          "SHARED ADVENTURE"
+        ) : confirmed ? (
+          <>
+            CONFIRMED ADVENTURE
+            {plate !== null && (
+              <>
+                {" · "}
+                <Term id="plate">PLATE {roman(plate)}</Term>
+              </>
+            )}
+          </>
+        ) : decision?.action === "dismissed" ? (
+          "DISMISSED CANDIDATE"
+        ) : (
+          <Term id="candidate">CANDIDATE</Term>
+        )}
+      </p>
       <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
         {name}
       </h1>
@@ -262,66 +305,28 @@ function Cover({
             Local names with their diacritics — what the road sign said. */}
         {journey.states.length > 0 && (
           <> · {journey.states.map((s) => s.name).join(", ")}</>
-        )}{" "}
-        · {dayCount} {dayCount === 1 ? "day" : "days"} · {journey.merged_points}{" "}
-        fixes
+        )}
       </p>
       {(truncation?.start_truncated || truncation?.end_truncated) && (
-        // Truncation as words (bug 4 made visible), not markers. The amber
-        // stays on the flag glyph: the token passes contrast as a mark but
-        // not as sentence text (the CP4 a11y pass), so words are ink.
+        // Truncation as words (bug 4 made visible). The amber stays on the
+        // flag glyph: the token passes contrast as a mark but not as
+        // sentence text (the phase 6 CP4 a11y pass), so the words are ink.
         <p className="mt-2 max-w-[52ch] text-[13px]">
           <span className="font-bold text-flag" aria-hidden>
             ⚑
           </span>{" "}
           {truncation.start_truncated &&
-            "The record starts mid-journey — it began before the imported window. "}
+            "Already under way when the record begins. "}
           {truncation.end_truncated &&
-            "Still in progress at the window's edge — the end shown is the cut, not the return."}
+            "Still under way when the record ends."}
         </p>
       )}
 
-      <div className="mt-5 border-b border-rule border-t border-t-ink py-4">
-        <p className="font-display text-3xl font-semibold leading-none sm:text-4xl">
-          {journey.total_km.toFixed(0)} km
-          <span className="ml-2 font-sans text-base font-normal text-ink-2">
-            drawn — {pctObserved}% of it measured
-          </span>
-        </p>
-        <ProvenanceBar
-          observed={journey.observed_km}
-          routed={journey.routed_km}
-          unknown={journey.unknown_km}
-          air={journey.air_km}
-          className="mb-2 mt-3"
-        />
-        <p className="font-mono text-xs text-ink-2">
-          observed {journey.observed_km.toFixed(1)} km · routed{" "}
-          {journey.routed_km.toFixed(1)} km · unknown{" "}
-          {journey.unknown_km.toFixed(1)} km · air {journey.air_km.toFixed(1)}{" "}
-          km
-        </p>
-        <p className="mt-1.5 text-xs text-ink-2">
-          {journey.merged_points} points ({journey.trace_points_kept} trace +{" "}
-          {journey.raw_points_kept} raw)
-          {journey.google_km > 0 && (
-            <> · Google&apos;s own figure {journey.google_km.toFixed(1)} km</>
-          )}
-          {journey.countries.length > 0 && (
-            <>
-              {" · "}
-              {journey.states.length > 0
-                ? "countries and regions derived from route points"
-                : "countries derived from route points"}
-            </>
-          )}
-        </p>
-        <ModeLine journey={journey} />
-      </div>
-
-      <SummaryBlock journey={journey} candidate={shared ? undefined : candidate} />
-
-      <Divergence journey={journey} />
+      <TripBlock
+        journey={journey}
+        dayCount={dayCount}
+        candidate={shared ? undefined : candidate}
+      />
 
       {shared ? (
         <p className="mb-8 mt-4 text-[11.5px] uppercase tracking-[0.18em] text-ink-2">
@@ -334,7 +339,7 @@ function Cover({
               {decision.action} {shortDate(decision.updated_at)}
             </>
           ) : (
-            <>Undecided — confirm or dismiss in the candidates table</>
+            <>Undecided — confirm or dismiss in the candidates gallery</>
           )}
         </p>
       )}
@@ -342,124 +347,181 @@ function Cover({
   );
 }
 
-// The summary block (phase 14 BRIEF §2a, reworded at the CP2 review): what
-// the trip was, in the traveller's words — time away, time on the move,
-// stops, the places passed through, distance from home. The pipeline's
-// own vocabulary (observed, routed, unknown, fixes) stays on the provenance
-// lines above, where the headline distance is explained; here it would
-// answer a question nobody asked. Every figure is served by the API and
-// printed identically by `roadbook journey -candidate N`. "On the move" is
-// the source's own transit time — the sum of its activity durations, the
-// same claim as the mode line — chosen at review over span-minus-dwell
-// (DECISIONS 2026-09-25); the average speed beside it is measured, over
-// recorded driving only. The one home-relative figure appears for the
-// owner only: the shared view never names home (BRIEF §3E), so
-// `candidate` is withheld there. Labels quiet sans, figures mono (DESIGN §6).
-function SummaryBlock({
+// The trip block (phase 14's summary, made the hero in phase 16 CP1): what
+// the trip was, in the traveller's words. The headline kilometres carry
+// their provenance bar and its caption — the one place the bar is taught
+// (a Term) — then time away, time on the move, stops, distance from home.
+// Every figure is served by the API and printed identically by
+// `roadbook journey -candidate N`. "On the move" is the source's own
+// transit time — the sum of its activity durations, the same claim as the
+// mode line in the disclosure — chosen at the phase 14 review over
+// span-minus-dwell; the average speed beside it is measured, over recorded
+// driving only. The one home-relative figure appears for the owner only:
+// the shared view never names home (phase 14 BRIEF §3E), so `candidate`
+// is withheld there. Labels quiet sans, figures mono (DESIGN §6).
+function TripBlock({
   journey,
+  dayCount,
   candidate,
 }: {
   journey: Journey;
+  dayCount: number;
   candidate?: Candidate;
 }) {
   const s = journey.summary;
   const bd = journey.mode_breakdown;
   const transitHours =
     bd === undefined ? undefined : bd.reduce((acc, m) => acc + m.hours, 0);
-  const through = [
-    journey.countries.map((c) => c.name).join(" · "),
-    journey.states.map((r) => r.name).join(", "),
-  ].filter((part) => part !== "");
   return (
-    <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-1.5 text-[13px] leading-snug">
-      <dt className="text-ink-2">Time away</dt>
-      <dd>
-        <span className="font-mono">{fmtHours(s.span_hours)}</span>
-        {" — "}
-        {dayWord(s.civil_days)}
-      </dd>
-      <dt className="text-ink-2">On the move</dt>
-      <dd>
-        {transitHours === undefined ? (
-          "no transit record — this journey's evidence carries no activity data"
-        ) : (
+    <section
+      aria-label="The trip"
+      className="mt-5 border-t border-t-ink py-4"
+    >
+      <p className="font-display text-4xl font-semibold leading-none sm:text-5xl">
+        {journey.total_km.toFixed(0)} km
+        <span className="ml-2.5 font-sans text-base font-normal text-ink-2">
+          {dayCount === 1 ? "in one day" : `over ${dayCount} days`}
+        </span>
+      </p>
+      <ProvenanceBar
+        observed={journey.observed_km}
+        routed={journey.routed_km}
+        unknown={journey.unknown_km}
+        air={journey.air_km}
+        className="mb-2 mt-3.5"
+      />
+      <p className="text-xs text-ink-2">
+        <Term id="provenance">How much of this was recorded, how much drawn in</Term>
+      </p>
+
+      <dl className="mt-5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 text-[13px] leading-snug">
+        <dt className="text-ink-2">Time away</dt>
+        <dd>
+          <span className="font-mono">{fmtHours(s.span_hours)}</span>
+        </dd>
+        <dt className="text-ink-2">On the move</dt>
+        <dd>
+          {transitHours === undefined ? (
+            <span className="text-ink-2">no record of it</span>
+          ) : (
+            <>
+              <span className="font-mono">{fmtHours(transitHours)}</span>
+              <span className="text-ink-2"> by Google&apos;s count</span>
+              {s.observed_pace_kmh !== undefined && (
+                <>
+                  {" · "}
+                  <span className="font-mono">
+                    {s.observed_pace_kmh.toFixed(0)} km/h
+                  </span>
+                  <span className="text-ink-2"> average where recorded</span>
+                </>
+              )}
+            </>
+          )}
+        </dd>
+        <dt className="text-ink-2">Stopped</dt>
+        <dd>
+          {s.stops === 0 ? (
+            <span className="text-ink-2">no stops recorded</span>
+          ) : (
+            <>
+              <span className="font-mono">{s.stops}</span>
+              {s.stops === 1 ? " stop · " : " stops · "}
+              <span className="font-mono">{fmtHours(s.dwell_hours)}</span>
+            </>
+          )}
+        </dd>
+        {candidate && (
           <>
-            <span className="font-mono">{fmtHours(transitHours)}</span>
-            {s.observed_pace_kmh !== undefined && (
-              <>
-                {" · "}
-                <span className="font-mono">
-                  {s.observed_pace_kmh.toFixed(0)} km/h
-                </span>
-                {" average"}
-              </>
-            )}
-            <span className="text-ink-2">
-              {" — by the source's account"}
-              {s.observed_pace_kmh !== undefined &&
-                "; speed over recorded driving"}
-            </span>
+            <dt className="text-ink-2">Farthest</dt>
+            <dd>
+              <span className="font-mono">{candidate.dest_km} km</span>
+              {" from home"}
+            </dd>
           </>
         )}
-      </dd>
-      <dt className="text-ink-2">Stopped</dt>
-      <dd>
-        {s.stops === 0 ? (
-          "no stops recorded"
-        ) : (
-          <>
-            <span className="font-mono">{s.stops}</span>
-            {s.stops === 1 ? " stop · " : " stops · "}
-            <span className="font-mono">{fmtHours(s.dwell_hours)}</span>
-          </>
-        )}
-      </dd>
-      {through.length > 0 && (
-        <>
-          <dt className="text-ink-2">Through</dt>
-          <dd>{through.join(" — ")}</dd>
-        </>
-      )}
-      {candidate && (
-        <>
-          <dt className="text-ink-2">Farthest</dt>
-          <dd>
-            <span className="font-mono">{candidate.dest_km} km</span>
-            {" from home"}
-          </dd>
-        </>
-      )}
-    </dl>
+      </dl>
+    </section>
   );
 }
 
-function dayWord(n: number): string {
-  return `${n} ${n === 1 ? "day" : "days"}`;
+// The disclosure (BRIEF §5B), at the FOOT of the page since the CP1 STOP:
+// the last thing on a page about the trip, reachable, closed by default.
+// The cover's flagged distance check still points here ("below").
+function DrawingDisclosure({ journey }: { journey: Journey }) {
+  return (
+    <>
+      <DivergenceFlag journey={journey} />
+      <details className="mt-3 border-t border-b border-rule text-xs [&[open]>summary>span]:rotate-90">
+        {/* py-3 on a 20px line = 44px: a thumb-sized disclosure control. */}
+        <summary className="cursor-pointer list-none py-3 text-sm text-ink-2 marker:content-none [&::-webkit-details-marker]:hidden">
+          <span className="mr-2 inline-block w-3 text-center transition-transform" aria-hidden>
+            ▸
+          </span>
+          How this route was drawn
+        </summary>
+        <DrawingAccount journey={journey} />
+      </details>
+    </>
+  );
+}
+
+// The account of the drawing, behind the disclosure (BRIEF §5B): the kind
+// kilometres, the point counts, Google's own figure, the modes as the
+// source labelled them, and the divergence check in full. These are the
+// figures `roadbook journey -candidate N` prints (invariant 13) — kept,
+// reachable, out of the way.
+function DrawingAccount({ journey }: { journey: Journey }) {
+  return (
+    <div className="space-y-2 pb-4 text-ink-2">
+      <p className="font-mono">
+        observed {journey.observed_km.toFixed(1)} km · routed{" "}
+        {journey.routed_km.toFixed(1)} km · unknown{" "}
+        {journey.unknown_km.toFixed(1)} km · air {journey.air_km.toFixed(1)}{" "}
+        km
+      </p>
+      <p>
+        {journey.merged_points} recorded points ({journey.trace_points_kept}{" "}
+        from the timeline + {journey.raw_points_kept} raw)
+        {journey.google_km > 0 && (
+          <>
+            {" · Google's own distance "}
+            <span className="font-mono">{journey.google_km.toFixed(1)} km</span>
+          </>
+        )}
+        {journey.countries.length > 0 && (
+          <>
+            {" · "}
+            {journey.states.length > 0
+              ? "countries and regions from the route's recorded points"
+              : "countries from the route's recorded points"}
+          </>
+        )}
+      </p>
+      <ModeLine journey={journey} />
+      <DivergenceFigures journey={journey} />
+    </div>
+  );
 }
 
 // The source-asserted mode line (phase 11 §6.2): Google's own labels and
-// distances, visually subordinate to the measured figures above it and never
-// summed with them — the source's guesses have recorded failures (a 1,023 km
-// "motorcycling" relocation; probability-0.00 modes), and the pipeline
-// itself trusts speed over mode for flight classification. Absent breakdown
-// (a photo-sourced journey has no activities) states the absence, never
-// zeros. Reproduction: `roadbook journey -candidate N` prints the same line.
+// distances, never summed with the measured figures — the source's guesses
+// have recorded failures (a 1,023 km "motorcycling" relocation;
+// probability-0.00 modes), and the pipeline itself trusts speed over mode
+// for flight classification. Absent breakdown (a photo-sourced journey has
+// no activities) states the absence, never zeros. Reproduction:
+// `roadbook journey -candidate N` prints the same line.
 function ModeLine({ journey }: { journey: Journey }) {
   const bd = journey.mode_breakdown;
   if (bd === undefined) {
-    return (
-      <p className="mt-1.5 text-xs text-ink-2">
-        No mode record — this journey&apos;s evidence carries no activity
-        data.
-      </p>
-    );
+    return <p>No mode record — this journey&apos;s evidence carries no activity data.</p>;
   }
   if (bd.length === 0) return null;
   // Per-mode hours (phase 14 CP2) ride beside the km — the same claim, the
-  // source's own; their sum is the summary's "on the move" row.
+  // source's own; their sum is the trip block's "on the move" row.
   return (
-    <p className="mt-1.5 text-xs text-ink-2">
-      By mode, as the source recorded it (modes are guesses):{" "}
+    <p>
+      By mode, as Google labelled it (modes are guesses):{" "}
       {bd.map((m, i) => (
         <span key={m.mode}>
           {i > 0 && " · "}
@@ -473,20 +535,18 @@ function ModeLine({ journey }: { journey: Journey }) {
   );
 }
 
-// The phase 3 validation line: the road-comparable reconstruction against
-// Google's own ground figure — air excluded from both sides. Flagged, it
-// becomes the cover's one amber note; unflagged, a quiet line. Divergence is
-// a conversation starter, never a gate: the unknown and routed legs
-// explaining it are right there on the map.
-function Divergence({ journey }: { journey: Journey }) {
+// The phase 3 validation check, in full, inside the disclosure: the
+// road-comparable reconstruction against Google's own ground figure — air
+// excluded from both sides. Divergence is a conversation starter, never a
+// gate: the unknown and routed legs explaining it are right there on the
+// map. Spacing rides in {" "} expressions throughout: SWC drops inter-tag
+// whitespace in some constructs (the phase 7 trap — this very line
+// rendered "62.7 km· Google's" until phase 9's screenshot review).
+function DivergenceFigures({ journey }: { journey: Journey }) {
   if (journey.divergence_pct === undefined) return null;
-  // Spacing rides in {" "} expressions throughout: SWC drops inter-tag
-  // whitespace in some constructs (the phase 7 trap — this very line
-  // rendered "62.7 km· Google's" and "172.0 km(-63.5%)" until phase 9's
-  // screenshot review caught it).
-  const figures = (
-    <>
-      ground reconstruction{" "}
+  return (
+    <p>
+      Distance check: drawn on the ground{" "}
       <span className="font-mono">{journey.ground_km.toFixed(1)} km</span>
       {" · Google's ground figure "}
       <span className="font-mono">{journey.google_ground_km.toFixed(1)} km</span>
@@ -494,20 +554,28 @@ function Divergence({ journey }: { journey: Journey }) {
       {journey.divergence_pct >= 0 ? "+" : ""}
       {journey.divergence_pct.toFixed(1)}
       {"%)"}
-    </>
+      {journey.divergence_flagged &&
+        ". Gaps with no road under-count, detours over-count, and a record cut short compares against a door-to-door figure — the legs explaining it are on the map."}
+    </p>
   );
-  if (!journey.divergence_flagged) {
-    return <p className="mt-3 text-xs text-ink-2">{figures}</p>;
-  }
+}
+
+// The floor (BRIEF §1): a flagged divergence keeps its flag and one line
+// outside the disclosure, visible with it closed — at the foot of the
+// page since the review (maintainer: not a cover fact), directly above
+// the account that explains it.
+function DivergenceFlag({ journey }: { journey: Journey }) {
+  if (journey.divergence_pct === undefined || !journey.divergence_flagged) return null;
+  const pct = Math.abs(Math.round(journey.divergence_pct));
   return (
     <p className="mt-4 flex gap-2.5 border-l-[3px] border-flag bg-land px-3 py-2.5 text-[13px]">
       <span className="font-bold text-flag" aria-hidden>
         ⚑
       </span>
       <span>
-        Distance check flagged: {figures}. Unroutable gaps under-count, road
-        detours over-count, and a truncated window compares against
-        door-to-door figures — the legs explaining it are on the map.
+        The drawn distance and Google&apos;s differ by{" "}
+        <span className="font-mono">{pct}%</span> — the account below says
+        why.
       </span>
     </p>
   );

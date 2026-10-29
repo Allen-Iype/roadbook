@@ -72,3 +72,38 @@ body {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* The teaching note (components/term.tsx). A popover lives in the top
+   layer; the UA centres it in the viewport, which on a phone reads as a
+   small sheet — kept, with the plate's own frame and ground. The first
+   rule hides the note in browsers without popover support (the attribute
+   is unknown there and the span would otherwise render inline); the
+   component swaps in an inline toggle for them. The backdrop is a light
+   wash so the tap-outside dismissal is discoverable. */
+[popover] {
+  display: none;
+}
+.term-note:popover-open {
+  display: block;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(24rem, calc(100vw - 2rem));
+  height: fit-content;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--color-ink);
+  outline: 1px solid var(--color-ink);
+  outline-offset: 3px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+}
+.term-note::backdrop {
+  background: rgb(38 37 31 / 0.18);
+}

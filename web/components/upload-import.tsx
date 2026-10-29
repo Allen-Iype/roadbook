@@ -18,7 +18,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { redirectFor } from "@/lib/rejection-anchors";
+import { WELCOME_SECTIONS, redirectFor } from "@/lib/rejection-anchors";
 
 type ImportRow = {
   id: number;
@@ -45,7 +45,16 @@ type Phase =
 
 const POLL_MS = 1500;
 
-export function UploadImport() {
+// Two placements, one island (phase 16 CP2). "panel" is the framed section
+// with its own heading and intro, for /imports, where the island is one
+// of several things on the page. "door" is the front door's primary
+// action: the button alone, ink-filled and full width on a phone, with the
+// three steps above it doing the explaining — no second heading, no
+// paragraph. The state machine, the proxy and the polling are identical;
+// only the idle rendering differs.
+export type UploadVariant = "panel" | "door";
+
+export function UploadImport({ variant = "panel" }: { variant?: UploadVariant } = {}) {
   const [phase, setPhase] = useState<Phase>({ k: "idle" });
   const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -149,32 +158,71 @@ export function UploadImport() {
     return () => clearInterval(t);
   }, [phase, router]);
 
+  const input = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept=".json,application/json"
+      disabled={busy}
+      className="hidden"
+      onChange={(e) => {
+        const f = e.target.files?.[0];
+        if (f) start(f);
+        // Allow re-selecting the same file after a failure.
+        e.target.value = "";
+      }}
+    />
+  );
+
+  if (variant === "door") {
+    return (
+      <div>
+        {input}
+        {/* text-base (24px line) + py-3 = 48px: over the 44px a thumb
+            needs, as a real control and not a padded link. */}
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+          className="w-full border border-ink bg-ink px-5 py-3 font-display text-base font-semibold text-paper hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        >
+          {phase.k === "idle" ? "Choose the Timeline file" : "Choose another file"}
+        </button>
+        {fileName && (
+          <p className="mt-2 font-mono text-sm text-ink-2">{fileName}</p>
+        )}
+        <div aria-live="polite" className="mt-3 text-sm">
+          <PhaseView phase={phase} />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <section className="mt-6 border border-rule bg-land p-4">
+    <section className="flex flex-col border border-rule bg-land p-4">
       <h2 className="font-display text-lg font-semibold">
         Add a Timeline export
       </h2>
-      <p className="mt-1 text-sm text-ink-2">
-        Upload the file exported from Google Maps Timeline on your phone. It
-        imports here and detection runs automatically; your export stays
-        stored on this instance. Large files take a while — use Wi-Fi and
-        keep this page open until the upload finishes.
+      {/* Phase 16 CP3: one line. What the file is and the one thing to do
+          while it uploads; the walkthrough link for anyone without it.
+          The rest of the old intro (detection follows, the export is
+          kept, large files are slow) is said by the phases below as they
+          happen and by the front door's folds. */}
+      <p className="mt-1 text-sm leading-relaxed text-ink-2">
+        The file exported from Google Maps Timeline on your phone. Keep this
+        page open while it uploads.{" "}
+        <a
+          href={`/welcome#${WELCOME_SECTIONS.export}`}
+          className="underline decoration-rule underline-offset-2 hover:text-ink"
+        >
+          Don&apos;t have the file yet?
+        </a>
       </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".json,application/json"
-          disabled={busy}
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) start(f);
-            // Allow re-selecting the same file after a failure.
-            e.target.value = "";
-          }}
-        />
+      {/* mt-auto: the two panels share a row from lg, and the buttons
+          sit on one baseline whatever the intro's line count. */}
+      <div className="mt-auto flex flex-wrap items-center gap-3 pt-3">
+        {input}
         <button
           type="button"
           disabled={busy}

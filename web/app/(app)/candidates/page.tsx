@@ -7,6 +7,7 @@ import type { components } from "@/lib/api/schema";
 import { DecideCell } from "@/app/decide-cell";
 import { RouteThumb } from "@/components/route-thumb";
 import { SiteHeader } from "@/components/site-header";
+import { Term } from "@/components/term";
 import { TriageBar } from "@/components/triage-bar";
 import { TriageSelect } from "@/components/triage-select";
 import { TriageSelectAll } from "@/components/triage-select-all";
@@ -78,9 +79,9 @@ export default async function CandidatesPage({
 
   return (
     <Shell accountEmail={accountEmail}>
-      <RunSummary list={data} />
       {data.candidates.length > 0 && (
         <>
+          <RunSummary list={data} />
           <SortToggle byScore={byScore} />
           <p className="mt-1.5">
             <TriageSelectAll
@@ -95,13 +96,12 @@ export default async function CandidatesPage({
         data.run ? (
           <div className="mt-6 max-w-[58ch]">
             <p className="font-semibold">
-              Detection ran and found no candidates.
+              Roadbook looked and found no trips.
             </p>
             <p className="mt-2 text-ink-2">
-              Your data imported fine — no journeys far from home with a
-              real destination were found in it. Detection looks for time
-              spent well away from every home base with a genuine stay;
-              short trips and pass-throughs don&apos;t count.
+              Your data imported fine. A trip is time spent well away from
+              home with a real stay somewhere; short outings and
+              pass-throughs don&apos;t count.
             </p>
             <p className="mt-2 text-ink-2">
               More data may change that:{" "}
@@ -160,9 +160,15 @@ function Shell({
       <SiteHeader active="candidates" instanceLabel={INSTANCE_LABEL}
         accountEmail={accountEmail} />
       <h1 className="mt-8 font-display text-2xl font-semibold">Candidates</h1>
-      <p className="mt-1 text-sm text-ink-2">
-        Adventure candidates detected from your timeline. Confirm the real
-        ones; dismiss the rest.
+      {/* Phase 16 CP3: the page says what it asks (RESEARCH §4), and the
+          one term it needs is taught where it is met. */}
+      {/* text-balance, not text-pretty: pretty only rescues a one-word
+          last line, and this intro's natural break leaves two ("the
+          rest."); balance evens the lines, which lands the break on the
+          sentence boundary at laptop width. */}
+      <p className="mt-1 max-w-[72ch] text-balance text-sm text-ink-2">
+        Each <Term id="candidate">candidate</Term> is a trip Roadbook found
+        in your record. Confirm the adventures; dismiss the rest.
       </p>
       {children}
     </main>
@@ -199,23 +205,55 @@ function SortToggle({ byScore }: { byScore: boolean }) {
           </Link>
         </>
       )}
-      <span className="ml-3 text-xs text-ink-2">
-        Deciding moves focus to the next undecided card — the queue clears
-        from the keyboard.
+      {/* A keyboard fact, so it is said only where a keyboard is likely. */}
+      <span className="ml-3 hidden text-xs text-ink-2 sm:inline">
+        After each decision, focus moves to the next undecided card.
       </span>
     </p>
   );
 }
 
+// The run's own figures, folded (phase 16 BRIEF §4 CP3). They are what
+// `roadbook detect` prints — the run id, the outliers it dropped, the FAR
+// threshold — and none of them helps a person decide whether a trip was
+// real (RESEARCH §4), so they sit behind a closed summary that carries
+// the one figure a person does want: how many there are. The words inside
+// are plain; the figures are the CLI's, unchanged (invariant 13).
 function RunSummary({ list }: { list: CandidateList }) {
   if (!list.run) return null;
+  const n = list.candidates.length;
   const far = list.run.params["FAR_KM"];
+  const dropped = list.run.outliers_dropped;
   return (
-    <p className="mt-6 text-xs text-ink-2">
-      Detection run {list.run.id} · {list.candidates.length} candidates ·{" "}
-      {list.run.outliers_dropped} outliers dropped
-      {typeof far === "number" && <> · FAR {far} km</>}
-    </p>
+    <details className="group mt-5 max-w-[72ch] text-xs text-ink-2">
+      <summary className="-my-3.5 inline-flex cursor-pointer list-none items-baseline gap-2 py-3.5 marker:hidden">
+        <span aria-hidden className="font-mono transition-transform group-open:rotate-90">
+          ▸
+        </span>
+        <span className="underline decoration-rule underline-offset-2 group-hover:text-ink">
+          How these {n} were found
+        </span>
+      </summary>
+      <p className="mt-2 pl-5 leading-relaxed">
+        {typeof far === "number" ? (
+          <>
+            Time spent more than{" "}
+            <span className="font-mono">{far} km</span> from home, with
+            somewhere you stayed, counts as a trip.{" "}
+          </>
+        ) : (
+          <>Time spent far from home, with somewhere you stayed, counts as a trip.{" "}</>
+        )}
+        {dropped > 0 ? (
+          <>
+            <span className="font-mono">{dropped}</span> recorded position
+            {dropped === 1 ? "" : "s"} too fast to be real{" "}
+            {dropped === 1 ? "was" : "were"} left out first.{" "}
+          </>
+        ) : null}
+        <span className="font-mono">Run {list.run.id}</span>.
+      </p>
+    </details>
   );
 }
 
@@ -297,13 +335,14 @@ function CandidateCard({
               </span>
             )}
           </span>
-          <span
-            className="text-xs text-ink-2"
-            title="Confidence 0–100; the breakdown appears when confirming."
-          >
+          {/* data-score is the e2e sort check's hook (it used to read a
+              hover title, which a phone never showed — the Term now
+              teaches the figure, phase 16 CP3). */}
+          <span data-score className="text-xs text-ink-2">
+            <Term id="score">score</Term>{" "}
             {/* Absent means "not scored" (a pre-scoring run) — different
                 information than a low score. */}
-            score {c.score !== undefined ? c.score.toFixed(0) : "—"}
+            {c.score !== undefined ? c.score.toFixed(0) : "—"}
           </span>
         </p>
         <p className="mb-2.5 mt-1 font-mono text-xs text-ink-2">

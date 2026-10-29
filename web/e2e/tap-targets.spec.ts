@@ -87,3 +87,16 @@ test("adventure page: the sharing and image-export controls are thumb-sized", as
   await page.goto(href!);
   await expectThumbSized(page, 'button:has-text("Create a share link"), button:has-text("Download as image")');
 });
+
+test("adventure page: the disclosure and the teaching terms are thumb-sized", async ({ page }) => {
+  // Phase 16 CP1: the "How this route was drawn" summary and every Term
+  // button (plate number, provenance caption, the four legend names) —
+  // inline-block with negative-margin padding, so this must be measured.
+  await page.goto("/");
+  const dialog = await openSummonedList(page);
+  const href = await dialog.getByRole("link").first().getAttribute("href");
+  await page.goto(href!);
+  // Scoped to our summary by its text: MapLibre's attribution control is
+  // also a <details>, and its 24px summary is the library's, not ours.
+  await expectThumbSized(page, 'summary:has-text("How this route was drawn"), button.term');
+});

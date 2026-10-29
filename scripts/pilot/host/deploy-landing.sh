@@ -3,9 +3,10 @@
 #
 #   scripts/pilot/host/deploy-landing.sh
 #
-# Stages /srv/pilot/landing/site/ from the repo checkout — landing/index.html
-# plus the two asset directories the page references but git does not
-# duplicate (fonts from web/app/fonts, screenshots from docs/screens) — and
+# Stages /srv/pilot/landing/site/ from the repo checkout — landing/index.html,
+# how-its-built.html and the form endings, plus the two asset directories
+# the pages reference but git does not duplicate (fonts from web/app/fonts,
+# the one screenshot from docs/screens) — and
 # writes the Caddy snippet routing www.$ROADBOOK_DOMAIN to it, credential-
 # free: this is the one public, unauthenticated surface, and it is static
 # files only. The wildcard certificate covers www.<domain>; the bare apex
@@ -44,6 +45,7 @@ mkdir -p "$STAGE/fonts" "$STAGE/shots"
 # page stays domain-agnostic (phase 15 BRIEF §9); substitute from front.env
 # and refuse to deploy if the placeholder survives.
 sed "s/{ROADBOOK_DOMAIN}/$ROADBOOK_DOMAIN/g" "$REPO/landing/index.html" > "$STAGE/index.html"
+sed "s/{ROADBOOK_DOMAIN}/$ROADBOOK_DOMAIN/g" "$REPO/landing/how-its-built.html" > "$STAGE/how-its-built.html"
 cp "$REPO/landing/joined.html" "$REPO/landing/oops.html" "$STAGE/"
 if grep -q '{ROADBOOK_DOMAIN}' "$STAGE"/*.html; then
   echo "placeholder {ROADBOOK_DOMAIN} survived staging — refusing to deploy" >&2
@@ -51,11 +53,11 @@ if grep -q '{ROADBOOK_DOMAIN}' "$STAGE"/*.html; then
 fi
 cp -R "$REPO/web/app/fonts/source-serif-4" "$STAGE/fonts/source-serif-4"
 cp -R "$REPO/web/app/fonts/ibm-plex-mono" "$STAGE/fonts/ibm-plex-mono"
-# Screenshot mapping — the page's <img> names on the left, the committed
-# demo captures on the right. Update both together.
-cp "$REPO/docs/screens/phase9-cp4-home.png"        "$STAGE/shots/life-map.png"
-cp "$REPO/docs/screens/phase9-cp4-adventure-2.png" "$STAGE/shots/adventure.png"
-cp "$REPO/docs/screens/phase9-cp4-adventures.png"  "$STAGE/shots/atlas.png"
+# Screenshot mapping — the page's one <img> on the left, the committed demo
+# capture on the right (phase 16 CP2b: the landing shows one real
+# screenshot, "The app itself"; the trips are drawn covers, inline SVG).
+# Update both together, and the <img> width/height with them.
+cp "$REPO/docs/screens/phase16-cp2b-adventure-2.png" "$STAGE/shots/app.png"
 
 # World-readable throughout: caddy runs as its own user and bind/disk
 # permissions are literal (phase 10 CP2).

@@ -210,6 +210,16 @@ function advanceFocus(from: HTMLElement | null) {
 // arithmetic, shown at the moment of confirming (BRIEF §1.6). Decision
 // support only — nothing here confirms anything. Candidates from runs before
 // scoring existed have no breakdown and the box simply doesn't render.
+// The components' names are the detector's (internal/detect); these are
+// their words for the person confirming (phase 16 CP3). Presentation only
+// — an unknown name shows as the detector spelled it.
+const COMPONENT_LABELS: Record<string, string> = {
+  distance_from_home: "distance from home",
+  destination_dwell: "time at the farthest stay",
+  observation_density: "how much was recorded",
+  span_duration: "length of the trip",
+};
+
 function ScoreBreakdownBox({
   score,
   components,
@@ -223,11 +233,13 @@ function ScoreBreakdownBox({
   return (
     <span className="w-max rounded border border-rule bg-land px-2.5 py-1.5 text-xs text-ink-2">
       <span className="block pb-1 text-ink">
-        confidence {score.toFixed(1)} / 100
+        score {score.toFixed(1)} of 100 — what it is made of
       </span>
       {components.map((c) => (
         <span key={c.name} className="flex items-baseline gap-2 py-px">
-          <span className="w-36">{c.name.replaceAll("_", " ")}</span>
+          <span className="w-36">
+            {COMPONENT_LABELS[c.name] ?? c.name.replaceAll("_", " ")}
+          </span>
           {c.present ? (
             <>
               <span className="w-24 text-right font-mono">
@@ -239,7 +251,7 @@ function ScoreBreakdownBox({
             </>
           ) : (
             <span className="text-ink-2/80">
-              not measurable — weight redistributed
+              no record of it; its share went to the others
             </span>
           )}
         </span>

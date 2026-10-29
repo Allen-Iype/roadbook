@@ -33,6 +33,48 @@ test("welcome: both upload islands are present", async ({ page }) => {
   await expect(page.locator('input[type="file"]')).toHaveCount(2);
 });
 
+test("welcome: the primary action sits under the three steps and is a thumb-sized target", async ({ page }) => {
+  // Phase 16 CP2 (BRIEF §4): one primary action, the Timeline picker,
+  // directly under "your own, in three steps" — above the walkthroughs,
+  // not after them — and at least 44px tall at every width.
+  await page.goto("/welcome");
+  const button = page.getByRole("button", { name: "Choose the Timeline file" });
+  await expect(button).toBeVisible();
+  const box = await button.boundingBox();
+  expect(box, "button must lay out").not.toBeNull();
+  expect(box!.height).toBeGreaterThanOrEqual(44);
+  const steps = page.getByRole("heading", { name: "Your own, in three steps" });
+  const stepsBox = await steps.boundingBox();
+  const walkthroughs = page.locator(`#${WELCOME_SECTIONS.export}`);
+  const walkBox = await walkthroughs.boundingBox();
+  expect(stepsBox!.y).toBeLessThan(box!.y);
+  expect(box!.y).toBeLessThan(walkBox!.y);
+  // The photos door is present and second.
+  const photos = page.getByRole("button", { name: "Choose photos" });
+  await expect(photos).toBeVisible();
+  expect((await photos.boundingBox())!.y).toBeGreaterThan(box!.y);
+});
+
+test("welcome: the folded sections start closed and a rejection anchor opens its fold", async ({ page }) => {
+  // The fold is the point (RESEARCH §2); the one script on the page
+  // (components/open-on-hash.tsx) opens a <details> when a rejection link
+  // lands on it, so "What the right file looks like" is never a dead end
+  // behind a closed summary.
+  await page.goto("/welcome");
+  const theFile = page.locator(`details#${WELCOME_SECTIONS.theFile}`);
+  await expect(theFile).toBeAttached();
+  await expect(theFile).not.toHaveAttribute("open", "");
+  for (const id of [WELCOME_SECTIONS.exportAndroid, WELCOME_SECTIONS.exportIphone, WELCOME_SECTIONS.next]) {
+    await expect(page.locator(`details#${id}`)).not.toHaveAttribute("open", "");
+  }
+  await page.goto(`/welcome#${WELCOME_SECTIONS.theFile}`);
+  await expect(theFile).toHaveAttribute("open", "");
+  await expect(theFile.getByText("Timeline.json")).toBeVisible();
+  // The walkthroughs keep their verification state visible before the fold.
+  await expect(page.locator(`#${WELCOME_SECTIONS.exportAndroid} summary`)).toContainText(/Verified \d+ \w+ \d{4}/);
+  await expect(page.locator(`#${WELCOME_SECTIONS.exportIphone} summary`)).toContainText("Unverified");
+});
+
 test("candidates: every gallery card carries art, figures, and a decision", async ({ page }) => {
   // Triage is a gallery from phase 9 CP4 (T3, decided at the mockup STOP).
   // Cards do not fold — the same structure renders at every width; what
@@ -45,11 +87,28 @@ test("candidates: every gallery card carries art, figures, and a decision", asyn
   for (let i = 0; i < n; i++) {
     const card = cards.nth(i);
     await expect(card.locator("svg").first()).toBeVisible();
-    await expect(card.getByText(/score (\d+|—)/)).toBeVisible();
+    // The score: the word is a Term button, the figure its sibling text
+    // (phase 16 CP3), so match the element, not one text run.
+    await expect(card.locator("[data-score]")).toBeVisible();
+    // innerText: the Term's closed popover note is in textContent but is
+    // not shown.
+    await expect(card.locator("[data-score]")).toHaveText(/^score\s+(\d+|—)$/, { useInnerText: true });
     await expect(
       card.locator('a[href^="/adventure/"]').first(),
     ).toBeVisible();
   }
+});
+
+test("candidates: the run's figures are folded and closed; the intro teaches the term", async ({ page }) => {
+  // Phase 16 CP3 (BRIEF §4): the detection run line ("Detection run 1 ·
+  // 3 outliers dropped · FAR 100 km") is behind a closed <details> whose
+  // summary carries only the count; the intro's "candidate" is a Term.
+  await page.goto("/candidates");
+  const fold = page.locator("main details", { hasText: /How these \d+ were found/ });
+  await expect(fold).toBeAttached();
+  await expect(fold).not.toHaveAttribute("open", "");
+  await expect(page.getByText(/outliers dropped|Detection run|FAR \d+ km/)).toHaveCount(0);
+  await expect(page.locator("main p button.term", { hasText: "candidate" }).first()).toBeVisible();
 });
 
 test("candidates: bulk triage — selection summons the bar; score order sorts", async ({ page }) => {
@@ -94,7 +153,7 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   // The score element, not card textContent: concatenated text runs the
   // score into the next figure ("score 100" + "28 days" → "10028").
   const scores = await page
-    .locator('main ul > li [title^="Confidence"]')
+    .locator("main ul > li [data-score]")
     .evaluateAll((els) =>
       els.map((el) => {
         const m = el.textContent?.match(/score (\d+|—)/);
@@ -107,11 +166,28 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   }
 });
 
+test("imports: the panels say one thing each and the table has its own heading", async ({ page }) => {
+  // Phase 16 CP3 (BRIEF §4): the page heading stands alone; each upload
+  // panel carries a heading, one short intro and its picker; the table is
+  // its own section, headed, with word column names.
+  await page.goto("/imports");
+  await expect(page.getByRole("heading", { level: 1, name: "Imports" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add a Timeline export" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add photos" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Added so far" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Don't have the file yet?" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Added" })).toBeVisible();
+  // The schema's column names are gone from the user table.
+  for (const old of ["When", "Window", "Raw"]) {
+    await expect(page.getByRole("columnheader", { name: old, exact: true })).toHaveCount(0);
+  }
+});
+
 test("imports: format folds below sm, accounting below md", async ({ page }) => {
   await page.goto("/imports");
   const w = viewportWidth(page);
   const format = page.getByRole("columnheader", { name: "Format" });
-  const window_ = page.getByRole("columnheader", { name: "Window" });
+  const window_ = page.getByRole("columnheader", { name: "Dates" });
   if (w >= SM) {
     await expect(format).toBeVisible();
   } else {
