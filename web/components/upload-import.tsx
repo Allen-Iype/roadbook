@@ -45,7 +45,16 @@ type Phase =
 
 const POLL_MS = 1500;
 
-export function UploadImport() {
+// Two placements, one island (phase 16 CP2). "panel" is the framed section
+// with its own heading and intro, for /imports, where the island is one
+// of several things on the page. "door" is the front door's primary
+// action: the button alone, ink-filled and full width on a phone, with the
+// three steps above it doing the explaining — no second heading, no
+// paragraph. The state machine, the proxy and the polling are identical;
+// only the idle rendering differs.
+export type UploadVariant = "panel" | "door";
+
+export function UploadImport({ variant = "panel" }: { variant?: UploadVariant } = {}) {
   const [phase, setPhase] = useState<Phase>({ k: "idle" });
   const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -149,6 +158,46 @@ export function UploadImport() {
     return () => clearInterval(t);
   }, [phase, router]);
 
+  const input = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept=".json,application/json"
+      disabled={busy}
+      className="hidden"
+      onChange={(e) => {
+        const f = e.target.files?.[0];
+        if (f) start(f);
+        // Allow re-selecting the same file after a failure.
+        e.target.value = "";
+      }}
+    />
+  );
+
+  if (variant === "door") {
+    return (
+      <div>
+        {input}
+        {/* text-base (24px line) + py-3 = 48px: over the 44px a thumb
+            needs, as a real control and not a padded link. */}
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+          className="w-full border border-ink bg-ink px-5 py-3 font-display text-base font-semibold text-paper hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        >
+          {phase.k === "idle" ? "Choose the Timeline file" : "Choose another file"}
+        </button>
+        {fileName && (
+          <p className="mt-2 font-mono text-sm text-ink-2">{fileName}</p>
+        )}
+        <div aria-live="polite" className="mt-3 text-sm">
+          <PhaseView phase={phase} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className="mt-6 border border-rule bg-land p-4">
       <h2 className="font-display text-lg font-semibold">
@@ -162,19 +211,7 @@ export function UploadImport() {
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".json,application/json"
-          disabled={busy}
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) start(f);
-            // Allow re-selecting the same file after a failure.
-            e.target.value = "";
-          }}
-        />
+        {input}
         <button
           type="button"
           disabled={busy}

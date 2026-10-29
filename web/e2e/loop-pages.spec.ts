@@ -33,6 +33,48 @@ test("welcome: both upload islands are present", async ({ page }) => {
   await expect(page.locator('input[type="file"]')).toHaveCount(2);
 });
 
+test("welcome: the primary action sits under the three steps and is a thumb-sized target", async ({ page }) => {
+  // Phase 16 CP2 (BRIEF §4): one primary action, the Timeline picker,
+  // directly under "your own, in three steps" — above the walkthroughs,
+  // not after them — and at least 44px tall at every width.
+  await page.goto("/welcome");
+  const button = page.getByRole("button", { name: "Choose the Timeline file" });
+  await expect(button).toBeVisible();
+  const box = await button.boundingBox();
+  expect(box, "button must lay out").not.toBeNull();
+  expect(box!.height).toBeGreaterThanOrEqual(44);
+  const steps = page.getByRole("heading", { name: "Your own, in three steps" });
+  const stepsBox = await steps.boundingBox();
+  const walkthroughs = page.locator(`#${WELCOME_SECTIONS.export}`);
+  const walkBox = await walkthroughs.boundingBox();
+  expect(stepsBox!.y).toBeLessThan(box!.y);
+  expect(box!.y).toBeLessThan(walkBox!.y);
+  // The photos door is present and second.
+  const photos = page.getByRole("button", { name: "Choose photos" });
+  await expect(photos).toBeVisible();
+  expect((await photos.boundingBox())!.y).toBeGreaterThan(box!.y);
+});
+
+test("welcome: the folded sections start closed and a rejection anchor opens its fold", async ({ page }) => {
+  // The fold is the point (RESEARCH §2); the one script on the page
+  // (components/open-on-hash.tsx) opens a <details> when a rejection link
+  // lands on it, so "What the right file looks like" is never a dead end
+  // behind a closed summary.
+  await page.goto("/welcome");
+  const theFile = page.locator(`details#${WELCOME_SECTIONS.theFile}`);
+  await expect(theFile).toBeAttached();
+  await expect(theFile).not.toHaveAttribute("open", "");
+  for (const id of [WELCOME_SECTIONS.exportAndroid, WELCOME_SECTIONS.exportIphone, WELCOME_SECTIONS.next]) {
+    await expect(page.locator(`details#${id}`)).not.toHaveAttribute("open", "");
+  }
+  await page.goto(`/welcome#${WELCOME_SECTIONS.theFile}`);
+  await expect(theFile).toHaveAttribute("open", "");
+  await expect(theFile.getByText("Timeline.json")).toBeVisible();
+  // The walkthroughs keep their verification state visible before the fold.
+  await expect(page.locator(`#${WELCOME_SECTIONS.exportAndroid} summary`)).toContainText(/Verified \d+ \w+ \d{4}/);
+  await expect(page.locator(`#${WELCOME_SECTIONS.exportIphone} summary`)).toContainText("Unverified");
+});
+
 test("candidates: every gallery card carries art, figures, and a decision", async ({ page }) => {
   // Triage is a gallery from phase 9 CP4 (T3, decided at the mockup STOP).
   // Cards do not fold — the same structure renders at every width; what

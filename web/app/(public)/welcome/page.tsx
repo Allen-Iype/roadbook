@@ -2,23 +2,32 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LegKindLegend } from "@/components/legend";
+import { OpenOnHash } from "@/components/open-on-hash";
 import { PhotoUploadImport } from "@/components/photo-upload-import";
 import { SiteHeader } from "@/components/site-header";
+import { Term } from "@/components/term";
 import { UploadImport } from "@/components/upload-import";
 import { WelcomePlate } from "@/components/welcome-plate";
 import { WELCOME_SECTIONS as S } from "@/lib/rejection-anchors";
 
-// The front door (phase 7 BRIEF §3E): the one page that carries a cold
-// visitor — typically on a phone, from a shared link — from "what is this?"
-// to their own candidates. Section order is fixed by the cold-visitor test:
-// each section answers the question the previous one raises. Pitch first,
-// before asking for anything; the honest never-enabled branch before the
-// walkthroughs; the upload only after the file exists.
+// The front door (phase 7 BRIEF §3E; reshaped in phase 16 CP2). The one
+// page that carries a cold visitor — typically on a phone, from a shared
+// link — from "what is this?" to their own candidates. Phase 16's research
+// measured it at eleven hundred words before the upload control
+// (RESEARCH §2); the maintainer's finding was that the page has to make a
+// person WANT the next step, not explain it harder (RESEARCH §9.1). So the
+// order is now: the plate (the payoff, drawn) with one line; the three
+// steps to a plate of your own, with the one primary action — the
+// Timeline file picker — directly under them; everything that used to be
+// a section is a native <details> below, opened on demand. The photos door
+// stays a door of its own, second.
 //
 // Statically rendered, deliberately: the page reads nothing from the API
 // (DECISIONS 2026-08-11) — outcome states live where outcomes show
-// (/candidates, the life map), and the embedded upload island carries all
-// interactivity. `/` redirects here while the instance has zero imports.
+// (/candidates, the life map), and the two upload islands carry all
+// interactivity. The one other script is OpenOnHash, which opens a folded
+// section when a rejection link targets it. `/` redirects here while the
+// instance has zero imports.
 export const metadata: Metadata = {
   title: "Roadbook — start here",
   description:
@@ -27,37 +36,28 @@ export const metadata: Metadata = {
 
 // Section ids come from the same module the rejection-redirection map types
 // its anchors against (lib/rejection-anchors.ts) — a dead-end anchor cannot
-// be written.
+// be written. Every id still has a real target; the folded ones are
+// <details> elements, which OpenOnHash opens when a link lands on them.
 export default function WelcomePage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
       <SiteHeader />
+      <OpenOnHash />
 
-      {/* ── 1 · The pitch ─────────────────────────────────────────────── */}
-      <section className="mt-10 sm:mt-14">
-        <p className="text-[11.5px] uppercase tracking-[0.24em] text-ink-2">
-          A road atlas of your own past
-        </p>
-        <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
+      {/* ── 1 · The plate, with one line ──────────────────────────────── */}
+      <section className="mt-8 sm:mt-12">
+        <h1 className="font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
           The adventures you actually took.
         </h1>
-        <p className="mt-5 max-w-[58ch] text-[15px] leading-relaxed">
-          Your phone has been keeping a record of where it went — Google Maps
-          calls it Timeline. Roadbook reads one Timeline export — or the
-          places your photos were taken — and finds the journeys that stand
-          out: stretches far from home, with a real destination. You confirm
-          the ones that mattered and name them; each becomes a route on a
-          life map of your own, and a plate in an atlas of your adventures.
-        </p>
-        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
-          The maps are honest about what they know. What your phone recorded
-          is drawn differently from what was inferred along roads — and where
-          nothing is known, the map says so instead of guessing.
+        <p className="mt-4 max-w-[58ch] text-[15px] leading-relaxed">
+          Roadbook reads the record your phone already keeps of where it went,
+          draws the trips that stood out, and leaves it to you to say which
+          were adventures.
         </p>
 
         {/* The plate: the demo life map, framed the way the app frames its
             maps — double rule, marginalia below. Demo data only. */}
-        <figure className="mt-8">
+        <figure className="mt-6">
           <div className="border border-ink [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
             <WelcomePlate />
           </div>
@@ -69,81 +69,184 @@ export default function WelcomePage() {
               <LegKindLegend />
             </div>
             <p className="mt-2 text-xs text-ink-2">
-              Fictional demonstration data. Your map is drawn the same way,
-              from your own export.
+              Fictional demonstration data. Yours is drawn the same way, from
+              your own record.
             </p>
           </figcaption>
         </figure>
-
-        {/* Jump row: a returning visitor with the file in hand should not
-            re-read the pitch to find the upload control. */}
-        <nav
-          aria-label="Sections of this page"
-          className="mt-6 flex flex-wrap gap-x-5 gap-y-1 text-sm"
-        >
-          <a href={`#${S.whatYouNeed}`} className="underline decoration-rule underline-offset-2 hover:text-ink">
-            What you need
-          </a>
-          <a href={`#${S.export}`} className="underline decoration-rule underline-offset-2 hover:text-ink">
-            Export it from your phone
-          </a>
-          <a href={`#${S.upload}`} className="underline decoration-rule underline-offset-2 hover:text-ink">
-            Upload
-          </a>
-          <a href={`#${S.photos}`} className="underline decoration-rule underline-offset-2 hover:text-ink">
-            Start from photos
-          </a>
-        </nav>
       </section>
 
-      {/* ── 2 · What you need ─────────────────────────────────────────── */}
+      {/* ── 2 · Your own, in three steps + the primary action ─────────── */}
       <section id={S.whatYouNeed} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
-        <h2 className="font-display text-2xl font-semibold">What you need</h2>
-        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
-          One file: a <strong>Timeline export</strong>
-          {/* explicit space: SWC drops the plain one at this boundary */}{" "}
-          from Google Maps on your phone. Timeline (formerly Location History) is off unless you —
-          or a setup screen, years ago — turned it on. It moved from
-          Google&apos;s servers onto the phone itself in 2024, which is why
-          the export is
-          made on the device.
-        </p>
+        <h2 className="font-display text-2xl font-semibold">
+          Your own, in three steps
+        </h2>
+        {/* A real sequence, so the numbers carry order. */}
+        <ol className="mt-4 max-w-[58ch] space-y-2 text-[15px] leading-relaxed">
+          <Step n={1}>
+            Export your Timeline from Google Maps on your phone — a couple of
+            minutes.
+          </Step>
+          <Step n={2}>Upload the file here.</Step>
+          <Step n={3}>
+            Confirm the trips that were adventures; the rest stay off the map.
+          </Step>
+        </ol>
 
-        {/* The honest third branch, stated before the walkthroughs (BRIEF
-            §3E): this page never implies data exists that does not. Since
-            phase 11 it is no longer a dead end — photos are the second
-            source, and this box points at that door. */}
-        <div
-          id={S.neverEnabled}
-          className="mt-5 max-w-prose scroll-mt-6 border-l-[3px] border-rule bg-land px-4 py-3"
-        >
-          <p className="text-[15px] font-semibold">Never had Timeline on?</p>
-          <p className="mt-1 text-sm leading-relaxed text-ink-2">
+        <div id={S.upload} className="mt-6 scroll-mt-6">
+          <UploadImport variant="door" />
+        </div>
+
+        {/* The walkthroughs, folded (BRIEF §4 CP2): each platform is a
+            <details>; its verification state stays visible page text
+            (phase 7 BRIEF §3E) on the summary line, so a stale date is
+            still read before the steps are. */}
+        <div id={S.export} className="mt-8 scroll-mt-6">
+          <h3 className="font-display text-lg font-semibold">
+            Don&apos;t have the file yet?
+          </h3>
+          <p className="mt-1 max-w-[58ch] text-sm leading-relaxed text-ink-2">
+            Google makes the export on the phone itself. Do it on the phone
+            you&apos;re reading this on and the file is already where the
+            button above can find it.
+          </p>
+
+          <Walkthrough
+            id={S.exportAndroid}
+            title="On Android"
+            verified="Verified 11 Aug 2026"
+            verifiedNote="Walked 11 Aug 2026 on an Android device from a WhatsApp-opened link: the steps matched the phone's menus and the upload completed in the in-app browser."
+            steps={[
+              <>
+                Open <strong>Settings</strong> → <strong>Location</strong> →{" "}
+                <strong>Location Services</strong> → <strong>Timeline</strong>.
+                (Wording differs slightly between Android versions; Timeline
+                settings can also be reached from Google Maps → your profile
+                picture → Your Timeline.)
+              </>,
+              <>
+                Choose <strong>Export Timeline data</strong> and confirm.
+              </>,
+              <>
+                The phone saves a <code className="font-mono">.json</code>{" "}
+                file to <strong>Downloads</strong>.
+              </>,
+              <>
+                Come back here and{" "}
+                <a href={`#${S.upload}`} className="underline decoration-rule underline-offset-2">
+                  choose the file
+                </a>{" "}
+                with the button above — the picker opens straight into
+                Downloads.
+              </>,
+            ]}
+          />
+
+          <Walkthrough
+            id={S.exportIphone}
+            title="On iPhone"
+            steps={[
+              <>
+                Open the <strong>Google Maps</strong> app and tap your profile
+                picture → <strong>Your Timeline</strong>.
+              </>,
+              <>
+                Open Timeline settings (the <strong>⋯</strong> or gear button)
+                and choose <strong>Export Timeline data</strong>.
+              </>,
+              <>
+                Save the file from the share sheet — <strong>Save to
+                Files</strong> is the simplest place to find it again.
+              </>,
+              <>
+                Come back here and{" "}
+                <a href={`#${S.upload}`} className="underline decoration-rule underline-offset-2">
+                  choose the file
+                </a>{" "}
+                with the button above, picking it from the Files app.
+              </>,
+            ]}
+          />
+
+          {/* The honest third branch (phase 7 BRIEF §3E): the page never
+              implies data exists that does not. Since phase 11 it points
+              at the second door instead of ending. */}
+          <p
+            id={S.neverEnabled}
+            className="mt-4 max-w-[58ch] scroll-mt-6 text-sm leading-relaxed text-ink-2"
+          >
+            <strong className="font-semibold text-ink">Never had Timeline on?</strong>{" "}
             Then there is nothing to export — Google holds no location record
-            for you. But your camera probably does: geotagged photos work as
-            location evidence on their own.{/* SWC drops the plain space */}{" "}
+            for you.{" "}
             <a
               href={`#${S.photos}`}
               className="underline decoration-rule underline-offset-2 hover:text-ink"
             >
               Start from your photos
             </a>{" "}
-            instead — no export step needed.
+            instead.
           </p>
         </div>
+      </section>
 
-        <div id={S.theFile} className="mt-6 scroll-mt-6">
-          <h3 className="font-display text-lg font-semibold">
-            What the right file looks like
-          </h3>
-          <p className="mt-2 max-w-[58ch] text-sm leading-relaxed">
+      {/* ── 3 · The second door: photos (phase 11) ────────────────────── */}
+      <section id={S.photos} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
+        <h2 className="font-display text-2xl font-semibold">
+          Or start from photos
+        </h2>
+        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
+          A photo straight from the camera carries where and when it was
+          taken, and that is enough to find your trips — no export step, the
+          picker opens your photo library.{" "}
+          <Term id="originals">Original photos</Term> work best.
+        </p>
+        <div className="mt-5">
+          <PhotoUploadImport variant="door" />
+        </div>
+
+        <Fold title="Which photos work" last>
+          <ul className="list-disc space-y-1.5 pl-5">
+            <li>
+              Camera originals, and downloads from your own Google Photos.
+              iPhone photos are usually HEIC — upload them as they are; if
+              the picker offers JPEG, either works.
+            </li>
+            <li>
+              Photos received in a chat almost never carry a location —
+              messaging apps strip it. Screenshots never have one.
+            </li>
+            <li>
+              A Google Photos Takeout includes small{" "}
+              <code className="font-mono">.json</code> files beside the
+              photos. Upload them together: they can restore a location the
+              photo file lost.
+            </li>
+            <li>
+              On their own, photos need a little context: home is worked out
+              from where your photos recur, so include a spread from ordinary
+              weeks too, not only the trips. With a Timeline export already
+              in, photos simply add detail to the adventures it found.
+            </li>
+          </ul>
+          <p className="mt-3 text-xs text-ink-2">
+            Photo intake verified 26 Aug 2026 with a real camera roll. Not
+            yet walked on a phone — the iPhone notes come from documentation,
+            not a device.
+          </p>
+        </Fold>
+      </section>
+
+      {/* ── 4 · The rest, folded ──────────────────────────────────────── */}
+      <section className="mt-12 border-t border-ink pt-2">
+        <Fold id={S.theFile} title="What the right file looks like">
+          <p>
             A single <code className="font-mono">.json</code> file, usually
             named <code className="font-mono">Timeline.json</code>. On
-            Android it lands in the phone&apos;s{" "}
-            <strong>Downloads</strong> folder; on iPhone it goes wherever you
-            save it from the share sheet, typically the Files app.
+            Android it lands in the phone&apos;s <strong>Downloads</strong>{" "}
+            folder; on iPhone it goes wherever you saved it from the share
+            sheet, typically the Files app.
           </p>
-          <ul className="mt-3 max-w-[58ch] list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink-2">
+          <ul className="mt-3 list-disc space-y-1.5 pl-5">
             <li>
               Got a <code className="font-mono">.zip</code> archive? Extract
               it and upload the <code className="font-mono">.json</code> file
@@ -154,197 +257,123 @@ export default function WelcomePage() {
               Location History&rdquo; files or{" "}
               <code className="font-mono">Records.json</code> — are the old
               server-side format, which Roadbook does not read. The phone
-              export below is the current one.
+              export is the current one.
             </li>
             <li>
-              Photos, PDFs, and KML files are not location exports — the
+              Photos, PDFs and KML files are not location exports — the
               upload will say so and point back here.
             </li>
-          </ul>
-        </div>
-      </section>
-
-      {/* ── 3 · The walkthroughs ──────────────────────────────────────── */}
-      <section id={S.export} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
-        <h2 className="font-display text-2xl font-semibold">
-          Export it from your phone
-        </h2>
-        <p className="mt-3 max-w-[58ch] text-sm leading-relaxed text-ink-2">
-          The export is created on the phone itself and takes a couple of
-          minutes. Do it on the same phone you&apos;re reading this on and the
-          file is already where the upload below can find it.
-        </p>
-
-        <Walkthrough
-          id={S.exportAndroid}
-          title="On Android"
-          verified="Verified 11 Aug 2026 · Android"
-          verifiedNote="Walked 11 Aug 2026 on an Android device from a WhatsApp-opened link: the steps matched the phone's menus and the upload completed in the in-app browser."
-          steps={[
-            <>
-              Open <strong>Settings</strong> →{" "}
-              <strong>Location</strong> → <strong>Location Services</strong>{" "}
-              → <strong>Timeline</strong>. (Wording differs slightly between
-              Android versions; Timeline settings can also be reached from
-              Google Maps → your profile picture → Your Timeline.)
-            </>,
-            <>
-              Choose <strong>Export Timeline data</strong> and confirm.
-            </>,
-            <>
-              The phone saves a <code className="font-mono">.json</code> file
-              to <strong>Downloads</strong>.
-            </>,
-            <>
-              Come back to this page and{" "}
-              <a href={`#${S.upload}`} className="underline decoration-rule underline-offset-2">
-                upload it below
-              </a>{" "}
-              — the file picker opens straight into Downloads.
-            </>,
-          ]}
-        />
-
-        <Walkthrough
-          id={S.exportIphone}
-          title="On iPhone"
-          steps={[
-            <>
-              Open the <strong>Google Maps</strong> app and tap your profile
-              picture → <strong>Your Timeline</strong>.
-            </>,
-            <>
-              Open Timeline settings (the <strong>⋯</strong> or gear button)
-              and choose <strong>Export Timeline data</strong>.
-            </>,
-            <>
-              Save the file from the share sheet — <strong>Save to
-              Files</strong> is the simplest place to find it again.
-            </>,
-            <>
-              Come back to this page and{" "}
-              <a href={`#${S.upload}`} className="underline decoration-rule underline-offset-2">
-                upload it below
-              </a>
-              , picking the file from the Files app.
-            </>,
-          ]}
-        />
-
-        <p className="mt-5 max-w-[58ch] text-sm leading-relaxed text-ink-2">
-          Using someone else&apos;s Roadbook link on a computer instead? Export on
-          the phone first, then move the file over — or simply open the same
-          link on the phone; everything here works there.
-        </p>
-      </section>
-
-      {/* ── 4 · The upload ────────────────────────────────────────────── */}
-      <section id={S.upload} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
-        <h2 className="font-display text-2xl font-semibold">Upload it</h2>
-        <UploadImport />
-      </section>
-
-      {/* ── 5 · Photos as a source (phase 11) ─────────────────────────── */}
-      <section id={S.photos} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
-        <h2 className="font-display text-2xl font-semibold">
-          No Timeline? Start from your photos
-        </h2>
-        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
-          Every geotagged photo already records where and when it was taken.
-          Roadbook reads exactly that — the position and the moment — so a
-          camera roll works as location evidence on its own. There is no
-          export step: the picker below opens your photo library directly.
-        </p>
-        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
-          The photos themselves are never kept. What this instance stores is
-          the position, the time, and a small thumbnail — enough to place a
-          photo on a map, nothing more.
-        </p>
-
-        <div className="mt-5 max-w-prose">
-          <h3 className="font-display text-lg font-semibold">
-            Which photos carry location
-          </h3>
-          <ul className="mt-2 max-w-[58ch] list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink-2">
             <li>
-              Camera originals do, and downloads from your own Google Photos
-              keep it. iPhone photos are usually HEIC — upload them as they
-              are; if the picker offers to convert to JPEG, either works.
-            </li>
-            <li>
-              Photos received in a chat almost never do — messaging apps
-              strip location on the way through. Screenshots never have it.
-            </li>
-            <li>
-              A Google Photos Takeout includes small{" "}
-              <code className="font-mono">.json</code> files beside the
-              photos. Upload them together: they can restore a location the
-              photo file itself lost.
+              Using someone else&apos;s Roadbook link on a computer? Export
+              on the phone first and move the file over — or open the same
+              link on the phone; everything here works there.
             </li>
           </ul>
-          <p className="mt-3 max-w-[58ch] text-sm leading-relaxed text-ink-2">
-            Already uploaded a Timeline export? Photos simply add detail —
-            each becomes another observed point on the adventures it found.
-            On their own, photos need a little context: home is worked out
-            from where your photos recur, so include a spread from ordinary
-            weeks too, not only the trips.
+        </Fold>
+
+        <Fold title="Where your data goes">
+          <p>
+            Your file streams to this Roadbook and nowhere else, and is kept
+            here as-is so later versions can re-read it without asking you
+            for the file again. Photos are not kept — only the position, the
+            time and a small thumbnail of each. Everything you upload is
+            listed on{" "}
+            <Link href="/imports" className="underline decoration-rule underline-offset-2 hover:text-ink">
+              Imports
+            </Link>
+            , and can be deleted from there.
           </p>
-        </div>
+        </Fold>
 
-        <PhotoUploadImport intro={false} />
-
-        <p className="mt-3 max-w-[58ch] text-xs leading-relaxed text-ink-2">
-          Photo intake verified 26 Aug 2026 with a real camera roll. Not yet
-          walked on a phone — the iPhone HEIC notes come from documentation,
-          not a device.
-        </p>
-      </section>
-
-      {/* ── 6 · What happens next ─────────────────────────────────────── */}
-      <section id={S.next} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
-        <h2 className="font-display text-2xl font-semibold">
-          What happens next
-        </h2>
-        <ol className="mt-4 max-w-[58ch] space-y-3 text-[15px] leading-relaxed">
-          <NextStep n={1} title="Upload">
-            The file streams to this Roadbook instance and nowhere else.
-            Nothing is recorded until it has fully arrived — if the
-            connection drops, just try again.
-          </NextStep>
-          <NextStep n={2} title="Import">
-            Every visit, activity, and recorded point is read in — and each
-            geotagged photo contributes the position it carries. Your export
-            is stored on the instance as-is, so future versions of Roadbook
-            can re-read it without asking you for the file again.
-          </NextStep>
-          <NextStep n={3} title="Detection">
-            Roadbook looks for journeys far from home with a real destination
-            — somewhere you stayed, not somewhere you passed through — and
-            lists them as candidates. Home is worked out from the data
-            itself.
-          </NextStep>
-          <NextStep n={4} title="You decide">
-            Confirm the real adventures and name them; dismiss the rest. The
-            confirmed ones are drawn on your life map and shelved as plate
-            covers in your atlas.
-          </NextStep>
-        </ol>
-        <p className="mt-5 max-w-[58ch] text-sm leading-relaxed text-ink-2">
-          Once the upload finishes you can close the tab —{" "}
-          <Link href="/imports" className="underline decoration-rule underline-offset-2 hover:text-ink">
-            Imports
-          </Link>{" "}
-          keeps every attempt and its outcome, and is the place to come back
-          to.
-        </p>
+        <Fold id={S.next} title="What happens after you upload" last>
+          <ol className="space-y-2">
+            <Step n={1}>
+              <strong className="font-semibold text-ink">Upload.</strong>{" "}
+              Nothing is recorded until the whole file has arrived — if the
+              connection drops, just try again.
+            </Step>
+            <Step n={2}>
+              <strong className="font-semibold text-ink">Import.</strong>{" "}
+              Every visit, journey and recorded position is read in; each
+              geotagged photo contributes the position it carries.
+            </Step>
+            <Step n={3}>
+              <strong className="font-semibold text-ink">Detection.</strong>{" "}
+              Roadbook looks for journeys far from home with a real
+              destination — somewhere you stayed, not somewhere you passed
+              through — and lists them as{" "}
+              <Term id="candidate">candidates</Term>. Home is worked out from
+              the data itself.
+            </Step>
+            <Step n={4}>
+              <strong className="font-semibold text-ink">You decide.</strong>{" "}
+              Confirm the real adventures and name them; dismiss the rest.
+              The confirmed ones are drawn on your life map and shelved as{" "}
+              <Term id="plate">plates</Term> in your atlas.
+            </Step>
+          </ol>
+          <p className="mt-3">
+            Once the upload finishes you can close the tab —{" "}
+            <Link href="/imports" className="underline decoration-rule underline-offset-2 hover:text-ink">
+              Imports
+            </Link>{" "}
+            keeps every attempt and its outcome.
+          </p>
+        </Fold>
       </section>
     </main>
   );
 }
 
-// One platform walkthrough. Steps are a real sequence, so an ordered list is
-// the honest structure. Each branch carries its verification state as
-// visible page text (BRIEF §3E): a real device pass stamps `verified`; a
+// One numbered line. Mono numeral, hanging — the same mark the adventure
+// page's day headings use for sequence.
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span className="font-mono text-ink-2">{n}.</span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+// A folded section: native <details>, closed by default, no script. The
+// summary is the one line a person reads; its padding makes it a 44px
+// target at phone width (text-lg 28px + py-2.5). The id, when given, is a
+// rejection anchor — OpenOnHash opens the fold when a link lands on it.
+function Fold({
+  id,
+  title,
+  last = false,
+  children,
+}: {
+  id?: string;
+  title: string;
+  /** The last fold before a section rule: no rule of its own. */
+  last?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details
+      id={id}
+      className={`group mt-4 scroll-mt-6 pb-4 first:mt-0 ${last ? "" : "border-b border-rule"}`}
+    >
+      <summary className="flex cursor-pointer list-none items-baseline gap-3 py-2.5 font-display text-lg font-semibold marker:hidden">
+        <span aria-hidden className="font-mono text-sm text-ink-2 transition-transform group-open:rotate-90">
+          ▸
+        </span>
+        {title}
+      </summary>
+      <div className="max-w-[58ch] pl-6 text-sm leading-relaxed text-ink-2">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+// One platform walkthrough, folded. Steps are a real sequence, so an
+// ordered list is the honest structure. Each branch carries its
+// verification state as visible page text (phase 7 BRIEF §3E) on the
+// summary line, before the fold: a real device pass stamps `verified`; a
 // drafted-but-unwalked branch says "unverified" rather than carrying a
 // false date. A stale verified date is itself information — Google changes
 // these menus without notice, and the date says when they last matched.
@@ -358,20 +387,23 @@ function Walkthrough({
   id: string;
   title: string;
   steps: React.ReactNode[];
-  /** Chip text once the device pass has walked this branch. */
+  /** Summary-line stamp once the device pass has walked this branch. */
   verified?: string;
   /** Footer sentence recording what the pass checked. */
   verifiedNote?: string;
 }) {
   return (
-    <div id={id} className="mt-6 max-w-prose scroll-mt-6 border border-rule bg-paper">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule bg-land px-4 py-2.5">
-        <h3 className="font-display text-lg font-semibold">{title}</h3>
-        <p className="text-[11px] uppercase tracking-[0.14em] text-ink-2">
-          {verified ?? "Unverified — steps may have changed"}
-        </p>
-      </div>
-      <ol className="space-y-2.5 px-4 py-3.5 text-sm leading-relaxed">
+    <details id={id} className="group mt-3 max-w-prose scroll-mt-6 border border-rule bg-paper">
+      <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 gap-y-1 bg-land px-4 py-2.5 marker:hidden">
+        <span aria-hidden className="font-mono text-sm text-ink-2 transition-transform group-open:rotate-90">
+          ▸
+        </span>
+        <span className="font-display text-lg font-semibold">{title}</span>
+        <span className="ml-auto text-[11px] uppercase tracking-[0.14em] text-ink-2">
+          {verified ?? "Unverified"}
+        </span>
+      </summary>
+      <ol className="space-y-2.5 border-t border-rule px-4 py-3.5 text-sm leading-relaxed">
         {steps.map((step, i) => (
           <li key={i} className="flex gap-3">
             <span className="font-mono text-ink-2">{i + 1}.</span>
@@ -383,26 +415,6 @@ function Walkthrough({
         {verifiedNote ??
           "Drafted 11 Aug 2026 from documentation, not yet verified on a device — Google changes these menus without notice."}
       </p>
-    </div>
-  );
-}
-
-function NextStep({
-  n,
-  title,
-  children,
-}: {
-  n: number;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <li className="flex gap-3">
-      <span className="font-mono text-ink-2">{n}.</span>
-      <span>
-        <strong className="font-semibold">{title}.</strong>{" "}
-        <span className="text-ink-2">{children}</span>
-      </span>
-    </li>
+    </details>
   );
 }
