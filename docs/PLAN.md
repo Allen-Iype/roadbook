@@ -667,6 +667,36 @@ UI.
 hiding of the legend, provenance bar or leg kinds (invariant 8), a dark
 theme, the unified timeline, auth surfaces. Zero Go diff is the target.
 
+### Phase 17 — Places: what a day can say (planned 2026-10-29, brief pending)
+
+**Goal.** Let each day of an adventure name where it was. The phase 16 CP1
+review found the day narrative honest but useless to the person — it
+recounted the reconstruction (positions, gaps), because nothing the system
+holds names a place: the Timeline export carries coordinates and an opaque
+Google `placeId` the parser never reads, visits are not loaded into the
+journey, and countries and regions are served once per journey, not per
+day or stop. The phase serves per-leg and per-stop regions (one ungrouped
+`ST_Contains` pass over the same embedded Natural Earth admin-1 set) and
+stop names from two sources: an embedded offline gazetteer (Natural Earth
+populated places, public domain — every instance names its stops with no
+service, "near Ísafjörður") and an opt-in batch Nominatim pass cached
+like `route_cache`, the row recording which source named it. The routing
+pattern throughout (invariant 7): a `Namer` interface, Null by default,
+`roadbook places` as the batch CLI, `serve` reads the cache only;
+`roadbook journey -candidate N` prints every served name and region
+(invariant 13). The web fills the two slots phase 16 left in the day line
+and the stay row; the shared view inherits.
+
+**Sequencing.** After phase 16 closes (its CP2–CP4 are front door, copy
+diet, close). Brief before any code; the gazetteer's size and licence are
+measured at the brief (the 1 MB rule's named-exception procedure if it is
+over). Decided at the phase 16 CP1 STOP, 2026-10-29 (`docs/phase-16/
+DECISIONS.md`), over re-scoping phase 16 to carry the Go work.
+
+**Excludes.** Google's `placeId` (paid API, terms); any runtime service
+dependency in `serve`; instantaneous speed; visits as stops and
+"farthest that day" unless the brief takes them on evidence.
+
 ### Gated alongside — not in the sequence until their evidence arrives
 
 - **Ingestion (photos as a source, GPX).** Photos-as-source was chartered
