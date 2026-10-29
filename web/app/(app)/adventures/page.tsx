@@ -8,6 +8,7 @@ import { LegKindLegend } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
 import { RouteThumb } from "@/components/route-thumb";
 import { SiteHeader } from "@/components/site-header";
+import { Term } from "@/components/term";
 import type { components } from "@/lib/api/schema";
 
 // The adventures atlas (phase 9 CP3, decided at the mockup STOP): every
@@ -68,8 +69,8 @@ export default async function AdventuresPage() {
             No adventures yet
           </h2>
           <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
-            Your atlas fills as you confirm candidates — journeys detected
-            in your location history that look like real trips.
+            Your atlas fills as you confirm candidates — the trips Roadbook
+            found in your record.
           </p>
           <p className="mt-5">
             <Link
@@ -113,9 +114,20 @@ export default async function AdventuresPage() {
 
   return (
     <Shell undecided={undecided} accountEmail={accountEmail}>
-      <p className="mt-1 text-sm text-ink-2">
-        {covers.length} confirmed adventure{covers.length === 1 ? "" : "s"},
-        most recent first. Plate numbers follow the order travelled.
+      {/* Phase 16 CP3: the two teaching lines the shelf owes a newcomer
+          (RESEARCH §4) — the plate number and the provenance bar each
+          taught once, above the first cover they appear on, as Terms. A
+          cover is one link, so the teaching cannot sit inside it. */}
+      {/* 72ch, not the body-text 58: a two-sentence line under a heading
+          above a full-width grid sets as two lines at laptop width instead
+          of three ragged ones (CP3 review). Phones are narrower than
+          either cap. */}
+      <p className="mt-1 max-w-[72ch] text-pretty text-sm text-ink-2">
+        {covers.length} adventure{covers.length === 1 ? "" : "s"}, the latest
+        first. Each is a <Term id="plate">plate</Term>, numbered in the order
+        you travelled.{" "}
+        <Term id="provenance">The bar under each distance</Term> shows how
+        much of it the phone recorded.
       </p>
       <ul className="mt-6 grid list-none grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-7">
         {covers.map((c) => (
@@ -190,9 +202,12 @@ function PlateCover({ cover }: { cover: Cover }) {
             {name}
           </span>
           {journey.divergence_flagged && (
-            <span className="shrink-0 text-flag" title="Divergence flagged — details on the adventure page">
+            <span
+              className="shrink-0 text-flag"
+              title="The drawn distance and Google's differ — the adventure page says why"
+            >
               <span aria-hidden>⚑</span>
-              <span className="sr-only">divergence flagged</span>
+              <span className="sr-only">distance flagged</span>
             </span>
           )}
         </p>

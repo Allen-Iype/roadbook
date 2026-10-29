@@ -18,6 +18,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Term } from "@/components/term";
+
 type ImportRow = {
   id: number;
   status: "running" | "completed" | "failed";
@@ -181,18 +183,20 @@ export function PhotoUploadImport({
   }
 
   return (
-    <section className="mt-6 border border-rule bg-land p-4">
+    <section className="flex flex-col border border-rule bg-land p-4">
       <h2 className="font-display text-lg font-semibold">Add photos</h2>
-      <p className="mt-1 text-sm text-ink-2">
-        Geotagged photos become position evidence: pick the trips (and some
-        everyday photos, so home can be worked out), and detection runs on
-        what they show. JPEG and HEIC both work; Google Photos Takeout JSON
-        sidecars fill in photos whose location was stripped. The photos
-        themselves are not kept — only their positions, times, and small
-        thumbnails. Keep the screen on until the upload finishes.
+      {/* Phase 16 CP3: two sentences. Which photos count and the one
+          term worth teaching here; the formats, the Takeout files and
+          the home-from-everyday-photos advice live in the front door's
+          "Which photos work" fold, where a person choosing photos reads
+          them once. */}
+      <p className="mt-1 text-sm leading-relaxed text-ink-2">
+        Photos that carry a time and place; the picker opens your photo
+        library. <Term id="originals">Original photos</Term> work best —
+        keep the screen on while they upload.
       </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+      <div className="mt-auto flex flex-wrap items-center gap-3 pt-3">
         {input}
         <button
           type="button"
@@ -319,11 +323,11 @@ function VerdictSummary({ verdicts }: { verdicts: FileVerdict[] }) {
 function reasonFor(status: FileVerdict["status"]): string {
   switch (status) {
     case "no_position":
-      return "no location in the photo (messenger apps strip it; use camera originals or Takeout sidecars)";
+      return "no place in the photo — a copy from a messenger has it stripped; use the original";
     case "no_time":
       return "a location but no readable capture time";
     case "sidecar_unpaired":
-      return "a metadata file naming no photo in this batch — include the photo it describes";
+      return "a Takeout .json file naming no photo in this batch — include the photo it describes";
     default:
       return "not a supported photo format";
   }

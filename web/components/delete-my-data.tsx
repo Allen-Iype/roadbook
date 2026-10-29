@@ -53,7 +53,7 @@ export function DeleteMyData({
         {hasData
           ? multiUser
             ? "Removes every import, adventure, decision, photo, and share link of yours, and forgets your account. Nothing of anyone else's is touched."
-            : "Removes every import, adventure, decision, photo, and share link. The instance is empty again, as if freshly installed."
+            : "Removes every import, adventure, decision, photo, and share link. This Roadbook is empty again, as if freshly installed."
           : multiUser
             ? "Nothing is stored yet. Deleting forgets your account and frees its seat; you can sign in again any time."
             : "Nothing is stored yet — there is nothing to delete."}
@@ -88,7 +88,7 @@ export function DeleteMyData({
           <p className="mt-3 text-sm leading-relaxed">This removes, for good:</p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed">
             <li>every import and the observations it brought in;</li>
-            <li>every detection run, candidate, and decision — names included;</li>
+            <li>every candidate and decision — names included;</li>
             <li>every photo thumbnail and photo record;</li>
             <li>every share link — the links stop opening immediately;</li>
             {multiUser ? (

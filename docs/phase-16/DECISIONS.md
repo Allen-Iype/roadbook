@@ -589,3 +589,143 @@ words, the three covers' names, dates and distances, the PLATE chips and
 the form's placeholder — what a person is shown. The vocabulary hits fell
 from 31 to 10: the four kind names in the legend, "atlas", "export",
 "timeline" and "stop" forms in the steps — none from the banned list.
+
+## 2026-10-29 — CP3: `/imports` says one thing per panel; the table is its own section with word headers
+
+- **Chosen:** the heading stands alone — the paragraph under it (what
+  the table lists, a link to the export walkthrough) is gone, because the
+  table now has its own heading ("Added so far") and the walkthrough link
+  sits in the panel whose file it explains ("Don't have the file yet?" →
+  `/welcome#export`, the same anchor the rejection map uses). The
+  Timeline panel's intro is one line and one instruction; the photos
+  panel's is two sentences with `originals` as a Term, as on the front
+  door. The table's columns are words, not the import row's field names:
+  Added · Source · Format · Dates · Visits · Activities · Path points ·
+  Positions · Skipped · New · Status ("Window", "Points", "Raw" were on
+  the RESEARCH §4 leakage list); the format cell renders "Timeline
+  export" and "Photos" for the two formats that import and leaves a
+  rejected file's sniffer label as it is ("pdf", "kml" already say what
+  the file was). "all" in the dates column became "everything". The
+  deletion copy says "this Roadbook", not "the instance", and the dialog
+  no longer lists "detection run". The photo verdict reasons lost
+  "sidecars" except where a Takeout file is the thing being described.
+  The figures in the table and the panels' behaviour are unchanged.
+- **Rejected:** the table above the panels (a person who comes here
+  comes to add; the row they just made is one scroll down); folding the
+  panel intros into a `<details>` (one line needs no fold); collapsing
+  the accounting columns into one "observations" figure (the columns are
+  what `roadbook import` prints, invariant 13 — they fold at phone width
+  already, so their cost is nil where the cost matters).
+- **Would change our mind:** a walker asking what "Positions" or "Path
+  points" means — then the two merge under one header with the detail in
+  the CLI only.
+
+## 2026-10-29 — CP3: the `/candidates` run line folded; the page says what it asks; the score taught
+
+- **Chosen:** the intro says the page's question in the person's words —
+  "Each candidate is a trip Roadbook found in your record. Confirm the
+  adventures; dismiss the rest." — with `candidate` as a Term. The run
+  line ("Detection run 1 · 3 candidates · 0 outliers dropped · FAR 100
+  km") is a closed `<details>` whose summary carries the one figure a
+  person wants, the count ("How these 3 were found"); inside, the same
+  figures in plain words — the FAR threshold as "more than 100 km from
+  home, with somewhere you stayed", the dropped outliers as "recorded
+  positions too fast to be real", and the run id. The fold renders only
+  when there are candidates; the empty states already explain
+  themselves, and their wording lost "detection" ("Roadbook looked and
+  found no trips"). The keyboard hint beside the sort toggle is one
+  sentence and hidden below `sm` — it describes focus movement, which a
+  phone has no keyboard to notice. **One addition beyond the brief's
+  list:** the card's "score" is now a Term (`lib/terms.ts` gains
+  `score`), replacing a hover title a phone never showed; DESIGN §4
+  keeps the score in triage, and RESEARCH §4 asked for it plain-worded,
+  which a tap-to-read note does without adding a word to the card. The
+  confirm box's breakdown says "score 55.0 of 100 — what it is made of",
+  names its four components in words (distance from home · time at the
+  farthest stay · how much was recorded · length of the trip; a display
+  map over the detector's names, unknown names shown as spelled), and
+  "no record of it; its share went to the others" for an absent one.
+  The e2e sort check reads a `data-score` hook instead of the title.
+- **Rejected:** deleting the run line (invariant 13 — the figures are
+  the CLI's and must stay reproducible on the page; folded is enough);
+  putting the count in the heading ("3 candidates") — the header's nav
+  already carries the undecided count where it matters, and the
+  summary line gives the total once; renaming "km track" on the card
+  (not on the leakage list; cheap to leave, §9.3).
+- **Would change our mind:** a walker opening the fold and being more
+  confused than before — then its copy, not its placement, gets the
+  diet; a walker never finding the score note — then the figure's
+  explanation moves into the confirm box only.
+
+## 2026-10-29 — CP3: the `/adventures` shelf teaches the plate number and the bar once, above the covers
+
+- **Chosen:** one line under the heading does both of RESEARCH §4's
+  jobs for this page: "3 adventures, the latest first. Each is a plate,
+  numbered in the order you travelled. The bar under each distance shows
+  how much of it the phone recorded." — `plate` and the bar's phrase
+  are Terms, opening the same notes the adventure page's eyebrow and
+  caption open. The line sits above the first cover, which is where the
+  number and the bar are first seen; a cover is one link, so a button
+  cannot sit inside it. The cover's flag mark lost "divergence" from its
+  title and its screen-reader text ("The drawn distance and Google's
+  differ — the adventure page says why" / "distance flagged"), matching
+  the adventure page's one line. The empty state says "the trips
+  Roadbook found in your record" instead of "journeys detected in your
+  location history".
+- **Rejected:** a caption under every cover's bar (three repetitions of
+  the same line on a phone, and no tappable term inside a link); the
+  caption beside the legend at the foot (below three covers on a phone —
+  the term is met before the teaching).
+- **Would change our mind:** the intro growing past two lines at 390 px
+  on a long atlas — the count is the only variable, so it will not.
+
+## 2026-10-29 — CP3 reading load, measured
+
+`copy-count.cjs` against `next dev` on the CP3 code with the scratch
+demo API (baseline: RESEARCH §2; the demo's `/candidates` has three
+decided cards and no undecided queue, so it reads light before and
+after):
+
+| page | before, phone (words / sentences / titles / terms) | after CP3, phone | after CP3, desktop |
+|---|---|---|---|
+| imports | 176 / 14 / 0 / 15 | 95 / 11 / 0 / 6 | 111 / 11 / 0 / 8 |
+| candidates | 110 / 8 / 3 / 13 | 91 / 8 / 0 / 10 | 100 / 8 / 0 / 10 |
+| adventures | 83 / 9 / 3 / 11 | 99 / 10 / 3 / 8 | 103 / 11 / 3 / 8 |
+
+`/adventures` gained sixteen words on purpose: the teaching line. Its
+three remaining titles are the covers' flag marks (inside links, where
+a Term cannot go; the screen-reader text carries the same words). The
+`/candidates` titles went to zero (the score's hover title became a
+Term). Across every page the vocabulary list now hits: plate 15 ·
+stops 11 · candidates 9 · timeline 8 · export 8 · observed/routed/
+unknown 7 each · stop 4 · score 3 · source 2 · decision 2 · fix 2 ·
+atlas 1 · candidate 1 — the load-bearing set plus "source" (the
+imports table's column, a plain word), "fix" (the plate margin's
+marker entry, CP1) and "decision" (the deletion copy). "Divergence",
+"detection", "outliers", "window", "raw", "instance", "sidecars" and
+"takeout" no longer appear on any shown surface. Suite after CP3:
+Playwright 122 passed / 22 skipped at 390, 768 and 1280 against
+`next dev` on the CP3 code; vitest 128; `tsc`, lint (0 errors) and
+`next build` clean.
+
+## 2026-10-29 — CP3 review: the intro lines widen; the imports panels pair up at laptop width
+
+- **Chosen:** the maintainer, comparing 3016 with the pre-CP3 pages on a
+  laptop: the pages read well but the text sat wrong at desktop width —
+  a two-sentence intro broke into three ragged lines beside a wide grid,
+  and the `/imports` panel intros bunched in the left third of a
+  full-width frame. One rule was at fault: every intro capped at the
+  body-text measure of 58 characters. The one- and two-sentence lines
+  under a heading on `/adventures` and `/candidates` (and the folded run
+  line) now cap at 72, with `text-wrap: pretty` so no line ends on a
+  single word; paragraphs of body text keep 58. On `/imports` the two
+  panels sit side by side from 1024 px, each intro filling its own
+  panel with no cap, the pickers on one baseline; on a phone they stack
+  as before, with the one gap they had (the panels lost their own top
+  margin to the grid's gap — the first build doubled it).
+- **Rejected:** dropping the cap on the stacked full-width panels (a
+  130-character line, worse than the wrap); widening the grid-page
+  intros to the grid's width (one long line is harder to follow than
+  two).
+- **Would change our mind:** a laptop narrower than 1024 px reading the
+  paired panels as cramped — then the breakpoint moves to `xl`.

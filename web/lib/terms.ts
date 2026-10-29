@@ -5,7 +5,9 @@
 // CLI's help cannot drift apart — there is one place to change a note.
 //
 // The vocabulary is the one RESEARCH §4 marked load-bearing: the plate and
-// its number, the provenance bar, the four leg kinds, the candidate. The
+// its number, the provenance bar, the four leg kinds, the candidate — and
+// (CP3) the triage score, which DESIGN §4 keeps on the candidate card and
+// which a phone could not otherwise learn about. The
 // pipeline's own terms (fix, dwell, window, trace, raw, divergence) are not
 // taught; the pages stopped using them instead.
 //
@@ -50,6 +52,11 @@ export const TERMS = {
     term: "Candidate",
     note:
       "A stretch of time that looks like a trip: far from home, with somewhere you stayed. Roadbook proposes it; only you can confirm it.",
+  },
+  score: {
+    term: "Score",
+    note:
+      "How much this looks like a trip, from 0 to 100: how far from home, how long you stayed, how much was recorded. It orders the queue; it decides nothing.",
   },
 } as const;
 

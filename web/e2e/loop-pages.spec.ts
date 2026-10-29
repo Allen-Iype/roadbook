@@ -87,11 +87,28 @@ test("candidates: every gallery card carries art, figures, and a decision", asyn
   for (let i = 0; i < n; i++) {
     const card = cards.nth(i);
     await expect(card.locator("svg").first()).toBeVisible();
-    await expect(card.getByText(/score (\d+|—)/)).toBeVisible();
+    // The score: the word is a Term button, the figure its sibling text
+    // (phase 16 CP3), so match the element, not one text run.
+    await expect(card.locator("[data-score]")).toBeVisible();
+    // innerText: the Term's closed popover note is in textContent but is
+    // not shown.
+    await expect(card.locator("[data-score]")).toHaveText(/^score\s+(\d+|—)$/, { useInnerText: true });
     await expect(
       card.locator('a[href^="/adventure/"]').first(),
     ).toBeVisible();
   }
+});
+
+test("candidates: the run's figures are folded and closed; the intro teaches the term", async ({ page }) => {
+  // Phase 16 CP3 (BRIEF §4): the detection run line ("Detection run 1 ·
+  // 3 outliers dropped · FAR 100 km") is behind a closed <details> whose
+  // summary carries only the count; the intro's "candidate" is a Term.
+  await page.goto("/candidates");
+  const fold = page.locator("main details", { hasText: /How these \d+ were found/ });
+  await expect(fold).toBeAttached();
+  await expect(fold).not.toHaveAttribute("open", "");
+  await expect(page.getByText(/outliers dropped|Detection run|FAR \d+ km/)).toHaveCount(0);
+  await expect(page.locator("main p button.term", { hasText: "candidate" }).first()).toBeVisible();
 });
 
 test("candidates: bulk triage — selection summons the bar; score order sorts", async ({ page }) => {
@@ -136,7 +153,7 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   // The score element, not card textContent: concatenated text runs the
   // score into the next figure ("score 100" + "28 days" → "10028").
   const scores = await page
-    .locator('main ul > li [title^="Confidence"]')
+    .locator("main ul > li [data-score]")
     .evaluateAll((els) =>
       els.map((el) => {
         const m = el.textContent?.match(/score (\d+|—)/);
@@ -149,11 +166,28 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   }
 });
 
+test("imports: the panels say one thing each and the table has its own heading", async ({ page }) => {
+  // Phase 16 CP3 (BRIEF §4): the page heading stands alone; each upload
+  // panel carries a heading, one short intro and its picker; the table is
+  // its own section, headed, with word column names.
+  await page.goto("/imports");
+  await expect(page.getByRole("heading", { level: 1, name: "Imports" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add a Timeline export" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add photos" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Added so far" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Don't have the file yet?" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Added" })).toBeVisible();
+  // The schema's column names are gone from the user table.
+  for (const old of ["When", "Window", "Raw"]) {
+    await expect(page.getByRole("columnheader", { name: old, exact: true })).toHaveCount(0);
+  }
+});
+
 test("imports: format folds below sm, accounting below md", async ({ page }) => {
   await page.goto("/imports");
   const w = viewportWidth(page);
   const format = page.getByRole("columnheader", { name: "Format" });
-  const window_ = page.getByRole("columnheader", { name: "Window" });
+  const window_ = page.getByRole("columnheader", { name: "Dates" });
   if (w >= SM) {
     await expect(format).toBeVisible();
   } else {
