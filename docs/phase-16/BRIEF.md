@@ -134,6 +134,19 @@ done.
   "Journey ends". Overnight and truncation notes stay, shortened.
   Coordinates leave the rows. Day headings unchanged ("Day 3 · Sunday 24
   May · 80 km", DESIGN §3).
+
+  *Amended at the CP1 STOP (2026-10-29).* The maintainer rejected the
+  per-event row as a shape: it is still the reconstruction's account.
+  A day is now a heading (its kilometres over a provenance bar), one
+  line in the traveller's words (the record's edges, an overnight, the
+  count of stays, "nothing recorded"), and a row per stay. Transit and
+  position rows leave the page; `roadbook journey` keeps every leg. The
+  "How this route was drawn" disclosure moves to the foot of the page.
+  What a day cannot yet say — which regions it crossed, where each stay
+  was — needs data the system does not hold (the Timeline export carries
+  no place names; nothing stored names a stop); that is phase 17
+  "places", briefed separately, and the day line and stay row carry its
+  two slots. DECISIONS 2026-10-29 has the inventory's conclusion.
 - Legend: descriptions visible at phone width in a compact two-column
   form; wording per §5C.
 - Teaching control on: PLATE n in the eyebrow and the plate margin, the

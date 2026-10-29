@@ -1,15 +1,33 @@
-// The day-sliced narrative (BRIEF §1, DESIGN §3): each civil day of the
-// journey as a section — "Day 3 · Sunday 24 May · 80 km" — with its fixes,
-// transits, and dwells as a timeline, and photos slotted where their
-// placements put them. Rendered from sliceDays output; the same output
-// stamps the map's day assignments, so heading, events, and highlight can
+// The day-sliced narrative (phase 6 BRIEF §1, DESIGN §3): each civil day of
+// the journey as a section — "Day 3 · Sunday 24 May · 80 km" — with what
+// the person did that day. Rendered from sliceDays output; the same output
+// stamps the map's day assignments, so heading, line, and highlight can
 // never disagree.
+//
+// Phase 16 CP1, revised at the STOP (plan 2026-10-29): a day is a heading
+// with its kilometres over a provenance bar, ONE line in the traveller's
+// words, and a row per stay. The per-event rows (every transit and
+// recorded position) left the page — they were the reconstruction's
+// account, and `roadbook journey` prints every leg for anyone who wants
+// it. Two slots are reserved for phase 17 "places", which will serve
+// per-day regions and stop names: the day line gains a regions phrase in
+// front ("From Vesturland into Vestfirðir · …") and the stay row gains
+// "· near Ísafjörður" after its duration. Nothing else moves then.
 //
 // No "use client" directive: this module renders inside the adventure view,
 // which is already a client component — the directive marks entry points
 // into the client graph, not every file in it.
-import { clockOf, dayLabel, type Day, type DayEvent } from "@/lib/slice-days";
-import { fmtDuration, fmtLatLon } from "@/lib/format";
+import { StopDot } from "@/components/legend";
+import { ProvenanceBar } from "@/components/provenance-bar";
+import {
+  clockOf,
+  dayComposition,
+  dayLabel,
+  dayPaceKmh,
+  type Day,
+  type DayEvent,
+} from "@/lib/slice-days";
+import { fmtDuration } from "@/lib/format";
 import type { DisplayPhoto } from "@/lib/photo-display";
 import type { components } from "@/lib/api/schema";
 
@@ -79,6 +97,11 @@ function DaySection({
   active: boolean;
   onSelect: () => void;
 }) {
+  const composition = dayComposition(day, journey);
+  // Photos placed on the day's legs sit under the day line: the transit
+  // rows that used to hold them are gone; the day is their slot now.
+  const legPhotos = day.legIndices.flatMap((i) => byLeg.get(i) ?? []);
+  const stays = day.events.filter(isStay);
   return (
     <section
       className={active ? "border-t-2 border-ink" : "border-t border-rule"}
@@ -112,111 +135,227 @@ function DaySection({
           </span>
         </button>
       </h2>
-      {day.events.length === 0 ? (
-        <p className="pb-3 text-sm italic text-ink-2">
-          Nothing recorded this day.
-        </p>
-      ) : (
+      {/* The day's kilometres carry their provenance like every headline
+          distance (RESEARCH §5 principle 2); a day with none shows none. */}
+      {day.km > 0 && (
+        <ProvenanceBar
+          observed={composition.observed}
+          routed={composition.routed}
+          unknown={composition.unknown}
+          air={composition.air}
+          className="-mt-1 mb-2.5"
+        />
+      )}
+      <p data-day-line className="pb-2 text-sm">
+        {/* phase 17 slot: regions phrase first — "From Vesturland into
+            Vestfirðir · " — then the line below. */}
+        <DayLine day={day} journey={journey} candidate={candidate} />
+        {legPhotos.length > 0 && (
+          <>
+            {" "}
+            <PhotoThumbs photos={legPhotos} />
+          </>
+        )}
+      </p>
+      {stays.length > 0 && (
         <ol className="pb-2">
-          {day.events.map((e, i) => (
-            <EventRow
-              key={i}
-              event={e}
-              day={day}
-              journey={journey}
-              candidate={candidate}
-              byLeg={byLeg}
-              byStop={byStop}
-            />
+          {stays.map((e, i) => (
+            <StayRow key={i} event={e} day={day} journey={journey} byStop={byStop} />
           ))}
         </ol>
       )}
-      <DwellDayNote day={day} journey={journey} />
     </section>
   );
 }
 
-// The honest note under a day whose whole content is an ongoing dwell (the
-// Westfjords Day 2): where the traveller was dwelling — or that no position
-// was observed — and exactly which hours the record cannot describe.
-function DwellDayNote({ day, journey }: { day: Day; journey: Journey }) {
-  const dwellDay = day.events.find((e) => e.type === "dwellDay");
-  if (!dwellDay) return null;
-  const s = journey.stops[dwellDay.stopIndex];
-  const minutes = Math.round((Date.parse(s.end) - Date.parse(s.start)) / 60_000);
-  const where =
-    s.loc.lat === 0 && s.loc.lon === 0
-      ? "with no observed position"
-      : `near ${fmtLatLon(s.loc.lat, s.loc.lon)}`;
+type Stay = Extract<DayEvent, { type: "dwell" | "dwellBegin" | "dwellDay" | "dwellEnd" }>;
+
+function isStay(e: DayEvent): e is Stay {
   return (
-    <p className="max-w-[46ch] pb-4 text-[13.5px] italic text-ink-2">
-      Dwelling {where}. No fixes between {dayLabel(s.start.slice(0, 10))}{" "}
-      {clockOf(s.start)} and {dayLabel(s.end.slice(0, 10))} {clockOf(s.end)} —{" "}
-      {fmtDuration(minutes)} the record cannot describe, so this page does not
-      try.
-    </p>
+    e.type === "dwell" ||
+    e.type === "dwellBegin" ||
+    e.type === "dwellDay" ||
+    e.type === "dwellEnd"
   );
 }
 
-// Below this drawn distance a routed leg reads as a stationary gap rather
-// than a transit (phase 9 BRIEF §5.2). Named, per invariant 3's spirit: a
-// display threshold buried as a literal could never be explained later.
-// 0.25 km covers the measured cases — the demo's 0.0 km overnight gaps and
-// the ~100 m routed overnight gap carried from phase 3 — while any real
-// movement (the shortest genuine transit in the goldens is >1 km) clears it.
-const STATIONARY_ROUTED_KM = 0.25;
+const muted = (text: string) => <span className="text-ink-2"> · {text}</span>;
+const flag = (
+  <span className="font-bold text-flag" aria-hidden>
+    {" "}
+    ⚑
+  </span>
+);
 
-// Chip styles per event class. Spelled out: Tailwind extracts class names
-// statically, so `text-${kind}` would silently generate nothing.
-const CHIP: Record<string, { label: string; cls: string }> = {
-  fix: { label: "fix", cls: "text-observed border-observed" },
-  observed: { label: "observed", cls: "text-observed border-observed" },
-  road: { label: "routed", cls: "text-routed border-routed" },
-  // unknown's ink fails AA as 10px text (3.36:1, CP4 a11y pass): the words
-  // go ink-2, the border keeps the leg-ink pairing.
-  unknown: { label: "unknown", cls: "text-ink-2 border-unknown" },
-  air: { label: "air", cls: "text-air border-air" },
-  dwell: { label: "dwell", cls: "text-ink-2 border-rule" },
-  window: { label: "window", cls: "text-ink-2 border-rule" },
-};
-
-function EventRow({
-  event,
+// The one line: what the day was, from its events and nothing more. The
+// stays get their own rows below, so the line counts them and says how
+// the day began and ended — the record's edges, an overnight transit, a
+// day spent travelling or staying put. An empty day says so.
+function DayLine({
   day,
   journey,
   candidate,
-  byLeg,
-  byStop,
 }: {
-  event: DayEvent;
   day: Day;
   journey: Journey;
   candidate?: Truncation;
-  byLeg: Map<number, DisplayPhoto[]>;
+}) {
+  if (day.events.length === 0) {
+    return <span className="italic text-ink-2">Nothing recorded this day.</span>;
+  }
+  const parts: React.ReactNode[] = [];
+  const start = day.events.find((e) => e.type === "windowEdge" && e.edge === "start");
+  const end = day.events.find((e) => e.type === "windowEdge" && e.edge === "end");
+  if (start) {
+    parts.push(
+      candidate?.start_truncated ? (
+        <>
+          Journey begins{flag}
+          {muted("already under way when the record starts")}
+        </>
+      ) : (
+        <>Journey begins</>
+      ),
+    );
+  }
+  const stops = new Set(
+    day.events.flatMap((e) => ("stopIndex" in e ? [e.stopIndex] : [])),
+  ).size;
+  const dwellDay = day.events.find((e) => e.type === "dwellDay");
+  const transitDay = day.events.find((e) => e.type === "transitDay");
+  const overnight = day.events
+    .filter((e) => e.type === "transit" && e.overnight !== null)
+    .map((e) => (e.type === "transit" ? e.overnight : null))
+    .at(-1);
+  if (dwellDay) {
+    // The whole day inside one stay: which hours the record cannot
+    // describe, in the traveller's own clock (the honest Westfjords Day 2).
+    const s = journey.stops[dwellDay.stopIndex];
+    // The row below says "Stayed all day"; the line says what that means.
+    parts.push(
+      <>
+        Nothing recorded from {dayLabel(s.start.slice(0, 10))}{" "}
+        {clockOf(s.start)} to {dayLabel(s.end.slice(0, 10))} {clockOf(s.end)}
+      </>,
+    );
+  } else if (transitDay) {
+    parts.push(<>Travelling all day</>);
+  } else if (stops > 0) {
+    parts.push(<>{stops === 1 ? "1 stop" : `${stops} stops`}</>);
+  } else if (day.km > 0) {
+    parts.push(<>On the move</>);
+  }
+  // The day's average pace over its recorded stretches (the cover's rule,
+  // per day) — absent when nothing moving was recorded that day.
+  const pace = dayPaceKmh(day, journey);
+  if (pace !== undefined) {
+    parts.push(
+      <>
+        <span className="font-mono">{pace.toFixed(0)} km/h</span>
+        <span className="text-ink-2"> average where recorded</span>
+      </>,
+    );
+  }
+  if (overnight !== undefined && overnight !== null) {
+    parts.push(<>overnight into Day {overnight}</>);
+  }
+  if (end) {
+    parts.push(
+      candidate?.end_truncated ? (
+        <>
+          Journey ends{flag}
+          {muted("still under way when the record stops")}
+        </>
+      ) : (
+        <>Journey ends</>
+      ),
+    );
+  }
+  return (
+    <>
+      {parts.map((p, i) => (
+        <span key={i}>
+          {i > 0 && " · "}
+          {p}
+        </span>
+      ))}
+    </>
+  );
+}
+
+// A stay: the map's stop marker, a time, and one line — "Stayed 38 h".
+// phase 17 slot: "· near <place>" after the duration.
+// aria-hidden on the glyph span must be undefined, not false, when the
+// label applies: React renders aria-hidden="false", which is honest but
+// noisy; absent is the plain form.
+function StayRow({
+  event: e,
+  day,
+  journey,
+  byStop,
+}: {
+  event: Stay;
+  day: Day;
+  journey: Journey;
   byStop: Map<number, DisplayPhoto[]>;
 }) {
-  const { time, chip, body, photos } = eventBits(
-    event,
-    day,
-    journey,
-    candidate,
-    byLeg,
-    byStop,
+  // A stay's photo appears on the day it was taken — the one stay event
+  // instance (begin, intermediate day, end) whose civil date matches.
+  const photos = (byStop.get(e.stopIndex) ?? []).filter(
+    (p) => p.taken_at && p.taken_at.slice(0, 10) === day.date,
   );
-  const c = CHIP[chip];
+  const s = journey.stops[e.stopIndex];
+  const unplaced = s.loc.lat === 0 && s.loc.lon === 0;
+  let time: string;
+  let words: React.ReactNode;
+  switch (e.type) {
+    case "dwell":
+      time = `${clockOf(e.start)}–${clockOf(e.end)}`;
+      words = (
+        <>
+          Stayed <span className="font-mono">{fmtDuration(e.minutes)}</span>
+        </>
+      );
+      break;
+    case "dwellBegin":
+      time = clockOf(e.at);
+      words = (
+        <>
+          Stayed{muted(`through to Day ${e.endsDay}`)}
+        </>
+      );
+      break;
+    case "dwellDay":
+      time = "all day";
+      words = <>Stayed all day</>;
+      break;
+    case "dwellEnd":
+      time = clockOf(e.at);
+      words = (
+        <>
+          Moved on after{" "}
+          <span className="font-mono">{fmtDuration(e.minutes)}</span>
+        </>
+      );
+      break;
+  }
   return (
-    <li className="flex items-baseline gap-2.5 py-1 text-sm">
-      <span className="min-w-[86px] shrink-0 font-mono text-xs text-ink-2">
-        {time}
-      </span>
+    <li className="grid grid-cols-[2.25rem_5.5rem_minmax(0,1fr)] items-baseline gap-x-2.5 py-1.5 text-sm">
+      {/* A stay with no recorded position: hollow marker, the words on
+          hover and for assistive tech — not in the row (maintainer's
+          review: not a first-glance fact). The map draws no such stop. */}
       <span
-        className={`shrink-0 border px-1.5 py-px text-[11px] font-medium uppercase tracking-[0.1em] ${c.cls}`}
+        className="flex self-center"
+        aria-hidden={unplaced ? undefined : true}
+        aria-label={unplaced ? "position not recorded" : undefined}
+        title={unplaced ? "Position not recorded — this stay is not on the map" : undefined}
       >
-        {c.label}
+        <StopDot unplaced={unplaced} />
       </span>
+      <span className="font-mono text-xs text-ink-2">{time}</span>
       <span>
-        {body}
-        {photos && photos.length > 0 && (
+        {words}
+        {photos.length > 0 && (
           <>
             {" "}
             <PhotoThumbs photos={photos} />
@@ -227,172 +366,9 @@ function EventRow({
   );
 }
 
-function eventBits(
-  e: DayEvent,
-  day: Day,
-  journey: Journey,
-  candidate: Truncation | undefined,
-  byLeg: Map<number, DisplayPhoto[]>,
-  byStop: Map<number, DisplayPhoto[]>,
-): { time: string; chip: string; body: React.ReactNode; photos?: DisplayPhoto[] } {
-  // A dwell photo appears on the day it was taken — the one dwell event
-  // instance (begin, intermediate day, end) whose civil date matches.
-  const stopPhotos = (stopIndex: number) =>
-    (byStop.get(stopIndex) ?? []).filter(
-      (p) => p.taken_at && p.taken_at.slice(0, 10) === day.date,
-    );
-  const muted = (text: string) => (
-    <span className="text-ink-2"> {text}</span>
-  );
-
-  switch (e.type) {
-    case "fix":
-      return {
-        time:
-          clockOf(e.start) === clockOf(e.end)
-            ? clockOf(e.start)
-            : `${clockOf(e.start)}–${clockOf(e.end)}`,
-        chip: "fix",
-        body: (
-          <>
-            Fix — <span className="font-mono">{fmtLatLon(e.lat, e.lon)}</span>
-            {e.points > 1 && muted(`(${e.points} fixes)`)}
-          </>
-        ),
-        photos: byLeg.get(e.legIndex),
-      };
-    case "transit": {
-      const km = e.km.toFixed(1);
-      const overnight =
-        e.overnight !== null ? muted(`· overnight, ends Day ${e.overnight}`) : null;
-      const bodyByKind: Record<typeof e.kind, React.ReactNode> = {
-        observed: (
-          <>
-            Observed transit — <b className="font-mono">{km} km</b> ·{" "}
-            {e.points} fixes{overnight}
-          </>
-        ),
-        road:
-          // A stationary gap: both ends are effectively the same place, so
-          // routing has nothing to draw — an overnight at a guesthouse, a
-          // parked afternoon. "Routed transit — 0.0 km along roads" is true
-          // but reads as noise; the wording demotes it while the routed
-          // figure stays visible, muted. Presentation only — the geometry
-          // and every stated figure are untouched (phase 9 BRIEF §5.2; the
-          // pipeline-side min-chord floor stays a carried item).
-          e.km < STATIONARY_ROUTED_KM ? (
-            <>
-              Stationary gap — start and end coincide
-              {muted(`(routed ${km} km)`)}
-              {overnight}
-            </>
-          ) : (
-            <>
-              Routed transit — <b className="font-mono">{km} km</b> along roads
-              {muted(`(straight line ${e.chordKm.toFixed(1)} km)`)}
-              {overnight}
-            </>
-          ),
-        unknown: (
-          <>
-            Unobserved gap — straight line{" "}
-            <b className="font-mono">{km} km</b>, nothing inferred{overnight}
-          </>
-        ),
-        air: (
-          <>
-            Flight — <b className="font-mono">{km} km</b> great-circle arc
-            {overnight}
-          </>
-        ),
-      };
-      return {
-        time: `${clockOf(e.start)}–${clockOf(e.end)}`,
-        chip: e.kind,
-        body: bodyByKind[e.kind],
-        photos: byLeg.get(e.legIndex),
-      };
-    }
-    case "dwell": {
-      const s = journey.stops[e.stopIndex];
-      const where =
-        s.loc.lat === 0 && s.loc.lon === 0
-          ? muted("· position not observed")
-          : muted(`· near ${fmtLatLon(s.loc.lat, s.loc.lon)}`);
-      return {
-        time: `${clockOf(e.start)}–${clockOf(e.end)}`,
-        chip: "dwell",
-        body: (
-          <>
-            Dwell — {fmtDuration(e.minutes)}
-            {where}
-          </>
-        ),
-        photos: stopPhotos(e.stopIndex),
-      };
-    }
-    case "dwellBegin":
-      return {
-        time: clockOf(e.at),
-        chip: "dwell",
-        body: <>Dwell begins{muted(`· ends Day ${e.endsDay}`)}</>,
-        photos: stopPhotos(e.stopIndex),
-      };
-    case "dwellDay":
-      return {
-        time: "all day",
-        chip: "dwell",
-        body: <>Dwelling — no movement observed</>,
-        photos: stopPhotos(e.stopIndex),
-      };
-    case "dwellEnd":
-      return {
-        time: clockOf(e.at),
-        chip: "dwell",
-        body: <>Dwell ends ({fmtDuration(e.minutes)})</>,
-        photos: stopPhotos(e.stopIndex),
-      };
-    case "transitDay": {
-      const wording: Record<typeof e.kind, string> = {
-        observed: "observed",
-        road: "inferred along roads",
-        unknown: "unobserved",
-        air: "in the air",
-      };
-      return {
-        time: "all day",
-        chip: e.kind,
-        body: <>Transit under way all day — {wording[e.kind]}</>,
-      };
-    }
-    case "windowEdge":
-      return {
-        time: clockOf(e.at),
-        chip: "window",
-        body:
-          e.edge === "start" ? (
-            candidate?.start_truncated ? (
-              <>
-                Window opens — the journey was already under way; it began
-                before the imported window
-              </>
-            ) : (
-              <>Window opens — beyond home range</>
-            )
-          ) : candidate?.end_truncated ? (
-            <>
-              Window closes — still in progress at the window&apos;s edge
-            </>
-          ) : (
-            <>Window closes — back within home range</>
-          ),
-      };
-  }
-}
-
-// Photos slot into the timeline by placement (BRIEF §3G): each placed photo
-// appears inline on the leg or dwell whose span held its instant —
-// thumbnails where the journey says they happened.
+// Photos slot into the narrative by placement (phase 4 BRIEF §3G): each
+// placed photo appears inline on the day whose legs held its instant, or
+// on the stay — thumbnails where the journey says they happened.
 function PhotoThumbs({ photos }: { photos: DisplayPhoto[] }) {
   return (
     <span className="inline-flex gap-1 align-middle">

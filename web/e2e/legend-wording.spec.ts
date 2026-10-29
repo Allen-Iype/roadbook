@@ -1,36 +1,35 @@
-// DESIGN §6: the legend's fixed wording — "Observed — recorded fixes ·
-// Routed — inferred along roads · Unknown — straight line, nothing
-// inferred · Air — great-circle arc". The wordy legend lives on the life
-// map and /welcome; its descriptions yield at phone width (the drawn
-// samples and kind names still carry the channel) and return from sm: up.
-// Both halves of that behaviour are the layout truth pinned here. The
-// adventure plate's compact variant is covered in adventure.spec.ts.
+// DESIGN §6: the legend's fixed wording, read from lib/legend.ts so the
+// spec follows the one constant every legend reads (the page components
+// and the exported image's margin alike). Phase 16 CP1: the descriptions
+// are visible at EVERY width — the phone used to get four names and no
+// explanation — on the life map, /welcome, and the adventure plate's
+// margin (reached through the summoned list, as a reader would).
 import { expect, test } from "@playwright/test";
 
-import { SM, legendLocator, viewportWidth } from "./helpers";
+import { LEGEND_ENTRIES } from "../lib/legend";
+import { legendLocator, openSummonedList } from "./helpers";
 
-const DESCRIPTIONS = [
-  "recorded fixes",
-  "inferred along roads",
-  "straight line, nothing inferred",
-  "great-circle arc",
-];
+async function expectFullLegend(page: import("@playwright/test").Page) {
+  const legend = legendLocator(page);
+  for (const e of LEGEND_ENTRIES) {
+    await expect(legend.getByRole("button", { name: e.label, exact: true })).toBeVisible();
+    // The description span by its hook: the Term note behind each name
+    // repeats the phrase, so a bare text match would resolve to two.
+    await expect(legend.locator("[data-legend-desc]", { hasText: e.desc })).toBeVisible();
+  }
+}
 
 for (const path of ["/", "/welcome"]) {
-  test(`the wordy legend at ${path}`, async ({ page }) => {
+  test(`the legend with its descriptions at ${path}`, async ({ page }) => {
     await page.goto(path);
-    const legend = legendLocator(page);
-    for (const label of ["Observed", "Routed", "Unknown", "Air"]) {
-      await expect(legend.getByText(label, { exact: true })).toBeVisible();
-    }
-    const wordy = viewportWidth(page) >= SM;
-    for (const desc of DESCRIPTIONS) {
-      const el = legend.getByText(desc);
-      if (wordy) {
-        await expect(el).toBeVisible();
-      } else {
-        await expect(el).toBeHidden();
-      }
-    }
+    await expectFullLegend(page);
   });
 }
+
+test("the legend with its descriptions on the adventure plate", async ({ page }) => {
+  await page.goto("/");
+  const dialog = await openSummonedList(page);
+  const href = await dialog.getByRole("link").first().getAttribute("href");
+  await page.goto(href!);
+  await expectFullLegend(page);
+});

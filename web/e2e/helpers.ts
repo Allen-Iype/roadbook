@@ -43,19 +43,16 @@ export async function clickUntil(
   await expect(effect).toBeVisible();
 }
 
-// The leg-kind legend renders as one <p> holding all four kind entries,
-// each with a drawn SVG sample. Scoping to it matters twice over: the
-// welcome pitch prose legitimately reuses legend phrases ("inferred along
-// roads", "great-circle arc"), and text filtering is case-insensitive, so
-// the adventure cover's lowercase composition line ("observed 700.2 km ·
-// routed …") also matches. The SVG samples are the discriminator — no
-// other <p> draws line samples.
+// The leg-kind legend renders as one <ul aria-label="Legend"> holding the
+// four kind entries; each name is a Term button (its popover note repeats
+// the name, so specs match the label BY ROLE, never by text alone), with a
+// drawn SVG sample and its description visible at every width (phase 16).
+// Scoping to it matters: the
+// welcome pitch prose legitimately reuses legend phrases, and text
+// filtering is case-insensitive, so the adventure disclosure's lowercase
+// composition line ("observed 700.2 km · routed …") would also match.
 export function legendLocator(page: Page): Locator {
-  return page
-    .locator("p")
-    .filter({ has: page.locator("svg") })
-    .filter({ hasText: "Observed" })
-    .first();
+  return page.locator('ul[aria-label="Legend"]').first();
 }
 
 // Opens the life map's summoned list ("List (n)") and returns the dialog.

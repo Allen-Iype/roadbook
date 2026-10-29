@@ -14,6 +14,7 @@
 // API returns one result per uploaded file, and the panel renders each
 // (BRIEF §3F), so one HEIC in a batch of five fails inline while four land.
 
+import { Term } from "@/components/term";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { deletePhoto, uploadPhotos } from "@/app/actions";
 import { fmtDistanceM, placeStatement } from "@/lib/format";
@@ -135,10 +136,10 @@ export function PhotosSection({
       {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
 
       {shown.length === 0 && pending.length === 0 && (
-        <p className="mt-2 text-sm text-ink-2">
-          None yet. Photos carry the most accurate positions in the project —
-          EXIF stays on camera originals; WhatsApp and most messengers strip
-          it.
+        // Short, in the person's words; the why is one tap away on the term
+        // (phase 16 review: the EXIF/messenger sentence was the pipeline's).
+        <p className="mt-2 text-xs text-ink-2">
+          None yet. <Term id="originals">Original photos</Term> work best.
         </p>
       )}
 

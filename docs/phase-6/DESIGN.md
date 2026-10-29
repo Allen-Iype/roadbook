@@ -99,6 +99,18 @@ straight line, nothing inferred · Air — great-circle arc".
 Shared invention kept: the provenance bar — headline distances carry a
 hairline stacked bar of their kind-composition.
 
+*Amendment (2026-10-29, phase 16 CP1, maintainer-approved):* the legend's
+fixed wording is now **"Observed — the phone recorded it · Routed — drawn
+along roads · Unknown — nothing recorded, straight line · Air — a
+flight"**. The four names, the order, the sample lines and the legend's
+presence everywhere are unchanged; only the descriptions changed, from
+the pipeline's terms ("recorded fixes", "great-circle arc") to plain
+words. "The phone", not "your phone", because the same legend sits on a
+shared view and travels on an exported image. One constant carries it
+(`web/lib/legend.ts`), read by the page legend, the plate margin, the
+exported image and overlay, and the Playwright legend spec. Decision
+record: `docs/phase-16/DECISIONS.md`.
+
 Standing recommendation confirmed: no home markers on the life map.
 
 ## 7. Parked

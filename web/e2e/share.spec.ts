@@ -53,8 +53,13 @@ test("share link: mint, open signed-out, revoke", async ({ page, browser }) => {
   // all four kinds, and the cover prints the provenance split.
   const legend = legendLocator(view);
   for (const label of ["Observed", "Routed", "Unknown", "Air"]) {
-    await expect(legend.getByText(label, { exact: true })).toBeVisible();
+    await expect(legend.getByRole("button", { name: label, exact: true })).toBeVisible();
   }
+  // The composition line lives in the drawing's disclosure (phase 16),
+  // closed by default on the shared view exactly as on the owner's.
+  const details = view.locator("details", { hasText: "How this route was drawn" });
+  await expect(details).toHaveJSProperty("open", false);
+  await details.locator("summary").click();
   await expect(view.getByText(/observed [\d.]+ km · routed/)).toBeVisible();
   await expect(view.locator(".maplibregl-canvas")).toBeAttached({ timeout: 20_000 });
   // No owner controls leak into the shared surface.

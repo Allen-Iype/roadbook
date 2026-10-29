@@ -6,6 +6,8 @@
 // Purely presentational; the numbers are km and only their ratios matter.
 // The visual is aria-hidden because the composition is always stated in
 // adjacent text — the bar makes it scannable, the words make it accessible.
+// data-provenance-bar is the hook the Playwright floor assertion uses
+// (phase 16): an aria-hidden element has no role to find it by.
 export function ProvenanceBar({
   observed,
   routed,
@@ -30,6 +32,7 @@ export function ProvenanceBar({
   return (
     <span
       aria-hidden
+      data-provenance-bar
       className={`flex h-1 w-full overflow-hidden bg-rule ${className}`}
     >
       {parts.map((p) => (

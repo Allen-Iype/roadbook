@@ -179,6 +179,57 @@ export function drawnKm(leg: Leg): number {
     : leg.distance_km;
 }
 
+/** The kind-composition of a day's drawn kilometres (phase 16 CP1): the
+ * same drawnKm rule the day's `km` sums, split by leg kind over the legs
+ * assigned to the day, so the day heading can carry a provenance bar
+ * (invariant 8 applied to the one figure a day shows). Observed includes
+ * fixes (0 km); the four parts sum to `day.km`. */
+export type DayComposition = {
+  observed: number;
+  routed: number;
+  unknown: number;
+  air: number;
+};
+
+export function dayComposition(
+  day: Pick<Day, "legIndices">,
+  journey: Pick<SliceInput, "legs">,
+): DayComposition {
+  const c: DayComposition = { observed: 0, routed: 0, unknown: 0, air: 0 };
+  for (const i of day.legIndices) {
+    const leg = journey.legs[i];
+    const km = drawnKm(leg);
+    if (leg.kind === "observed") c.observed += km;
+    else if (leg.gap_kind === "road") c.routed += km;
+    else if (leg.gap_kind === "air") c.air += km;
+    else c.unknown += km;
+  }
+  return c;
+}
+
+/** A day's average pace over its MOVING observed legs — the Go
+ * `Summarize` rule (internal/journey/summary.go) applied to one day:
+ * summed observed distance over summed observed duration, fixes excluded
+ * (a fix has no pace), drawn-in stretches excluded (no measured duration
+ * of their own). undefined when the day has no moving observed leg:
+ * absent, never zero. Each leg belongs to exactly one day (the midnight
+ * rule), so the days' kilometres and hours sum to the journey's served
+ * pace — the parity vitest. */
+export function dayPaceKmh(
+  day: Pick<Day, "legIndices">,
+  journey: Pick<SliceInput, "legs">,
+): number | undefined {
+  let km = 0;
+  let hours = 0;
+  for (const i of day.legIndices) {
+    const leg = journey.legs[i];
+    if (leg.kind !== "observed" || isFixLeg(leg)) continue;
+    km += leg.distance_km;
+    hours += (Date.parse(leg.end) - Date.parse(leg.start)) / 3_600_000;
+  }
+  return hours > 0 ? km / hours : undefined;
+}
+
 function minutesBetween(start: string, end: string): number {
   return Math.round((Date.parse(end) - Date.parse(start)) / 60_000);
 }
