@@ -347,3 +347,245 @@ is left as it is so the before and after stay comparable.
   "great-circle arc") and teaching the two terms instead.
 - **Would change our mind:** a walker reading "the phone" as someone
   else's phone — then "a phone recorded it".
+
+## 2026-10-29 — CP2, the front door as built: the plate, three steps, one door
+
+- **Chosen:** `/welcome` opens with the title, one sentence and the demo
+  plate with its legend; then "Your own, in three steps" (export · upload
+  · confirm) with the Timeline file picker directly under it as the one
+  filled button on the page ("Choose the Timeline file", full width on a
+  phone, 48 px); then "Don't have the file yet?" with the Android and
+  iPhone walkthroughs as native `<details>`, their verification stamps on
+  the summary line before the fold; the photos door second, one line and
+  an outlined button, with "Original photos" a Term; "What the right file
+  looks like", "Where your data goes" and "What happens after you upload"
+  folded at the foot. The upload islands gained a `variant` prop
+  (`panel` for `/imports`, unchanged; `door` for the front door — the
+  button and its status alone, no second heading or paragraph). Every
+  `WELCOME_SECTIONS` id keeps a real target, unchanged, so
+  `lib/rejection-anchors.ts` and its test are untouched; three ids now
+  sit on `<details>` elements and `components/open-on-hash.tsx` — the one
+  script added to a deliberately static page — opens the fold a rejection
+  link lands on, and every fold enclosing it, then scrolls to it. The
+  eyebrow ("A road atlas of your own past") and the section jump row are
+  gone: the picker is in the first screen and a half.
+- **Rejected:** a stepper (BRIEF §5E — client state on a static page,
+  and it hides the picker from a returning person with the file in
+  hand); opening every walkthrough when a link targets the "export"
+  block (two open accordions where one platform applies — the summaries
+  name the platforms); repeating the picker after the walkthroughs (one
+  primary action; the walkthroughs' last step links back up to it);
+  deleting the walkthroughs' verification notes (phase 7 BRIEF §3E — a
+  stale date is information).
+- **Would change our mind:** a walker who does not find the picker
+  (then it moves above the plate); a walker who does not open "Don't
+  have the file yet?" and stalls (then the two platform summaries open
+  by default on a phone).
+
+## 2026-10-29 — CP2, the landing: the four kinds once, the rule in one sentence, custody folded
+
+- **Chosen:** the "honesty rule" section with its four ink entries is
+  removed; the four kinds appear once, in the plate's legend, whose
+  wording now follows DESIGN §6 as amended at CP1 (the landing must never
+  drift from the product's words) and whose descriptions are visible at
+  every width (they were hidden under 480 px — the phone user has equal
+  weight, RESEARCH §9.4). The rule itself is one italic sentence under
+  the legend; the lede lost its copy of it. "How it works" keeps its four
+  steps at one sentence each. Custody is one paragraph, with the full
+  statement (the three headings and the no-public-demo note) in a
+  `<details>` under it. "The way in" is unchanged in substance. The page
+  stays zero-script: `<details>` is HTML.
+- **Rejected:** dropping "How it works" or "What you reach" (the brief
+  names neither; the steps are a real sequence and the screenshots are
+  the page's only look at the product past the hero); rewriting "the way
+  in" (phase 15's copy, reviewed on the CP2 walk there).
+- **Would change our mind:** the phase 15 CP4 stranger stalling on the
+  landing — then the steps go too, and the page is hero, custody, way in.
+
+## 2026-10-29 — CP2 reading load, measured
+
+`copy-count.cjs` against `next dev` on the CP2 code with the scratch
+demo API (baseline: RESEARCH §2; CP1's rows above). The landing is read
+from disk by the script; the welcome page from the stack.
+
+| page | before, phone (words / sentences / titles / terms) | after CP2, phone | after CP2, desktop |
+|---|---|---|---|
+| landing | 851 / 73 / 0 / 31 | 597 / 53 / 0 / 25 | 601 / 54 / 0 / 25 |
+| welcome | 1105 / 80 / 0 / 56 | 257 / 27 / 0 / 12 | 261 / 28 / 0 / 12 |
+
+The welcome page's folded text is not counted (closed `<details>`
+content is not in `innerText`), which is the point of the measure: it
+is what a person is shown. Opened, the page carries roughly the
+walkthroughs and notes it did before, shortened. Page height at 390 px:
+5,276 px before, 2,143 px after (puppeteer, full page).
+
+## 2026-10-29 — CP2 review: the welcome page accepted, the landing returned to the mockup gate
+
+- **Chosen:** the maintainer's verdict on sight: the welcome page is
+  "much cleaner" and stands; the landing is not clean — flat hierarchy
+  (every section eyebrow + heading + prose), too many devices (rules,
+  boxes, numerals, mono caps, middle dots), still too wordy (597 words on
+  a phone). CP2 is committed as built; the landing redesign is **CP2b**,
+  the BRIEF §5A fallback used deliberately: a shape question goes back to
+  the mockup gate. Inspiration first — a reference board before any
+  mockup (`LANDING-REFERENCES.md`: eleven pages in three groups, same
+  job / same audience / print ancestry, with word counts measured the
+  way ours are).
+- **Rejected:** holding the welcome page uncommitted until the landing is
+  done; redesigning the landing straight into the file.
+- **Would change our mind:** nothing about the split; the board's
+  principles are decided at the next entry.
+
+## 2026-10-29 — STOP 1: the board's principles stand, plus two of the maintainer's
+
+- **Chosen:** principles 1–5 as the board states them (one thing leads;
+  one label treatment and one rule weight; drawn covers, not screenshots;
+  a copy budget of about 350 words, custody once; the form is the only
+  box). Two more from the maintainer: **(6) written for a traveller, not
+  an engineer** — the landing never uses *plate, leg, fix, custody,
+  provenance, candidate, civil day, great-circle, colophon*; "atlas" stays
+  as the brand word; captions say what the person sees ("All your trips on
+  one map", "Each trip, day by day"); the provenance bar may appear as a
+  drawing but carries no jargon label. **(7) Copy before design** — the
+  full landing copy, at most 350 words, in the order hero · what you get ·
+  three steps · privacy · the way in · footer, approved at a STOP before
+  any mockup; step 1 says plainly that the history is exported from Google
+  Maps and roughly how long that takes. The hero copy is fixed by the
+  maintainer: headline "Every road you've travelled, on one map."; button
+  "Make mine"; under it "Sign in with Google · 10 free spots"; then one
+  privacy sentence. "Make mine" is the one action's name everywhere the
+  sign-in appears (masthead, hero, the way in). The hero image is the life
+  map — the whole promise — not one adventure's cover.
+- **Rejected:** "custody" and the rest of the list as landing words (they
+  are the product's and the docs' vocabulary; a stranger reads none of
+  them); a different verb per sign-in placement.
+- **Would change our mind:** a reader taking "Make mine" for a purchase —
+  then the small line under it says "free" before "10 spots".
+
+## 2026-10-29 — The honesty rule leaves the landing for a page of its own
+
+- **Chosen:** the four kinds explained, the rule ("never a line it cannot
+  justify") and the drawing's account move to a separate static page,
+  "How it's built" (`landing/how-its-built.html`, same tokens, zero
+  script), linked from the footer. The legend under the hero map stays on
+  the landing, in the plain words DESIGN §6 now carries. The planned
+  drift test (Step 3) pins the landing's legend to `web/lib/legend.ts` as
+  before; the new page carries the fuller account and is not pinned
+  (prose, not the fixed wording).
+- **Rejected:** keeping the rule as a sentence under the legend on the
+  landing (the CP2 trim did this; it is still the engineer's account on
+  the traveller's page); dropping the rule from the public surface
+  altogether (it is the product's reason to exist, and the self-hosting
+  reader wants it).
+- **Would change our mind:** the five-second test (below) showing readers
+  do not understand why the lines differ — then one plain sentence
+  returns under the legend.
+
+## 2026-10-29 — Product proof: drawn covers plus one real screenshot
+
+- **Chosen:** the three demo adventures as drawn covers replace the phase 9
+  screenshots; **one** real screenshot of the app stays as proof that this
+  is working software (a current phase-14 capture or a fresh one from the
+  demo stack, never phase 9's).
+- **Rejected:** covers only (a drawing could be a poster shop; the
+  screenshot says it runs); three screenshots (the greyish row the board
+  found weak).
+- **Would change our mind:** the screenshot reading as clutter next to the
+  covers on a phone — then it moves below the steps, smaller.
+
+## 2026-10-29 — One mockup, A1; the review is a five-second test
+
+- **Chosen:** build mockup A1 ("the plate is the page") only. A2 (the
+  typographic atlas cover) is dropped: fewer images is the wrong direction
+  for a visual product. B (direction B's dark sheet) is dropped: a rule
+  amendment with no gain for visitors. The review at STOP 2 is the
+  maintainer's phone plus three non-engineer friends sent the A1 link and
+  asked "what does this do?" after five seconds; their answers decide.
+- **Rejected:** three mockups for comparison (the board already fixed the
+  direction; what is left is execution, which one mockup tests).
+- **Would change our mind:** the five-second answers missing the point —
+  then A1's hero is reworked before any build, not the mockup count.
+
+## 2026-10-29 — Copy approved; mockup A1 built from it
+
+- **Chosen:** the maintainer approved the landing copy with edits (hero
+  subline, privacy line, captions, a platform-neutral step 1, the photos
+  line, the privacy paragraph, the way-in's second paragraph, the footer's
+  second sentence dropped); the approved text measures **327 words**,
+  under the 350 budget. One edit of the assistant's stands: "delete all of
+  it in one tap" became "Delete all of it, any time", because deletion
+  asks the person to type "delete" before the button unlocks. Mockup A1
+  (`mockups/landing-a1.html`): masthead with the one action; headline,
+  two sentences, "Make mine" full width on a phone, the two small lines;
+  the life-map plate at full sheet width with the legend and caption in
+  its margin strip; "Each trip, day by day" as the three demo covers in
+  the atlas-grid idiom (route art, PLATE n, country, name, dates · days,
+  km, the bar with no label) over one screenshot of the app's adventure
+  page captured fresh from the demo stack; three steps; privacy; the one
+  box with the form; a four-link footer. Six type sizes, one rule (1 px
+  ink), the double rule only on the plate and the covers, no eyebrows, no
+  inline styles except the covers' bar widths (data).
+- **Rejected:** a two-column hero at desktop (text beside the plate — the
+  plate shrinks, and the plate is the point); lazy-loading the screenshot
+  (a blank box in the first full-page capture; the page has one image);
+  a horizontal scroller for the covers on a phone (sideways scroll on a
+  page whose test forbids it); the life-map screenshot as "the app itself"
+  (the plate above already is the life map — the adventure page shows what
+  the covers open into).
+- **Would change our mind:** the five-second answers; the maintainer's
+  phone.
+
+## 2026-10-29 — A1 gains a desktop layout; the phone layout is unchanged
+
+- **Chosen:** the maintainer, on a laptop: the page was the phone layout
+  centred with empty margins. From 1024 px the hero sets in two columns —
+  headline, subline, the action and its two small lines on the left, the
+  life map on the right as large as the sheet allows — and both are in
+  the first screen at 1280×800 (the plate's lower rule lands at 630 px).
+  The three covers and the three steps each set in three columns; privacy
+  and the way in keep a reading column of about 65 characters. The
+  screenshot is capped at 52 rem so it reads as proof, not a second hero.
+  Same copy; the phone layout is byte-identical in the DOM and unchanged
+  on screen.
+- **Rejected:** scaling the type up to fill the width (the phone layout
+  centred, only larger); the plate at full sheet width under the words
+  at desktop (what the first build did — the page's one thing led, but
+  from below the fold).
+- **Would change our mind:** the plate reading as a thumbnail on a wide
+  laptop — then the left column narrows to 22 rem.
+
+## 2026-10-29 — STOP 2 passed on sight; the landing built from A1
+
+- **Chosen:** the maintainer's "this looks good" on the desktop pass;
+  `landing/index.html` is now the A1 page generated from the same source
+  as the mockup (the hero plate SVG, the three covers' route art as
+  `/adventures` draws it, the approved copy), with the committed
+  screenshot `docs/screens/phase16-cp2b-adventure-2.png` staged as
+  `shots/app.png` by `deploy-landing.sh` (the three phase-9 shots are no
+  longer referenced). `landing/how-its-built.html` is new: the four kinds
+  explained, the rule, where the figures come from, where the data lives
+  (the custody statement that left the landing), self-hosting; linked
+  from the landing's footer, same tokens, zero script, placeholder
+  substituted at deploy like the landing. `web/lib/landing-legend.test.ts`
+  pins the landing's legend to `LEGEND_ENTRIES`, zero `<script>` and the
+  `{ROADBOOK_DOMAIN}` placeholder on both pages (vitest 128). The landing
+  README is rewritten for the two pages and the test.
+- **Rejected:** keeping the deploy mapping for the three old screenshots
+  "in case" (dead staging); a build step to share the stylesheet between
+  the two pages (two files, the README's same-commit rule).
+- **Would change our mind:** the three friends' five-second answers, still
+  to come — a miss on "what does this do?" reopens the hero, not the build.
+
+## 2026-10-29 — CP2b reading load, measured
+
+`copy-count.cjs` on the built landing (read from disk, as the script does):
+
+| page | before, phone (words / sentences / titles / terms) | CP2 trim | CP2b, phone | CP2b, desktop |
+|---|---|---|---|---|
+| landing | 851 / 73 / 0 / 31 | 597 / 53 / 0 / 25 | 390 / 47 / 0 / 10 | 399 / 49 / 0 / 11 |
+
+The approved copy is 327 words; the script's 390 adds the legend's eight
+words, the three covers' names, dates and distances, the PLATE chips and
+the form's placeholder — what a person is shown. The vocabulary hits fell
+from 31 to 10: the four kind names in the legend, "atlas", "export",
+"timeline" and "stop" forms in the steps — none from the banned list.

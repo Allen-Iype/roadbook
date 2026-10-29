@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadbook — how it's built</title>
+<meta name="description" content="How Roadbook draws a route: the four kinds of line, the rule that a gap is never drawn as a confident line, where the figures come from, and where your data lives.">
+<!-- The engineer's page (phase 16 CP2b, DECISIONS 2026-10-29): the honesty
+     rule and the drawing's account left the landing for here, linked from
+     its footer. Same tokens and type as index.html — the <style> block is
+     copied from it; when index.html's changes, this one changes in the same
+     commit. Static, zero script. {ROADBOOK_DOMAIN} is substituted at deploy. -->
+<style>
+:root {
+  --paper:#f5f2e8; --land:#efece2; --sea:#d9e2e4; --ink:#26251f; --ink-2:#6e6a5e; --rule:#c9c3b2;
+  --observed:#a81e22; --routed:#2a5da8; --unknown:#8a8375; --air:#3f7069;
+  --color-paper:var(--paper); --color-land:var(--land); --color-sea:var(--sea); --color-ink:var(--ink); --color-ink-2:var(--ink-2);
+  --color-observed:var(--observed); --color-routed:var(--routed); --color-unknown:var(--unknown); --color-air:var(--air);
+  --font-display:"Source Serif 4","Palatino Linotype",Palatino,Georgia,serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --font-sans:"Avenir Next",Avenir,"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@font-face { font-family:"Source Serif 4"; src:url("fonts/source-serif-4/latin-400-normal.woff2") format("woff2"); font-weight:400; font-display:swap; }
+@font-face { font-family:"Source Serif 4"; src:url("fonts/source-serif-4/latin-600-normal.woff2") format("woff2"); font-weight:600; font-display:swap; }
+@font-face { font-family:"IBM Plex Mono"; src:url("fonts/ibm-plex-mono/latin-400-normal.woff2") format("woff2"); font-weight:400; font-display:swap; }
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+body { background:var(--paper); color:var(--ink); font-family:var(--font-sans); font-size:1rem; line-height:1.55; }
+a { color:inherit; text-decoration:underline; text-decoration-color:var(--rule); text-underline-offset:3px; }
+a:hover { text-decoration-color:var(--ink); }
+:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+
+/* Type scale: six sizes. */
+.t-display { font-family:var(--font-display); font-weight:600; font-size:clamp(2.1rem,7.2vw,3.6rem); line-height:1.04; letter-spacing:-0.012em; }
+.t-h2 { font-family:var(--font-display); font-weight:600; font-size:1.4rem; line-height:1.2; }
+.t-h3 { font-family:var(--font-display); font-weight:600; font-size:1.15rem; line-height:1.3; }
+.t-body { font-size:1rem; }
+.t-small { font-size:0.875rem; }
+.t-label { font-family:var(--font-display); font-weight:600; font-size:0.6875rem; letter-spacing:0.22em; text-transform:uppercase; }
+.sec-title { margin-top:1.75rem; }
+
+.sheet { max-width:66rem; margin:0 auto; padding:0 1.25rem; }
+.rule { border-top:1px solid var(--ink); }  /* the one rule */
+.measure { max-width:58ch; }
+.quiet { color:var(--ink-2); }
+
+/* The action: one look wherever it appears. */
+.act { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 1.4rem; background:var(--ink); color:var(--paper); font-family:var(--font-display); font-weight:600; font-size:1.0625rem; text-decoration:none; border:1px solid var(--ink); }
+.act:hover { background:var(--paper); color:var(--ink); }
+@media (max-width:39.99rem) { .act.wide { width:100%; } }
+
+/* Masthead */
+.masthead { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.9rem 0; }
+.wordmark { font-family:var(--font-display); font-weight:600; font-size:1.25rem; letter-spacing:0.01em; text-decoration:none; }
+.wordmark small { display:none; font-family:var(--font-sans); font-weight:400; font-size:0.875rem; color:var(--ink-2); margin-left:0.75rem; letter-spacing:0; }
+@media (min-width:40rem) { .wordmark small { display:inline; } }
+.masthead .act { min-height:44px; padding:0 1rem; font-size:0.95rem; }
+
+/* Hero */
+.hero { padding-top:2.25rem; }
+.hero h1 { max-width:16ch; }
+.hero .lede { margin-top:1.1rem; font-size:1.125rem; max-width:50ch; }
+.hero .cta { margin-top:1.5rem; }
+.hero .under { margin-top:0.6rem; }
+.hero .promise { margin-top:0.35rem; }
+@media (min-width:62rem) {
+  .hero-text { max-width:40rem; }
+/* Desktop (≥1024px): the hero in two columns — words left, the plate right, both in the first screen at 1280×800. */
+@media (min-width:64rem) {
+  .hero { padding-top:1.75rem; }
+  .hero-wrap { display:grid; grid-template-columns:minmax(18rem,26rem) minmax(0,1fr); gap:2.5rem 3.5rem; align-items:center; }
+  .hero-text { max-width:none; }
+  .hero h1 { font-size:clamp(2.4rem,3.4vw,3.1rem); }
+  .hero .lede { font-size:1.0625rem; }
+  .plate { margin-top:0; min-width:0; }
+  .legend { gap:0.3rem 1.25rem; }
+  .sheet.steps ol { grid-template-columns:repeat(3,1fr); max-width:none; gap:2.5rem; }
+  .shot { max-width:52rem; }
+}
+}
+
+/* The plate: the one double rule on the page besides the covers. */
+.plate { margin:2rem 0 0; }
+.plate-frame { border:1px solid var(--ink); outline:1px solid var(--ink); outline-offset:3px; background:var(--sea); }
+.plate-frame svg { display:block; width:100%; height:auto; }
+.plate figcaption { margin-top:4px; border:1px solid var(--ink); border-top:0; outline:1px solid var(--ink); outline-offset:3px; background:var(--paper); padding:0.7rem 0.9rem 0.8rem; }
+.legend { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem 1rem; font-size:0.8125rem; list-style:none; }
+.legend li { display:flex; flex-wrap:wrap; align-items:baseline; gap:0.1rem 0.5rem; }
+.legend li b { font-weight:600; }
+.legend li span { color:var(--ink-2); flex-basis:100%; }
+.legend li .dash { display:none; }
+.legend svg { width:34px; height:8px; flex:none; align-self:center; }
+@media (min-width:48rem) {
+  .legend { display:flex; flex-wrap:wrap; gap:0.3rem 1.5rem; }
+  .legend li span { flex-basis:auto; } .legend li .dash { display:inline; } .legend svg { width:44px; }
+}
+.plate .caption { margin-top:0.7rem; font-size:0.875rem; }
+.plate .caption b { font-weight:600; }
+
+/* What you get */
+.get { margin-top:3.5rem; padding-top:1.75rem; }
+.get .caption { margin-top:0.35rem; }
+.covers { list-style:none; display:grid; grid-template-columns:1fr; gap:1.5rem; margin-top:1.5rem; }
+@media (min-width:30rem) { .covers { grid-template-columns:repeat(2,1fr); gap:1.75rem; } .covers li:last-child:nth-child(odd) { grid-column:1 / -1; max-width:calc(50% - 0.875rem); } }
+@media (min-width:52rem) { .covers { grid-template-columns:repeat(3,1fr); } .covers li:last-child:nth-child(odd) { grid-column:auto; max-width:none; } }
+.cover { border:1px solid var(--ink); outline:1px solid var(--ink); outline-offset:3px; background:var(--paper); margin:4px; }
+.cover .art { position:relative; border-bottom:1px solid var(--rule); }
+.cover .art svg { display:block; width:100%; height:auto; }
+.cover .plate-no { position:absolute; right:0.6rem; top:0.45rem; background:var(--paper); padding-left:0.35rem; color:var(--ink-2); font-family:var(--font-display); font-weight:600; font-size:0.6875rem; letter-spacing:0.22em; }
+.cover-text { padding:0.75rem 0.9rem 0.85rem; }
+.cover .where { font-family:var(--font-display); font-weight:600; font-size:0.6875rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-2); }
+.cover .name { font-family:var(--font-display); font-weight:600; font-size:1.15rem; line-height:1.25; margin-top:0.15rem; }
+.cover .facts { display:flex; justify-content:space-between; gap:0.5rem; font-family:var(--font-mono); font-size:0.75rem; color:var(--ink-2); margin:0.3rem 0 0.55rem; }
+.cover .facts .km { color:var(--ink); }
+.cover .bar { display:flex; height:4px; width:100%; background:var(--rule); overflow:hidden; }
+.cover .bar i { display:block; height:100%; }
+.shot { margin-top:2.25rem; }
+.shot img { display:block; width:100%; height:auto; border:1px solid var(--ink); }
+.shot .caption { margin-top:0.5rem; }
+
+/* Three steps — a real sequence; the numerals carry order. */
+.steps { margin-top:3.5rem; padding-top:1.75rem; }
+.steps ol { list-style:none; margin-top:1.25rem; display:grid; gap:1.1rem; max-width:58ch; }
+.steps li { display:grid; grid-template-columns:2ch 1fr; gap:0.9rem; }
+.steps li::before { content:counter(step); counter-increment:step; font-family:var(--font-mono); color:var(--ink-2); padding-top:0.15rem; }
+.steps ol { counter-reset:step; }
+.steps li b { font-weight:600; }
+.steps .photos { margin-top:1.5rem; }
+
+/* Privacy */
+.privacy { margin-top:3.5rem; padding-top:1.75rem; }
+.privacy p { margin-top:0.75rem; max-width:65ch; }
+
+/* The way in — the one box, because it is the one thing to fill in. */
+.wayin { margin-top:3.5rem; padding-top:1.75rem; }
+.box { margin-top:1.25rem; max-width:42rem; border:1px solid var(--ink); background:var(--land); padding:1.4rem 1.25rem 1.5rem; }
+.box p { max-width:54ch; }
+.box .act { margin-top:1rem; }
+.box .then { margin-top:1.25rem; }
+.join { margin-top:0.75rem; display:flex; flex-wrap:wrap; gap:0.6rem; }
+.join label { flex-basis:100%; font-size:0.875rem; color:var(--ink-2); }
+.join input { flex:1 1 14rem; min-height:48px; padding:0 0.8rem; font:inherit; background:var(--paper); color:var(--ink); border:1px solid var(--ink); border-radius:0; }
+.join button { min-height:48px; padding:0 1.2rem; font-family:var(--font-display); font-weight:600; font-size:1rem; background:var(--ink); color:var(--paper); border:1px solid var(--ink); border-radius:0; cursor:pointer; }
+.join button:hover { background:var(--paper); color:var(--ink); }
+.hp { position:absolute; left:-9999px; top:auto; }
+.box .note { margin-top:0.75rem; }
+
+/* Footer */
+footer { margin-top:3.5rem; padding-bottom:2.5rem; }
+footer .links { margin-top:1rem; }
+footer .links { display:flex; flex-wrap:wrap; gap:0.5rem 1.75rem; font-size:0.875rem; }
+footer .links a, footer .lic { display:inline-flex; align-items:center; min-height:44px; }
+footer .made { margin-top:0.25rem; font-size:0.875rem; }
+</style>
+<style>
+.doc { max-width:66ch; }
+.doc h1 { margin-top:2rem; }
+.doc h2 { margin-top:2.5rem; }
+.doc p { margin-top:0.75rem; }
+.kinds { list-style:none; margin-top:1.25rem; display:grid; gap:1.25rem; }
+.kinds li { display:grid; grid-template-columns:64px 1fr; gap:1rem; align-items:start; }
+.kinds svg { width:64px; height:10px; margin-top:0.55rem; }
+.kinds b { font-family:var(--font-display); font-weight:600; font-size:1.05rem; }
+.kinds p { margin-top:0.15rem; }
+.doc code { font-family:var(--font-mono); font-size:0.9em; }
+.back { display:inline-flex; align-items:center; min-height:44px; margin-top:2rem; }
+</style>
+</head>
+<body>
+<header class="sheet">
+  <div class="masthead">
+    <a class="wordmark" href="./">Roadbook<small>an atlas of your own travels</small></a>
+    <a class="act" href="https://app.{ROADBOOK_DOMAIN}/signin">Make mine</a>
+  </div>
+  <div class="rule"></div>
+</header>
+
+<main class="sheet doc">
+  <h1 class="t-display">How it's built</h1>
+  <p class="lede">The landing page says what Roadbook does. This page says how the drawing is made, for anyone who wants to check the claim before trusting a line on a map.</p>
+
+  <h2 class="t-h2">Every line says how it is known</h2>
+  <p>A trip on a Roadbook map is not one line. It is a list of stretches, and each stretch carries one of four kinds. The kind survives from the moment the record is read all the way to the pixels, and it is drawn in a different ink and a different stroke, so the two can never be confused.</p>
+  <ul class="kinds">
+    <li><svg viewBox="0 0 64 10" aria-hidden="true"><line x1="2" y1="5" x2="62" y2="5" stroke="var(--observed)" stroke-width="3.4" stroke-linecap="round"/></svg><div><b>Observed</b><p>The phone recorded positions along this stretch. The line joins them exactly as recorded; nothing is smoothed, nothing is added.</p></div></li>
+    <li><svg viewBox="0 0 64 10" aria-hidden="true"><line x1="2" y1="5" x2="62" y2="5" stroke="var(--paper)" stroke-width="8"/><line x1="2" y1="5" x2="62" y2="5" stroke="var(--routed)" stroke-width="2.8" stroke-linecap="round"/></svg><div><b>Routed</b><p>Nothing was recorded between two positions, so the line follows the roads between them. It is drawn over a paper casing so it cannot be mistaken for a recording, and its distance is the road's, not a measurement.</p></div></li>
+    <li><svg viewBox="0 0 64 10" aria-hidden="true"><line x1="2" y1="5" x2="62" y2="5" stroke="var(--unknown)" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="7 5"/></svg><div><b>Unknown</b><p>Nothing was recorded and no road was looked up. A dashed straight line marks the gap, and says exactly that instead of guessing.</p></div></li>
+    <li><svg viewBox="0 0 64 10" aria-hidden="true"><line x1="2" y1="5" x2="62" y2="5" stroke="var(--air)" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="0.1 6.5"/></svg><div><b>Air</b><p>A flight, told by its speed. The dotted arc is the shortest path between where it began and ended, never pretending to be a road.</p></div></li>
+  </ul>
+  <p>The rule behind the four: a gap drawn as a confident solid line would be a lie. Most tools in this category draw one anyway. Roadbook is built so it cannot — the kind is part of the data, not a styling choice, and every legend on every map repeats these four words.</p>
+
+  <h2 class="t-h2">Where the figures come from</h2>
+  <p>Under every distance on a trip's page sits a thin bar in the same four inks, showing how much of that distance the phone recorded and how much was drawn in. The total never appears without it. Every number on a page — kilometres, days, stops, time away — is printed by the same command-line tool from the same stored record, so any figure can be reproduced outside the browser. The map on the landing page and the three trips under it are a fictional record committed to the repository; every number in them reproduces from one command.</p>
+
+  <h2 class="t-h2">Where your data lives</h2>
+  <p>Hosted Roadbook is one service with an account per person. You sign in with Google; Roadbook never sees a password. Every row of your data carries your account, every read and write in the service is filtered by it, and a standing family of tests proves that one account cannot see or touch another's. The only way anything of yours becomes visible is a share link you create, and you can revoke it.</p>
+  <p>Your export streams to the server and nowhere else, and is retained because it may be the only copy of your history that still exists. Photos are never kept — only their positions, times and small thumbnails. Leaving is one control on your own page: your account and every row and file that was yours are removed. Nothing lingers in a provider's analytics, because there are none: the landing page and this one carry no scripts, no cookies, no trackers.</p>
+  <p>There is no public try-it demo, on purpose. An open upload endpoint for strangers' location histories would be a privacy problem dressed as a convenience. The screenshot on the landing page and the one-command demo in the repository are the substitute.</p>
+
+  <h2 class="t-h2">Run it yourself</h2>
+  <p>Roadbook is open source under AGPL-3.0, and self-hosting is the reference deployment — the hosted service runs the same <code>docker compose up</code>. The repository's README starts you with the demo dataset.</p>
+  <p><a class="back" href="./">← Back to Roadbook</a></p>
+</main>
+
+<footer class="sheet">
+  <div class="rule"></div>
+  <div class="links">
+    <a href="https://github.com/Allen-Iype/roadbook">Source on GitHub</a>
+    <span class="lic">Licensed AGPL-3.0</span>
+    <a href="https://github.com/Allen-Iype/roadbook#readme">Run it yourself</a>
+  </div>
+  <p class="made quiet">Made by one person, for a small pilot.</p>
+</footer>
+</body>
+</html>

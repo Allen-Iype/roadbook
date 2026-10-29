@@ -3,239 +3,189 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Roadbook — an atlas of your own travels</title>
-<meta name="description" content="Roadbook reads the location history your phone already keeps — a Google Timeline export, or geotagged photos — finds the journeys that stand out, and draws the ones you confirm as plates in an atlas. It never draws a line it cannot justify.">
+<title>Roadbook — every road you've travelled, on one map</title>
+<meta name="description" content="Roadbook turns the location history your phone already keeps into a map of every trip you've taken.">
+<!-- The public landing page (phase 12; redesigned phase 16 CP2b from mockup
+     docs/phase-16/mockups/landing-a1.html and the approved copy in
+     docs/phase-16/LANDING-COPY.md). One static file, zero script. The :root
+     tokens are the Atlas values from web/app/globals.css and must change
+     with them in the same commit; the legend's words are web/lib/legend.ts
+     (web/lib/landing-legend.test.ts pins both). The hero plate is the SVG of
+     web/components/welcome-plate.tsx in plain HTML attributes; the three
+     covers are the demo adventures' route art as /adventures draws them;
+     fonts/ and shots/ are staged at deploy by scripts/pilot/host/
+     deploy-landing.sh. {ROADBOOK_DOMAIN} is substituted there. Demo
+     geometry only: nothing on this page derives from real location history. -->
 <style>
-/* Atlas tokens — the same values as web/app/globals.css. This page is the
-   product's public face and must never drift from the product's inks; if a
-   token changes there, it changes here in the same commit. */
 :root {
-  --paper: #f5f2e8;
-  --land: #efece2;
-  --sea: #d9e2e4;
-  --ink: #26251f;
-  --ink-2: #6e6a5e;
-  --rule: #c9c3b2;
-  --observed: #a81e22;
-  --routed: #2a5da8;
-  --unknown: #8a8375;
-  --air: #3f7069;
-  --flag: #8a5c0b;
-  /* The SVG plate reads the app's variable names; alias them. */
-  --color-paper: var(--paper);
-  --color-land: var(--land);
-  --color-sea: var(--sea);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-observed: var(--observed);
-  --color-routed: var(--routed);
-  --color-unknown: var(--unknown);
-  --color-air: var(--air);
-  --font-display: "Source Serif 4", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --font-sans: "Avenir Next", Avenir, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --paper:#f5f2e8; --land:#efece2; --sea:#d9e2e4; --ink:#26251f; --ink-2:#6e6a5e; --rule:#c9c3b2;
+  --observed:#a81e22; --routed:#2a5da8; --unknown:#8a8375; --air:#3f7069;
+  --color-paper:var(--paper); --color-land:var(--land); --color-sea:var(--sea); --color-ink:var(--ink); --color-ink-2:var(--ink-2);
+  --color-observed:var(--observed); --color-routed:var(--routed); --color-unknown:var(--unknown); --color-air:var(--air);
+  --font-display:"Source Serif 4","Palatino Linotype",Palatino,Georgia,serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --font-sans:"Avenir Next",Avenir,"Segoe UI",system-ui,-apple-system,sans-serif;
 }
-@font-face {
-  font-family: "Source Serif 4";
-  src: url("fonts/source-serif-4/latin-400-normal.woff2") format("woff2");
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "Source Serif 4";
-  src: url("fonts/source-serif-4/latin-400-italic.woff2") format("woff2");
-  font-weight: 400; font-style: italic; font-display: swap;
-}
-@font-face {
-  font-family: "Source Serif 4";
-  src: url("fonts/source-serif-4/latin-600-normal.woff2") format("woff2");
-  font-weight: 600; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "IBM Plex Mono";
-  src: url("fonts/ibm-plex-mono/latin-400-normal.woff2") format("woff2");
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "IBM Plex Mono";
-  src: url("fonts/ibm-plex-mono/latin-500-normal.woff2") format("woff2");
-  font-weight: 500; font-style: normal; font-display: swap;
-}
+@font-face { font-family:"Source Serif 4"; src:url("fonts/source-serif-4/latin-400-normal.woff2") format("woff2"); font-weight:400; font-display:swap; }
+@font-face { font-family:"Source Serif 4"; src:url("fonts/source-serif-4/latin-600-normal.woff2") format("woff2"); font-weight:600; font-display:swap; }
+@font-face { font-family:"IBM Plex Mono"; src:url("fonts/ibm-plex-mono/latin-400-normal.woff2") format("woff2"); font-weight:400; font-display:swap; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.65;
-}
-a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
-a:hover { text-decoration-color: var(--ink); }
-a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+body { background:var(--paper); color:var(--ink); font-family:var(--font-sans); font-size:1rem; line-height:1.55; }
+a { color:inherit; text-decoration:underline; text-decoration-color:var(--rule); text-underline-offset:3px; }
+a:hover { text-decoration-color:var(--ink); }
+:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
 
-.sheet { max-width: 66rem; margin: 0 auto; padding: 0 1.25rem; }
+/* Type scale: six sizes. */
+.t-display { font-family:var(--font-display); font-weight:600; font-size:clamp(2.1rem,7.2vw,3.6rem); line-height:1.04; letter-spacing:-0.012em; }
+.t-h2 { font-family:var(--font-display); font-weight:600; font-size:1.4rem; line-height:1.2; }
+.t-h3 { font-family:var(--font-display); font-weight:600; font-size:1.15rem; line-height:1.3; }
+.t-body { font-size:1rem; }
+.t-small { font-size:0.875rem; }
+.t-label { font-family:var(--font-display); font-weight:600; font-size:0.6875rem; letter-spacing:0.22em; text-transform:uppercase; }
+.sec-title { margin-top:1.75rem; }
+
+.sheet { max-width:66rem; margin:0 auto; padding:0 1.25rem; }
+.rule { border-top:1px solid var(--ink); }  /* the one rule */
+.measure { max-width:58ch; }
+.quiet { color:var(--ink-2); }
+
+/* The action: one look wherever it appears. */
+.act { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 1.4rem; background:var(--ink); color:var(--paper); font-family:var(--font-display); font-weight:600; font-size:1.0625rem; text-decoration:none; border:1px solid var(--ink); }
+.act:hover { background:var(--paper); color:var(--ink); }
+@media (max-width:39.99rem) { .act.wide { width:100%; } }
 
 /* Masthead */
-.masthead {
-  display: flex; align-items: baseline; justify-content: space-between;
-  gap: 1rem; flex-wrap: wrap;
-  padding: 1.5rem 0 1rem;
-  border-bottom: 1px solid var(--ink);
-}
-.wordmark { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; letter-spacing: 0.01em; }
-.masthead .tag { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-2); letter-spacing: 0.08em; }
-.masthead .door { margin-left: auto; min-height: 44px; display: inline-flex; align-items: center; padding: 0 0.9rem; font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; color: var(--ink); border: 1px solid var(--ink); text-decoration: none; }
-.masthead .door:hover { background: var(--ink); color: var(--paper); }
-.hero .cta { margin-top: 1.4rem; display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; align-items: center; }
-.hero .cta .or { font-size: 0.95rem; color: var(--ink-2); }
+.masthead { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.9rem 0; }
+.wordmark { font-family:var(--font-display); font-weight:600; font-size:1.25rem; letter-spacing:0.01em; text-decoration:none; }
+.wordmark small { display:none; font-family:var(--font-sans); font-weight:400; font-size:0.875rem; color:var(--ink-2); margin-left:0.75rem; letter-spacing:0; }
+@media (min-width:40rem) { .wordmark small { display:inline; } }
+.masthead .act { min-height:44px; padding:0 1rem; font-size:0.95rem; }
 
 /* Hero */
-.hero { padding: 2.75rem 0 0.5rem; }
-.hero h1 {
-  font-family: var(--font-display); font-weight: 600;
-  font-size: clamp(2rem, 5.5vw, 3.1rem);
-  line-height: 1.12; letter-spacing: -0.01em;
-  max-width: 24ch;
+.hero { padding-top:2.25rem; }
+.hero h1 { max-width:16ch; }
+.hero .lede { margin-top:1.1rem; font-size:1.125rem; max-width:50ch; }
+.hero .cta { margin-top:1.5rem; }
+.hero .under { margin-top:0.6rem; }
+.hero .promise { margin-top:0.35rem; }
+@media (min-width:62rem) {
+  .hero-text { max-width:40rem; }
+/* Desktop (≥1024px): the hero in two columns — words left, the plate right, both in the first screen at 1280×800. */
+@media (min-width:64rem) {
+  .hero { padding-top:1.75rem; }
+  .hero-wrap { display:grid; grid-template-columns:minmax(18rem,26rem) minmax(0,1fr); gap:2.5rem 3.5rem; align-items:center; }
+  .hero-text { max-width:none; }
+  .hero h1 { font-size:clamp(2.4rem,3.4vw,3.1rem); }
+  .hero .lede { font-size:1.0625rem; }
+  .plate { margin-top:0; min-width:0; }
+  .legend { gap:0.3rem 1.25rem; }
+  .sheet.steps ol { grid-template-columns:repeat(3,1fr); max-width:none; gap:2.5rem; }
+  .shot { max-width:52rem; }
 }
-.hero .lede { margin-top: 1.25rem; max-width: 58ch; font-size: 1.0625rem; }
-.hero .lede strong { font-weight: 600; }
-
-/* The plate: the frame idiom the app reserves for drawn plates — a border
-   with a second 1px outline offset 3px (the double rule). */
-.plate { margin: 2.5rem 0 0; }
-.plate-frame { border: 1px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 3px; }
-.plate-frame svg { display: block; width: 100%; height: auto; }
-.plate figcaption {
-  margin-top: 4px;
-  border: 1px solid var(--ink); border-top: 0;
-  outline: 1px solid var(--ink); outline-offset: 3px;
-  background: var(--paper);
-  padding: 0.7rem 1rem 0.8rem;
-}
-.plate-title {
-  font-family: var(--font-display); font-weight: 600;
-  font-size: 0.7rem; letter-spacing: 0.22em;
-}
-.plate-note { margin-top: 0.5rem; font-size: 0.78rem; color: var(--ink-2); }
-
-/* Legend — fixed wording and drawn samples, same as the app's legend. */
-.legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; margin-top: 0.6rem; font-size: 0.78rem; }
-.legend .entry { display: inline-flex; align-items: center; gap: 0.5rem; }
-.legend .entry b { font-weight: 600; letter-spacing: 0.02em; }
-.legend .entry .desc { color: var(--ink-2); }
-.legend svg { width: 44px; height: 8px; flex: none; }
-@media (max-width: 480px) { .legend .desc { display: none; } }
-
-/* Sections */
-section { padding: 3rem 0 0; }
-.eyebrow {
-  font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500;
-  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-2);
-}
-section h2 {
-  font-family: var(--font-display); font-weight: 600;
-  font-size: 1.55rem; margin-top: 0.35rem;
-}
-section > .sheet > p, .prose p { max-width: 58ch; }
-.rule-above { border-top: 1px solid var(--rule); margin-top: 3rem; }
-
-/* The inks */
-.inks { display: grid; grid-template-columns: 1fr; gap: 1.5rem 2rem; margin-top: 1.5rem; }
-@media (min-width: 30rem) { .inks { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 62rem) { .inks { grid-template-columns: repeat(4, 1fr); } }
-.ink-entry svg { width: 64px; height: 10px; display: block; }
-.ink-entry h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; margin-top: 0.5rem; }
-.ink-entry p { font-size: 0.92rem; color: var(--ink-2); margin-top: 0.25rem; }
-.central-rule { margin-top: 2rem; max-width: 58ch; font-family: var(--font-display); font-style: italic; font-size: 1.05rem; }
-
-/* Steps — a real sequence: the numbers carry order. */
-.steps { margin-top: 1.5rem; display: grid; grid-template-columns: 1fr; gap: 1.75rem 2rem; list-style: none; counter-reset: step; }
-@media (min-width: 34rem) { .steps { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 62rem) { .steps { grid-template-columns: repeat(4, 1fr); } }
-.steps li { counter-increment: step; border-top: 1px solid var(--ink); padding-top: 0.7rem; }
-.steps li::before {
-  content: counter(step, upper-roman);
-  font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500;
-  letter-spacing: 0.14em; color: var(--ink-2);
-}
-.steps h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.08rem; margin-top: 0.15rem; }
-.steps p { font-size: 0.92rem; margin-top: 0.3rem; }
-
-/* Screenshots */
-.shots { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.75rem; }
-.shots figure { margin: 0; }
-.shots img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); }
-.shots figcaption { margin-top: 0.4rem; font-size: 0.78rem; color: var(--ink-2); }
-
-/* Data section */
-.data-list { margin-top: 1.25rem; max-width: 62ch; }
-.data-list dt { font-family: var(--font-display); font-weight: 600; margin-top: 1.1rem; }
-.data-list dd { margin-top: 0.15rem; color: var(--ink); }
-.aside-note {
-  margin-top: 1.75rem; max-width: 58ch;
-  border-left: 3px solid var(--rule); background: var(--land);
-  padding: 0.8rem 1rem; font-size: 0.92rem;
 }
 
-/* The way in */
-/* Single rule only: the double-rule frame is reserved for drawn plates. */
-.way-in { border: 1px solid var(--ink); background: var(--land); padding: 1.5rem 1.5rem 1.6rem; margin-top: 1.5rem; max-width: 44rem; }
-.way-in p { max-width: 54ch; }
-.slots { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--ink-2); margin-top: 0.15rem; }
+/* The plate: the one double rule on the page besides the covers. */
+.plate { margin:2rem 0 0; }
+.plate-frame { border:1px solid var(--ink); outline:1px solid var(--ink); outline-offset:3px; background:var(--sea); }
+.plate-frame svg { display:block; width:100%; height:auto; }
+.plate figcaption { margin-top:4px; border:1px solid var(--ink); border-top:0; outline:1px solid var(--ink); outline-offset:3px; background:var(--paper); padding:0.7rem 0.9rem 0.8rem; }
+.legend { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem 1rem; font-size:0.8125rem; list-style:none; }
+.legend li { display:flex; flex-wrap:wrap; align-items:baseline; gap:0.1rem 0.5rem; }
+.legend li b { font-weight:600; }
+.legend li span { color:var(--ink-2); flex-basis:100%; }
+.legend li .dash { display:none; }
+.legend svg { width:34px; height:8px; flex:none; align-self:center; }
+@media (min-width:48rem) {
+  .legend { display:flex; flex-wrap:wrap; gap:0.3rem 1.5rem; }
+  .legend li span { flex-basis:auto; } .legend li .dash { display:inline; } .legend svg { width:44px; }
+}
+.plate .caption { margin-top:0.7rem; font-size:0.875rem; }
+.plate .caption b { font-weight:600; }
 
-/* The waitlist form. No script anywhere — a plain POST; 44px targets. */
-.join { margin-top: 1.1rem; }
-.join > label { display: block; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
-.join-row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.4rem; }
-.join input[type="email"] { flex: 1 1 14rem; min-height: 44px; padding: 0.4rem 0.75rem; font: inherit; background: var(--paper); border: 1px solid var(--ink); border-radius: 0; color: var(--ink); }
-.join button { min-height: 44px; padding: 0.4rem 1.2rem; font-family: var(--font-display); font-weight: 600; font-size: 1rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 0; cursor: pointer; }
-.join button:hover { background: var(--paper); color: var(--ink); }
-.enter { display: inline-block; min-height: 44px; box-sizing: border-box; padding: 0.6rem 1.2rem; font-family: var(--font-display); font-weight: 600; font-size: 1rem; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); text-decoration: none; }
-.enter:hover { background: var(--paper); color: var(--ink); }
-.enter:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.join input:focus-visible, .join button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-/* Honeypot: off-screen, not display:none — bots skip hidden fields. */
-.hp { position: absolute; left: -9999px; top: auto; }
+/* What you get */
+.get { margin-top:3.5rem; padding-top:1.75rem; }
+.get .caption { margin-top:0.35rem; }
+.covers { list-style:none; display:grid; grid-template-columns:1fr; gap:1.5rem; margin-top:1.5rem; }
+@media (min-width:30rem) { .covers { grid-template-columns:repeat(2,1fr); gap:1.75rem; } .covers li:last-child:nth-child(odd) { grid-column:1 / -1; max-width:calc(50% - 0.875rem); } }
+@media (min-width:52rem) { .covers { grid-template-columns:repeat(3,1fr); } .covers li:last-child:nth-child(odd) { grid-column:auto; max-width:none; } }
+.cover { border:1px solid var(--ink); outline:1px solid var(--ink); outline-offset:3px; background:var(--paper); margin:4px; }
+.cover .art { position:relative; border-bottom:1px solid var(--rule); }
+.cover .art svg { display:block; width:100%; height:auto; }
+.cover .plate-no { position:absolute; right:0.6rem; top:0.45rem; background:var(--paper); padding-left:0.35rem; color:var(--ink-2); font-family:var(--font-display); font-weight:600; font-size:0.6875rem; letter-spacing:0.22em; }
+.cover-text { padding:0.75rem 0.9rem 0.85rem; }
+.cover .where { font-family:var(--font-display); font-weight:600; font-size:0.6875rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-2); }
+.cover .name { font-family:var(--font-display); font-weight:600; font-size:1.15rem; line-height:1.25; margin-top:0.15rem; }
+.cover .facts { display:flex; justify-content:space-between; gap:0.5rem; font-family:var(--font-mono); font-size:0.75rem; color:var(--ink-2); margin:0.3rem 0 0.55rem; }
+.cover .facts .km { color:var(--ink); }
+.cover .bar { display:flex; height:4px; width:100%; background:var(--rule); overflow:hidden; }
+.cover .bar i { display:block; height:100%; }
+.shot { margin-top:2.25rem; }
+.shot img { display:block; width:100%; height:auto; border:1px solid var(--ink); }
+.shot .caption { margin-top:0.5rem; }
+
+/* Three steps — a real sequence; the numerals carry order. */
+.steps { margin-top:3.5rem; padding-top:1.75rem; }
+.steps ol { list-style:none; margin-top:1.25rem; display:grid; gap:1.1rem; max-width:58ch; }
+.steps li { display:grid; grid-template-columns:2ch 1fr; gap:0.9rem; }
+.steps li::before { content:counter(step); counter-increment:step; font-family:var(--font-mono); color:var(--ink-2); padding-top:0.15rem; }
+.steps ol { counter-reset:step; }
+.steps li b { font-weight:600; }
+.steps .photos { margin-top:1.5rem; }
+
+/* Privacy */
+.privacy { margin-top:3.5rem; padding-top:1.75rem; }
+.privacy p { margin-top:0.75rem; max-width:65ch; }
+
+/* The way in — the one box, because it is the one thing to fill in. */
+.wayin { margin-top:3.5rem; padding-top:1.75rem; }
+.box { margin-top:1.25rem; max-width:42rem; border:1px solid var(--ink); background:var(--land); padding:1.4rem 1.25rem 1.5rem; }
+.box p { max-width:54ch; }
+.box .act { margin-top:1rem; }
+.box .then { margin-top:1.25rem; }
+.join { margin-top:0.75rem; display:flex; flex-wrap:wrap; gap:0.6rem; }
+.join label { flex-basis:100%; font-size:0.875rem; color:var(--ink-2); }
+.join input { flex:1 1 14rem; min-height:48px; padding:0 0.8rem; font:inherit; background:var(--paper); color:var(--ink); border:1px solid var(--ink); border-radius:0; }
+.join button { min-height:48px; padding:0 1.2rem; font-family:var(--font-display); font-weight:600; font-size:1rem; background:var(--ink); color:var(--paper); border:1px solid var(--ink); border-radius:0; cursor:pointer; }
+.join button:hover { background:var(--paper); color:var(--ink); }
+.hp { position:absolute; left:-9999px; top:auto; }
+.box .note { margin-top:0.75rem; }
 
 /* Footer */
-footer { margin-top: 3.5rem; border-top: 1px solid var(--ink); padding: 1.25rem 0 2.5rem; }
-footer .cols { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; font-size: 0.85rem; }
-footer .fine { margin-top: 0.9rem; font-size: 0.78rem; color: var(--ink-2); max-width: 62ch; }
+footer { margin-top:3.5rem; padding-bottom:2.5rem; }
+footer .links { margin-top:1rem; }
+footer .links { display:flex; flex-wrap:wrap; gap:0.5rem 1.75rem; font-size:0.875rem; }
+footer .links a, footer .lic { display:inline-flex; align-items:center; min-height:44px; }
+footer .made { margin-top:0.25rem; font-size:0.875rem; }
 </style>
 </head>
 <body>
 <header class="sheet">
   <div class="masthead">
-    <span class="wordmark">Roadbook</span>
-    <span class="tag">AN ATLAS OF YOUR OWN TRAVELS</span>
-    <!-- {ROADBOOK_DOMAIN} is substituted at deploy time (deploy-landing.sh). -->
-    <a class="door" href="https://app.{ROADBOOK_DOMAIN}/signin">Sign in</a>
+    <a class="wordmark" href="#">Roadbook<small>an atlas of your own travels</small></a>
+    <a class="act" href="https://app.{ROADBOOK_DOMAIN}/signin">Make mine</a>
   </div>
+  <div class="rule"></div>
 </header>
 
 <main>
-  <div class="sheet hero">
-    <h1>Years of travel, drawn as an atlas.</h1>
-    <p class="lede">
-      Roadbook reads the location history your phone already keeps — a Google
-      Timeline export, or the geotagged photos on your camera roll — finds the
-      journeys that stand out, and draws the ones you confirm as plates in an
-      atlas. Its one rule: <strong>it never draws a line it cannot
-      justify.</strong>
-    </p>
-    <p class="cta">
-      <a class="enter" href="https://app.{ROADBOOK_DOMAIN}/signin">Sign in with Google</a>
-      <span class="or">Ten seats to start — <a href="#in">how the way in works</a>.</span>
-    </p>
+  <section class="sheet hero">
+    <div class="hero-wrap">
+      <div class="hero-text">
+        <h1 class="t-display">Every road you've travelled, on one map.</h1>
+        <p class="lede">Your phone has quietly kept a record of everywhere you've been. Roadbook turns it into a map of every trip you've taken.</p>
+        <p class="cta"><a class="act wide" href="https://app.{ROADBOOK_DOMAIN}/signin">Make mine</a></p>
+        <p class="under t-small quiet">Sign in with Google · 10 free spots</p>
+        <p class="promise t-small">Only you can see your history. Delete all of it, any time.</p>
+      </div>
 
     <figure class="plate">
       <div class="plate-frame">
 <svg
       viewBox="0 0 1200 810"
-      role="img"
-      aria-label="A life map drawn from the demonstration timeline: three adventures across Iceland — an observed drive along the south coast, a routed loop through the Westfjords, and a return flight to Akureyri."
+      role="img" aria-label="A life map: three sample trips across Iceland, drawn as routes"
       
     >
       <rect x="0" y="0" width="1200" height="810" fill="var(--color-sea)" />
@@ -353,226 +303,101 @@ footer .fine { margin-top: 0.9rem; font-size: 0.78rem; color: var(--ink-2); max-
     </svg>
       </div>
       <figcaption>
-        <p class="plate-title">A LIFE MAP · THREE ADVENTURES · DEMONSTRATION TIMELINE</p>
-        <div class="legend" aria-label="Leg kinds">
-          <span class="entry">
-            <svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--observed)" stroke-width="3" stroke-linecap="round"/></svg>
-            <b>Observed</b> <span class="desc">— recorded fixes</span>
-          </span>
-          <span class="entry">
-            <svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--paper)" stroke-width="7"/><line x1="2" y1="4" x2="42" y2="4" stroke="var(--routed)" stroke-width="2.5" stroke-linecap="round"/></svg>
-            <b>Routed</b> <span class="desc">— inferred along roads</span>
-          </span>
-          <span class="entry">
-            <svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--unknown)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 4"/></svg>
-            <b>Unknown</b> <span class="desc">— straight line, nothing inferred</span>
-          </span>
-          <span class="entry">
-            <svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--air)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="0.1 5.5"/></svg>
-            <b>Air</b> <span class="desc">— great-circle arc</span>
-          </span>
-        </div>
-        <p class="plate-note">Fictional demonstration data, generated by committed
-        code. Your atlas is drawn the same way, from your own history.</p>
+        <ul class="legend" aria-label="Legend">
+          <li><svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--observed)" stroke-width="3" stroke-linecap="round"/></svg><b>Observed</b><span><i class="dash">— </i>the phone recorded it</span></li>
+          <li><svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--paper)" stroke-width="7"/><line x1="2" y1="4" x2="42" y2="4" stroke="var(--routed)" stroke-width="2.5" stroke-linecap="round"/></svg><b>Routed</b><span><i class="dash">— </i>drawn along roads</span></li>
+          <li><svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--unknown)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 4"/></svg><b>Unknown</b><span><i class="dash">— </i>nothing recorded, straight line</span></li>
+          <li><svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--air)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="0.1 5.5"/></svg><b>Air</b><span><i class="dash">— </i>a flight</span></li>
+        </ul>
+        <p class="caption"><b>All your trips on one map.</b> <span class="quiet">These are sample trips. Yours will be drawn the same way.</span></p>
       </figcaption>
     </figure>
-  </div>
-
-  <section id="inks">
-    <div class="sheet">
-      <p class="eyebrow">The honesty rule</p>
-      <h2>Every line states its confidence</h2>
-      <p style="margin-top:0.75rem">
-        A journey is a list of legs, and every leg says how it is known. The
-        distinction survives from the detector all the way to the pixels — it
-        is the product's structure, not a styling choice.
-      </p>
-      <div class="inks">
-        <div class="ink-entry">
-          <svg viewBox="0 0 64 10" aria-hidden="true"><line x1="2" y1="5" x2="62" y2="5" stroke="var(--observed)" stroke-width="3.4" stroke-linecap="round"/></svg>
-          <h3>Observed</h3>
-          <p>Your phone's own recorded fixes. Measurement — never smoothed,
-          never replaced.</p>
-        </div>
-        <div class="ink-entry">
-          <svg viewBox="0 0 64 10" aria-hidden="true"><line x1="2" y1="5" x2="62" y2="5" stroke="var(--paper)" stroke-width="8"/><line x1="2" y1="5" x2="62" y2="5" stroke="var(--routed)" stroke-width="2.8" stroke-linecap="round"/></svg>
-          <h3>Routed</h3>
-          <p>A gap filled by road routing. Inference, and drawn as inference —
-          cased in paper so it can never be mistaken for measurement.</p>
-        </div>
-        <div class="ink-entry">
-          <svg viewBox="0 0 64 10" aria-hidden="true"><line x1="2" y1="5" x2="62" y2="5" stroke="var(--unknown)" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="7 5"/></svg>
-          <h3>Unknown</h3>
-          <p>A gap nothing can honestly fill. A dashed straight line that says
-          exactly that, instead of a guess.</p>
-        </div>
-        <div class="ink-entry">
-          <svg viewBox="0 0 64 10" aria-hidden="true"><line x1="2" y1="5" x2="62" y2="5" stroke="var(--air)" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="0.1 6.5"/></svg>
-          <h3>Air</h3>
-          <p>A flight, drawn as a dotted great-circle arc — never pretending
-          to be a road.</p>
-        </div>
-      </div>
-      <p class="central-rule">
-        A gap drawn as a confident solid line would be a lie. Most tools in
-        this category draw one anyway; Roadbook is built so it cannot.
-      </p>
     </div>
   </section>
 
-  <section id="how">
-    <div class="sheet rule-above">
-      <p class="eyebrow" style="margin-top:3rem">How it works</p>
-      <h2>From an export to an atlas</h2>
-      <ol class="steps">
-        <li>
-          <h3>Bring your data</h3>
-          <p>A Timeline export made on your phone, or geotagged photos straight
-          from your library. The front door carries per-platform
-          walkthroughs; a wrong file is told apart and pointed the right way.</p>
-        </li>
-        <li>
-          <h3>Candidates are detected</h3>
-          <p>Journeys away from home with a real destination. Home is derived
-          from your own data — nothing about you is configured or assumed.</p>
-        </li>
-        <li>
-          <h3>You confirm what counts</h3>
-          <p>Detection deliberately over-produces; choosing which journeys are
-          adventures is yours. Nothing appears on your map unconfirmed.</p>
-        </li>
-        <li>
-          <h3>Your life map and atlas</h3>
-          <p>One map holding every confirmed route, and a plate for each
-          adventure — its days, distances with their composition, countries,
-          and photos.</p>
-        </li>
-      </ol>
-    </div>
+  <section class="sheet get">
+    <div class="rule"></div>
+    <h2 class="t-h2 sec-title">Each trip, day by day</h2>
+    <p class="caption measure quiet">The route, the distance, the days, the countries, and your photos along the way.</p>
+    <ul class="covers">
+      <li class="cover">
+        <div class="art"><svg viewBox="0 0 224 120"><g><path d="M57.0 76.7L57.0 76.7" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M72.9 83.0L72.9 83.0" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M89.7 91.5L89.7 91.5" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M157.6 46.4L157.6 46.4" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M183.8 44.0L183.8 44.0" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M216.0 28.5L216.0 28.5" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M23.5 52.7L23.5 52.7" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M9.4 45.5L15.0 48.4L20.7 51.3L26.5 54.9L32.6 59.2L38.7 63.6L44.8 67.9L50.9 72.3L57.0 76.7" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M57.0 76.7L62.3 78.8L67.6 80.9L72.9 83.0" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M72.9 83.0L77.1 85.1L81.3 87.2L85.5 89.4L89.7 91.5" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M89.7 91.5L95.4 86.5L101.1 81.4L106.8 76.4L112.6 71.3L118.3 66.3L124.4 62.2L131.1 59.0L137.7 55.9L144.3 52.7L150.9 49.5L157.6 46.4" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M157.6 46.4L162.8 45.9L168.0 45.5L173.3 45.0L178.5 44.5L183.8 44.0" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M183.8 44.0L189.1 41.4L194.5 38.9L199.9 36.3L205.3 33.7L210.6 31.1L216.0 28.5" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M216.0 28.5L206.2 33.2L196.4 38.0L186.6 42.7L178.1 44.5L170.1 45.3L162.1 46.0L152.8 48.7L141.7 53.9L130.6 59.2L119.8 64.9L110.2 73.4L100.6 81.9L91.1 90.3L85.3 89.3L80.2 86.7L75.1 84.1L70.1 81.9L65.3 79.9L60.5 78.0L54.1 74.6L43.9 67.3L33.7 60.0L23.5 52.7" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M23.5 52.7L15.7 48.8L8.0 44.8" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g></svg><span class="plate-no" aria-hidden="true">PLATE 1</span></div>
+        <div class="cover-text">
+          <p class="where">Iceland</p>
+          <p class="name">South coast drive</p>
+          <p class="facts"><span>24–26 April 2026 · 3 days</span><span class="km">700 km</span></p>
+          <span class="bar" aria-hidden="true"><i style="width:100%;background:var(--observed)"></i></span>
+        </div>
+      </li>
+      <li class="cover">
+        <div class="art"><svg viewBox="0 0 224 120"><g><path d="M107.3 112.0L116.7 8.0" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M116.7 8.0L113.0 61.5" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M113.0 61.5L113.0 61.5" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g></svg><span class="plate-no" aria-hidden="true">PLATE 2</span></div>
+        <div class="cover-text">
+          <p class="where">Iceland</p>
+          <p class="name">Westfjords loop</p>
+          <p class="facts"><span>22–24 May 2026 · 3 days</span><span class="km">197 km</span></p>
+          <span class="bar" aria-hidden="true"><i style="width:100%;background:var(--unknown)"></i></span>
+        </div>
+      </li>
+      <li class="cover">
+        <div class="art"><svg viewBox="0 0 224 120"><g><path d="M46.4 112.0L46.4 112.0" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M164.1 9.7L162.7 8.0" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M177.6 8.3L177.6 8.3" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M162.7 8.0L164.1 9.7" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3" stroke="var(--unknown)"></path></g><g><path d="M46.4 112.0L51.0 107.6L55.6 103.2L60.3 98.8L65.0 94.4L69.7 90.0L74.4 85.7L79.2 81.3L84.0 77.0L88.8 72.7L93.6 68.4L98.5 64.1L103.4 59.8L108.3 55.6L113.2 51.3L118.2 47.1L123.2 42.9L128.2 38.7L133.3 34.5L138.3 30.3L143.4 26.2L148.5 22.1L153.7 17.9L158.9 13.8L164.1 9.7" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.1 3.4" stroke="var(--air)"></path></g><g><path d="M164.1 9.7L158.9 13.8L153.7 17.9L148.5 22.1L143.4 26.2L138.3 30.3L133.3 34.5L128.2 38.7L123.2 42.9L118.2 47.1L113.2 51.3L108.3 55.6L103.4 59.8L98.5 64.1L93.6 68.4L88.8 72.7L84.0 77.0L79.2 81.3L74.4 85.7L69.7 90.0L65.0 94.4L60.3 98.8L55.6 103.2L51.0 107.6L46.4 112.0" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.1 3.4" stroke="var(--air)"></path></g><g><path d="M46.4 112.0L46.4 112.0" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M164.1 9.7L164.1 9.7" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M162.7 8.0L167.6 8.1L172.6 8.2L177.6 8.3" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M177.6 8.3L172.6 8.2L167.6 8.1L162.7 8.0" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M164.1 9.7L164.1 9.7" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g><g><path d="M46.4 112.0L46.4 112.0L46.4 112.0" fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" stroke="var(--observed)"></path></g></svg><span class="plate-no" aria-hidden="true">PLATE 3</span></div>
+        <div class="cover-text">
+          <p class="where">Iceland</p>
+          <p class="name">Akureyri weekend</p>
+          <p class="facts"><span>12–14 June 2026 · 3 days</span><span class="km">629 km</span></p>
+          <span class="bar" aria-hidden="true"><i style="width:8.391877527177915%;background:var(--observed)"></i><i style="width:1.2746324310101622%;background:var(--unknown)"></i><i style="width:90.33349004181191%;background:var(--air)"></i></span>
+        </div>
+      </li>
+    </ul>
+    <figure class="shot">
+      <img src="shots/app.png" width="1600" height="1000" alt="Roadbook's page for one trip: the name, the distance over three days, the stops, and the route on a map beside it.">
+      <figcaption class="caption t-small"><b>The app itself.</b></figcaption>
+    </figure>
   </section>
 
-  <section id="screens">
-    <div class="sheet rule-above">
-      <p class="eyebrow" style="margin-top:3rem">The product</p>
-      <h2>What you reach</h2>
-      <div class="shots">
-        <figure>
-          <img src="shots/life-map.png" alt="The life map: one map of Iceland holding three confirmed adventure routes drawn in the leg-kind inks." loading="lazy" width="1280" height="800">
-          <figcaption>The life map — every confirmed adventure on one map.</figcaption>
-        </figure>
-        <figure>
-          <img src="shots/adventure.png" alt="An adventure page: a plate cover with honest figures, and the journey sliced into civil days." loading="lazy" width="1280" height="800">
-          <figcaption>An adventure — days, figures, and their provenance.</figcaption>
-        </figure>
-        <figure>
-          <img src="shots/atlas.png" alt="The adventures page: framed plate covers with route thumbnails, dates, and countries." loading="lazy" width="1280" height="800">
-          <figcaption>The atlas — a plate for every adventure.</figcaption>
-        </figure>
-      </div>
-      <p class="plate-note" style="margin-top:1rem">All three screens are
-      captured from the demonstration dataset committed in the repository —
-      every number in them reproduces from a command.</p>
-    </div>
+  <section class="sheet steps">
+    <div class="rule"></div>
+    <h2 class="t-h2 sec-title">Three steps</h2>
+    <ol>
+      <li><p><b>Export your history from Google Maps.</b> It takes about two minutes on your phone and gives you one file. Step-by-step guides for Android and iPhone are inside.</p></li>
+      <li><p><b>Upload that file.</b> Roadbook reads it and finds the trips that stood out — the ones far from home, with somewhere you stayed.</p></li>
+      <li><p><b>Keep the ones that mattered.</b> Say yes to the real adventures and name them; the rest stay off the map.</p></li>
+    </ol>
+    <p class="photos measure quiet">No Timeline history? Start from your photos instead. They already know where and when they were taken.</p>
   </section>
 
-  <section id="data">
-    <div class="sheet rule-above">
-      <p class="eyebrow" style="margin-top:3rem">Custody</p>
-      <h2>Where your data lives</h2>
-      <dl class="data-list">
-        <dt>Your rows, and only yours</dt>
-        <dd>Hosted Roadbook is one service with an account per person. You
-        sign in with Google; Roadbook never sees a password. Every row of
-        your data carries your account, every read and write in the service
-        is filtered by it, and a standing family of tests proves that one
-        account cannot see or touch another's. The only way anything of
-        yours becomes visible is a share link you create — and revoke.</dd>
-        <dt>Uploads stay put</dt>
-        <dd>Your export streams to this server and nowhere else, and is
-        retained here because it may be the only copy of your history that
-        still exists. Photos are never kept — only their positions, times,
-        and small thumbnails.</dd>
-        <dt>Deletable, meaning it</dt>
-        <dd>Leaving is one button on your own page: your account and every
-        row and file that was yours are removed. Nothing lingers in a
-        provider's analytics because there are none — this page itself
-        carries no scripts, no cookies, no trackers.</dd>
-      </dl>
-      <p class="aside-note">
-        There is no public try-it demo, on purpose: an open upload endpoint
-        for strangers' location histories would be a custody problem dressed
-        as a convenience. The screenshots above and the one-command demo in
-        the repository are the substitute.
-      </p>
-    </div>
+  <section class="sheet privacy">
+    <div class="rule"></div>
+    <h2 class="t-h2 sec-title">Privacy</h2>
+    <p class="measure">Your history stays in your own account. Nobody else can see it unless you share a link, and you can take that link back. Your export is kept so Roadbook can re-read it later. Photos are never kept, only where and when each was taken. Delete everything whenever you like. No ads, no trackers.</p>
   </section>
 
-  <section id="in">
-    <div class="sheet rule-above">
-      <p class="eyebrow" style="margin-top:3rem">The way in</p>
-      <h2>Ten seats, then a list</h2>
-      <div class="way-in">
-        <p class="slots">SEATS · TEN · THEN THE LIST</p>
-        <p style="margin-top:0.6rem">
-          Roadbook is opening to its first ten people. Sign in with Google
-          and, while a seat is free, it is yours — no waiting, no
-          invitation.
-        </p>
-        <!-- {ROADBOOK_DOMAIN} is substituted at deploy time by
-             scripts/pilot/host/deploy-landing.sh from the host's front.env;
-             the committed page names no domain. -->
-        <p class="join" style="margin-top:1rem">
-          <a class="enter" href="https://app.{ROADBOOK_DOMAIN}/signin">Sign in with Google</a>
-        </p>
-        <p style="margin-top:1.25rem">
-          If Roadbook is full, your sign-in creates nothing and you are
-          sent back here. Leave your email and you're on the list.
-        </p>
-        <form class="join" method="post" action="/waitlist">
-          <label for="email">Email</label>
-          <div class="join-row">
-            <input id="email" name="email" type="email" required
-                   autocomplete="email" placeholder="you@example.org">
-            <button type="submit">Join the waitlist</button>
-          </div>
-          <div class="hp" aria-hidden="true">
-            <label for="website">Leave this field empty</label>
-            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
-          </div>
-        </form>
-        <p style="margin-top:1rem">
-          Your address lands in one file on this host — no form service, no
-          mailing-list provider. It is used for exactly one thing: one email
-          when seats open again, telling you to sign in. Nothing else is
-          ever sent, and if you ask, the line is deleted and you were never
-          here.
-        </p>
-      </div>
-      <p style="margin-top:1.25rem">
-        Rather run it yourself? Roadbook is open source and self-hosting is
-        the reference deployment — the hosted service runs the same
-        <code style="font-family:var(--font-mono);font-size:0.9em">docker compose up</code>,
-        and the repository's README starts you with the demo dataset.
-      </p>
+  <section class="sheet wayin" id="in">
+    <div class="rule"></div>
+    <h2 class="t-h2 sec-title">10 spots, then a list</h2>
+    <div class="box">
+      <p>Roadbook is opening to its first ten people. Sign in with Google and, while a spot is free, it is yours.</p>
+      <a class="act wide" href="https://app.{ROADBOOK_DOMAIN}/signin">Make mine</a>
+      <p class="then">If all ten are taken, you'll land back here. Leave your email and you'll get one message when a spot opens.</p>
+      <form class="join" method="post" action="/waitlist">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.org">
+        <button type="submit">Join the list</button>
+        <div class="hp" aria-hidden="true"><label for="website">Leave this field empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+      </form>
+      <p class="note t-small quiet">Nothing else, and we'll delete your address if you ask.</p>
     </div>
   </section>
 </main>
 
-<footer>
-  <div class="sheet">
-    <div class="cols">
-      <a href="https://github.com/Allen-Iype/roadbook">Source on GitHub</a>
-      <span>Licensed AGPL-3.0</span>
-      <a href="https://github.com/Allen-Iype/roadbook#readme">Self-host quickstart</a>
-    </div>
-    <p class="fine">
-      Roadbook is maintained by one person and hosted for a small pilot. This
-      page is static — no scripts, no analytics, no cookies. Demonstration
-      geometry and screenshots derive from the fictional dataset committed in
-      the repository; no real person's location history appears anywhere on
-      this page.
-    </p>
+<footer class="sheet">
+  <div class="rule"></div>
+  <div class="links">
+    <a href="https://github.com/Allen-Iype/roadbook">Source on GitHub</a>
+    <span class="lic">Licensed AGPL-3.0</span>
+    <a href="https://github.com/Allen-Iype/roadbook#readme">Run it yourself</a>
+    <a href="how-its-built.html">How it's built</a>
   </div>
+  <p class="made quiet">Made by one person, for a small pilot.</p>
 </footer>
 </body>
 </html>

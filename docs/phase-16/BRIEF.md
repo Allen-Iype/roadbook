@@ -185,6 +185,21 @@ changes (the vitest walk is the regression).
   proof) runs on them — the maintainer's call, logged in phase 15
   DECISIONS.
 
+  *Amended at the CP2 STOP (2026-10-29).* The welcome page was accepted
+  as built; the landing was not ("cleaner, not clean": flat hierarchy,
+  too many devices, still wordy) and returned to the mockup gate — the
+  §5A fallback, used deliberately — as **CP2b**: a reference board
+  (`LANDING-REFERENCES.md`, eleven pages in three groups) and two more
+  principles from the maintainer (written for a traveller; copy before
+  design), the copy approved first (`LANDING-COPY.md`, 327 words), one
+  mockup (A1, `mockups/landing-a1.html`) reviewed on the maintainer's
+  phone and laptop and by three non-engineer friends asked "what does
+  this do?" after five seconds, then the page built from it. The honesty
+  rule left the landing for `landing/how-its-built.html`; the legend
+  stays under the hero map in plain words, pinned by
+  `web/lib/landing-legend.test.ts`. DECISIONS 2026-10-29 carries each
+  step.
+
 **CP3 — the rest of the loop.** `/imports` headers and intros; the
 `/candidates` run line folded; the plate-number caption on `/adventures`.
 Copy diet pass over every surface against RESEARCH §4 with the script

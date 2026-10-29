@@ -50,3 +50,13 @@ Known artifact, kept deliberately: the `phase6-baseline` adventure pages
 show the pre-fix (0,0)-stop bug — world-spanning bounds with a stop
 marker at null island (fixed in ac06b50, which the baseline predates).
 The baseline records the UI as it was, bug included.
+
+Phase 16 CP2b adds one capture outside a set: `phase16-cp2b-adventure-2.png`
+is the adventure page at 1280×800 (downscaled from a 2× capture to 1600
+wide) and is the one screenshot the public landing page shows ("The app
+itself" — `scripts/pilot/host/deploy-landing.sh` stages it as
+`shots/app.png`). Captured from the phase-16 scratch demo stack with
+puppeteer-core and Brave headless (`--use-angle=swiftshader` renders the
+MapLibre canvas). When the adventure page changes materially, recapture
+and replace this file in the same change, so the landing never shows a UI
+the app no longer has.
