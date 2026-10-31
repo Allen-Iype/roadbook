@@ -729,3 +729,20 @@ Playwright 122 passed / 22 skipped at 390, 768 and 1280 against
   two).
 - **Would change our mind:** a laptop narrower than 1024 px reading the
   paired panels as cramped — then the breakpoint moves to `xl`.
+
+## 2026-10-29 — Merged to main and hosted before CP4, not after
+
+- **Chosen:** the maintainer's call at the CP3 STOP ("one of the best
+  points in this project"): `phase-16-ux` merged to main as one merge
+  commit (af51a1f) with CP1–CP3 in it, and the host pulled main the same
+  day — app and demo stacks rebuilt from it, the CP2b landing and
+  `how-its-built.html` deployed. The brief (§8) had the merge at phase
+  end; moving it forward means CP4's phone walk happens on the deployed
+  UI, which is the walk the brief describes, and phase 15's stranger
+  proof can run on the pages it was waiting for.
+- **Rejected:** waiting for CP4 (the close is documentation and a walk;
+  neither needs the branch unmerged); a fast-forward (one merge for the
+  whole UI phase was the Gate 1 decision, and a merge commit is what
+  marks it).
+- **Would change our mind:** the CP4 walk finding a shape problem — then
+  the fix is a commit on main like any other, not a revert.
