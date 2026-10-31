@@ -232,3 +232,41 @@ mind. Written as decisions are made, not reconstructed.
   lifecycle at a STOP; the initdb race on a fresh stamp (hit for the
   third time this phase) → a retry loop inside `new-instance.sh`; a
   night-time reboot catching a real upload → reboot time moved.
+
+## 2026-10-31 — The front counts arrivals: a masked, seven-day request log, read by a funnel script
+
+- **Chosen:** Caddy's access log switched on for the three public hosts,
+  masked at the writer (IPv4 /24, IPv6 /48; Authorization, Cookie,
+  Set-Cookie deleted), rotated daily and kept seven days by logrotate,
+  with `scripts/pilot/host/funnel.py` printing the funnel per day:
+  landing → sign-in page → sign-in started → signed in / refused →
+  welcome → pages inside → uploads, plus demo opens, bots split out by
+  user agent, distinct masked addresses and how many came back, and
+  landing arrivals per source tag (`?s=ig-bio` on every posted link;
+  the Instagram in-app browser counted on its own). A timer appends
+  each day's totals to `funnel.csv`/`sources.csv` on the host, kept for
+  good — numbers only — because the log's seven days cannot show a
+  trend and the maintainer's next step is campaigns read week against
+  week. `accounts.sh` prints the conversion end from the database. The
+  trigger was the first share: five friends sent the link, three
+  accounts, no uploads, and no way to tell whether the other two ever
+  opened the page or where the three stopped — the users table starts
+  at sign-in, the front sees the two steps before it. The public
+  how-its-built page gains one sentence saying exactly this; "no
+  scripts, no cookies, no trackers" stays true and stays written.
+- **Rejected:** a script counter or hosted analytics on the page (breaks
+  the page's own promise, and the landing is static on purpose); a
+  cookie or a carried query to attribute a sign-in to a campaign (the
+  landing is static and cookie-free; a tag that stops at the landing,
+  read against that day's sign-ins, is enough at this scale); a
+  counter inside the app (needs a Go endpoint and an openapi change, and
+  counts signed-in people, who are already counted); Cloudflare's
+  analytics (the records are DNS-only, it sees nothing); Caddy's own
+  size-based rolling for retention (a few lines a day never reach a roll
+  size, so "seven days" would be a promise the config could not keep).
+- **Would change our mind:** anyone asking for a figure from this log →
+  it is a shape, not a measurement (a /24 is a carrier range), and the
+  answer is "ask the people"; traffic that makes the file large → Caddy's
+  roll back on with a short `roll_keep_for`; a decision to drop the
+  landing's no-script claim for any other reason → the log stays, the
+  sentence changes with it.
