@@ -106,9 +106,9 @@ Already in traveller words (phase 16 CP2b). Five lines change.
 
 ## 4. Sign-in — `web/app/(public)/signin/page.tsx`
 
-**Under the heading**
-- Now: This Roadbook keeps each person's adventures their own. Sign in and you'll only ever see yours.
-- Then: Your trips are yours alone. Sign in and you'll only ever see your own.
+**Tagline and the sentence under the heading**
+- Now: A road atlas of your own past / Sign in / This Roadbook keeps each person's adventures their own. Sign in and you'll only ever see yours.
+- Then: nothing visible — the wordmark and the button are the page (the maintainer's review of the first build, 2026-11-02); "Sign in" stays as a heading only screen readers get.
 
 **The button**
 - Now: Sign in to continue
@@ -152,7 +152,7 @@ Already in traveller words (phase 16 CP2b). Five lines change.
 - Then: On iPhone · Not yet checked on a phone / Written 11 Aug 2026 from Google's own instructions, not yet checked on an iPhone — Google changes these menus without notice.
 - The steps themselves are unchanged: they are Google's menu names.
 
-**Never had Timeline on**
+**Never had Timeline on** — REMOVED with the photos section (maintainer, 2026-11-02: the start page is for someone with a Timeline file; photos stay on the Uploads page)
 - Now: Never had Timeline on? Then there is nothing to export — Google holds no location record for you. Start from your photos instead.
 - Then: Never had Timeline on? Then Google has nothing for you to export. Start from your photos instead.
 

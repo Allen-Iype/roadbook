@@ -3,9 +3,7 @@ import Link from "next/link";
 
 import { LegendInfo } from "@/components/legend-info";
 import { OpenOnHash } from "@/components/open-on-hash";
-import { PhotoUploadImport } from "@/components/photo-upload-import";
 import { SiteHeader } from "@/components/site-header";
-import { Term } from "@/components/term";
 import { UploadImport } from "@/components/upload-import";
 import { WelcomePlate } from "@/components/welcome-plate";
 import { WELCOME_SECTIONS as S } from "@/lib/rejection-anchors";
@@ -31,7 +29,7 @@ import { WELCOME_SECTIONS as S } from "@/lib/rejection-anchors";
 export const metadata: Metadata = {
   title: "Roadbook — start here",
   description:
-    "What Roadbook is, how to export your Google Timeline, and where to upload it.",
+    "Every trip you've taken, found from the location history your phone already keeps.",
 };
 
 // Section ids come from the same module the rejection-redirection map types
@@ -47,12 +45,12 @@ export default function WelcomePage() {
       {/* ── 1 · The plate, with one line ──────────────────────────────── */}
       <section className="mt-8 sm:mt-12">
         <h1 className="font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
-          The adventures you actually took.
+          Every trip you&apos;ve taken, on one map.
         </h1>
         <p className="mt-4 max-w-[58ch] text-[15px] leading-relaxed">
-          Roadbook reads the record your phone already keeps of where it went,
-          draws the trips that stood out, and leaves it to you to say which
-          were adventures.
+          Your phone has quietly kept a record of everywhere you&apos;ve
+          been. Upload it and your trips are found for you — no diary, no
+          logging. You choose which ones to keep.
         </p>
 
         {/* The plate: the demo life map, framed the way the app frames its
@@ -63,14 +61,13 @@ export default function WelcomePage() {
           </div>
           <figcaption className="mt-1 border border-t-0 border-ink bg-paper px-3 py-2.5 [outline:1px_solid_var(--color-ink)] [outline-offset:3px] sm:px-4">
             <p className="font-display text-[11px] font-semibold tracking-[0.22em]">
-              THREE ADVENTURES ACROSS ICELAND · DEMONSTRATION TIMELINE
+              SAMPLE · THREE TRIPS ACROSS ICELAND
             </p>
             <div className="mt-2">
               <LegendInfo />
             </div>
             <p className="mt-2 text-xs text-ink-2">
-              Fictional demonstration data. Yours is drawn the same way, from
-              your own record.
+              Sample trips. Yours will look like this.
             </p>
           </figcaption>
         </figure>
@@ -85,11 +82,11 @@ export default function WelcomePage() {
         <ol className="mt-4 max-w-[58ch] space-y-2 text-[15px] leading-relaxed">
           <Step n={1}>
             Export your Timeline from Google Maps on your phone — a couple of
-            minutes.
+            minutes; how is below.
           </Step>
           <Step n={2}>Upload the file here.</Step>
           <Step n={3}>
-            Confirm the trips that were adventures; the rest stay off the map.
+            Keep the trips that mattered; the rest stay off the map.
           </Step>
         </ol>
 
@@ -98,24 +95,16 @@ export default function WelcomePage() {
         </div>
 
         {/* The walkthroughs, folded (BRIEF §4 CP2): each platform is a
-            <details>; its verification state stays visible page text
-            (phase 7 BRIEF §3E) on the summary line, so a stale date is
-            still read before the steps are. */}
-        <div id={S.export} className="mt-8 scroll-mt-6">
-          <h3 className="font-display text-lg font-semibold">
-            Don&apos;t have the file yet?
-          </h3>
-          <p className="mt-1 max-w-[58ch] text-sm leading-relaxed text-ink-2">
-            Google makes the export on the phone itself. Do it on the phone
-            you&apos;re reading this on and the file is already where the
-            button above can find it.
-          </p>
+            <details>. The copy pass (maintainer's review, 2026-11-02) took
+            the subheading, the intro and the summary-line stamp away — the
+            steps say the same thing — and the check date now sits inside
+            each fold as its last line. */}
+        <div id={S.export} className="mt-6 scroll-mt-6">
 
           <Walkthrough
             id={S.exportAndroid}
             title="On Android"
-            verified="Verified 11 Aug 2026"
-            verifiedNote="Walked 11 Aug 2026 on an Android device from a WhatsApp-opened link: the steps matched the phone's menus and the upload completed in the in-app browser."
+            verifiedNote="Checked 11 Aug 2026 on an Android phone, opened from a WhatsApp link: the menus matched these steps and the upload worked from the browser inside WhatsApp."
             steps={[
               <>
                 Open <strong>Settings</strong> → <strong>Location</strong> →{" "}
@@ -168,73 +157,9 @@ export default function WelcomePage() {
             ]}
           />
 
-          {/* The honest third branch (phase 7 BRIEF §3E): the page never
-              implies data exists that does not. Since phase 11 it points
-              at the second door instead of ending. */}
-          <p
-            id={S.neverEnabled}
-            className="mt-4 max-w-[58ch] scroll-mt-6 text-sm leading-relaxed text-ink-2"
-          >
-            <strong className="font-semibold text-ink">Never had Timeline on?</strong>{" "}
-            Then there is nothing to export — Google holds no location record
-            for you.{" "}
-            <a
-              href={`#${S.photos}`}
-              className="underline decoration-rule underline-offset-2 hover:text-ink"
-            >
-              Start from your photos
-            </a>{" "}
-            instead.
-          </p>
         </div>
       </section>
 
-      {/* ── 3 · The second door: photos (phase 11) ────────────────────── */}
-      <section id={S.photos} className="mt-12 scroll-mt-6 border-t border-ink pt-6">
-        <h2 className="font-display text-2xl font-semibold">
-          Or start from photos
-        </h2>
-        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed">
-          A photo straight from the camera carries where and when it was
-          taken, and that is enough to find your trips — no export step, the
-          picker opens your photo library.{" "}
-          <Term id="originals">Original photos</Term> work best.
-        </p>
-        <div className="mt-5">
-          <PhotoUploadImport variant="door" />
-        </div>
-
-        <Fold title="Which photos work" last>
-          <ul className="list-disc space-y-1.5 pl-5">
-            <li>
-              Camera originals, and downloads from your own Google Photos.
-              iPhone photos are usually HEIC — upload them as they are; if
-              the picker offers JPEG, either works.
-            </li>
-            <li>
-              Photos received in a chat almost never carry a location —
-              messaging apps strip it. Screenshots never have one.
-            </li>
-            <li>
-              A Google Photos Takeout includes small{" "}
-              <code className="font-mono">.json</code> files beside the
-              photos. Upload them together: they can restore a location the
-              photo file lost.
-            </li>
-            <li>
-              On their own, photos need a little context: home is worked out
-              from where your photos recur, so include a spread from ordinary
-              weeks too, not only the trips. With a Timeline export already
-              in, photos simply add detail to the adventures it found.
-            </li>
-          </ul>
-          <p className="mt-3 text-xs text-ink-2">
-            Photo intake verified 26 Aug 2026 with a real camera roll. Not
-            yet walked on a phone — the iPhone notes come from documentation,
-            not a device.
-          </p>
-        </Fold>
-      </section>
 
       {/* ── 4 · The rest, folded ──────────────────────────────────────── */}
       <section className="mt-12 border-t border-ink pt-2">
@@ -248,20 +173,19 @@ export default function WelcomePage() {
           </p>
           <ul className="mt-3 list-disc space-y-1.5 pl-5">
             <li>
-              Got a <code className="font-mono">.zip</code> archive? Extract
-              it and upload the <code className="font-mono">.json</code> file
-              inside.
+              Got a <code className="font-mono">.zip</code> file? Open it and
+              upload the <code className="font-mono">.json</code> file inside.
             </li>
             <li>
-              Files from a Google Takeout download — monthly &ldquo;Semantic
-              Location History&rdquo; files or{" "}
-              <code className="font-mono">Records.json</code> — are the old
-              server-side format, which Roadbook does not read. The phone
-              export is the current one.
+              Files from an older Google download (Takeout: monthly
+              &ldquo;Semantic Location History&rdquo; files, or{" "}
+              <code className="font-mono">Records.json</code>) are a format
+              Roadbook can&apos;t read. The file from the phone is the one
+              that works.
             </li>
             <li>
-              Photos, PDFs and KML files are not location exports — the
-              upload will say so and point back here.
+              A photo, a PDF or a map file isn&apos;t your Timeline — the
+              upload will say so and point you back here.
             </li>
             <li>
               Using someone else&apos;s Roadbook link on a computer? Export
@@ -273,51 +197,42 @@ export default function WelcomePage() {
 
         <Fold title="Where your data goes">
           <p>
-            Your file streams to this Roadbook and nowhere else, and is kept
-            here as-is so later versions can re-read it without asking you
-            for the file again. Photos are not kept — only the position, the
-            time and a small thumbnail of each. Everything you upload is
-            listed on{" "}
+            Your file goes straight to this Roadbook and nowhere else. It is
+            kept as it is, so you never have to upload it again. Photos are
+            not kept — only where and when each was taken, and a small
+            preview. Everything you&apos;ve uploaded is listed under{" "}
             <Link href="/imports" className="underline decoration-rule underline-offset-2 hover:text-ink">
-              Imports
+              Uploads
             </Link>
             , and can be deleted from there.
           </p>
         </Fold>
 
-        <Fold id={S.next} title="What happens after you upload" last>
+        <Fold id={S.next} title="What happens next" last>
           <ol className="space-y-2">
             <Step n={1}>
               <strong className="font-semibold text-ink">Upload.</strong>{" "}
-              Nothing is recorded until the whole file has arrived — if the
+              Nothing is saved until the whole file has arrived — if the
               connection drops, just try again.
             </Step>
             <Step n={2}>
-              <strong className="font-semibold text-ink">Import.</strong>{" "}
-              Every visit, journey and recorded position is read in; each
-              geotagged photo contributes the position it carries.
+              <strong className="font-semibold text-ink">Your trips are found.</strong>{" "}
+              Roadbook reads the file and picks out the trips: time well away
+              from home, with somewhere you stayed. Home is worked out from
+              your own data.
             </Step>
             <Step n={3}>
-              <strong className="font-semibold text-ink">Detection.</strong>{" "}
-              Roadbook looks for journeys far from home with a real
-              destination — somewhere you stayed, not somewhere you passed
-              through — and lists them as{" "}
-              <Term id="candidate">candidates</Term>. Home is worked out from
-              the data itself.
-            </Step>
-            <Step n={4}>
-              <strong className="font-semibold text-ink">You decide.</strong>{" "}
-              Confirm the real adventures and name them; dismiss the rest.
-              The confirmed ones are drawn on your life map and shelved as{" "}
-              <Term id="plate">plates</Term> in your atlas.
+              <strong className="font-semibold text-ink">You choose.</strong>{" "}
+              Keep the real trips and name them; leave out the rest. The kept
+              ones are drawn on your map.
             </Step>
           </ol>
           <p className="mt-3">
             Once the upload finishes you can close the tab —{" "}
             <Link href="/imports" className="underline decoration-rule underline-offset-2 hover:text-ink">
-              Imports
+              Uploads
             </Link>{" "}
-            keeps every attempt and its outcome.
+            keeps every attempt and how it went.
           </p>
         </Fold>
       </section>
@@ -371,39 +286,34 @@ function Fold({
 }
 
 // One platform walkthrough, folded. Steps are a real sequence, so an
-// ordered list is the honest structure. Each branch carries its
-// verification state as visible page text (phase 7 BRIEF §3E) on the
-// summary line, before the fold: a real device pass stamps `verified`; a
-// drafted-but-unwalked branch says "unverified" rather than carrying a
-// false date. A stale verified date is itself information — Google changes
-// these menus without notice, and the date says when they last matched.
+// ordered list is the honest structure. Each branch still carries its
+// verification state as visible page text (phase 7 BRIEF §3E), now as the
+// fold's last line rather than a stamp on the summary (copy pass,
+// maintainer's review 2026-11-02): a real device pass says when it was
+// checked; a drafted-but-unwalked branch says so rather than carrying a
+// false date. Google changes these menus without notice, and the date
+// says when they last matched.
 function Walkthrough({
   id,
   title,
   steps,
-  verified,
   verifiedNote,
 }: {
   id: string;
   title: string;
   steps: React.ReactNode[];
-  /** Summary-line stamp once the device pass has walked this branch. */
-  verified?: string;
-  /** Footer sentence recording what the pass checked. */
+  /** Footer sentence recording what the device pass checked. */
   verifiedNote?: string;
 }) {
   return (
-    <details id={id} className="group mt-3 max-w-prose scroll-mt-6 border border-rule bg-paper">
-      <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 gap-y-1 bg-land px-4 py-2.5 marker:hidden">
+    <details id={id} className="group mt-2 max-w-prose scroll-mt-6 border-t border-rule">
+      <summary className="flex cursor-pointer list-none items-baseline gap-x-3 py-3 marker:hidden">
         <span aria-hidden className="font-mono text-sm text-ink-2 transition-transform group-open:rotate-90">
           ▸
         </span>
         <span className="font-display text-lg font-semibold">{title}</span>
-        <span className="ml-auto text-[11px] uppercase tracking-[0.14em] text-ink-2">
-          {verified ?? "Unverified"}
-        </span>
       </summary>
-      <ol className="space-y-2.5 border-t border-rule px-4 py-3.5 text-sm leading-relaxed">
+      <ol className="space-y-2.5 pb-3.5 pl-7 text-sm leading-relaxed">
         {steps.map((step, i) => (
           <li key={i} className="flex gap-3">
             <span className="font-mono text-ink-2">{i + 1}.</span>
@@ -411,9 +321,9 @@ function Walkthrough({
           </li>
         ))}
       </ol>
-      <p className="border-t border-rule px-4 py-2 text-xs text-ink-2">
+      <p className="pb-3 pl-7 text-xs text-ink-2">
         {verifiedNote ??
-          "Drafted 11 Aug 2026 from documentation, not yet verified on a device — Google changes these menus without notice."}
+          "Written 11 Aug 2026 from Google's own instructions, not yet checked on an iPhone — Google changes these menus without notice."}
       </p>
     </details>
   );

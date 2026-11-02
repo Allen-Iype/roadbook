@@ -26,11 +26,12 @@ test("welcome: every rejection anchor has a real target", async ({ page }) => {
   }
 });
 
-test("welcome: both upload islands are present", async ({ page }) => {
-  // Two doors since phase 11: the Timeline export upload and the photo
-  // batch upload each carry their own file input.
+test("welcome: one upload island, the Timeline file", async ({ page }) => {
+  // The photos door left the start page in the copy pass (2026-11-02):
+  // the start page is for someone with a Timeline file; photos are added
+  // from the Uploads page.
   await page.goto("/welcome");
-  await expect(page.locator('input[type="file"]')).toHaveCount(2);
+  await expect(page.locator('input[type="file"]')).toHaveCount(1);
 });
 
 test("welcome: the primary action sits under the three steps and is a thumb-sized target", async ({ page }) => {
@@ -49,10 +50,6 @@ test("welcome: the primary action sits under the three steps and is a thumb-size
   const walkBox = await walkthroughs.boundingBox();
   expect(stepsBox!.y).toBeLessThan(box!.y);
   expect(box!.y).toBeLessThan(walkBox!.y);
-  // The photos door is present and second.
-  const photos = page.getByRole("button", { name: "Choose photos" });
-  await expect(photos).toBeVisible();
-  expect((await photos.boundingBox())!.y).toBeGreaterThan(box!.y);
 });
 
 test("welcome: the folded sections start closed and a rejection anchor opens its fold", async ({ page }) => {

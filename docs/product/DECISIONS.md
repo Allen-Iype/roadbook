@@ -28,7 +28,61 @@ settled on the way.
 - **Would change our mind:** a tester not finding the (i) — then the
   button grows a word ("Legend") or the trip page's margin prints the
   four lines again.
-- **Verified:** tsc, lint (0 errors), vitest 128, `go test ./internal/api
+- **Verified (first commit):** tsc, lint (0 errors), vitest 128, `go test ./internal/api
   ./internal/timeline`, Playwright 122 passed / 22 skipped at 390/768/1280
   against `next dev -p 3017` over the roadbook-p16 API; screenshots at
   390 and 1280 with the popover open on all four maps.
+
+## 2026-11-02 — Landing, waitlist replies, sign-in
+
+- **Chosen:** the landing's legend is a closed `<details>` (the page runs
+  no script); the three sentences from copy.md §2; `how-its-built.html`
+  takes the same style block in the same commit. The waitlist replies lose
+  "seats", "your line" and the stale "entry email is the only way in".
+  Sign-in is the wordmark and the button — the tagline, the reassurance
+  sentence and then the visible heading went at the maintainer's review
+  of the first build (the button says it; the heading is screen-reader
+  only); "spots" and "the list" in the full state, and one fixed sentence on a provider error — the Go
+  side logs Google's code and no longer puts it in the message.
+- **Rejected:** showing Google's error code in small print under the
+  sentence (nobody who sees it can act on it; the operator has the log).
+- **Would change our mind:** a sign-in failure that a person could fix
+  themselves (a blocked third-party cookie, say) — then the sentence
+  gains the one instruction, not the code.
+- **Reported, not done (maintainer, 2026-11-02, on the landing):** the
+  page still feels cluttered — eight blocks, two pictures of a trip, two
+  "Make mine" buttons. A layout cut (one picture, one button, one-line
+  steps and promises, the waitlist box reduced to a field) waits until
+  the copy pass closes, then gets its own mockup-first step.
+
+## 2026-11-02 — Welcome
+
+- **Chosen:** copy.md §5 as approved: the lede says what the person gets,
+  the sample map is "Sample · three trips across Iceland", the four-step
+  fold becomes three ("Your trips are found" absorbs import and detection),
+  the walkthrough stamps read "Checked on a phone" / "Not yet checked on a
+  phone", Takeout's small files are "info files", and both links to the
+  uploads page say Uploads. No Term is left on the page except "Original
+  photos"; the `candidate` and `plate` Terms are unused here now.
+- **Maintainer's review of the first build:** the block between the steps
+  and the photos line was still cluttered — a subheading ("Don't have the
+  file yet?"), an intro paragraph and two boxed folds with a stamp each.
+  Now: the three steps (step 1 says "how is below"), the button, two plain
+  fold lines (On Android · On iPhone), the photos line. The check date
+  moved inside each fold as its last line.
+- **Maintainer's second review:** the photos door leaves the start page
+  altogether — "someone who doesn't have a Timeline is not our audience
+  at this point". The section, its "Which photos work" fold and the
+  "Never had Timeline on?" line are gone; the photos panel stays on the
+  Uploads page, where photos add detail to trips already found. The
+  `photos` and `never-enabled` anchors are retired, so an image dropped
+  into the Timeline picker is now a wrong file pointed at "What the right
+  file looks like", and the Go message for it names the Uploads page.
+- **Rejected:** dropping the verification stamps altogether (a stale
+  guide must still say so, phase 7's rule; only its place and register
+  changed); removing the photos panel from Uploads too (not asked; photos
+  on a found trip are a different thing from photos as the only source).
+- **Would change our mind:** a tester asking what "Takeout" is — then the
+  word goes and only "an older Google download" stays.
+- **Verified:** tsc, lint, loop-pages and legend specs (40 passed at three
+  widths); screenshots at 390 and 1280.
