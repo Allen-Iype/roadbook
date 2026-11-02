@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { MAP_STYLE_URL } from "@/lib/basemap";
 import { SiteHeader } from "@/components/site-header";
+import { Unreachable } from "@/components/unreachable";
 import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
 import { AdventureView } from "@/components/adventure/adventure-view";
@@ -47,10 +48,7 @@ export default async function AdventurePage({
     if (journeyRes.response?.status === 404) notFound();
     return (
       <main className="mx-auto w-full max-w-[91rem] px-4 py-8 sm:px-6">
-        <p className="text-red-700">
-          The Roadbook API is not reachable. Start it with{" "}
-          <code className="font-mono">roadbook serve</code> and reload.
-        </p>
+        <Unreachable operator={session?.mode === "off"} className="text-red-700" />
       </main>
     );
   }

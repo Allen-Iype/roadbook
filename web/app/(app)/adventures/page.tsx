@@ -4,7 +4,8 @@ import { api } from "@/lib/api/client";
 import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
 import { fmtDateRange } from "@/lib/slice-days";
-import { LegKindLegend } from "@/components/legend";
+import { LegendInfo } from "@/components/legend-info";
+import { Unreachable } from "@/components/unreachable";
 import { ProvenanceBar } from "@/components/provenance-bar";
 import { RouteThumb } from "@/components/route-thumb";
 import { SiteHeader } from "@/components/site-header";
@@ -48,10 +49,7 @@ export default async function AdventuresPage() {
   if (!res?.data) {
     return (
       <Shell accountEmail={accountEmail}>
-        <p className="mt-6 text-red-700">
-          The Roadbook API is not reachable. Start it with{" "}
-          <code className="font-mono">roadbook serve</code> and reload.
-        </p>
+        <Unreachable operator={session?.mode === "off"} />
       </Shell>
     );
   }
@@ -137,7 +135,7 @@ export default async function AdventuresPage() {
         ))}
       </ul>
       <div className="mt-8 border-t border-rule pt-4">
-        <LegKindLegend />
+        <LegendInfo />
       </div>
     </Shell>
   );

@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   expectNoHorizontalScroll,
-  legendLocator,
+  openLegend,
   openSummonedList,
 } from "./helpers";
 
@@ -27,24 +27,21 @@ test("adventure page: no horizontal scroll", async ({ page }) => {
   await expectNoHorizontalScroll(page);
 });
 
-test("adventure page: the plate legend names all four kinds", async ({ page }) => {
+test("adventure page: the map margin's legend button opens all four kinds", async ({ page }) => {
   await gotoFirstAdventure(page);
-  const legend = legendLocator(page);
+  const legend = await openLegend(page);
   for (const label of ["Observed", "Routed", "Unknown", "Air"]) {
-    await expect(legend.getByRole("button", { name: label, exact: true })).toBeVisible();
+    await expect(legend.getByText(label, { exact: true })).toBeVisible();
   }
 });
 
-test("adventure page: the floor — bar, caption, disclosure closed, flag outside", async ({ page }) => {
+test("adventure page: the floor — bar, disclosure closed, flag outside", async ({ page }) => {
   await gotoFirstAdventure(page);
   const trip = page.locator('section[aria-label="The trip"]');
   await expect(trip).toBeVisible();
-  // The provenance bar is aria-hidden (its words are the caption and the
-  // disclosure), so it is found by its data hook, not a role.
+  // The bar is aria-hidden and, since the copy pass, uncaptioned (its note
+  // is in the legend popover), so it is found by its data hook, not a role.
   await expect(trip.locator("[data-provenance-bar]")).toBeAttached();
-  await expect(
-    trip.getByRole("button", { name: "How much of this was recorded, how much drawn in" }),
-  ).toBeVisible();
 
   const details = page.locator("details", { hasText: "How this route was drawn" });
   await expect(details).toBeVisible();

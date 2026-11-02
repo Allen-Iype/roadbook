@@ -39,7 +39,7 @@ func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidateP
 		return nil, err
 	}
 	if cand == nil {
-		return UploadCandidatePhotos404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return UploadCandidatePhotos404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	dec, err := s.confirmedDecisionFor(ctx, cand.ID)
 	if err != nil {
@@ -202,7 +202,7 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 		return nil, err
 	}
 	if cand == nil {
-		return ListCandidatePhotos404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return ListCandidatePhotos404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	dec, err := s.confirmedDecisionFor(ctx, cand.ID)
 	if err != nil {

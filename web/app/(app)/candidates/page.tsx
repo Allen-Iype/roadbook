@@ -7,6 +7,7 @@ import type { components } from "@/lib/api/schema";
 import { DecideCell } from "@/app/decide-cell";
 import { RouteThumb } from "@/components/route-thumb";
 import { SiteHeader } from "@/components/site-header";
+import { Unreachable } from "@/components/unreachable";
 import { Term } from "@/components/term";
 import { TriageBar } from "@/components/triage-bar";
 import { TriageSelect } from "@/components/triage-select";
@@ -47,10 +48,7 @@ export default async function CandidatesPage({
   if (!res?.data) {
     return (
       <Shell accountEmail={accountEmail}>
-        <p className="mt-6 text-red-700">
-          The Roadbook API is not reachable. Start it with{" "}
-          <code className="font-mono">roadbook serve</code> and reload.
-        </p>
+        <Unreachable operator={session?.mode === "off"} />
       </Shell>
     );
   }

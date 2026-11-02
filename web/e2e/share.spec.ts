@@ -10,7 +10,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   clickUntil,
   expectNoHorizontalScroll,
-  legendLocator,
+  openLegend,
   openSummonedList,
   viewportWidth,
 } from "./helpers";
@@ -49,12 +49,13 @@ test("share link: mint, open signed-out, revoke", async ({ page, browser }) => {
   expect(response?.headers()["x-robots-tag"]).toContain("noindex");
   await expect(view.getByText("SHARED ADVENTURE", { exact: true })).toBeVisible();
   await expect(view.getByText("Read-only · shared by its owner")).toBeVisible();
-  // The honesty channel survives to the stranger: the plate legend names
-  // all four kinds, and the cover prints the provenance split.
-  const legend = legendLocator(view);
+  // The honesty channel survives to the stranger: the map margin's legend
+  // button opens all four kinds, and the cover prints the bar.
+  const legend = await openLegend(view);
   for (const label of ["Observed", "Routed", "Unknown", "Air"]) {
-    await expect(legend.getByRole("button", { name: label, exact: true })).toBeVisible();
+    await expect(legend.getByText(label, { exact: true })).toBeVisible();
   }
+  await view.keyboard.press("Escape");
   // The composition line lives in the drawing's disclosure (phase 16),
   // closed by default on the shared view exactly as on the owner's.
   const details = view.locator("details", { hasText: "How this route was drawn" });

@@ -7,7 +7,8 @@ import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
 import { LifeMap, type Adventure } from "@/components/life-map";
 import { SummonedList } from "@/components/summoned-list";
-import { LegKindLegend } from "@/components/legend";
+import { LegendInfo } from "@/components/legend-info";
+import { Unreachable } from "@/components/unreachable";
 import { SiteHeader } from "@/components/site-header";
 
 // The home page is the life map (phase 6, the anchor vision): one map, the
@@ -55,10 +56,7 @@ export default async function HomePage() {
   if (error || !data) {
     return (
       <Invitation accountEmail={accountEmail}>
-        <p className="text-red-700">
-          The Roadbook API is not reachable. Start it with{" "}
-          <code className="font-mono">roadbook serve</code> and reload.
-        </p>
+        <Unreachable operator={session?.mode === "off"} className="text-red-700" />
       </Invitation>
     );
   }
@@ -215,20 +213,20 @@ export default async function HomePage() {
               href="/adventures"
               className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
-              Adventures
+              Trips
             </Link>
             <Link
               href="/candidates"
               className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
-              Candidates
-              {undecided > 0 && <> — {undecided} undecided</>}
+              Trips to review
+              {undecided > 0 && <> · {undecided}</>}
             </Link>
             <Link
               href="/imports"
               className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
-              Imports
+              Uploads
             </Link>
             {/* The reserved header slot (phase 9 BRIEF §6), now carrying
                 both meanings (phase 13 CP3): the operator label, and on a
@@ -261,10 +259,10 @@ export default async function HomePage() {
         </header>
 
         <footer className="flex items-end justify-between">
-          {/* The plate-margin legend, permanent (DESIGN §6 treatment T3):
-              the map never appears without its language. */}
-          <div className="pointer-events-auto max-w-2xl border border-rule bg-paper px-4 py-2.5 shadow-sm">
-            <LegKindLegend />
+          {/* The legend behind its button (copy pass decision 2): the four
+              line styles stay on the map; the names are one tap away. */}
+          <div className="pointer-events-auto border border-rule bg-paper px-4 py-2.5 shadow-sm">
+            <LegendInfo />
           </div>
         </footer>
       </div>

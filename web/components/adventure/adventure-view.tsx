@@ -24,7 +24,7 @@
 // sticky right column.
 import { useMemo, useState } from "react";
 
-import { FixDot, LegKindLegend, StopDot } from "@/components/legend";
+import { LegendInfo } from "@/components/legend-info";
 import { ProvenanceBar } from "@/components/provenance-bar";
 import { Term } from "@/components/term";
 import { fmtHours, fmtMode, roman } from "@/lib/format";
@@ -149,24 +149,12 @@ export function AdventureView({
                   "FULL ROUTE"
                 )}
               </span>
-              <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink">
-                {journey.legs.some(isFixLeg) && (
-                  <span className="inline-flex items-center gap-2">
-                    <FixDot />
-                    <span className="font-semibold tracking-wide">Fix</span>
-                    <span className="text-ink-2">one recorded position</span>
-                  </span>
-                )}
-                {journey.stops.some((s) => !(s.loc.lat === 0 && s.loc.lon === 0)) && (
-                  <span className="inline-flex items-center gap-2">
-                    <StopDot />
-                    <span className="font-semibold tracking-wide">Stop</span>
-                  </span>
-                )}
-              </span>
-            </div>
-            <div className="mt-2.5">
-              <LegKindLegend />
+              {/* The legend, the markers and the bar's note behind one
+                  button (copy pass decision 2). */}
+              <LegendInfo
+                fix={journey.legs.some(isFixLeg)}
+                stop={journey.stops.some((s) => !(s.loc.lat === 0 && s.loc.lon === 0))}
+              />
             </div>
             <div className="mt-2.5">
               {/* The image export (phase 14 CP3) — a second margin row, on
@@ -390,9 +378,6 @@ function TripBlock({
         air={journey.air_km}
         className="mb-2 mt-3.5"
       />
-      <p className="text-xs text-ink-2">
-        <Term id="provenance">How much of this was recorded, how much drawn in</Term>
-      </p>
 
       <dl className="mt-5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 text-[13px] leading-snug">
         <dt className="text-ink-2">Time away</dt>
@@ -613,5 +598,5 @@ function adventureName(
   const decision = candidate?.decision;
   return decision?.action === "confirmed" && decision.name
     ? decision.name
-    : `Journey of ${journey.window_start.slice(0, 10)}`;
+    : `Trip of ${fmtDateRange(journey.window_start, journey.window_start)}`;
 }

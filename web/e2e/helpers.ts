@@ -44,15 +44,22 @@ export async function clickUntil(
 }
 
 // The leg-kind legend renders as one <ul aria-label="Legend"> holding the
-// four kind entries; each name is a Term button (its popover note repeats
-// the name, so specs match the label BY ROLE, never by text alone), with a
-// drawn SVG sample and its description visible at every width (phase 16).
-// Scoping to it matters: the
-// welcome pitch prose legitimately reuses legend phrases, and text
-// filtering is case-insensitive, so the adventure disclosure's lowercase
-// composition line ("observed 700.2 km · routed …") would also match.
-export function legendLocator(page: Page): Locator {
+// four kind entries, each with a drawn SVG sample and its description.
+// Since the copy pass (docs/product/words.md decision 2, 2026-11-02) it
+// sits behind a "What the lines mean" button on every map: openLegend
+// presses it and returns the list. Scoping to the <ul> matters: the
+// welcome prose reuses legend phrases, and text filtering is
+// case-insensitive, so the disclosure's lowercase composition line would
+// also match.
+export function legendLocator(page: Page | Locator): Locator {
   return page.locator('ul[aria-label="Legend"]').first();
+}
+
+export async function openLegend(page: Page | Locator): Promise<Locator> {
+  const button = page.getByRole("button", { name: "What the lines mean" }).first();
+  const legend = legendLocator(page);
+  await clickUntil(button, legend);
+  return legend;
 }
 
 // Opens the life map's summoned list ("List (n)") and returns the dialog.

@@ -4,7 +4,7 @@
 // header naming where the reader is.
 import { expect, test } from "@playwright/test";
 
-import { legendLocator } from "./helpers";
+import { openLegend } from "./helpers";
 
 test("every cover is a link carrying art, figures, and a provenance bar", async ({ page }) => {
   await page.goto("/adventures");
@@ -49,17 +49,17 @@ test("the shelf teaches the plate number and the provenance bar once, above the 
   expect((await intro.boundingBox())!.y).toBeLessThan((await firstCover.boundingBox())!.y);
 });
 
-test("the page carries the leg-kind legend", async ({ page }) => {
+test("the page carries the legend behind its button", async ({ page }) => {
   // Covers draw the four-way encoding, so the page owes the reader its
-  // language (DESIGN §6: the legend is a permanent fixture).
+  // language — one tap away since the copy pass (words.md decision 2).
   await page.goto("/adventures");
-  await expect(legendLocator(page)).toBeVisible();
+  await expect(await openLegend(page)).toBeVisible();
 });
 
-test("the header marks Adventures as the current page", async ({ page }) => {
+test("the header marks Trips as the current page", async ({ page }) => {
   await page.goto("/adventures");
   await expect(
-    page.locator('header a[aria-current="page"]', { hasText: "Adventures" }),
+    page.locator('header a[aria-current="page"]', { hasText: "Trips" }),
   ).toBeVisible();
 });
 

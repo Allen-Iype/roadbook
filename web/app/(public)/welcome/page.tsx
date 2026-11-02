@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { LegKindLegend } from "@/components/legend";
+import { LegendInfo } from "@/components/legend-info";
 import { OpenOnHash } from "@/components/open-on-hash";
 import { PhotoUploadImport } from "@/components/photo-upload-import";
 import { SiteHeader } from "@/components/site-header";
@@ -66,7 +66,7 @@ export default function WelcomePage() {
               THREE ADVENTURES ACROSS ICELAND · DEMONSTRATION TIMELINE
             </p>
             <div className="mt-2">
-              <LegKindLegend />
+              <LegendInfo />
             </div>
             <p className="mt-2 text-xs text-ink-2">
               Fictional demonstration data. Yours is drawn the same way, from

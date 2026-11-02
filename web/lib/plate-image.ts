@@ -57,7 +57,7 @@ export type PlateJourney = Pick<
 
 export type PlateInput = {
   journey: PlateJourney;
-  /** The cover's name: the decision name, or "Journey of <date>". */
+  /** The cover's name: the decision name, or "Trip of <date>". */
   name: string;
   /** Position among confirmed adventures in date order; null on the shared
    * view and for unconfirmed candidates. */

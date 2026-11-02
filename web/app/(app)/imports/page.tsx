@@ -2,6 +2,7 @@
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { SiteHeader } from "@/components/site-header";
+import { Unreachable } from "@/components/unreachable";
 import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
 import { PhotoUploadImport } from "@/components/photo-upload-import";
@@ -28,10 +29,7 @@ export default async function ImportsPage() {
   if (error || !data) {
     return (
       <Shell accountEmail={accountEmail}>
-        <p className="mt-6 text-red-700">
-          The Roadbook API is not reachable. Start it with{" "}
-          <code className="font-mono">roadbook serve</code> and reload.
-        </p>
+        <Unreachable operator={session?.mode === "off"} />
       </Shell>
     );
   }
