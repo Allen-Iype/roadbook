@@ -420,3 +420,10 @@ canonical copy of your history — keep them. An export's high-accuracy
 `rawSignals` section covers only the ~30 days before the export was made and
 then expires at the source, so exporting roughly monthly preserves what a
 later export cannot recover.
+
+## Licence
+
+Roadbook is released under the GNU Affero General Public License, version
+3 (`LICENSE`). The Roadbook name and logo are not covered by the AGPL-3.0
+licence: forks and self-hosted copies may use the code, but must not
+present themselves as Roadbook or use this logo.

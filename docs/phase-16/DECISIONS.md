@@ -746,3 +746,41 @@ Playwright 122 passed / 22 skipped at 390, 768 and 1280 against
   marks it).
 - **Would change our mind:** the CP4 walk finding a shape problem — then
   the fix is a commit on main like any other, not a revert.
+
+## 2026-10-31 — The brand gets one home, `brand/`, and the profile picture is the mark alone on paper
+
+- **Chosen:** `brand/logo/rally-strip.svg` holds the chosen mark (concept
+  A on the "Roadbook Logo Options" canvas: tape, ticks, bent route,
+  waypoint, arrow — no letters), copied verbatim from the canvas, never
+  redrawn in the repository; `brand/exports/` holds only what
+  `brand/export.mjs` generates, so every export can be remade; the
+  README says which file goes where and what does not exist yet. The
+  Instagram profile is the mark alone at 700 px inside a 1080 square on
+  `--color-paper` (`#f5f2e8`, read from `web/app/globals.css` by token
+  name): paper is the ground of every page a person lands on after
+  tapping the profile, it keeps the tape at full contrast at thumbnail
+  size, and it is within a hair of the canvas's own sand (`#F3EDE2`), so
+  the picture does not argue with the mark. A dark ground was rejected
+  because the tape is near-black and would melt into `--color-ink`.
+- **Flagged, not resolved:** the canvas palette (rally orange `#E8590C`,
+  sand `#F3EDE2`, tar black `#1B1A17`; Barlow and Barlow Condensed) and
+  the app's (`paper #f5f2e8`, `land`, `ink #26251f`, the red/blue/grey/
+  green leg inks, Source Serif 4 and IBM Plex Mono) share no colour and
+  no typeface. Orange appears nowhere in the product. The maintainer
+  decides which palette the brand uses; until then the mark keeps its
+  canvas colours. `web/app/favicon.ico` is still the Next.js scaffold's
+  default, and no home-screen icon, manifest or social preview image
+  exists — pointed at in the README, not fixed here.
+- **Rejected:** a wordmark SVG (the canvas sets "ROADBOOK" as live
+  Barlow Condensed text; writing a vector of it would be a redraw with a
+  font the repository does not carry); copying the canvas's inverse and
+  app-icon variants into `logo/` ahead of a palette decision; any raster
+  tool outside the repository (the Chromium that `web/`'s Playwright
+  already installs renders the export, so no new dependency).
+- **Would change our mind:** the palette decision → the SVG's colours
+  change on the canvas first, then are copied, and the export's
+  background token may change with them; a favicon or home-screen icon
+  → a second entry in `EXPORTS` and Next's `app/icon.png` convention;
+  the mark unreadable at 110 px on a phone → the tick marks and branch
+  line drop at small sizes (a second, simplified source on the canvas,
+  not a redraw here).

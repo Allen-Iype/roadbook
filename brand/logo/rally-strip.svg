@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="160" viewBox="0 0 120 160" role="img" aria-label="Roadbook rally mark">
+  <!-- The plain rally-strip mark, copied verbatim from the "A · Rally" artboard of the
+       "Roadbook Logo Options" canvas (2026-10-28). Not redrawn here; edit the canvas,
+       then copy again. Colours are the canvas's own: tar black #1B1A17 tape, sand
+       #F3EDE2 ticks and branch, rally orange #E8590C route, arrow and waypoint. -->
+  <rect x="20" y="4" width="80" height="152" rx="10" fill="#1B1A17"></rect>
+  <g stroke="#F3EDE2" stroke-width="2" stroke-linecap="round" opacity="0.5">
+    <line x1="27" y1="20" x2="33" y2="20"></line><line x1="27" y1="40" x2="33" y2="40"></line><line x1="27" y1="60" x2="33" y2="60"></line><line x1="27" y1="80" x2="33" y2="80"></line><line x1="27" y1="100" x2="33" y2="100"></line><line x1="27" y1="120" x2="33" y2="120"></line><line x1="27" y1="140" x2="33" y2="140"></line>
+  </g>
+  <line x1="56" y1="88" x2="40" y2="74" stroke="#F3EDE2" stroke-width="5" stroke-linecap="round" opacity="0.6"></line>
+  <path d="M56 128 V88 L84 60 V44" fill="none" stroke="#E8590C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path>
+  <polygon points="84,24 72,44 96,44" fill="#E8590C"></polygon>
+  <circle cx="56" cy="132" r="8" fill="#E8590C"></circle>
+</svg>
