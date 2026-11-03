@@ -62,7 +62,7 @@ test("life map: the chrome nav and the dialog controls are thumb-sized", async (
   // Inside the summoned list — the phone's primary navigation (DESIGN §5):
   // every adventure link and the close control.
   const button = page.getByRole("button", { name: /^List \(\d+\)$/ });
-  const dialog = page.locator('dialog[aria-label="Confirmed adventures"]');
+  const dialog = page.locator('dialog[aria-label="Kept trips"]');
   await clickUntil(button, dialog);
   await expectThumbSized(dialog, "a, button");
 });
@@ -70,7 +70,7 @@ test("life map: the chrome nav and the dialog controls are thumb-sized", async (
 test("adventure: the day-heading map toggles are thumb-sized", async ({ page }) => {
   await page.goto("/");
   const button = page.getByRole("button", { name: /^List \(\d+\)$/ });
-  const dialog = page.locator('dialog[aria-label="Confirmed adventures"]');
+  const dialog = page.locator('dialog[aria-label="Kept trips"]');
   await clickUntil(button, dialog);
   const href = await dialog.getByRole("link").first().getAttribute("href");
   await page.goto(href!);

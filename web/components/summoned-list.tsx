@@ -19,6 +19,7 @@ import { useRef } from "react";
 import Link from "next/link";
 
 import { ProvenanceBar } from "@/components/provenance-bar";
+import { fmtDateRange } from "@/lib/slice-days";
 import type { Adventure } from "@/components/life-map";
 
 export function SummonedList({ adventures }: { adventures: Adventure[] }) {
@@ -37,7 +38,7 @@ export function SummonedList({ adventures }: { adventures: Adventure[] }) {
       </button>
       <dialog
         ref={ref}
-        aria-label="Confirmed adventures"
+        aria-label="Kept trips"
         className="m-auto max-h-[85vh] w-[30rem] max-w-[calc(100vw-2rem)] overflow-y-auto border border-rule bg-paper p-0 text-ink shadow-lg backdrop:bg-ink/45"
         onClick={(e) => {
           if (e.target === ref.current) ref.current?.close();
@@ -46,7 +47,7 @@ export function SummonedList({ adventures }: { adventures: Adventure[] }) {
         <div className="p-6">
           <div className="flex items-baseline justify-between">
             <h2 className="font-display text-lg font-semibold">
-              Adventures ({adventures.length})
+              Trips ({adventures.length})
             </h2>
             <button
               type="button"
@@ -73,7 +74,7 @@ export function SummonedList({ adventures }: { adventures: Adventure[] }) {
                       </span>
                     </span>
                     <span className="mt-0.5 block font-mono text-xs text-ink-2">
-                      {a.start.slice(0, 10)} → {a.end.slice(0, 10)}
+                      {fmtDateRange(a.start, a.end)}
                     </span>
                     <ProvenanceBar
                       observed={j.observed_km}

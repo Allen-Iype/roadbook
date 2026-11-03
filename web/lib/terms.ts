@@ -16,7 +16,7 @@ export const TERMS = {
   plate: {
     term: "Plate",
     note:
-      "Each confirmed adventure is one plate in your atlas. Plates are numbered in the order you travelled, the oldest first.",
+      "Your kept trips are numbered in the order you travelled, the oldest first.",
   },
   provenance: {
     term: "The provenance bar",
@@ -56,7 +56,7 @@ export const TERMS = {
   score: {
     term: "Score",
     note:
-      "How much this looks like a trip, from 0 to 100: how far from home, how long you stayed, how much was recorded. It orders the queue; it decides nothing.",
+      "How much this looks like a trip, from 0 to 100: how far from home, how long you stayed, how much your phone recorded. It only sets the order; you decide.",
   },
 } as const;
 

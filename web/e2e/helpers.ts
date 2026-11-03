@@ -65,7 +65,7 @@ export async function openLegend(page: Page | Locator): Promise<Locator> {
 // Opens the life map's summoned list ("List (n)") and returns the dialog.
 export async function openSummonedList(page: Page): Promise<Locator> {
   const button = page.getByRole("button", { name: /^List \(\d+\)$/ });
-  const dialog = page.locator('dialog[aria-label="Confirmed adventures"]');
+  const dialog = page.locator('dialog[aria-label="Kept trips"]');
   await clickUntil(button, dialog);
   return dialog;
 }

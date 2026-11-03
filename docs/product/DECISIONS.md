@@ -115,3 +115,20 @@ settled on the way.
 - **Would change our mind:** a hosted person hitting "something went
   wrong on this Roadbook's side" with nowhere to turn — then the sentence
   gains a contact, which is a hosting decision, not a word.
+
+## 2026-11-03 — The map
+
+- **Chosen:** copy.md §7 as approved. The three empty states say "No
+  trips found — yet", "No trips yet" (self-hosted only, after a
+  command-line upload) and "12 trips are waiting for you · Keep the real
+  ones and they're drawn here"; the fourth (kept trips that could not be
+  loaded) keeps the "check the API and database" clause only on an
+  instance without sign-in. The hover card and the summoned list print
+  dates as "24–26 April 2026" through `fmtDateRange` and the hover card
+  loses "— 640 observed"; the list's dialog is "Kept trips" / "Trips (3)".
+  The plate note says "Your kept trips are numbered in the order you
+  travelled"; the score note ends "It only sets the order; you decide".
+- **Rejected:** removing the bar from the hover card and the list rows
+  (decision 2 keeps the bar drawn, uncaptioned, everywhere a distance is).
+- **Would change our mind:** a tester reading "12 trips are waiting for
+  you" as a to-do rather than an invitation — then "12 trips found so far".
