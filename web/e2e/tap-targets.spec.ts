@@ -85,7 +85,7 @@ test("adventure page: the sharing and image-export controls are thumb-sized", as
   const dialog = await openSummonedList(page);
   const href = await dialog.getByRole("link").first().getAttribute("href");
   await page.goto(href!);
-  await expectThumbSized(page, 'button:has-text("Create a share link"), button:has-text("Download as image")');
+  await expectThumbSized(page, 'button:has-text("Create a share link"), button:has-text("Download the map")');
 });
 
 test("adventure page: the disclosure and the teaching terms are thumb-sized", async ({ page }) => {

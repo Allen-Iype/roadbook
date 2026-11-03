@@ -287,10 +287,10 @@ export function datelineText(
 export function truncationText(start: boolean, end: boolean): string | null {
   const parts = [
     ...(start
-      ? ["The record starts mid-journey — it began before the imported window."]
+      ? ["Already under way when the file begins."]
       : []),
     ...(end
-      ? ["Still in progress at the window's edge — the end shown is the cut, not the return."]
+      ? ["Still under way when the file ends."]
       : []),
   ];
   return parts.length === 0 ? null : parts.join(" ");
@@ -438,7 +438,7 @@ export function plateLayout(input: PlateInput): PlateLayout {
     items: [
       { item: "text", text: `${j.total_km.toFixed(0)} km`, role: "display", size: 26, weight: 600, color: C.ink },
       { item: "space", px: 10 },
-      { item: "text", text: `drawn — ${pct}% of it measured`, role: "sans", size: 14, weight: 400, color: C.ink2 },
+      { item: "text", text: `${pct}% recorded by the phone`, role: "sans", size: 14, weight: 400, color: C.ink2 },
     ],
   });
   y += 10;
@@ -498,7 +498,7 @@ export function plateLayout(input: PlateInput): PlateLayout {
       { item: "space", px: 22 },
       { item: "dot", kind: "fix" },
       { item: "space", px: 8 },
-      { item: "text", text: "Fix", role: "sans", size: 12, weight: 700, color: C.ink },
+      { item: "text", text: "Single point", role: "sans", size: 12, weight: 700, color: C.ink },
     );
   }
   if (hasStop(j)) {
@@ -710,7 +710,7 @@ export function overlayLayout(
     items: [
       { item: "text", text: `${j.total_km.toFixed(0)} km`, role: "display", size: 26, weight: 600, color: C.ink, halo: true },
       { item: "space", px: 8 },
-      { item: "text", text: `drawn — ${pct}% of it measured`, role: "sans", size: 12.5, weight: 400, color: C.ink, halo: true },
+      { item: "text", text: `${pct}% recorded by the phone`, role: "sans", size: 12.5, weight: 400, color: C.ink, halo: true },
     ],
   });
   y += 9;
@@ -770,7 +770,7 @@ export function overlayLayout(
       { item: "space", px: 18 },
       { item: "dot", kind: "fix" },
       { item: "space", px: 7 },
-      { item: "text", text: "Fix", role: "sans", size: 11.5, weight: 700, color: C.ink, halo: true },
+      { item: "text", text: "Single point", role: "sans", size: 11.5, weight: 700, color: C.ink, halo: true },
     );
   }
   if (hasStop(j)) {

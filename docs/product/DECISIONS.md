@@ -161,3 +161,34 @@ settled on the way.
 - **Rejected:** keeping the plate Term on the intro line (decision 1
   keeps the printed numeral, not the word in a sentence).
 - **Would change our mind:** nothing here; the shelf is the simplest page.
+
+## 2026-11-03 — The trip page
+
+- **Chosen:** copy.md §10 as approved. Eyebrows KEPT TRIP · PLATE II / LEFT
+  OUT / TO REVIEW / SHARED TRIP; the flags and the day-by-day edges say
+  "your file" ("Trip begins · already under way when your file starts");
+  status "kept 12 Oct 2026" / "Not reviewed yet — keep it or leave it out
+  under Trips to review" / "Shared with you". Photos: times as "24 April
+  2026 10:12 · from the photo" through a new `sourceWords` in
+  `lib/format.ts` (the API's enum values said in words), "on the map" /
+  "no location — not on the map", place lines "from the route at that
+  time" (the three ground kinds collapse to one sentence), results "not
+  added" / "info file matched" / "info file without its photo"; the
+  uploads strip says how to remove them. Download: "Download the map" /
+  "Download for a story", "Making it…", the description in words. Sharing:
+  "Stop sharing", "Share this trip", three plain bullets with the same
+  disclosure, "Copy it now — Roadbook can't show this link again". The
+  fold at the foot: "recorded · by road · gap · flight" in whole
+  kilometres, "312 recorded points (32 of them precise)", "How you
+  travelled, as Google guessed it", "Google didn't record how you
+  travelled", "Distance check: by road … · Google's figure …". The
+  downloaded picture: "91% recorded by the phone", "Single point", "Already
+  under way when the file begins." Four Go photo messages in words. The
+  `candidate` entry leaves `lib/terms.ts`; only `plate`, the four kinds,
+  `originals` and `score` remain.
+- **Rejected:** dropping the fold's figures to whole kilometres only on
+  the page but not the picture (one register everywhere); hiding the
+  photo source entirely (a person who uploaded an info file wants to see
+  it was used).
+- **Would change our mind:** a tester asking what "precise" points are —
+  then the bracket goes and the count stands alone.

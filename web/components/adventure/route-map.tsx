@@ -29,7 +29,8 @@ import {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { fmtDistanceM, placeStatement } from "@/lib/format";
+import { fmtDistanceM, placeStatement, sourceWords } from "@/lib/format";
+import { fmtDateRange } from "@/lib/slice-days";
 // Geometry conversions shared with the life map (extracted checkpoint 2):
 // one implementation of leg→GeoJSON, arcs, and bounds for every map.
 import { bboxOf, lngLat } from "@/lib/geo";
@@ -167,8 +168,8 @@ export function RouteMap({
       body.appendChild(title);
       const line = document.createElement("div");
       line.textContent = p.taken_at
-        ? `${p.taken_at.slice(0, 10)} ${p.taken_at.slice(11, 16)} (${p.time_source})`
-        : "no capture time";
+        ? `${fmtDateRange(p.taken_at, p.taken_at)} ${p.taken_at.slice(11, 16)} (${sourceWords(p.time_source)})`
+        : "no time";
       body.appendChild(line);
       if (p.distance_from_route_m !== undefined && p.place_kind) {
         const dist = document.createElement("div");

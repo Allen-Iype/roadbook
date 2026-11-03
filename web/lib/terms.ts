@@ -43,11 +43,6 @@ export const TERMS = {
     note:
       "A photo straight from the camera carries the time and place it was taken, so Roadbook can put it on the route. A copy sent through WhatsApp or most other messengers has that stripped out, and cannot be placed.",
   },
-  candidate: {
-    term: "Candidate",
-    note:
-      "A stretch of time that looks like a trip: far from home, with somewhere you stayed. Roadbook proposes it; only you can confirm it.",
-  },
   score: {
     term: "Score",
     note:

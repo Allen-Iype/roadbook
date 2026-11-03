@@ -210,11 +210,11 @@ function DayLine({
     parts.push(
       candidate?.start_truncated ? (
         <>
-          Journey begins{flag}
-          {muted("already under way when the record starts")}
+          Trip begins{flag}
+          {muted("already under way when your file starts")}
         </>
       ) : (
-        <>Journey begins</>
+        <>Trip begins</>
       ),
     );
   }
@@ -263,11 +263,11 @@ function DayLine({
     parts.push(
       candidate?.end_truncated ? (
         <>
-          Journey ends{flag}
-          {muted("still under way when the record stops")}
+          Trip ends{flag}
+          {muted("still under way when your file stops")}
         </>
       ) : (
-        <>Journey ends</>
+        <>Trip ends</>
       ),
     );
   }

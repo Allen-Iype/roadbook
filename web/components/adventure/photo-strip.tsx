@@ -6,7 +6,8 @@
 // (phase 13 CP4), where both provenances render read-only for a stranger
 // and the copy says whose photos they are. Attached photos on the owner's
 // own page keep their upload/delete island (photos-section.tsx).
-import { fmtDistanceM, placeStatement } from "@/lib/format";
+import { fmtDistanceM, placeStatement, sourceWords } from "@/lib/format";
+import { fmtDateRange } from "@/lib/slice-days";
 import type { DisplayPhoto } from "@/lib/photo-display";
 
 export function PhotoStrip({
@@ -39,8 +40,7 @@ export function PhotoStrip({
               />
             ) : (
               <div className="flex h-28 w-36 items-center justify-center rounded border border-rule bg-land px-2 text-center text-[11px] leading-snug text-ink-2">
-                No preview — this format&apos;s pixels aren&apos;t decodable
-                here
+                No preview for this format
               </div>
             )}
             <figcaption className="mt-1 text-[11px] leading-tight text-ink-2">
@@ -48,9 +48,9 @@ export function PhotoStrip({
                 {p.original_name}
               </span>
               {p.taken_at && (
-                <span title={`capture time from ${p.time_source}`}>
-                  {p.taken_at.slice(0, 10)} {p.taken_at.slice(11, 16)}
-                  <span className="text-ink-2/80"> · {p.time_source}</span>
+                <span>
+                  {fmtDateRange(p.taken_at, p.taken_at)} {p.taken_at.slice(11, 16)}
+                  <span className="text-ink-2/80"> · {sourceWords(p.time_source)}</span>
                 </span>
               )}
               <span className="block">
@@ -66,7 +66,7 @@ export function PhotoStrip({
                       : placeStatement(p.place_kind)}
                   </>
                 ) : (
-                  "outside the drawn route's elements"
+                  "away from the route"
                 )}
               </span>
             </figcaption>
@@ -84,14 +84,13 @@ export function PhotoStrip({
 export function ImportPhotosStrip({ photos }: { photos: DisplayPhoto[] }) {
   return (
     <PhotoStrip
-      heading="From your photo imports"
+      heading="From your photo uploads"
       intro={
         <>
           {photos.length === 1 ? "One photo" : `${photos.length} photos`} from
-          your photo imports {photos.length === 1 ? "was" : "were"} taken
-          inside this journey&apos;s window — placed by capture time against
-          the drawn route. They stay with their import; deleting is not done
-          from here.
+          your photo uploads {photos.length === 1 ? "was" : "were"} taken
+          during this trip. To remove {photos.length === 1 ? "it" : "them"},
+          delete that upload under Uploads.
         </>
       }
       photos={photos}

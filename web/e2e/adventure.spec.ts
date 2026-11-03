@@ -47,7 +47,7 @@ test("adventure page: the floor — bar, disclosure closed, flag outside", async
   await expect(details).toBeVisible();
   await expect(details).toHaveJSProperty("open", false);
   // The composition line is inside, hidden until opened.
-  const composition = details.getByText(/observed [\d.]+ km · routed/);
+  const composition = details.getByText(/recorded \d+ km · by road/);
   await expect(composition).toBeHidden();
   await details.locator("summary").click();
   await expect(details).toHaveJSProperty("open", true);
@@ -58,10 +58,10 @@ test("adventure page: the floor — bar, disclosure closed, flag outside", async
   // it). Not every adventure is flagged; the assertion holds wherever the
   // line exists.
   await details.locator("summary").click();
-  const flag = page.getByText(/differ by \d+% — the account below says why/);
+  const flag = page.getByText(/differs from Google's by \d+%/);
   if ((await flag.count()) > 0) {
     await expect(flag.first()).toBeVisible();
-    expect(await details.getByText(/differ by \d+%/).count()).toBe(0);
+    expect(await details.getByText(/differs from Google's by \d+%/).count()).toBe(0);
   }
 });
 

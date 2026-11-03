@@ -129,7 +129,7 @@ describe("plateLayout — what else the margin says", () => {
     const s = layoutStrings(plateLayout(base));
     expect(s).toContain("South coast drive");
     expect(s).toContain("700 km");
-    expect(s).toContain("drawn — 100% of it measured");
+    expect(s).toContain("100% recorded by the phone");
     expect(s).toContain(
       "observed 699.6 km · routed 0.0 km · unknown 0.0 km · air 0.0 km",
     );
@@ -163,18 +163,15 @@ describe("plateLayout — what else the margin says", () => {
 
   it("prints the truncation words with the flag glyph when the window is cut", () => {
     const none = layoutStrings(plateLayout(base));
-    expect(none.some((x) => x.includes("mid-journey"))).toBe(false);
+    expect(none.some((x) => x.includes("under way"))).toBe(false);
     const both = layoutStrings(
       plateLayout({ ...base, startTruncated: true, endTruncated: true }),
     );
     expect(both).toContain("⚑");
     expect(both).toContain(
-      "The record starts mid-journey — it began before the imported window. " +
-        "Still in progress at the window's edge — the end shown is the cut, not the return.",
+      "Already under way when the file begins. Still under way when the file ends.",
     );
-    expect(truncationText(false, true)).toBe(
-      "Still in progress at the window's edge — the end shown is the cut, not the return.",
-    );
+    expect(truncationText(false, true)).toBe("Still under way when the file ends.");
     expect(truncationText(false, false)).toBeNull();
   });
 
@@ -188,7 +185,7 @@ describe("plateLayout — what else the margin says", () => {
         },
       }),
     );
-    expect(fixAndStop).toContain("Fix");
+    expect(fixAndStop).toContain("Single point");
     expect(fixAndStop).toContain("Stop");
     const neither = layoutStrings(
       plateLayout({
@@ -196,7 +193,7 @@ describe("plateLayout — what else the margin says", () => {
         journey: { ...journey, stops: [{ loc: { lat: 0, lon: 0 } }] },
       }),
     );
-    expect(neither).not.toContain("Fix");
+    expect(neither).not.toContain("Single point");
     expect(neither).not.toContain("Stop"); // a (0,0) dwell is not drawn
   });
 
@@ -350,7 +347,7 @@ describe("overlayLayout — the transparent format", () => {
   it("prints the plate's figures verbatim and the wordmark", () => {
     const s = layoutStrings(overlay());
     const p = layoutStrings(plateLayout({ ...base, journey: overlayJourney }));
-    for (const x of ["South coast drive", "700 km", "drawn — 100% of it measured",
+    for (const x of ["South coast drive", "700 km", "100% recorded by the phone",
       "observed 699.6 km · routed 0.0 km · unknown 0.0 km · air 0.0 km",
       "24–26 April 2026 · Iceland · Suðurland, Austurland · 3 days", "PLATE I · FULL ROUTE", "ROADBOOK"]) {
       expect(s).toContain(x);

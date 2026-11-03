@@ -94,7 +94,7 @@ export default async function AdventurePage({
         accountEmail={accountEmail} />
       <p className="mt-6 text-sm">
         <Link href="/" className="text-ink-2 hover:text-ink">
-          ← Life map
+          ← Map
         </Link>
       </p>
       <AdventureView

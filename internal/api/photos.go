@@ -46,7 +46,7 @@ func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidateP
 		return nil, err
 	}
 	if dec == nil {
-		return UploadCandidatePhotos409JSONResponse{Error: "photos attach to confirmed adventures — confirm this candidate first"}, nil
+		return UploadCandidatePhotos409JSONResponse{Error: "photos go on kept trips — keep this trip first"}, nil
 	}
 
 	entries, err := readParts(req.Body)
@@ -113,14 +113,14 @@ func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidateP
 				res.PairedWith = strp(target)
 			} else {
 				res.Status = PhotoUploadResultStatusSidecarUnpaired
-				res.Reason = strp("names no image in this upload — include the photo it describes in the same request")
+				res.Reason = strp("this info file's photo isn't in this upload — add them together")
 			}
 		case c.kind == photo.KindHEIC:
 			// Attached photos require a thumbnail, and HEIC pixels cannot be
 			// decoded here (no codec) — only the import path reads HEIC, for
 			// its position metadata.
 			res.Status = PhotoUploadResultStatusRejected
-			res.Reason = strp("HEIC (the iPhone default format) cannot be attached — attaching needs a thumbnail and HEIC pixels cannot be decoded here; convert to JPEG, or download it from Google Photos, which serves JPEG")
+			res.Reason = strp("iPhone-format (HEIC) photos can't be added here — convert to JPEG, or download the photo from Google Photos, which gives JPEG")
 		default: // a JPEG
 			var sc *photo.Sidecar
 			if v, ok := sidecarFor[i]; ok {
@@ -209,7 +209,7 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 		return nil, err
 	}
 	if dec == nil {
-		return ListCandidatePhotos409JSONResponse{Error: "photos attach to confirmed adventures — confirm this candidate first"}, nil
+		return ListCandidatePhotos409JSONResponse{Error: "photos go on kept trips — keep this trip first"}, nil
 	}
 	rows, err := s.Store.ListPhotos(ctx, s.currentUser(ctx), dec.ID)
 	if err != nil {
@@ -283,7 +283,7 @@ func (s *Server) GetPhotoThumbnail(ctx context.Context, req GetPhotoThumbnailReq
 	if err != nil {
 		// The row exists but its file is gone — say so plainly rather than
 		// pretending the photo does not exist.
-		return GetPhotoThumbnail404JSONResponse{Error: "thumbnail file missing from the photos directory — the photo must be re-uploaded"}, nil
+		return GetPhotoThumbnail404JSONResponse{Error: "the preview is missing — upload the photo again"}, nil
 	}
 	return GetPhotoThumbnail200ImagejpegResponse{
 		Body:          bytes.NewReader(data),
