@@ -132,3 +132,20 @@ settled on the way.
   (decision 2 keeps the bar drawn, uncaptioned, everywhere a distance is).
 - **Would change our mind:** a tester reading "12 trips are waiting for
   you" as a to-do rather than an invitation — then "12 trips found so far".
+
+## 2026-11-03 — Trips to review
+
+- **Chosen:** copy.md §8 as approved. The heading is "Trips to review",
+  the intro "Roadbook found these trips in your history. Keep the real
+  ones; leave out the rest." with no taught term; the buttons are Keep ·
+  Leave out · Save · Cancel · Change · Keep as is (capitalised, as
+  buttons elsewhere are); a left-out trip reads "left out"; the facts line
+  says "from home", "travelled" and "visited 2× before"; the fold keeps
+  the rule and the points-too-fast count and drops the run number; the
+  selection bar is "Keep or leave out together" with Keep selected / Leave
+  out selected; the notes say Kept / Left out / "Nothing changed". The
+  CLI hint in the empty state is self-hosted only (decision 7).
+- **Rejected:** "Skip" for leave out (sounds like later); lowercase button
+  labels (the old style; every other button on the site is capitalised).
+- **Would change our mind:** a tester hunting for "where did the one I
+  left out go" — then the left-out state gains a line, not a new word.

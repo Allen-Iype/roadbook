@@ -17,7 +17,7 @@ export function TriageSelect({ candidateId }: { candidateId: number }) {
         type="checkbox"
         checked={selected.has(candidateId)}
         onChange={() => toggle(candidateId)}
-        aria-label="Select this candidate for a bulk decision"
+        aria-label="Select this trip"
         className="h-4 w-4 accent-ink"
       />
     </label>

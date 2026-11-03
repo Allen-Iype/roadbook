@@ -22,8 +22,8 @@ export function TriageSelectAll({ undecidedIds }: { undecidedIds: number[] }) {
       className="-my-2 py-2 text-sm underline decoration-rule underline-offset-2 hover:text-ink disabled:no-underline disabled:opacity-60"
     >
       {allSelected
-        ? `All ${undecidedIds.length} undecided selected`
-        : `Select all ${undecidedIds.length} undecided`}
+        ? `All ${undecidedIds.length} selected`
+        : `Select all ${undecidedIds.length} to review`}
     </button>
   );
 }

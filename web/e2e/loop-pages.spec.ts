@@ -97,7 +97,7 @@ test("candidates: every gallery card carries art, figures, and a decision", asyn
   }
 });
 
-test("candidates: the run's figures are folded and closed; the intro teaches the term", async ({ page }) => {
+test("candidates: the run's figures are folded and closed; the intro is plain", async ({ page }) => {
   // Phase 16 CP3 (BRIEF §4): the detection run line ("Detection run 1 ·
   // 3 outliers dropped · FAR 100 km") is behind a closed <details> whose
   // summary carries only the count; the intro's "candidate" is a Term.
@@ -106,7 +106,10 @@ test("candidates: the run's figures are folded and closed; the intro teaches the
   await expect(fold).toBeAttached();
   await expect(fold).not.toHaveAttribute("open", "");
   await expect(page.getByText(/outliers dropped|Detection run|FAR \d+ km/)).toHaveCount(0);
-  await expect(page.locator("main p button.term", { hasText: "candidate" }).first()).toBeVisible();
+  // The copy pass (2026-11-03): the intro teaches no term, and the run
+  // number is gone from the fold.
+  await expect(page.getByText(/^Roadbook found these trips/)).toBeVisible();
+  await expect(fold.getByText(/Run \d+/)).toHaveCount(0);
 });
 
 test("candidates: bulk triage — selection summons the bar; score order sorts", async ({ page }) => {
@@ -119,7 +122,7 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   const n = await boxes.count();
   expect(n).toBeGreaterThan(0);
 
-  const bar = page.getByRole("region", { name: "Bulk decision" });
+  const bar = page.getByRole("region", { name: "Keep or leave out together" });
   await expect(bar).toBeHidden();
   // clickUntil, not .check(): a click before hydration silently no-ops
   // (the phase 7 trap) — clicking until the bar appears waits it out.
@@ -128,14 +131,14 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   await expect(bar).toBeVisible();
   await expect(bar.getByText("1 selected")).toBeVisible();
   await expect(
-    bar.getByRole("button", { name: "Dismiss selected" }),
+    bar.getByRole("button", { name: "Leave out selected" }),
   ).toBeVisible();
   await bar.getByRole("button", { name: "Clear" }).click();
   await expect(bar).toBeHidden();
 
   // Select-all: scoped to undecided candidates, and the count says so.
   const selectAllBtn = page.getByRole("button", {
-    name: /^Select all \d+ undecided$/,
+    name: /^Select all \d+ to review$/,
   });
   if (await selectAllBtn.isVisible()) {
     const m = (await selectAllBtn.textContent())?.match(/(\d+)/);
