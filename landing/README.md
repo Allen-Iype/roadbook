@@ -18,6 +18,10 @@ hosted-operator machinery out of product code.
   four kinds and what each means, the rule that a gap is never drawn as a
   confident line, where the figures come from, where the data lives, and
   self-hosting as the reference deployment.
+- `privacy.html` — the landing's Privacy paragraph, word for word, on its
+  own page linked from every footer (moved off the landing 2026-11-03, one
+  block fewer on the page); it points at "Where your data lives" on
+  `how-its-built.html` (`#data`) for the longer account.
 - `joined.html`, `oops.html` — the waitlist form's two endings.
 
 ## What references what

@@ -14,6 +14,7 @@ import { LEGEND_ENTRIES } from "./legend";
 // as the deploy-time placeholder (phase 15 BRIEF §9).
 const LANDING = resolve(__dirname, "..", "..", "landing", "index.html");
 const HOW = resolve(__dirname, "..", "..", "landing", "how-its-built.html");
+const PRIVACY = resolve(__dirname, "..", "..", "landing", "privacy.html");
 
 describe("the landing page", () => {
   const html = readFileSync(LANDING, "utf8");
@@ -43,6 +44,26 @@ describe("the how-it's-built page", () => {
 
   it.each(LEGEND_ENTRIES)("explains kind %o under its own name", (e) => {
     expect(html).toContain(`>${e.label}<`);
+  });
+
+  it("runs no script and names no domain", () => {
+    expect(html).not.toMatch(/<script\b/i);
+    expect(html).not.toMatch(/getroadbook/);
+  });
+});
+
+describe("the privacy page", () => {
+  const html = readFileSync(PRIVACY, "utf8");
+  const landing = readFileSync(LANDING, "utf8");
+
+  it("is linked from the landing's footer, and the landing no longer carries the section", () => {
+    expect(landing).toContain('<a href="privacy.html">Privacy</a>');
+    expect(landing).not.toMatch(/class="sheet privacy"/);
+  });
+
+  it("points at the longer account on the how-it's-built page", () => {
+    expect(html).toContain('href="how-its-built.html#data"');
+    expect(readFileSync(HOW, "utf8")).toContain('id="data"');
   });
 
   it("runs no script and names no domain", () => {

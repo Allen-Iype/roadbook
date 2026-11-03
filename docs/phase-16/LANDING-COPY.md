@@ -64,6 +64,10 @@ where and when they were taken.
 
 ## Privacy
 
+*Moved 2026-11-03 to its own page, `landing/privacy.html`, linked from the
+footer; the landing carries one block fewer. As served, the third sentence
+reads "Your Timeline file is kept, so you never have to upload it twice."*
+
 Your history stays in your own account. Nobody else can see it unless you
 share a link, and you can take that link back. Your export is kept so
 Roadbook can re-read it later. Photos are never kept, only where and when
