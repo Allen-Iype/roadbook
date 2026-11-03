@@ -5,6 +5,7 @@ import { LegendInfo } from "@/components/legend-info";
 import { OpenOnHash } from "@/components/open-on-hash";
 import { SiteHeader } from "@/components/site-header";
 import { UploadImport } from "@/components/upload-import";
+import { getSession } from "@/lib/session";
 import { WelcomePlate } from "@/components/welcome-plate";
 import { WELCOME_SECTIONS as S } from "@/lib/rejection-anchors";
 
@@ -36,7 +37,8 @@ export const metadata: Metadata = {
 // its anchors against (lib/rejection-anchors.ts) — a dead-end anchor cannot
 // be written. Every id still has a real target; the folded ones are
 // <details> elements, which OpenOnHash opens when a link lands on them.
-export default function WelcomePage() {
+export default async function WelcomePage() {
+  const session = await getSession();
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
       <SiteHeader />
@@ -91,7 +93,7 @@ export default function WelcomePage() {
         </ol>
 
         <div id={S.upload} className="mt-6 scroll-mt-6">
-          <UploadImport variant="door" />
+          <UploadImport variant="door" operator={session?.mode === "off"} />
         </div>
 
         {/* The walkthroughs, folded (BRIEF §4 CP2): each platform is a

@@ -43,7 +43,7 @@ export type Redirection = {
 // are added from the Uploads page, which the rejection message names.
 const OLD_FORMAT: Redirection = {
   anchor: WELCOME_SECTIONS.export,
-  link: "How to export the current format from your phone",
+  link: "How to export the right file from your phone",
 };
 const WRONG_FILE: Redirection = {
   anchor: WELCOME_SECTIONS.theFile,

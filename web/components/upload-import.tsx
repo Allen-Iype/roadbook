@@ -54,7 +54,15 @@ const POLL_MS = 1500;
 // only the idle rendering differs.
 export type UploadVariant = "panel" | "door";
 
-export function UploadImport({ variant = "panel" }: { variant?: UploadVariant } = {}) {
+export function UploadImport({
+  variant = "panel",
+  operator = false,
+}: {
+  variant?: UploadVariant;
+  /** True on an instance without sign-in: the person is the operator and
+   * may be told where the server log is (copy pass decision 7). */
+  operator?: boolean;
+} = {}) {
   const [phase, setPhase] = useState<Phase>({ k: "idle" });
   const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +94,7 @@ export function UploadImport({ variant = "panel" }: { variant?: UploadVariant } 
       setPhase({
         k: "error",
         message:
-          "The upload didn't complete — nothing was recorded. Check the connection and try again.",
+          "The upload didn't complete — nothing was saved. Check the connection and try again.",
       });
     xhr.onabort = xhr.onerror;
     xhr.onload = () => {
@@ -113,7 +121,7 @@ export function UploadImport({ variant = "panel" }: { variant?: UploadVariant } 
         // API's message is the useful part; show it as given.
         setPhase({
           k: "error",
-          message: body?.error ?? `The upload failed (HTTP ${xhr.status}).`,
+          message: body?.error ?? `The upload failed (error ${xhr.status}).`,
         });
       }
     };
@@ -146,7 +154,8 @@ export function UploadImport({ variant = "panel" }: { variant?: UploadVariant } 
           setPhase({
             k: "failed",
             message:
-              "Your data imported fine, but the detection step failed — the server log has details.",
+              "Your file was read, but Roadbook couldn't look for trips in it. Try again later." +
+              (operator ? " The server log has details." : ""),
           });
           router.refresh();
         } else {
@@ -201,7 +210,7 @@ export function UploadImport({ variant = "panel" }: { variant?: UploadVariant } 
   return (
     <section className="flex flex-col border border-rule bg-land p-4">
       <h2 className="font-display text-lg font-semibold">
-        Add a Timeline export
+        Add your Timeline file
       </h2>
       {/* Phase 16 CP3: one line. What the file is and the one thing to do
           while it uploads; the walkthrough link for anyone without it.
@@ -264,9 +273,9 @@ function PhaseView({ phase }: { phase: Phase }) {
         </div>
       );
     case "importing":
-      return <p>Uploaded. Importing your observations…</p>;
+      return <p>Uploaded. Reading your file…</p>;
     case "detecting":
-      return <p>Imported. Looking for adventures…</p>;
+      return <p>Finding your trips…</p>;
     case "done":
       return (
         <div>
@@ -275,8 +284,7 @@ function PhaseView({ phase }: { phase: Phase }) {
             {phase.inserted !== null && phase.inserted === 0 ? (
               <span className="text-ink-2">
                 {" "}
-                This file held nothing new — every observation was already
-                imported.
+                Nothing new in this file — everything in it was already here.
               </span>
             ) : null}
           </p>
@@ -284,7 +292,7 @@ function PhaseView({ phase }: { phase: Phase }) {
             href="/candidates"
             className="mt-1 inline-block font-semibold underline underline-offset-2"
           >
-            See your candidates →
+            See your trips →
           </a>
         </div>
       );
@@ -292,25 +300,22 @@ function PhaseView({ phase }: { phase: Phase }) {
       return (
         <div className="max-w-prose">
           <p className="font-semibold text-red-700">
-            That file isn&apos;t a Timeline export
-            {phase.format ? (
-              <span className="font-mono text-ink-2"> ({phase.format})</span>
-            ) : null}
+            That isn&apos;t your Timeline file
           </p>
           <p className="mt-1 text-ink-2">{phase.message}</p>
-          <p className="mt-1 text-ink-2">Nothing was stored — try the right file.</p>
+          <p className="mt-1 text-ink-2">Nothing was saved — try the right file.</p>
           <RedirectionLink format={phase.format} />
         </div>
       );
     case "failed":
       return (
         <div className="max-w-prose">
-          <p className="font-semibold text-red-700">The import failed</p>
+          <p className="font-semibold text-red-700">Roadbook couldn&apos;t read this file</p>
           {phase.message && <p className="mt-1 text-ink-2">{phase.message}</p>}
           <p className="mt-1 text-ink-2">
-            The attempt is recorded on the{" "}
+            The attempt is listed under{" "}
             <a href="/imports" className="underline underline-offset-2">
-              imports list
+              Uploads
             </a>
             .
           </p>

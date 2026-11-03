@@ -41,8 +41,8 @@ export default async function ImportsPage() {
           wide frame. Half-width panels put the text at a natural measure
           with no cap; on a phone they stack as before. */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <UploadImport />
-        <PhotoUploadImport />
+        <UploadImport operator={session?.mode === "off"} />
+        <PhotoUploadImport operator={session?.mode === "off"} />
       </div>
       {data.imports.length === 0 ? (
         <p className="mt-8 text-sm text-ink-2">

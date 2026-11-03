@@ -67,9 +67,10 @@ test("welcome: the folded sections start closed and a rejection anchor opens its
   await page.goto(`/welcome#${WELCOME_SECTIONS.theFile}`);
   await expect(theFile).toHaveAttribute("open", "");
   await expect(theFile.getByText("Timeline.json")).toBeVisible();
-  // The walkthroughs keep their verification state visible before the fold.
-  await expect(page.locator(`#${WELCOME_SECTIONS.exportAndroid} summary`)).toContainText(/Verified \d+ \w+ \d{4}/);
-  await expect(page.locator(`#${WELCOME_SECTIONS.exportIphone} summary`)).toContainText("Unverified");
+  // The walkthroughs keep their verification state as page text — since
+  // the copy pass as the fold's last line, not a stamp on the summary.
+  await expect(page.locator(`#${WELCOME_SECTIONS.exportAndroid}`)).toContainText(/Checked \d+ \w+ \d{4}/);
+  await expect(page.locator(`#${WELCOME_SECTIONS.exportIphone}`)).toContainText("not yet checked");
 });
 
 test("candidates: every gallery card carries art, figures, and a decision", async ({ page }) => {
@@ -169,7 +170,7 @@ test("imports: the panels say one thing each and the table has its own heading",
   // its own section, headed, with word column names.
   await page.goto("/imports");
   await expect(page.getByRole("heading", { level: 1, name: "Imports" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Add a Timeline export" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add your Timeline file" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Add photos" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Added so far" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Don't have the file yet?" })).toBeVisible();

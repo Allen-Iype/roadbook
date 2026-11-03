@@ -160,7 +160,7 @@ func (s *Server) storePhoto(ctx context.Context, decisionID int64, spanOffsetSec
 	thumb, w, h, err := photo.Thumbnail(e.data, m.Orientation, photo.DefaultThumbMaxPx, photo.DefaultThumbQuality)
 	if err != nil {
 		return store.PhotoRow{}, false, &photo.UnsupportedError{Kind: "undecodable",
-			Message: "the image could not be decoded — it may be corrupted or a format masquerading as JPEG"}
+			Message: "this image can't be opened — it may be damaged"}
 	}
 
 	sum := sha256.Sum256(e.data)
@@ -353,7 +353,7 @@ func readParts(r *multipart.Reader) ([]uploadEntry, error) {
 		switch {
 		case len(entries) >= MaxUploadFiles:
 			io.Copy(io.Discard, part)
-			e.reject = fmt.Sprintf("over the %d-files-per-request limit — upload the rest in another request", MaxUploadFiles)
+			e.reject = fmt.Sprintf("more than %d files at once — upload the rest separately", MaxUploadFiles)
 		default:
 			data, err := io.ReadAll(io.LimitReader(part, MaxUploadBytes+1))
 			if err != nil {
@@ -362,7 +362,7 @@ func readParts(r *multipart.Reader) ([]uploadEntry, error) {
 			}
 			if len(data) > MaxUploadBytes {
 				io.Copy(io.Discard, part) // drain so the stream advances
-				e.reject = fmt.Sprintf("larger than the %d MB per-file limit", MaxUploadBytes>>20)
+				e.reject = fmt.Sprintf("larger than %d MB", MaxUploadBytes>>20)
 			} else {
 				e.data = data
 			}

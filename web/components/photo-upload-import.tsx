@@ -60,7 +60,12 @@ export type PhotoUploadVariant = "panel" | "door";
 
 export function PhotoUploadImport({
   variant = "panel",
-}: { variant?: PhotoUploadVariant } = {}) {
+  operator = false,
+}: {
+  variant?: PhotoUploadVariant;
+  /** True on an instance without sign-in (copy pass decision 7). */
+  operator?: boolean;
+} = {}) {
   const [phase, setPhase] = useState<Phase>({ k: "idle" });
   const [verdicts, setVerdicts] = useState<FileVerdict[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +94,7 @@ export function PhotoUploadImport({
       setPhase({
         k: "error",
         message:
-          "The upload didn't complete — nothing was recorded. Check the connection, keep the screen on, and try again.",
+          "The upload didn't complete — nothing was saved. Check the connection, keep the screen on, and try again.",
       });
     xhr.onabort = xhr.onerror;
     xhr.onload = () => {
@@ -112,7 +117,7 @@ export function PhotoUploadImport({
       } else {
         setPhase({
           k: "error",
-          message: body?.error ?? `The upload failed (HTTP ${xhr.status}).`,
+          message: body?.error ?? `The upload failed (error ${xhr.status}).`,
         });
       }
     };
@@ -137,7 +142,8 @@ export function PhotoUploadImport({
         setPhase({
           k: "failed",
           message:
-            "Your photos imported fine, but the detection step failed — the server log has details.",
+            "Your photos were read, but Roadbook couldn't look for trips in them. Try again later." +
+            (operator ? " The server log has details." : ""),
         });
         router.refresh();
       }
@@ -237,7 +243,7 @@ function PhotoPhaseView({ phase }: { phase: Phase }) {
         </div>
       );
     case "detecting":
-      return <p>Photos imported. Looking for adventures…</p>;
+      return <p>Photos read. Finding your trips…</p>;
     case "done":
       return (
         <div>
@@ -246,8 +252,7 @@ function PhotoPhaseView({ phase }: { phase: Phase }) {
             {phase.inserted !== null && phase.inserted === 0 ? (
               <span className="text-ink-2">
                 {" "}
-                These photos held nothing new — every position was already
-                imported.
+                Nothing new in these photos — their places were already here.
               </span>
             ) : null}
           </p>
@@ -255,14 +260,14 @@ function PhotoPhaseView({ phase }: { phase: Phase }) {
             href="/candidates"
             className="mt-1 inline-block font-semibold underline underline-offset-2"
           >
-            See your candidates →
+            See your trips →
           </a>
         </div>
       );
     case "failed":
       return (
         <div className="max-w-prose">
-          <p className="font-semibold text-red-700">The import failed</p>
+          <p className="font-semibold text-red-700">Roadbook couldn&apos;t read these photos</p>
           {phase.message && <p className="mt-1 text-ink-2">{phase.message}</p>}
         </div>
       );
@@ -293,10 +298,10 @@ function VerdictSummary({ verdicts }: { verdicts: FileVerdict[] }) {
   return (
     <div className="mt-3 border-t border-rule pt-3 text-sm">
       <p>
-        {fixes} of {verdicts.length} file{verdicts.length === 1 ? "" : "s"}{" "}
-        carried a usable position
+        {fixes} of {verdicts.length} photo{verdicts.length === 1 ? "" : "s"}{" "}
+        had a location
         {paired > 0
-          ? ` (${paired} sidecar${paired === 1 ? "" : "s"} matched)`
+          ? ` (${paired} info file${paired === 1 ? "" : "s"} matched)`
           : ""}
         .
       </p>
@@ -323,12 +328,12 @@ function VerdictSummary({ verdicts }: { verdicts: FileVerdict[] }) {
 function reasonFor(status: FileVerdict["status"]): string {
   switch (status) {
     case "no_position":
-      return "no place in the photo — a copy from a messenger has it stripped; use the original";
+      return "no location in the photo — a copy from a chat has it stripped; use the original";
     case "no_time":
-      return "a location but no readable capture time";
+      return "a location but no readable time";
     case "sidecar_unpaired":
-      return "a Takeout .json file naming no photo in this batch — include the photo it describes";
+      return "a Google info file with no matching photo in this upload — include the photo it belongs to";
     default:
-      return "not a supported photo format";
+      return "not a photo format Roadbook can read";
   }
 }

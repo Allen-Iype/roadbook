@@ -86,3 +86,32 @@ settled on the way.
   word goes and only "an older Google download" stays.
 - **Verified:** tsc, lint, loop-pages and legend specs (40 passed at three
   widths); screenshots at 390 and 1280.
+
+## 2026-11-02 — Upload and waiting, with the Go messages
+
+- **Chosen:** copy.md §6 as approved. Web: "Reading your file…", "Finding
+  your trips…", "Nothing new in this file", "See your trips", "That isn't
+  your Timeline file" without the bracketed kind, "Roadbook couldn't read
+  this file", "listed under Uploads", and the photo verdicts in words (a
+  photo "had a location", "info file", "a copy from a chat"). Both
+  uploaders take an `operator` flag from the page's session so "the
+  server log has details" is said only on an instance without sign-in
+  (decision 7); the start page reads the session for it. Go: every
+  rejection in `internal/timeline/parse.go` is one sentence about the
+  file plus the hint "export it again from Google Maps on your phone —
+  the start page shows how"; the three old-Google-download kinds share
+  one sentence; the keys seen in an unrecognised JSON file stay in the
+  message in brackets (useful when someone reports it) but the parser's
+  own error text is gone from the not-valid-JSON case; `imports.go`'s
+  four operator-facing failures go through a new `ownSide` helper that
+  appends the server-log clause only when `s.Auth == nil`. The photo
+  uploader's three Go messages ("can't be opened", "more than N files at
+  once", "larger than N MB"). `Kind` keys and error types unchanged; the
+  Go tests pin kinds, not sentences, and pass as they were.
+- **Rejected:** mapping kinds to sentences in the web layer instead of
+  changing Go (two places to keep in step; decision 3); keeping Google's
+  menu path in the hint (it was the Android path only, and the start page
+  has both).
+- **Would change our mind:** a hosted person hitting "something went
+  wrong on this Roadbook's side" with nowhere to turn — then the sentence
+  gains a contact, which is a hosting decision, not a word.
