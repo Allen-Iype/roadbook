@@ -22,7 +22,7 @@ import { sharedThumbs } from "@/lib/photo-display";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Roadbook — shared adventure",
+  title: "Roadbook — a shared trip",
   // Belt and braces with next.config's X-Robots-Tag header on /shared/*.
   robots: { index: false, follow: false },
 };
@@ -73,11 +73,10 @@ export default async function SharedAdventurePage({
         thumbs={sharedThumbs(token)}
       />
       <footer className="mt-12 max-w-[58ch] border-t border-rule pt-4 text-sm leading-relaxed text-ink-2">
-        This plate was shared from someone&apos;s Roadbook — an atlas drawn
-        from their own location history, honest about what was recorded and
-        what was inferred.{" "}
+        Someone shared one of their trips with you, drawn from their
+        phone&apos;s own location history.{" "}
         <Link href="/welcome" className="text-ink underline decoration-rule underline-offset-2 hover:decoration-ink">
-          How Roadbook works, and how to make your own.
+          Make your own map →
         </Link>
       </footer>
     </main>
@@ -103,7 +102,7 @@ function Masthead() {
       >
         ROADBOOK
       </Link>
-      <span className="text-sm text-ink-2">A shared adventure</span>
+      <span className="text-sm text-ink-2">A shared trip</span>
     </header>
   );
 }

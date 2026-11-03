@@ -192,3 +192,20 @@ settled on the way.
   it was used).
 - **Would change our mind:** a tester asking what "precise" points are —
   then the bracket goes and the count stands alone.
+
+## 2026-11-03 — Shared view, Uploads and delete
+
+- **Chosen:** copy.md §11 and §12 as approved. The shared view is "A shared
+  trip" with the one-sentence footer and "Make your own map →"; its
+  not-found page says "stopped sharing". Uploads: heading "Uploads", table
+  headers Stops · Journeys · Points · Precise points · Unreadable · New,
+  statuses "reading" / "done" / "couldn't be read", and "Roadbook couldn't
+  look for trips in it" with the server-log clause only for the operator
+  (the table takes the session's mode, decision 7). Delete everything:
+  upload / trip / choice / preview / spot in place of import / candidate /
+  decision / thumbnail / seat; the list of what goes is the same list; the
+  typed word is still `delete`.
+- **Rejected:** collapsing the eleven-column table (a design question,
+  reported in copy.md's "Needs more than words").
+- **Would change our mind:** a tester asking what "precise points" are —
+  then that column folds into Points.

@@ -172,7 +172,7 @@ test("imports: the panels say one thing each and the table has its own heading",
   // panel carries a heading, one short intro and its picker; the table is
   // its own section, headed, with word column names.
   await page.goto("/imports");
-  await expect(page.getByRole("heading", { level: 1, name: "Imports" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Uploads" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Add your Timeline file" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Add photos" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Added so far" })).toBeVisible();

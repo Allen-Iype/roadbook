@@ -52,10 +52,10 @@ export function DeleteMyData({
       <p className="mt-1 max-w-[58ch] text-[13px] text-ink-2">
         {hasData
           ? multiUser
-            ? "Removes every import, adventure, decision, photo, and share link of yours, and forgets your account. Nothing of anyone else's is touched."
-            : "Removes every import, adventure, decision, photo, and share link. This Roadbook is empty again, as if freshly installed."
+            ? "Removes every upload, trip, choice, photo and share link of yours, and forgets your account. Nothing of anyone else's is touched."
+            : "Removes every upload, trip, choice, photo and share link. This Roadbook is empty again, as if freshly installed."
           : multiUser
-            ? "Nothing is stored yet. Deleting forgets your account and frees its seat; you can sign in again any time."
+            ? "Nothing is stored yet. Deleting forgets your account and frees its spot; you can sign in again any time."
             : "Nothing is stored yet — there is nothing to delete."}
       </p>
       <p className="mt-3">
@@ -87,19 +87,19 @@ export function DeleteMyData({
           </h2>
           <p className="mt-3 text-sm leading-relaxed">This removes, for good:</p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed">
-            <li>every import and the observations it brought in;</li>
-            <li>every candidate and decision — names included;</li>
-            <li>every photo thumbnail and photo record;</li>
-            <li>every share link — the links stop opening immediately;</li>
+            <li>every upload and every place it recorded;</li>
+            <li>every trip and every choice — names included;</li>
+            <li>every photo preview and photo record;</li>
+            <li>every share link — the links stop working immediately;</li>
             {multiUser ? (
               <li>your account here — signing in again starts from nothing.</li>
             ) : (
-              <li>the retained copies of your uploaded exports.</li>
+              <li>the kept copies of the files you uploaded.</li>
             )}
           </ul>
           <p className="mt-3 text-sm leading-relaxed text-ink-2">
-            Your own export files, wherever you keep them, are untouched —
-            they are the canonical copy of your history. There is no undo.
+            Your own files, wherever you keep them, are untouched — they are
+            the original copy of your history. There is no undo.
           </p>
           <label className="mt-5 block text-sm">
             Type <span className="font-mono">delete</span> to confirm

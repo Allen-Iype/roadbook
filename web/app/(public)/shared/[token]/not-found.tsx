@@ -20,9 +20,9 @@ export default function SharedNotFound() {
           This link doesn&apos;t open anything.
         </h1>
         <p className="mt-5 max-w-[58ch] text-[15px] leading-relaxed">
-          Whoever shared it may have revoked it, or the adventure it led to is
-          no longer available. If someone sent you this link, ask them for a
-          fresh one.
+          Whoever shared it may have stopped sharing, or the trip is no
+          longer there. If someone sent you this link, ask them for a fresh
+          one.
         </p>
         <p className="mt-8 text-sm">
           <Link href="/welcome" className="text-ink underline decoration-rule underline-offset-2 hover:decoration-ink">
