@@ -209,3 +209,19 @@ settled on the way.
   reported in copy.md's "Needs more than words").
 - **Would change our mind:** a tester asking what "precise points" are —
   then that column folds into Points.
+
+## 2026-11-03 — Close
+
+- **Chosen:** DESIGN §6 gains a dated amendment (the legend behind one
+  control; labels, order, samples, line styles unchanged; the bar
+  uncaptioned; the exported image keeps its printed legend). The README's
+  walkthrough names the controls as they now read. `docs/screens/
+  copy-pass-*` is the committed after-set, captured from the demo through
+  the dev server. The after-table and the breakages are in `LOG.md`. The
+  PLAN.md entries (landing cut, "one line") are drafted in LOG.md for the
+  maintainer to place on main.
+- **Rejected:** merging the branch from this session (the maintainer
+  merges, one merge for the whole pass, then the host pulls main).
+- **Would change our mind:** the five-second test with friends failing on
+  the new words — then `words.md` is the place to change, and each screen
+  follows.

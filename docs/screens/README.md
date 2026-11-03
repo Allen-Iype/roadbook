@@ -60,3 +60,12 @@ puppeteer-core and Brave headless (`--use-angle=swiftshader` renders the
 MapLibre canvas). When the adventure page changes materially, recapture
 and replace this file in the same change, so the landing never shows a UI
 the app no longer has.
+
+The copy pass (2026-11, `docs/product/`) adds the set `copy-pass-*`: the
+same eight pages after every user-facing string was rewritten in a
+traveller's words and the legend moved behind its "What the lines mean"
+control. Captured from the demo dataset through a development server
+pointed at a scratch stack, so the page content is exactly the committed
+code's (Next's development indicator removed before each shot). The same
+change recaptured `phase16-cp2b-adventure-2.png`, the landing's "The app
+itself", since the trip page's margin and words changed.
