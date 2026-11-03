@@ -328,6 +328,19 @@ specific user or region surfaces the first time someone else's export is importe
 Adopted into the backlog from the Dawarich comparison or moved here from a phase;
 none is scheduled:
 
+- Landing cut (added 2026-11-03, copy pass close; `docs/product/LOG.md`).
+  The landing is still cluttered: eight blocks, two pictures of a trip, two
+  "Make mine" buttons. A layout cut — one picture, one button, one-line
+  steps and promises, the waitlist box reduced to a field. Mockup first on
+  the maintainer's phone, then the five-second test with friends. Next step
+  after the copy pass.
+- One line (added 2026-11-03, copy pass close; `docs/product/LOG.md`). The
+  maintainer's wish that a trip read as one route from A to B. Drawing the
+  four kinds in one style is a rendering change; filling the dashed gaps
+  with real roads is the routing work (OSRM on the host, a batch after each
+  upload, coverage decisions). Either is a PRODUCT.md and CLAUDE.md
+  amendment (invariants 5, 6, 8) before any code. Its brief waits until the
+  landing cut lands.
 - Teaching the atlas vocabulary (added 2026-10-28, phase 15 CP2 walk). The
   product deliberately speaks in atlas terms — plate, plate number as a
   chronological register, provenance bar, legend — and the maintainer wants

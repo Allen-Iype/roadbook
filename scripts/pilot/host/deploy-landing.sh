@@ -4,7 +4,7 @@
 #   scripts/pilot/host/deploy-landing.sh
 #
 # Stages /srv/pilot/landing/site/ from the repo checkout — landing/index.html,
-# how-its-built.html and the form endings, plus the two asset directories
+# how-its-built.html, privacy.html and the form endings, plus the two asset directories
 # the pages reference but git does not duplicate (fonts from web/app/fonts,
 # the one screenshot from docs/screens) — and
 # writes the Caddy snippet routing www.$ROADBOOK_DOMAIN to it, credential-
@@ -46,6 +46,7 @@ mkdir -p "$STAGE/fonts" "$STAGE/shots"
 # and refuse to deploy if the placeholder survives.
 sed "s/{ROADBOOK_DOMAIN}/$ROADBOOK_DOMAIN/g" "$REPO/landing/index.html" > "$STAGE/index.html"
 sed "s/{ROADBOOK_DOMAIN}/$ROADBOOK_DOMAIN/g" "$REPO/landing/how-its-built.html" > "$STAGE/how-its-built.html"
+sed "s/{ROADBOOK_DOMAIN}/$ROADBOOK_DOMAIN/g" "$REPO/landing/privacy.html" > "$STAGE/privacy.html"
 cp "$REPO/landing/joined.html" "$REPO/landing/oops.html" "$STAGE/"
 if grep -q '{ROADBOOK_DOMAIN}' "$STAGE"/*.html; then
   echo "placeholder {ROADBOOK_DOMAIN} survived staging — refusing to deploy" >&2
