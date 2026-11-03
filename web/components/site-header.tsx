@@ -37,16 +37,16 @@ export function SiteHeader({
       <span className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
         <nav className="flex gap-5 text-sm text-ink-2">
           <NavLink href="/adventures" current={active === "adventures"}>
-            Adventures
+            Trips
           </NavLink>
           <NavLink href="/candidates" current={active === "candidates"}>
-            Candidates
+            Trips to review
             {undecided !== undefined && undecided > 0 && (
-              <> — {undecided} undecided</>
+              <> · {undecided}</>
             )}
           </NavLink>
           <NavLink href="/imports" current={active === "imports"}>
-            Imports
+            Uploads
           </NavLink>
         </nav>
         {instanceLabel ? (

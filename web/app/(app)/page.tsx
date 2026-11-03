@@ -7,7 +7,8 @@ import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
 import { LifeMap, type Adventure } from "@/components/life-map";
 import { SummonedList } from "@/components/summoned-list";
-import { LegKindLegend } from "@/components/legend";
+import { LegendInfo } from "@/components/legend-info";
+import { Unreachable } from "@/components/unreachable";
 import { SiteHeader } from "@/components/site-header";
 
 // The home page is the life map (phase 6, the anchor vision): one map, the
@@ -55,10 +56,7 @@ export default async function HomePage() {
   if (error || !data) {
     return (
       <Invitation accountEmail={accountEmail}>
-        <p className="text-red-700">
-          The Roadbook API is not reachable. Start it with{" "}
-          <code className="font-mono">roadbook serve</code> and reload.
-        </p>
+        <Unreachable operator={session?.mode === "off"} className="text-red-700" />
       </Invitation>
     );
   }
@@ -79,13 +77,12 @@ export default async function HomePage() {
         {data.run ? (
           <>
             <h1 className="font-display text-2xl font-semibold">
-              No adventures found — yet
+              No trips found — yet
             </h1>
             <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
-              Your data imported fine. Detection ran and found no journeys
-              far from home with a real destination — it looks for time
-              spent well away from every home base, staying somewhere, and
-              pass-throughs don&apos;t count.
+              Your file was read, and nothing in it counted as a trip. A trip
+              is time well away from home, with somewhere you stayed; short
+              outings and pass-throughs don&apos;t count.
             </p>
             <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
               More data may change that:{" "}
@@ -93,27 +90,26 @@ export default async function HomePage() {
                 href="/welcome"
                 className="underline decoration-rule underline-offset-2 hover:text-ink"
               >
-                add another export
+                add another Timeline file
               </Link>{" "}
-              — earlier years, another device — or see{" "}
+              — earlier years, another phone — or see{" "}
               <Link
                 href="/imports"
                 className="underline decoration-rule underline-offset-2 hover:text-ink"
               >
-                Imports
+                Uploads
               </Link>{" "}
-              for what was ingested.
+              for what came in.
             </p>
           </>
         ) : (
           <>
             <h1 className="font-display text-2xl font-semibold">
-              No adventures yet
+              No trips yet
             </h1>
             <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
-              Roadbook draws your life map from the journeys in a Google
-              Timeline export. Data has been imported but detection has not
-              run yet.
+              Your file is in, but Roadbook hasn&apos;t looked for trips in
+              it yet.
             </p>
             <pre className="mx-auto mt-4 w-fit bg-land px-4 py-3 text-left font-mono text-sm">
               {"roadbook detect -from-db"}
@@ -124,9 +120,9 @@ export default async function HomePage() {
                 href="/welcome"
                 className="underline decoration-rule underline-offset-2 hover:text-ink"
               >
-                add your data through the browser
+                add your file through the browser
               </Link>
-              , which runs detection automatically.
+              , which looks for trips on its own.
             </p>
           </>
         )}
@@ -141,20 +137,19 @@ export default async function HomePage() {
     return (
       <Invitation undecided={undecided} accountEmail={accountEmail}>
         <h1 className="font-display text-2xl font-semibold">
-          {candidates.length} candidate{candidates.length === 1 ? "" : "s"}{" "}
-          await review
+          {candidates.length} trip{candidates.length === 1 ? " is" : "s are"}{" "}
+          waiting for you
         </h1>
         <p className="mt-3 text-ink-2">
-          The life map draws confirmed adventures only — none are confirmed
-          yet. Confirm the real journeys and they appear here as routes.
+          Keep the real ones and they&apos;re drawn here.
         </p>
         <p className="mt-5">
           <Link
             href="/candidates"
             className="inline-block border border-ink bg-paper px-5 py-2 font-semibold hover:bg-land"
           >
-            Review candidates
-            {undecided > 0 && <> — {undecided} undecided</>}
+            Review your trips
+            {undecided > 0 && <> · {undecided}</>}
           </Link>
         </p>
       </Invitation>
@@ -174,7 +169,7 @@ export default async function HomePage() {
         if (!r.data) return null;
         return {
           id: c.id,
-          name: c.decision?.name ?? "Unnamed adventure",
+          name: c.decision?.name ?? "Unnamed trip",
           start: c.span_start,
           end: c.span_end,
           journey: r.data,
@@ -187,10 +182,11 @@ export default async function HomePage() {
     return (
       <Invitation undecided={undecided} accountEmail={accountEmail}>
         <p className="text-red-700">
-          {confirmed.length} confirmed adventure
-          {confirmed.length === 1 ? "" : "s"} exist, but no journey could be
-          loaded from the API. Reload; if it persists, check that the API and
-          database are up.
+          {confirmed.length} kept trip{confirmed.length === 1 ? "" : "s"}{" "}
+          couldn&apos;t be loaded. Reload;{" "}
+          {session?.mode === "off"
+            ? "if it persists, check that the API and database are up."
+            : "if it keeps happening, try again later."}
         </p>
       </Invitation>
     );
@@ -215,20 +211,20 @@ export default async function HomePage() {
               href="/adventures"
               className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
-              Adventures
+              Trips
             </Link>
             <Link
               href="/candidates"
               className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
-              Candidates
-              {undecided > 0 && <> — {undecided} undecided</>}
+              Trips to review
+              {undecided > 0 && <> · {undecided}</>}
             </Link>
             <Link
               href="/imports"
               className="-mx-2 -my-3 px-2 py-3 underline decoration-rule underline-offset-2 hover:text-ink"
             >
-              Imports
+              Uploads
             </Link>
             {/* The reserved header slot (phase 9 BRIEF §6), now carrying
                 both meanings (phase 13 CP3): the operator label, and on a
@@ -261,10 +257,10 @@ export default async function HomePage() {
         </header>
 
         <footer className="flex items-end justify-between">
-          {/* The plate-margin legend, permanent (DESIGN §6 treatment T3):
-              the map never appears without its language. */}
-          <div className="pointer-events-auto max-w-2xl border border-rule bg-paper px-4 py-2.5 shadow-sm">
-            <LegKindLegend />
+          {/* The legend behind its button (copy pass decision 2): the four
+              line styles stay on the map; the names are one tap away. */}
+          <div className="pointer-events-auto border border-rule bg-paper px-4 py-2.5 shadow-sm">
+            <LegendInfo />
           </div>
         </footer>
       </div>

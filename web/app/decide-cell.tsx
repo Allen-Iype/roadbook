@@ -106,13 +106,13 @@ export function DecideCell({
             onClick={() => submit({ status: "confirmed", name: trimmed })}
             className="-mx-2 -my-3 px-2 py-3 text-emerald-700 disabled:text-rule"
           >
-            save
+            Save
           </button>
           <button
             onClick={() => setEditing("closed")}
             className="-mx-2 -my-3 px-2 py-3 text-ink-2 hover:text-ink"
           >
-            cancel
+            Cancel
           </button>
         </span>
         <ScoreBreakdownBox score={score} components={scoreBreakdown} />
@@ -136,13 +136,13 @@ export function DecideCell({
         }}
         className="-mx-2 -my-3 px-2 py-3 text-emerald-700 hover:underline"
       >
-        confirm
+        Keep
       </button>
       <button
         onClick={() => submit({ status: "dismissed" })}
         className="-mx-2 -my-3 px-2 py-3 text-ink-2 hover:underline"
       >
-        dismiss
+        Leave out
       </button>
     </span>
   );
@@ -157,14 +157,14 @@ export function DecideCell({
       ) : shown.status === "confirmed" ? (
         <span className="text-emerald-700">{shown.name}</span>
       ) : (
-        <span className="text-ink-2 line-through">dismissed</span>
+        <span className="text-ink-2 line-through">left out</span>
       )}
       {shown.status !== "undecided" && editing !== "redeciding" && (
         <button
           onClick={() => setEditing("redeciding")}
           className="-mx-2 -my-3.5 px-2 py-3.5 text-xs text-ink-2 hover:text-ink"
         >
-          change
+          Change
         </button>
       )}
       {editing === "redeciding" && (
@@ -172,7 +172,7 @@ export function DecideCell({
           onClick={() => setEditing("closed")}
           className="-mx-2 -my-3.5 px-2 py-3.5 text-xs text-ink-2 hover:text-ink"
         >
-          keep as is
+          Keep as is
         </button>
       )}
       {error && <span className="text-xs text-red-700">{error}</span>}
@@ -251,7 +251,7 @@ function ScoreBreakdownBox({
             </>
           ) : (
             <span className="text-ink-2/80">
-              no record of it; its share went to the others
+              not recorded; counted with the others
             </span>
           )}
         </span>

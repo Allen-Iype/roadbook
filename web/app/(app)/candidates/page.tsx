@@ -7,6 +7,7 @@ import type { components } from "@/lib/api/schema";
 import { DecideCell } from "@/app/decide-cell";
 import { RouteThumb } from "@/components/route-thumb";
 import { SiteHeader } from "@/components/site-header";
+import { Unreachable } from "@/components/unreachable";
 import { Term } from "@/components/term";
 import { TriageBar } from "@/components/triage-bar";
 import { TriageSelect } from "@/components/triage-select";
@@ -47,10 +48,7 @@ export default async function CandidatesPage({
   if (!res?.data) {
     return (
       <Shell accountEmail={accountEmail}>
-        <p className="mt-6 text-red-700">
-          The Roadbook API is not reachable. Start it with{" "}
-          <code className="font-mono">roadbook serve</code> and reload.
-        </p>
+        <Unreachable operator={session?.mode === "off"} />
       </Shell>
     );
   }
@@ -99,9 +97,9 @@ export default async function CandidatesPage({
               Roadbook looked and found no trips.
             </p>
             <p className="mt-2 text-ink-2">
-              Your data imported fine. A trip is time spent well away from
-              home with a real stay somewhere; short outings and
-              pass-throughs don&apos;t count.
+              Your file was read. A trip is time well away from home with a
+              real stay somewhere; short outings and pass-throughs
+              don&apos;t count.
             </p>
             <p className="mt-2 text-ink-2">
               More data may change that:{" "}
@@ -109,22 +107,28 @@ export default async function CandidatesPage({
                 href="/welcome"
                 className="underline decoration-rule underline-offset-2 hover:text-ink"
               >
-                add another export
+                add another Timeline file
               </Link>{" "}
-              — earlier years, another device.
+              — earlier years, another phone.
             </p>
           </div>
         ) : (
           <p className="mt-6 text-ink-2">
-            No candidates.{" "}
+            Nothing to review yet.{" "}
             <Link
               href="/welcome"
               className="underline decoration-rule underline-offset-2 hover:text-ink"
             >
-              Add a Timeline export
-            </Link>{" "}
-            — or import one with the CLI and run{" "}
-            <code className="font-mono">roadbook detect -from-db</code>.
+              Add your Timeline file
+            </Link>
+            {session?.mode === "off" ? (
+              <>
+                {" "}— or import one with the CLI and run{" "}
+                <code className="font-mono">roadbook detect -from-db</code>.
+              </>
+            ) : (
+              "."
+            )}
           </p>
         )
       ) : (
@@ -138,10 +142,10 @@ export default async function CandidatesPage({
           <span className="font-bold text-flag" aria-hidden>
             ⚑
           </span>{" "}
-          {data.orphaned_decisions.length} decision
-          {data.orphaned_decisions.length === 1 ? "" : "s"} no longer match a
-          candidate under the current parameters. They are preserved and will
-          re-match if parameters change back.
+          {data.orphaned_decisions.length} of your earlier choice
+          {data.orphaned_decisions.length === 1 ? "" : "s"} no longer match
+          {data.orphaned_decisions.length === 1 ? "es" : ""} a trip.{" "}
+          {data.orphaned_decisions.length === 1 ? "It is" : "They are"} kept.
         </p>
       )}
     </Shell>
@@ -159,16 +163,16 @@ function Shell({
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
       <SiteHeader active="candidates" instanceLabel={INSTANCE_LABEL}
         accountEmail={accountEmail} />
-      <h1 className="mt-8 font-display text-2xl font-semibold">Candidates</h1>
-      {/* Phase 16 CP3: the page says what it asks (RESEARCH §4), and the
-          one term it needs is taught where it is met. */}
+      <h1 className="mt-8 font-display text-2xl font-semibold">Trips to review</h1>
+      {/* Phase 16 CP3: the page says what it asks (RESEARCH §4); the copy
+          pass (2026-11-03) dropped the taught term — "trip" needs none. */}
       {/* text-balance, not text-pretty: pretty only rescues a one-word
           last line, and this intro's natural break leaves two ("the
           rest."); balance evens the lines, which lands the break on the
           sentence boundary at laptop width. */}
       <p className="mt-1 max-w-[72ch] text-balance text-sm text-ink-2">
-        Each <Term id="candidate">candidate</Term> is a trip Roadbook found
-        in your record. Confirm the adventures; dismiss the rest.
+        Roadbook found these trips in your history. Keep the real ones;
+        leave out the rest.
       </p>
       {children}
     </main>
@@ -207,7 +211,7 @@ function SortToggle({ byScore }: { byScore: boolean }) {
       )}
       {/* A keyboard fact, so it is said only where a keyboard is likely. */}
       <span className="ml-3 hidden text-xs text-ink-2 sm:inline">
-        After each decision, focus moves to the next undecided card.
+        After each choice, the next trip is selected.
       </span>
     </p>
   );
@@ -246,12 +250,11 @@ function RunSummary({ list }: { list: CandidateList }) {
         )}
         {dropped > 0 ? (
           <>
-            <span className="font-mono">{dropped}</span> recorded position
+            <span className="font-mono">{dropped}</span> recorded point
             {dropped === 1 ? "" : "s"} too fast to be real{" "}
-            {dropped === 1 ? "was" : "were"} left out first.{" "}
+            {dropped === 1 ? "was" : "were"} left out first.
           </>
         ) : null}
-        <span className="font-mono">Run {list.run.id}</span>.
       </p>
     </details>
   );
@@ -301,7 +304,7 @@ function CandidateCard({
           <RouteThumb legs={legs} className="block h-auto w-full" />
         ) : (
           <p className="flex aspect-[28/15] items-center justify-center text-xs text-ink-2">
-            route shape unavailable
+            no map yet
           </p>
         )}
       </div>
@@ -346,9 +349,9 @@ function CandidateCard({
           </span>
         </p>
         <p className="mb-2.5 mt-1 font-mono text-xs text-ink-2">
-          {c.days} day{c.days === 1 ? "" : "s"} · {c.dest_km} km away ·{" "}
-          {c.track_km} km track · {c.stops} stop{c.stops === 1 ? "" : "s"}
-          {c.repeat > 0 && <> · {c.repeat + 1}× visited</>}
+          {c.days} day{c.days === 1 ? "" : "s"} · {c.dest_km} km from home ·{" "}
+          {c.track_km} km travelled · {c.stops} stop{c.stops === 1 ? "" : "s"}
+          {c.repeat > 0 && <> · visited {c.repeat}× before</>}
         </p>
         <DecideCell
           candidateId={c.id}

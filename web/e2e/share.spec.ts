@@ -10,7 +10,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   clickUntil,
   expectNoHorizontalScroll,
-  legendLocator,
+  openLegend,
   openSummonedList,
   viewportWidth,
 } from "./helpers";
@@ -28,16 +28,16 @@ test("share link: mint, open signed-out, revoke", async ({ page, browser }) => {
   await gotoFirstAdventure(page);
 
   // Mint. The dialog states what is shared before anything is created.
-  const dialog = page.locator('dialog[aria-label="Share this adventure"]');
+  const dialog = page.locator('dialog[aria-label="Share this trip"]');
   await clickUntil(page.getByRole("button", { name: "Create a share link" }), dialog);
   await expect(dialog).toContainText("without signing in");
-  await expect(dialog).toContainText("photo imports");
+  await expect(dialog).toContainText("your uploads");
   await dialog.getByRole("button", { name: "Create link" }).click();
   const urlInput = dialog.getByLabel("Share link");
   await expect(urlInput).toBeVisible({ timeout: 10_000 });
   const url = await urlInput.inputValue();
   expect(url).toMatch(/\/shared\/[0-9a-f]{32}$/);
-  await expect(dialog).toContainText("cannot be shown again");
+  await expect(dialog).toContainText("can't show this link again");
   await dialog.getByRole("button", { name: "Done" }).click();
   await expect(page.getByText(/Link created \d+ \w+ \d{4}/).first()).toBeVisible();
 
@@ -47,20 +47,21 @@ test("share link: mint, open signed-out, revoke", async ({ page, browser }) => {
   const response = await view.goto(url);
   expect(response?.status()).toBe(200);
   expect(response?.headers()["x-robots-tag"]).toContain("noindex");
-  await expect(view.getByText("SHARED ADVENTURE", { exact: true })).toBeVisible();
-  await expect(view.getByText("Read-only · shared by its owner")).toBeVisible();
-  // The honesty channel survives to the stranger: the plate legend names
-  // all four kinds, and the cover prints the provenance split.
-  const legend = legendLocator(view);
+  await expect(view.getByText("SHARED TRIP", { exact: true })).toBeVisible();
+  await expect(view.getByText("Shared with you")).toBeVisible();
+  // The honesty channel survives to the stranger: the map margin's legend
+  // button opens all four kinds, and the cover prints the bar.
+  const legend = await openLegend(view);
   for (const label of ["Observed", "Routed", "Unknown", "Air"]) {
-    await expect(legend.getByRole("button", { name: label, exact: true })).toBeVisible();
+    await expect(legend.getByText(label, { exact: true })).toBeVisible();
   }
+  await view.keyboard.press("Escape");
   // The composition line lives in the drawing's disclosure (phase 16),
   // closed by default on the shared view exactly as on the owner's.
   const details = view.locator("details", { hasText: "How this route was drawn" });
   await expect(details).toHaveJSProperty("open", false);
   await details.locator("summary").click();
-  await expect(view.getByText(/observed [\d.]+ km · routed/)).toBeVisible();
+  await expect(view.getByText(/recorded \d+ km · by road/)).toBeVisible();
   await expect(view.locator(".maplibregl-canvas")).toBeAttached({ timeout: 20_000 });
   // No owner controls leak into the shared surface.
   await expect(view.getByRole("button", { name: "Create a share link" })).toHaveCount(0);
@@ -71,10 +72,10 @@ test("share link: mint, open signed-out, revoke", async ({ page, browser }) => {
   await expectNoHorizontalScroll(view);
 
   // Revoke: the newest link is listed last; then the stranger's URL is dead.
-  const revoke = page.getByRole("button", { name: "Revoke" }).last();
-  const before = await page.getByRole("button", { name: "Revoke" }).count();
+  const revoke = page.getByRole("button", { name: "Stop sharing" }).last();
+  const before = await page.getByRole("button", { name: "Stop sharing" }).count();
   await revoke.click();
-  await expect(page.getByRole("button", { name: "Revoke" })).toHaveCount(before - 1, { timeout: 10_000 });
+  await expect(page.getByRole("button", { name: "Stop sharing" })).toHaveCount(before - 1, { timeout: 10_000 });
   // The page's notFound() streams under the root loading boundary, so the
   // HTTP status is 200 with the not-found content (the same transport fact
   // as NEXT_REDIRECT streaming as 200, phase 7); the API itself answers a
@@ -82,7 +83,7 @@ test("share link: mint, open signed-out, revoke", async ({ page, browser }) => {
   // shared plate is gone.
   await view.goto(url);
   await expect(view.getByText("This link doesn't open anything.")).toBeVisible();
-  await expect(view.getByText("SHARED ADVENTURE", { exact: true })).toHaveCount(0);
+  await expect(view.getByText("SHARED TRIP", { exact: true })).toHaveCount(0);
   await stranger.close();
 });
 

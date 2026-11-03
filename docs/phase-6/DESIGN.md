@@ -111,6 +111,26 @@ shared view and travels on an exported image. One constant carries it
 exported image and overlay, and the Playwright legend spec. Decision
 record: `docs/phase-16/DECISIONS.md`.
 
+*Amendment (2026-11-03, the copy pass, maintainer-approved):* the legend
+is no longer a permanent fixture printed under every map. It sits behind
+one small control, **"What the lines mean"** (`web/components/
+legend-info.tsx`, the same native popover as the teaching terms, with an
+inline fallback), on the life map, the trips shelf, the trip page's map
+margin and the start page's sample map; on the static landing it is a
+closed `<details>`. The four names, their order, the sample lines and the
+2026-10-29 wording are unchanged, and the four line styles are drawn on
+every map exactly as before — the distinction stays in the geometry
+(CLAUDE.md invariants 5 and 8). What changed is the reading: the
+maintainer's testers do not ask whether a stretch was recorded or drawn,
+and the printed legend was clutter on every map. The provenance bar
+keeps its place under every headline distance, drawn in the four inks,
+but carries no caption and no teaching term; the account of the drawing
+is the closed fold at the foot of the trip page. The exported image and
+overlay keep their printed legend (there is nothing to tap on a picture).
+The Playwright legend spec now opens the control and reads the four
+entries. Decision record: `docs/product/words.md` (decision 2) and
+`docs/product/DECISIONS.md`.
+
 Standing recommendation confirmed: no home markers on the life map.
 
 ## 7. Parked

@@ -52,7 +52,7 @@ export function PlateExport(props: ExportSpec) {
         message:
           e instanceof PlateExportError
             ? e.message
-            : `The export failed (${e instanceof Error ? e.message : String(e)}). Nothing was downloaded.`,
+            : `Couldn't make the picture (${e instanceof Error ? e.message : String(e)}). Nothing was downloaded.`,
       });
     }
   }
@@ -76,8 +76,8 @@ export function PlateExport(props: ExportSpec) {
           className={buttonClass}
         >
           {busy && state.format === "image"
-            ? "Rendering…"
-            : "Download as image"}
+            ? "Making it…"
+            : "Download the map"}
         </button>
         <button
           type="button"
@@ -87,14 +87,15 @@ export function PlateExport(props: ExportSpec) {
           className={buttonClass}
         >
           {busy && state.format === "overlay"
-            ? "Rendering…"
-            : "Download as overlay"}
+            ? "Making it…"
+            : "Download for a story"}
         </button>
       </div>
       <span className="mt-2 block text-[11.5px] leading-snug text-ink-2">
-        Image: PNG, 2400 × 1600 — the map with its route, and the margin as
-        printed here. Overlay: PNG, 1080 × 1920, transparent — route and figures
-        only, for your own photo or story. Photos are not drawn in either.
+        The map: a 2400 × 1600 picture of the route with its figures, as
+        shown here. For a story: 1080 × 1920 with a see-through background —
+        the route and the figures only, to lay over your own photo. Photos
+        aren&apos;t included in either.
       </span>
       <p
         data-testid="plate-export-status"
@@ -106,8 +107,8 @@ export function PlateExport(props: ExportSpec) {
       >
         {state.step === "busy" &&
           (state.format === "image"
-            ? "Rendering the plate — the basemap loads once more at the export size."
-            : "Rendering the overlay.")}
+            ? "Making the map — it loads once more at full size."
+            : "Making the story picture.")}
         {state.step === "done" && (
           <>
             Downloaded <span className="font-mono">{state.filename}</span>.

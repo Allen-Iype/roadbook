@@ -86,7 +86,7 @@ async function downloadPlate(page: Page): Promise<Sample> {
   const downloadPromise = page.waitForEvent("download", { timeout: 90_000 });
   // The island's button exists before hydration; clicking until the
   // status line appears is the honest wait (clickUntil's contract).
-  await clickUntil(page.getByRole("button", { name: "Download as image" }), status);
+  await clickUntil(page.getByRole("button", { name: "Download the map" }), status);
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^roadbook-plate-[a-z0-9-]+\.png$/);
   await expect(status).toContainText(`Downloaded ${download.suggestedFilename()}`, {
@@ -111,7 +111,7 @@ test("owner page: Download as image yields a 2400×1600 plate", async ({ page })
   test.setTimeout(DOWNLOAD_WALK_MS);
   await gotoAdventure(page, "first");
   // The control states, before anything renders, what the image carries.
-  await expect(page.getByText("Photos are not drawn in either.")).toBeVisible();
+  await expect(page.getByText("Photos aren't included in either.")).toBeVisible();
   await downloadPlate(page);
 });
 
@@ -120,7 +120,7 @@ test("shared view: the same control, signed out", async ({ page, browser }) => {
   test.setTimeout(DOWNLOAD_WALK_MS);
   await gotoAdventure(page, "last");
 
-  const dialog = page.locator('dialog[aria-label="Share this adventure"]');
+  const dialog = page.locator('dialog[aria-label="Share this trip"]');
   await clickUntil(page.getByRole("button", { name: "Create a share link" }), dialog);
   await dialog.getByRole("button", { name: "Create link" }).click();
   const urlInput = dialog.getByLabel("Share link");
@@ -135,13 +135,13 @@ test("shared view: the same control, signed out", async ({ page, browser }) => {
   const view = await stranger.newPage();
   try {
     await view.goto(url);
-    await expect(view.getByText("SHARED ADVENTURE", { exact: true })).toBeVisible();
+    await expect(view.getByText("SHARED TRIP", { exact: true })).toBeVisible();
     await downloadPlate(view);
   } finally {
     // Self-clean: the newest link is listed last; the proof of revocation
     // is the stranger's URL going dead, not a button count (counts race
     // any other writer on the page).
-    await page.getByRole("button", { name: "Revoke" }).last().click();
+    await page.getByRole("button", { name: "Stop sharing" }).last().click();
     await expect
       .poll(async () => {
         await view.goto(url);
@@ -160,10 +160,10 @@ test("overlay: a transparent 1080×1920 with route and figures, needing no basem
   test.skip(viewportWidth(page) !== 1280, "runs once, at the desktop project");
   await page.route("**/tiles.openfreemap.org/**", (route) => route.abort("failed"));
   await gotoAdventure(page, "first");
-  await expect(page.getByText("Photos are not drawn in either.")).toBeVisible();
+  await expect(page.getByText("Photos aren't included in either.")).toBeVisible();
   const status = page.getByTestId("plate-export-status").filter({ hasText: /./ });
   const downloadPromise = page.waitForEvent("download", { timeout: 60_000 });
-  await clickUntil(page.getByRole("button", { name: "Download as overlay" }), status);
+  await clickUntil(page.getByRole("button", { name: "Download for a story" }), status);
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^roadbook-overlay-[a-z0-9-]+\.png$/);
   await expect(status).toContainText(`Downloaded ${download.suggestedFilename()}`);
@@ -214,12 +214,12 @@ test("a basemap the browser cannot read is a worded error, not a silent nothing"
   page.on("download", () => {
     downloaded = true;
   });
-  await clickUntil(page.getByRole("button", { name: "Download as image" }), status);
+  await clickUntil(page.getByRole("button", { name: "Download the map" }), status);
   await expect(status).toContainText("could not be read", { timeout: 60_000 });
   await expect(status).toContainText("cross-origin");
   await expect(status).toContainText("Nothing was downloaded");
   await expect(status).toHaveAttribute("role", "alert");
   expect(downloaded).toBe(false);
   // The control recovers: it is enabled again for a retry.
-  await expect(page.getByRole("button", { name: "Download as image" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Download the map" })).toBeEnabled();
 });

@@ -10,6 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { api } from "@/lib/api/client";
+import { fmtDateRange } from "@/lib/slice-days";
 import type { components } from "@/lib/api/schema";
 
 type Action = components["schemas"]["DecisionRequest"]["action"];
@@ -32,7 +33,7 @@ export async function decideCandidate(
     // The contract's 400/404 bodies both carry { error: string }.
     return {
       ok: false,
-      error: error.error ?? `decide failed (HTTP ${response.status})`,
+      error: error.error ?? `couldn't save your choice (error ${response.status})`,
     };
   }
   // Invalidate the server-rendered list so the next render reflects the
@@ -58,7 +59,7 @@ export async function decideBulk(
   if (error || !data) {
     return {
       ok: false,
-      error: error?.error ?? `bulk decide failed (HTTP ${response.status})`,
+      error: error?.error ?? `couldn't save your choices (error ${response.status})`,
     };
   }
   revalidatePath("/candidates");
@@ -72,7 +73,7 @@ export type ConfirmSuggestedResult =
 
 // Confirm a selection using suggested names (phase 11 §6.1's quick-confirm
 // at selection scale). Suggestions are best-effort; where none exists the
-// candidate is named by its start date — "Journey of 2026-06-16", the same
+// candidate is named by its start date — "Trip of 16 June 2026", the same
 // convention unconfirmed covers already display — and confirmed anyway
 // (maintainer's decision at the CP4 review, DECISIONS 2026-08-26: one pass
 // clears the whole selection; renaming is one click via the card's or the
@@ -107,8 +108,9 @@ export async function confirmSelectedWithSuggestions(
       dateNamed++;
       // slice(0, 10): the civil date the traveller experienced, never
       // shifted through the viewer's timezone (the page-wide convention).
-      const date = startById.get(id)?.slice(0, 10) ?? "unknown date";
-      decisions.push({ id, action: "confirmed", name: `Journey of ${date}` });
+      const start = startById.get(id);
+      const date = start ? fmtDateRange(start, start) : "unknown date";
+      decisions.push({ id, action: "confirmed", name: `Trip of ${date}` });
     }
   }
   const res = await decideBulk(decisions);
@@ -155,7 +157,7 @@ export async function uploadPhotos(
     // 404 (stale candidate) and 409 (not confirmed) both carry { error }.
     return {
       ok: false,
-      error: error?.error ?? `upload failed (HTTP ${response.status})`,
+      error: error?.error ?? `couldn't upload (error ${response.status})`,
     };
   }
   revalidatePath(`/adventure/${candidateId}`);
@@ -174,7 +176,7 @@ export async function deletePhoto(
   if (error) {
     return {
       ok: false,
-      error: error.error ?? `delete failed (HTTP ${response.status})`,
+      error: error.error ?? `couldn't delete (error ${response.status})`,
     };
   }
   revalidatePath(`/adventure/${candidateId}`);
@@ -199,7 +201,7 @@ export async function createShareLink(
   if (error || !data) {
     return {
       ok: false,
-      error: error?.error ?? `creating the link failed (HTTP ${response.status})`,
+      error: error?.error ?? `couldn't create the link (error ${response.status})`,
     };
   }
   revalidatePath(`/adventure/${candidateId}`);
@@ -218,7 +220,7 @@ export async function revokeShareLink(
   if (error) {
     return {
       ok: false,
-      error: error.error ?? `revoking failed (HTTP ${response.status})`,
+      error: error.error ?? `couldn't stop sharing (error ${response.status})`,
     };
   }
   revalidatePath(`/adventure/${candidateId}`);
@@ -242,7 +244,7 @@ export async function deleteMyData(): Promise<DeleteMyDataResult> {
   if (error || !data) {
     return {
       ok: false,
-      error: error?.error ?? `deletion failed (HTTP ${response.status})`,
+      error: error?.error ?? `couldn't delete everything (error ${response.status})`,
     };
   }
   (await cookies()).delete("roadbook_session");

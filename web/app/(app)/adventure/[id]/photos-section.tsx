@@ -17,7 +17,8 @@
 import { Term } from "@/components/term";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { deletePhoto, uploadPhotos } from "@/app/actions";
-import { fmtDistanceM, placeStatement } from "@/lib/format";
+import { fmtDistanceM, placeStatement, sourceWords } from "@/lib/format";
+import { fmtDateRange } from "@/lib/slice-days";
 import type { components } from "@/lib/api/schema";
 
 type Photo = components["schemas"]["Photo"];
@@ -86,7 +87,7 @@ export function PhotosSection({
         // The one whole-batch failure: the request never reached the API —
         // most likely the batch exceeded the transport's body limit.
         setError(
-          "The batch could not be sent — most likely too large in one request. Try fewer photos at a time.",
+          "Couldn't send these — probably too many at once. Try fewer photos at a time.",
         );
       }
     });
@@ -196,20 +197,20 @@ function PhotoTile({
         {photo.taken_at ? (
           // taken_at carries the photo's own civil offset; slicing shows
           // traveller-local time (the page-wide convention).
-          <span title={`capture time from ${photo.time_source}`}>
-            {photo.taken_at.slice(0, 10)} {photo.taken_at.slice(11, 16)}
-            <span className="text-ink-2/80"> · {photo.time_source}</span>
+          <span>
+            {fmtDateRange(photo.taken_at, photo.taken_at)} {photo.taken_at.slice(11, 16)}
+            <span className="text-ink-2/80"> · {sourceWords(photo.time_source)}</span>
           </span>
         ) : (
-          <span className="text-ink-2">no capture time</span>
+          <span className="text-ink-2">no time</span>
         )}
         <span className="block">
           {photo.pos ? (
-            <span title={`position from ${photo.pos_source}`}>
-              positioned · {photo.pos_source}
+            <span>
+              on the map · {sourceWords(photo.pos_source)}
             </span>
           ) : (
-            <span className="text-ink-2">no position — strip only</span>
+            <span className="text-ink-2">no location — not on the map</span>
           )}
         </span>
         {/* Placement (BRIEF §3G): where the journey held this instant, and
@@ -231,7 +232,7 @@ function PhotoTile({
           ))}
         {!photo.place_kind && photo.pos && photo.taken_at && (
           <span className="block text-ink-2">
-            outside this journey&apos;s timeline
+            taken outside this trip&apos;s dates
           </span>
         )}
       </figcaption>
@@ -251,7 +252,7 @@ function PendingTile({ pending }: { pending: Pending }) {
         />
       ) : (
         <div className="flex h-28 w-36 animate-pulse items-center justify-center rounded bg-land text-xs text-ink-2">
-          sidecar
+          info file
         </div>
       )}
       <figcaption className="mt-1 truncate text-[11px] text-ink-2">
@@ -271,9 +272,9 @@ function ResultsPanel({ results }: { results: UploadResult[] }) {
   > = {
     accepted: { text: "added", cls: "text-emerald-700" },
     duplicate: { text: "already uploaded", cls: "text-ink-2" },
-    rejected: { text: "rejected", cls: "text-red-700" },
-    sidecar_paired: { text: "metadata applied", cls: "text-emerald-700" },
-    sidecar_unpaired: { text: "unpaired sidecar", cls: "text-ink", flagged: true },
+    rejected: { text: "not added", cls: "text-red-700" },
+    sidecar_paired: { text: "info file matched", cls: "text-emerald-700" },
+    sidecar_unpaired: { text: "info file without its photo", cls: "text-ink", flagged: true },
   };
   return (
     <ul className="mt-3 space-y-1 text-xs">

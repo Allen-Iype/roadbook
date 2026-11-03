@@ -21,7 +21,7 @@ func (s *Server) ListCandidateImportPhotos(ctx context.Context, req ListCandidat
 		return nil, err
 	}
 	if cand == nil {
-		return ListCandidateImportPhotos404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return ListCandidateImportPhotos404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	out, err := s.placedImportPhotos(ctx, s.currentUser(ctx), cand)
 	if err != nil {

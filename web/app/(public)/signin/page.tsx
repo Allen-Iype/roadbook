@@ -50,16 +50,9 @@ export default async function SignInPage({
       </header>
 
       <section className="mt-14 sm:mt-20">
-        <p className="text-[11.5px] uppercase tracking-[0.24em] text-ink-2">
-          A road atlas of your own past
-        </p>
-        <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05]">
-          Sign in
-        </h1>
-        <p className="mt-5 max-w-[58ch] text-[15px] leading-relaxed">
-          This Roadbook keeps each person&apos;s adventures their own. Sign
-          in and you&apos;ll only ever see yours.
-        </p>
+        {/* The button is the page (maintainer's review, 2026-11-02); the
+            heading stays for whoever hears the page rather than sees it. */}
+        <h1 className="sr-only">Sign in</h1>
 
         {isFull && (
           <div
@@ -68,8 +61,8 @@ export default async function SignInPage({
           >
             <p className="font-semibold">Roadbook is full for now.</p>
             <p className="mt-1">
-              Every seat on this instance is taken, so your sign-in created
-              nothing. Join the waitlist and one email arrives when a seat
+              All the spots are taken, so you don&apos;t have an account
+              yet. Join the list and you&apos;ll get one email when a spot
               opens. Nothing else is ever sent.
             </p>
             {WAITLIST_URL && (
@@ -78,7 +71,7 @@ export default async function SignInPage({
                   href={WAITLIST_URL}
                   className="inline-block border border-ink px-5 py-3 font-display text-sm font-semibold tracking-[0.08em] text-ink no-underline hover:bg-paper"
                 >
-                  Join the waitlist
+                  Join the list
                 </a>
               </p>
             )}
@@ -90,7 +83,7 @@ export default async function SignInPage({
             role="alert"
             className="mt-6 max-w-[58ch] border border-rule bg-paper-2 px-3 py-2 text-sm text-ink"
           >
-            Sign-in didn&apos;t complete: {error}
+            Google didn&apos;t finish signing you in. Try again.
           </p>
         )}
 
@@ -103,7 +96,7 @@ export default async function SignInPage({
               href="/api/auth/signin"
               className="inline-block border border-ink px-5 py-3 font-display text-sm font-semibold tracking-[0.08em] text-ink no-underline hover:bg-paper-2"
             >
-              Sign in to continue
+              Sign in with Google
             </a>
           </p>
         )}

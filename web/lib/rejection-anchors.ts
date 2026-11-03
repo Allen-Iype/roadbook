@@ -17,13 +17,11 @@
 // against it, so a dead-end anchor cannot be written.
 export const WELCOME_SECTIONS = {
   whatYouNeed: "what-you-need",
-  neverEnabled: "never-enabled",
   theFile: "the-file",
   export: "export",
   exportAndroid: "export-android",
   exportIphone: "export-iphone",
   upload: "upload",
-  photos: "photos",
   next: "what-happens-next",
 } as const;
 
@@ -39,11 +37,13 @@ export type Redirection = {
 // Four destinations cover the taxonomy: old or adjacent Google products →
 // the phone-export walkthroughs; everything that is simply the wrong file →
 // what the right file looks like; an incomplete file → export it again; an
-// image dropped into the Timeline upload → the photos section, because since
-// phase 11 photos are an import source of their own, not a wrong file.
+// An image dropped into the Timeline upload is a wrong file here: the
+// photos door left the start page in the copy pass (2026-11-02, the
+// maintainer: the start page is for someone with a Timeline file); photos
+// are added from the Uploads page, which the rejection message names.
 const OLD_FORMAT: Redirection = {
   anchor: WELCOME_SECTIONS.export,
-  link: "How to export the current format from your phone",
+  link: "How to export the right file from your phone",
 };
 const WRONG_FILE: Redirection = {
   anchor: WELCOME_SECTIONS.theFile,
@@ -53,10 +53,6 @@ const INCOMPLETE: Redirection = {
   anchor: WELCOME_SECTIONS.export,
   link: "Export a fresh copy from your phone and upload that",
 };
-const A_PHOTO: Redirection = {
-  anchor: WELCOME_SECTIONS.photos,
-  link: "Photos import separately — add them in the photos section",
-};
 
 export const REJECTION_REDIRECTS: Record<string, Redirection> = {
   // Old Google products with a current phone-export answer.
@@ -65,7 +61,7 @@ export const REJECTION_REDIRECTS: Record<string, Redirection> = {
   "my-activity": OLD_FORMAT,
   kml: OLD_FORMAT,
   // A photo in the Timeline upload: not wrong, just the other door.
-  image: A_PHOTO,
+  image: WRONG_FILE,
   // Wrong file outright.
   zip: WRONG_FILE,
   gzip: WRONG_FILE,

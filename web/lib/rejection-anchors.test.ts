@@ -52,10 +52,10 @@ describe("rejection redirection", () => {
     }
   });
 
-  it("an image in the Timeline upload routes to the photos section", () => {
-    // Phase 11: photos are an import source, so a photo dropped into the
-    // Timeline upload is redirected to its own door, not "wrong file".
-    expect(redirectFor("image").anchor).toBe(WELCOME_SECTIONS.photos);
+  it("an image in the Timeline upload is a wrong file, pointed at the file fold", () => {
+    // The photos door left the start page in the copy pass (2026-11-02);
+    // the Go message names the Uploads page as where photos go.
+    expect(redirectFor("image").anchor).toBe(WELCOME_SECTIONS.theFile);
   });
 
   it("unknown and absent labels fall back to a real section", () => {

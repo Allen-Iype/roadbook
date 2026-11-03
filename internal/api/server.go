@@ -122,7 +122,7 @@ func (s *Server) GetCandidateJourney(ctx context.Context, req GetCandidateJourne
 		return nil, err
 	}
 	if cand == nil {
-		return GetCandidateJourney404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return GetCandidateJourney404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	out, _, err := s.journeyFor(ctx, s.currentUser(ctx), cand)
 	if err != nil {
@@ -310,7 +310,7 @@ func (s *Server) SuggestCandidateName(ctx context.Context, req SuggestCandidateN
 		return nil, err
 	}
 	if cand == nil {
-		return SuggestCandidateName404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return SuggestCandidateName404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	sug, err := s.Suggester.Suggest(ctx, cand.Dest)
 	if err != nil {
@@ -348,7 +348,7 @@ func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequest
 		return nil, err
 	}
 	if cand == nil {
-		return DecideCandidate404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return DecideCandidate404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 
 	// If this candidate already has a matched decision, the user is re-deciding:
@@ -426,7 +426,7 @@ func (s *Server) DecideCandidatesBulk(ctx context.Context, req DecideCandidatesB
 		bulk = append(bulk, b)
 	}
 	if len(missing) > 0 {
-		return DecideCandidatesBulk404JSONResponse{Error: "not in the latest run (re-detection may have replaced them; reload the list): candidates " + strings.Join(missing, ", ")}, nil
+		return DecideCandidatesBulk404JSONResponse{Error: "these trips aren't in your list any more — reload the page: " + strings.Join(missing, ", ")}, nil
 	}
 
 	if err := s.Store.DecideBulk(ctx, s.currentUser(ctx), bulk); err != nil {

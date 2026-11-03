@@ -31,10 +31,10 @@ export function TriageBar() {
       if (res.ok) {
         clear();
         setNote(
-          `Dismissed ${res.decided} candidate${res.decided === 1 ? "" : "s"}.`,
+          `Left out ${res.decided} trip${res.decided === 1 ? "" : "s"}.`,
         );
       } else {
-        setNote(`Nothing was recorded — ${res.error}`);
+        setNote(`Nothing changed — ${res.error}`);
       }
     });
   }
@@ -44,23 +44,23 @@ export function TriageBar() {
     startTransition(async () => {
       const res = await confirmSelectedWithSuggestions(ids);
       if (!res.ok) {
-        setNote(`Nothing was recorded — ${res.error}`);
+        setNote(`Nothing changed — ${res.error}`);
         return;
       }
       clear();
       const parts: string[] = [
-        `Confirmed ${res.confirmed} candidate${res.confirmed === 1 ? "" : "s"}`,
+        `Kept ${res.confirmed} trip${res.confirmed === 1 ? "" : "s"}`,
       ];
       if (res.suggested > 0 && res.dateNamed > 0) {
         parts.push(
-          ` — ${res.suggested} with suggested names, ${res.dateNamed} named by date.`,
+          ` — ${res.suggested} with suggested names, ${res.dateNamed} named by its date.`,
         );
       } else if (res.dateNamed > 0) {
         parts.push(` — all named by date (no suggestions were available).`);
       } else {
         parts.push(` with suggested names.`);
       }
-      parts.push(" Rename any from its card or adventure page.");
+      parts.push(" Rename any from its card or its page.");
       setNote(parts.join(""));
     });
   }
@@ -68,7 +68,7 @@ export function TriageBar() {
   return (
     <div
       role="region"
-      aria-label="Bulk decision"
+      aria-label="Keep or leave out together"
       aria-live="polite"
       className="sticky bottom-0 z-10 mt-6 border-t border-ink bg-paper py-2.5"
     >
@@ -84,14 +84,14 @@ export function TriageBar() {
             disabled={isPending}
             className="-my-2 py-2 text-sm text-ink-2 underline decoration-rule underline-offset-2 hover:text-ink disabled:opacity-50"
           >
-            Dismiss selected
+            Leave out selected
           </button>
           <button
             onClick={confirmAll}
             disabled={isPending}
             className="-my-2 py-2 text-sm text-emerald-700 underline decoration-rule underline-offset-2 disabled:opacity-50"
           >
-            Confirm selected
+            Keep selected
           </button>
           <button
             onClick={() => {

@@ -68,15 +68,29 @@ export function fmtLatLon(lat: number, lon: number): string {
 export function placeStatement(kind: PlaceKind): string {
   switch (kind) {
     case "observed":
-      return "from the observed track at this time";
     case "road":
-      return "from the routed road at this time";
     case "unknown":
-      return "from the straight-line gap at this time";
+      return "from the route at that time";
     case "stop":
-      return "from the stop at this time";
+      return "from the stop at that time";
     case "air":
-      return "over an air leg — not checked against the arc";
+      return "during a flight — not checked";
+  }
+}
+
+/** Where a photo's time or place came from, in words (copy pass): the
+ * source values are the API's enums, said as what a person would call them. */
+export function sourceWords(source: string): string {
+  switch (source) {
+    case "gps":
+    case "exif":
+    case "exif_offset":
+    case "exif_local":
+      return "from the photo";
+    case "sidecar":
+      return "from Google's info file";
+    default:
+      return source;
   }
 }
 

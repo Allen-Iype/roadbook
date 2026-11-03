@@ -51,7 +51,7 @@ func (e *UnsupportedInputError) Error() string { return e.Message }
 
 // exportHint is the one true way to produce the supported export. Timeline
 // moved on-device in 2024; this path is where every message points.
-const exportHint = "export Timeline data on the phone: Settings → Location → Location Services → Timeline → Export Timeline data"
+const exportHint = "export it again from Google Maps on your phone — the start page shows how"
 
 type rawSegment struct {
 	StartTime string `json:"startTime"`
@@ -157,8 +157,9 @@ func Parse(r io.Reader) (domain.Observations, Stats, error) {
 	if !found {
 		return obs, st, &UnsupportedInputError{
 			Kind: "json-unrecognised",
-			Message: fmt.Sprintf(
-				"JSON, but with no semanticSegments section — top-level keys found: %s; this is not a phone Timeline export; %s",
+			// The keys seen go to the log for the operator; the person
+			// gets one plain sentence (copy pass, docs/product/words.md).
+			Message: fmt.Sprintf("this isn't the Timeline file from the phone (keys: %s); %s",
 				strings.Join(topKeys, ", "), exportHint),
 		}
 	}
@@ -295,14 +296,14 @@ func sniff(head []byte) *UnsupportedInputError {
 	// Binary container and document magics first.
 	switch {
 	case bytes.HasPrefix(head, []byte{0x1f, 0x8b}):
-		return reject("gzip", "this is a gzip archive, not a Timeline JSON file — decompress it and import the JSON inside")
+		return reject("gzip", "this is a compressed file (.gz), not your Timeline file — open it and upload the file inside")
 	case bytes.HasPrefix(head, []byte("PK\x03\x04")):
-		return reject("zip", "this is a ZIP archive (a Takeout download?) — extract it and import the Timeline JSON file inside")
+		return reject("zip", "this is a ZIP file (an older Google download?) — open it and upload the Timeline file inside")
 	case bytes.HasPrefix(head, []byte("%PDF")):
-		return reject("pdf", "this is a PDF, not a location export")
+		return reject("pdf", "this is a PDF, not your Timeline file")
 	case bytes.HasPrefix(head, []byte{0xFF, 0xD8, 0xFF}), bytes.HasPrefix(head, []byte("\x89PNG")),
 		len(head) > 11 && bytes.Equal(head[4:8], []byte("ftyp")):
-		return reject("image", "this is an image file, not a location export")
+		return reject("image", "this is a photo, not your Timeline file — photos go in from the Uploads page")
 	}
 
 	trimmed := bytes.TrimLeft(head, " \t\r\n\xef\xbb\xbf")
@@ -310,19 +311,19 @@ func sniff(head []byte) *UnsupportedInputError {
 
 	switch {
 	case bytes.HasPrefix(lower, []byte("<!doctype html")), bytes.HasPrefix(lower, []byte("<html")):
-		return reject("html", "this is a web page — Takeout's archive_browser.html is a table of contents, not data; import the Timeline JSON file instead")
+		return reject("html", "this is a web page (the index of an older Google download), not your Timeline file")
 	case bytes.HasPrefix(trimmed, []byte("<?xml")):
 		if bytes.Contains(lower, []byte("<kml")) {
-			return reject("kml", "this is KML from the old Timeline interface, which Roadbook does not read")
+			return reject("kml", "this is a map file from the old Timeline, which Roadbook can't read")
 		}
-		return reject("xml", "this is XML, not a Timeline JSON export")
+		return reject("xml", "this isn't your Timeline file")
 	}
 
 	if len(trimmed) > 0 && trimmed[0] != '{' && trimmed[0] != '[' {
 		if looksBinary(head) {
-			return reject("binary", "unreadable binary data — possibly an encrypted Timeline backup, which cannot be imported; instead")
+			return reject("binary", "this file can't be read — it may be an encrypted Timeline backup, which Roadbook can't open")
 		}
-		return reject("not-json", fmt.Sprintf("not JSON (the file starts with %q)", preview(trimmed)))
+		return reject("not-json", "this isn't your Timeline file")
 	}
 
 	// JSON: recognise the known wrong products by their distinctive markers.
@@ -332,13 +333,13 @@ func sniff(head []byte) *UnsupportedInputError {
 		return nil // the supported phone export
 	case strings.Contains(s, `"timelineObjects"`):
 		return reject("semantic-history",
-			"this is Semantic Location History from an old Google Takeout (monthly timelineObjects files) — not supported; for current data")
+			"this is from an older Google download, which Roadbook can't read — the file from the phone is the one that works")
 	case strings.Contains(s, `"latitudeE7"`), strings.Contains(s, `"longitudeE7"`):
 		return reject("records-json",
-			"this is Records.json from an old Google Takeout (raw location samples) — not supported; for current data")
+			"this is from an older Google download, which Roadbook can't read — the file from the phone is the one that works")
 	case trimmed[0] == '[' && strings.Contains(s, `"titleUrl"`):
 		return reject("my-activity",
-			"this is a Google My Activity export — a different Takeout product with no location timeline in it")
+			"this is from an older Google download, which Roadbook can't read — the file from the phone is the one that works")
 	}
 	// JSON with no marker in the first 4 KB: let the streaming parser decide.
 	return nil
@@ -402,7 +403,7 @@ func truncated(err error) error {
 	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 		return &UnsupportedInputError{
 			Kind:    "truncated",
-			Message: "the file ends mid-record — the export or the copy of it was cut short; re-export or re-copy the file",
+			Message: "the file ends early — the export or the copy was cut short; export it again",
 		}
 	}
 	return malformed(err)
@@ -411,7 +412,7 @@ func truncated(err error) error {
 func malformed(err error) error {
 	return &UnsupportedInputError{
 		Kind:    "malformed-json",
-		Message: fmt.Sprintf("the file is not valid JSON (%v); if it was edited or converted, start from a fresh export — %s", err, exportHint),
+		Message: fmt.Sprintf("this file can't be read — if it was edited or converted, start from a fresh export (%s)", exportHint),
 	}
 }
 

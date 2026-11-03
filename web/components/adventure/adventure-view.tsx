@@ -24,7 +24,7 @@
 // sticky right column.
 import { useMemo, useState } from "react";
 
-import { FixDot, LegKindLegend, StopDot } from "@/components/legend";
+import { LegendInfo } from "@/components/legend-info";
 import { ProvenanceBar } from "@/components/provenance-bar";
 import { Term } from "@/components/term";
 import { fmtHours, fmtMode, roman } from "@/lib/format";
@@ -149,24 +149,12 @@ export function AdventureView({
                   "FULL ROUTE"
                 )}
               </span>
-              <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink">
-                {journey.legs.some(isFixLeg) && (
-                  <span className="inline-flex items-center gap-2">
-                    <FixDot />
-                    <span className="font-semibold tracking-wide">Fix</span>
-                    <span className="text-ink-2">one recorded position</span>
-                  </span>
-                )}
-                {journey.stops.some((s) => !(s.loc.lat === 0 && s.loc.lon === 0)) && (
-                  <span className="inline-flex items-center gap-2">
-                    <StopDot />
-                    <span className="font-semibold tracking-wide">Stop</span>
-                  </span>
-                )}
-              </span>
-            </div>
-            <div className="mt-2.5">
-              <LegKindLegend />
+              {/* The legend, the markers and the bar's note behind one
+                  button (copy pass decision 2). */}
+              <LegendInfo
+                fix={journey.legs.some(isFixLeg)}
+                stop={journey.stops.some((s) => !(s.loc.lat === 0 && s.loc.lon === 0))}
+              />
             </div>
             <div className="mt-2.5">
               {/* The image export (phase 14 CP3) — a second margin row, on
@@ -207,8 +195,7 @@ export function AdventureView({
                   {attachedList.length === 1
                     ? "One photo"
                     : `${attachedList.length} photos`}{" "}
-                  the owner added to this adventure, placed by capture time
-                  against the drawn route.
+                  the owner added to this trip.
                 </>
               }
               photos={attachedList}
@@ -220,10 +207,7 @@ export function AdventureView({
                   {importedList.length === 1
                     ? "One photo"
                     : `${importedList.length} photos`}{" "}
-                  from the owner&apos;s photo imports{" "}
-                  {importedList.length === 1 ? "was" : "were"} taken inside
-                  this journey&apos;s window — placed by capture time against
-                  the drawn route.
+                  from the owner&apos;s uploads, taken during this trip.
                 </>
               }
               photos={importedList}
@@ -275,10 +259,10 @@ function Cover({
           number is the owner's atlas register and stays theirs. */}
       <p className="text-[11.5px] tracking-[0.24em] text-ink-2">
         {shared ? (
-          "SHARED ADVENTURE"
+          "SHARED TRIP"
         ) : confirmed ? (
           <>
-            CONFIRMED ADVENTURE
+            KEPT TRIP
             {plate !== null && (
               <>
                 {" · "}
@@ -287,9 +271,9 @@ function Cover({
             )}
           </>
         ) : decision?.action === "dismissed" ? (
-          "DISMISSED CANDIDATE"
+          "LEFT OUT"
         ) : (
-          <Term id="candidate">CANDIDATE</Term>
+          "TO REVIEW"
         )}
       </p>
       <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
@@ -316,9 +300,9 @@ function Cover({
             ⚑
           </span>{" "}
           {truncation.start_truncated &&
-            "Already under way when the record begins. "}
+            "Already under way when your file begins. "}
           {truncation.end_truncated &&
-            "Still under way when the record ends."}
+            "Still under way when your file ends."}
         </p>
       )}
 
@@ -330,16 +314,17 @@ function Cover({
 
       {shared ? (
         <p className="mb-8 mt-4 text-[11.5px] uppercase tracking-[0.18em] text-ink-2">
-          Read-only · shared by its owner
+          Shared with you
         </p>
       ) : (
         <p className="mb-8 mt-4 text-[11.5px] uppercase tracking-[0.18em] text-ink-2">
           {decision ? (
             <>
-              {decision.action} {shortDate(decision.updated_at)}
+              {decision.action === "confirmed" ? "kept" : "left out"}{" "}
+              {shortDate(decision.updated_at)}
             </>
           ) : (
-            <>Undecided — confirm or dismiss in the candidates gallery</>
+            <>Not reviewed yet — keep it or leave it out under Trips to review</>
           )}
         </p>
       )}
@@ -390,9 +375,6 @@ function TripBlock({
         air={journey.air_km}
         className="mb-2 mt-3.5"
       />
-      <p className="text-xs text-ink-2">
-        <Term id="provenance">How much of this was recorded, how much drawn in</Term>
-      </p>
 
       <dl className="mt-5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 text-[13px] leading-snug">
         <dt className="text-ink-2">Time away</dt>
@@ -475,26 +457,26 @@ function DrawingAccount({ journey }: { journey: Journey }) {
   return (
     <div className="space-y-2 pb-4 text-ink-2">
       <p className="font-mono">
-        observed {journey.observed_km.toFixed(1)} km · routed{" "}
-        {journey.routed_km.toFixed(1)} km · unknown{" "}
-        {journey.unknown_km.toFixed(1)} km · air {journey.air_km.toFixed(1)}{" "}
+        recorded {journey.observed_km.toFixed(0)} km · by road{" "}
+        {journey.routed_km.toFixed(0)} km · gap{" "}
+        {journey.unknown_km.toFixed(0)} km · flight {journey.air_km.toFixed(0)}{" "}
         km
       </p>
       <p>
-        {journey.merged_points} recorded points ({journey.trace_points_kept}{" "}
-        from the timeline + {journey.raw_points_kept} raw)
+        {journey.merged_points} recorded points ({journey.raw_points_kept} of
+        them precise)
         {journey.google_km > 0 && (
           <>
             {" · Google's own distance "}
-            <span className="font-mono">{journey.google_km.toFixed(1)} km</span>
+            <span className="font-mono">{journey.google_km.toFixed(0)} km</span>
           </>
         )}
         {journey.countries.length > 0 && (
           <>
             {" · "}
             {journey.states.length > 0
-              ? "countries and regions from the route's recorded points"
-              : "countries from the route's recorded points"}
+              ? "countries and regions from the recorded points"
+              : "countries from the recorded points"}
           </>
         )}
       </p>
@@ -514,20 +496,20 @@ function DrawingAccount({ journey }: { journey: Journey }) {
 function ModeLine({ journey }: { journey: Journey }) {
   const bd = journey.mode_breakdown;
   if (bd === undefined) {
-    return <p>No mode record — this journey&apos;s evidence carries no activity data.</p>;
+    return <p>Google didn&apos;t record how you travelled.</p>;
   }
   if (bd.length === 0) return null;
   // Per-mode hours (phase 14 CP2) ride beside the km — the same claim, the
   // source's own; their sum is the trip block's "on the move" row.
   return (
     <p>
-      By mode, as Google labelled it (modes are guesses):{" "}
+      How you travelled, as Google guessed it:{" "}
       {bd.map((m, i) => (
         <span key={m.mode}>
           {i > 0 && " · "}
           {fmtMode(m.mode)}{" "}
           <span className="font-mono">
-            {m.km.toFixed(1)} km, {fmtHours(m.hours)}
+            {m.km.toFixed(0)} km, {fmtHours(m.hours)}
           </span>
         </span>
       ))}
@@ -546,16 +528,16 @@ function DivergenceFigures({ journey }: { journey: Journey }) {
   if (journey.divergence_pct === undefined) return null;
   return (
     <p>
-      Distance check: drawn on the ground{" "}
-      <span className="font-mono">{journey.ground_km.toFixed(1)} km</span>
-      {" · Google's ground figure "}
-      <span className="font-mono">{journey.google_ground_km.toFixed(1)} km</span>
+      Distance check: by road{" "}
+      <span className="font-mono">{journey.ground_km.toFixed(0)} km</span>
+      {" · Google's figure "}
+      <span className="font-mono">{journey.google_ground_km.toFixed(0)} km</span>
       {" ("}
       {journey.divergence_pct >= 0 ? "+" : ""}
-      {journey.divergence_pct.toFixed(1)}
+      {journey.divergence_pct.toFixed(0)}
       {"%)"}
       {journey.divergence_flagged &&
-        ". Gaps with no road under-count, detours over-count, and a record cut short compares against a door-to-door figure — the legs explaining it are on the map."}
+        ". Gaps with no road under-count, detours over-count, and a trip cut short compares against a door-to-door figure."}
     </p>
   );
 }
@@ -573,9 +555,9 @@ function DivergenceFlag({ journey }: { journey: Journey }) {
         ⚑
       </span>
       <span>
-        The drawn distance and Google&apos;s differ by{" "}
-        <span className="font-mono">{pct}%</span> — the account below says
-        why.
+        The distance differs from Google&apos;s by{" "}
+        <span className="font-mono">{pct}%</span>
+        {" — "}&ldquo;How this route was drawn&rdquo; says why.
       </span>
     </p>
   );
@@ -613,5 +595,5 @@ function adventureName(
   const decision = candidate?.decision;
   return decision?.action === "confirmed" && decision.name
     ? decision.name
-    : `Journey of ${journey.window_start.slice(0, 10)}`;
+    : `Trip of ${fmtDateRange(journey.window_start, journey.window_start)}`;
 }

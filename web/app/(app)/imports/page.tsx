@@ -2,6 +2,7 @@
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { SiteHeader } from "@/components/site-header";
+import { Unreachable } from "@/components/unreachable";
 import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
 import { PhotoUploadImport } from "@/components/photo-upload-import";
@@ -28,10 +29,7 @@ export default async function ImportsPage() {
   if (error || !data) {
     return (
       <Shell accountEmail={accountEmail}>
-        <p className="mt-6 text-red-700">
-          The Roadbook API is not reachable. Start it with{" "}
-          <code className="font-mono">roadbook serve</code> and reload.
-        </p>
+        <Unreachable operator={session?.mode === "off"} />
       </Shell>
     );
   }
@@ -43,8 +41,8 @@ export default async function ImportsPage() {
           wide frame. Half-width panels put the text at a natural measure
           with no cap; on a phone they stack as before. */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <UploadImport />
-        <PhotoUploadImport />
+        <UploadImport operator={session?.mode === "off"} />
+        <PhotoUploadImport operator={session?.mode === "off"} />
       </div>
       {data.imports.length === 0 ? (
         <p className="mt-8 text-sm text-ink-2">
@@ -61,7 +59,7 @@ export default async function ImportsPage() {
           )}
         </p>
       ) : (
-        <ImportTable imports={data.imports} />
+        <ImportTable imports={data.imports} operator={session?.mode === "off"} />
       )}
       {/* Self-serve deletion (phase 13 CP5) lives where the data story
           lives: the page that shows what came in is the page that lets it
@@ -90,7 +88,7 @@ function Shell({
           described the table and pointed at the export walkthrough; the
           table now carries its own heading, and the walkthrough link
           lives in the panel whose file it explains. */}
-      <h1 className="mt-8 font-display text-2xl font-semibold">Imports</h1>
+      <h1 className="mt-8 font-display text-2xl font-semibold">Uploads</h1>
       {children}
     </main>
   );
@@ -105,7 +103,7 @@ const FORMAT_LABELS: Record<string, string> = {
   photos: "Photos",
 };
 
-function ImportTable({ imports }: { imports: Import[] }) {
+function ImportTable({ imports, operator }: { imports: Import[]; operator: boolean }) {
   return (
     <section className="mt-10">
       <h2 className="font-display text-lg font-semibold">Added so far</h2>
@@ -127,11 +125,11 @@ function ImportTable({ imports }: { imports: Import[] }) {
             <th className="py-2 pr-4">Source</th>
             <th className="hidden py-2 pr-4 sm:table-cell">Format</th>
             <th className="hidden py-2 pr-4 md:table-cell">Dates</th>
-            <th className="hidden py-2 pr-4 text-right md:table-cell">Visits</th>
-            <th className="hidden py-2 pr-4 text-right md:table-cell">Activities</th>
-            <th className="hidden py-2 pr-4 text-right md:table-cell">Path points</th>
-            <th className="hidden py-2 pr-4 text-right md:table-cell">Positions</th>
-            <th className="hidden py-2 pr-4 text-right md:table-cell">Skipped</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Stops</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Journeys</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Points</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Precise points</th>
+            <th className="hidden py-2 pr-4 text-right md:table-cell">Unreadable</th>
             <th className="py-2 pr-4 text-right">New</th>
             <th className="py-2 pr-4">Status</th>
           </tr>
@@ -164,7 +162,7 @@ function ImportTable({ imports }: { imports: Import[] }) {
                 {imp.inserted ?? "—"}
               </td>
               <td className="py-2 pr-4">
-                <StatusCell imp={imp} />
+                <StatusCell imp={imp} operator={operator} />
               </td>
             </tr>
           ))}
@@ -175,11 +173,11 @@ function ImportTable({ imports }: { imports: Import[] }) {
   );
 }
 
-function StatusCell({ imp }: { imp: Import }) {
+function StatusCell({ imp, operator }: { imp: Import; operator: boolean }) {
   if (imp.status === "failed") {
     return (
       <div>
-        <span className="text-red-700">failed</span>
+        <span className="text-red-700">couldn&apos;t be read</span>
         {imp.error && (
           <p className="mt-1 max-w-md text-xs text-ink-2">{imp.error}</p>
         )}
@@ -194,7 +192,7 @@ function StatusCell({ imp }: { imp: Import }) {
         <span className="text-flag" aria-hidden>
           ⚑
         </span>{" "}
-        running
+        reading
       </span>
     );
   }
@@ -203,14 +201,15 @@ function StatusCell({ imp }: { imp: Import }) {
   if (imp.detect_status === "failed") {
     return (
       <div>
-        <span className="text-ink-2">completed</span>
+        <span className="text-ink-2">done</span>
         <p className="mt-1 max-w-md text-xs text-red-700">
-          detection failed — the server log has details
+          Roadbook couldn&apos;t look for trips in it
+          {operator ? " — the server log has details" : ""}
         </p>
       </div>
     );
   }
-  return <span className="text-ink-2">completed</span>;
+  return <span className="text-ink-2">done</span>;
 }
 
 // Window bounds are dates the operator typed (-from/-to), so the date part is

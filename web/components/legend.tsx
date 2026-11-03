@@ -1,17 +1,11 @@
-// The leg-kind legend as a permanent fixture (DESIGN §6, treatment T3), with
-// the fixed wording used everywhere a legend appears (lib/legend.ts — shared
-// with the exported image's margin since phase 14 CP3). The samples draw the
-// actual channel: observed solid, routed solid over its casing, unknown
-// dashed, air round-dotted — so the legend teaches the map's language, not
-// just its colors.
-//
-// Phase 16 CP1: the descriptions are visible at every width (they used to
-// yield below sm:, which left a phone reader with four names and no
-// explanation — RESEARCH §2). On a phone the legend sets as two columns,
-// each entry's description under its name; from sm: up it flows as one
-// line. Each name is a Term: a tap opens the longer note from lib/terms.ts.
+// The legend's drawn pieces: the line sample per kind and the two markers,
+// as the map draws them. The samples draw the actual channel: observed
+// solid, routed solid over its casing, unknown dashed, air round-dotted.
+// The legend itself (the list with the fixed wording from lib/legend.ts)
+// is components/legend-info.tsx since the copy pass: one button per map
+// (docs/product/words.md decision 2, 2026-11-02) instead of a printed
+// fixture under every map (phase 16 CP1 / DESIGN §6 as it then stood).
 import { LEGEND_ENTRIES as ENTRIES } from "@/lib/legend";
-import { Term } from "@/components/term";
 
 type Kind = (typeof ENTRIES)[number]["key"];
 
@@ -52,28 +46,6 @@ export function LegSample({
         className={STROKE[kind]}
       />
     </svg>
-  );
-}
-
-export function LegKindLegend() {
-  return (
-    <ul
-      aria-label="Legend"
-      className="grid list-none grid-cols-2 gap-x-4 gap-y-2.5 text-xs text-ink sm:flex sm:flex-wrap sm:gap-x-5 sm:gap-y-1"
-    >
-      {ENTRIES.map((e) => (
-        <li key={e.key} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <LegSample kind={e.key} className="h-2 w-9 shrink-0 self-center sm:w-11" />
-          <Term id={e.key}>
-            <span className="font-semibold tracking-wide">{e.label}</span>
-          </Term>
-          <span data-legend-desc className="basis-full text-ink-2 sm:basis-auto">
-            <span className="hidden sm:inline">— </span>
-            {e.desc}
-          </span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

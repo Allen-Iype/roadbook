@@ -137,7 +137,10 @@ func (s *Server) CompleteSignIn(ctx context.Context, req CompleteSignInRequestOb
 		return CompleteSignIn409JSONResponse{Error: "this instance runs without sign-in"}, nil
 	}
 	if req.Params.Error != nil && *req.Params.Error != "" {
-		return CompleteSignIn400JSONResponse{Error: "the provider reported: " + *req.Params.Error}, nil
+		// The provider's code goes to the log for the operator; the person
+		// gets one plain sentence (copy pass, docs/product/words.md).
+		log.Printf("sign-in: provider returned error %q", *req.Params.Error)
+		return CompleteSignIn400JSONResponse{Error: "Google didn't finish signing you in"}, nil
 	}
 	code, state := "", ""
 	if req.Params.Code != nil {

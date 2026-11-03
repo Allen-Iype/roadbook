@@ -35,7 +35,7 @@ func (s *Server) UploadImport(ctx context.Context, req UploadImportRequestObject
 	// lock is released by the background goroutine when the import
 	// finalises, or below on every path that never starts one.
 	if !s.importMu.TryLock() {
-		return UploadImport409JSONResponse{Error: "an import is already running — watch it on the imports page and retry when it finishes"}, nil
+		return UploadImport409JSONResponse{Error: "another upload is still being read — watch it under Uploads and try again when it finishes"}, nil
 	}
 	handed := false // set true once the goroutine owns the unlock
 	defer func() {
@@ -100,7 +100,7 @@ func (s *Server) UploadImport(ctx context.Context, req UploadImportRequestObject
 		}
 	}
 	if !uploaded {
-		return UploadImport400JSONResponse{Error: "the request carried no file part — choose a Timeline export and try again"}, nil
+		return UploadImport400JSONResponse{Error: "no file arrived — choose your Timeline file and try again"}, nil
 	}
 
 	// Synchronous sniff (BRIEF §1.3): the head of the fully-written file,
@@ -158,7 +158,7 @@ func (s *Server) runUploadImport(userID string, importID int64, path string) {
 		// a panic must become a visible failed import, not a dead serve.
 		if r := recover(); r != nil {
 			log.Printf("import %d: panic: %v", importID, r)
-			if err := s.Store.FailImport(ctx, userID, importID, "", "internal error during import — the server log has details"); err != nil {
+			if err := s.Store.FailImport(ctx, userID, importID, "", s.ownSide("something went wrong on this Roadbook's side while reading the file")); err != nil {
 				log.Printf("import %d: recording panic failure: %v", importID, err)
 			}
 		}
@@ -172,7 +172,7 @@ func (s *Server) runUploadImport(userID string, importID int64, path string) {
 
 	f, err := os.Open(path)
 	if err != nil {
-		fail("", "the stored upload could not be reopened: "+err.Error())
+		fail("", s.ownSide("something went wrong on this Roadbook's side: "+err.Error()))
 		return
 	}
 	defer f.Close()
@@ -190,7 +190,7 @@ func (s *Server) runUploadImport(userID string, importID int64, path string) {
 		return
 	}
 	if _, err := s.Store.ImportObservations(ctx, userID, importID, st.Format, obs, st.Skipped); err != nil {
-		fail(st.Format, "storing observations failed: "+err.Error())
+		fail(st.Format, s.ownSide("something went wrong on this Roadbook's side: "+err.Error()))
 		return
 	}
 
@@ -272,4 +272,15 @@ func readHead(path string, n int) ([]byte, error) {
 		return nil, err
 	}
 	return buf[:m], nil
+}
+
+// ownSide finishes a failure message that nobody but the operator can act
+// on. On an instance without sign-in the one person is the operator and
+// the server log is theirs to read; on a hosted instance the sentence
+// stands alone (copy pass, docs/product/words.md decision 7).
+func (s *Server) ownSide(msg string) string {
+	if s.Auth == nil {
+		return msg + " — the server log has details"
+	}
+	return msg
 }

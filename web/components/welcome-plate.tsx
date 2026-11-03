@@ -15,7 +15,7 @@ export function WelcomePlate() {
     <svg
       viewBox="0 0 1200 810"
       role="img"
-      aria-label="A life map drawn from the demonstration timeline: three adventures across Iceland — an observed drive along the south coast, a routed loop through the Westfjords, and a return flight to Akureyri."
+      aria-label="A sample map: three trips across Iceland — a drive along the south coast, a loop through the Westfjords, and a flight to Akureyri."
       className="block h-auto w-full"
     >
       <rect x="0" y="0" width="1200" height="810" fill="var(--color-sea)" />

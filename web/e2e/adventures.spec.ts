@@ -4,7 +4,7 @@
 // header naming where the reader is.
 import { expect, test } from "@playwright/test";
 
-import { legendLocator } from "./helpers";
+import { openLegend } from "./helpers";
 
 test("every cover is a link carrying art, figures, and a provenance bar", async ({ page }) => {
   await page.goto("/adventures");
@@ -37,29 +37,28 @@ test("newest first, plate numbers chronological", async ({ page }) => {
 });
 
 test("the shelf teaches the plate number and the provenance bar once, above the covers", async ({ page }) => {
-  // Phase 16 CP3 (BRIEF §4): the two load-bearing terms the covers use
-  // (RESEARCH §4) are each a Term in the one line under the heading —
-  // tappable on a phone, where a hover title would never show.
+  // Copy pass (2026-11-03): one plain line under the heading — the
+  // count, the order — and no taught term; the legend sits behind its
+  // button at the foot.
   await page.goto("/adventures");
   const intro = page.locator("main > p").first();
-  await expect(intro).toContainText(/\d+ adventures?, the latest first/);
-  await expect(intro.locator("button.term", { hasText: "plate" })).toBeVisible();
-  await expect(intro.locator("button.term", { hasText: "The bar under each distance" })).toBeVisible();
+  await expect(intro).toContainText(/\d+ trips?, the latest first, numbered in the order you travelled/);
+  await expect(intro.locator("button.term")).toHaveCount(0);
   const firstCover = page.locator('main ul a[href^="/adventure/"]').first();
   expect((await intro.boundingBox())!.y).toBeLessThan((await firstCover.boundingBox())!.y);
 });
 
-test("the page carries the leg-kind legend", async ({ page }) => {
+test("the page carries the legend behind its button", async ({ page }) => {
   // Covers draw the four-way encoding, so the page owes the reader its
-  // language (DESIGN §6: the legend is a permanent fixture).
+  // language — one tap away since the copy pass (words.md decision 2).
   await page.goto("/adventures");
-  await expect(legendLocator(page)).toBeVisible();
+  await expect(await openLegend(page)).toBeVisible();
 });
 
-test("the header marks Adventures as the current page", async ({ page }) => {
+test("the header marks Trips as the current page", async ({ page }) => {
   await page.goto("/adventures");
   await expect(
-    page.locator('header a[aria-current="page"]', { hasText: "Adventures" }),
+    page.locator('header a[aria-current="page"]', { hasText: "Trips" }),
   ).toBeVisible();
 });
 

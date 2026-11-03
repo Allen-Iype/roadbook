@@ -16,12 +16,7 @@ export const TERMS = {
   plate: {
     term: "Plate",
     note:
-      "Each confirmed adventure is one plate in your atlas. Plates are numbered in the order you travelled, the oldest first.",
-  },
-  provenance: {
-    term: "The provenance bar",
-    note:
-      "Under every distance, this bar shows where the kilometres came from: how much of the route the phone recorded, and how much Roadbook drew in — along roads, as a straight line across a gap, or as a flight. Its colours are the legend's four kinds.",
+      "Your kept trips are numbered in the order you travelled, the oldest first.",
   },
   observed: {
     term: "Observed",
@@ -48,15 +43,10 @@ export const TERMS = {
     note:
       "A photo straight from the camera carries the time and place it was taken, so Roadbook can put it on the route. A copy sent through WhatsApp or most other messengers has that stripped out, and cannot be placed.",
   },
-  candidate: {
-    term: "Candidate",
-    note:
-      "A stretch of time that looks like a trip: far from home, with somewhere you stayed. Roadbook proposes it; only you can confirm it.",
-  },
   score: {
     term: "Score",
     note:
-      "How much this looks like a trip, from 0 to 100: how far from home, how long you stayed, how much was recorded. It orders the queue; it decides nothing.",
+      "How much this looks like a trip, from 0 to 100: how far from home, how long you stayed, how much your phone recorded. It only sets the order; you decide.",
   },
 } as const;
 

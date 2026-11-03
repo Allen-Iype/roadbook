@@ -25,7 +25,7 @@ func (s *Server) CreateShareLink(ctx context.Context, req CreateShareLinkRequest
 		return nil, err
 	}
 	if cand == nil {
-		return CreateShareLink404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return CreateShareLink404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	dec, err := s.confirmedDecisionFor(ctx, cand.ID)
 	if err != nil {
@@ -53,7 +53,7 @@ func (s *Server) ListShareLinks(ctx context.Context, req ListShareLinksRequestOb
 		return nil, err
 	}
 	if cand == nil {
-		return ListShareLinks404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return ListShareLinks404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	dec, err := s.confirmedDecisionFor(ctx, cand.ID)
 	if err != nil {

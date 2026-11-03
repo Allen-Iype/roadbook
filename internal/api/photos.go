@@ -39,14 +39,14 @@ func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidateP
 		return nil, err
 	}
 	if cand == nil {
-		return UploadCandidatePhotos404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return UploadCandidatePhotos404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	dec, err := s.confirmedDecisionFor(ctx, cand.ID)
 	if err != nil {
 		return nil, err
 	}
 	if dec == nil {
-		return UploadCandidatePhotos409JSONResponse{Error: "photos attach to confirmed adventures — confirm this candidate first"}, nil
+		return UploadCandidatePhotos409JSONResponse{Error: "photos go on kept trips — keep this trip first"}, nil
 	}
 
 	entries, err := readParts(req.Body)
@@ -113,14 +113,14 @@ func (s *Server) UploadCandidatePhotos(ctx context.Context, req UploadCandidateP
 				res.PairedWith = strp(target)
 			} else {
 				res.Status = PhotoUploadResultStatusSidecarUnpaired
-				res.Reason = strp("names no image in this upload — include the photo it describes in the same request")
+				res.Reason = strp("this info file's photo isn't in this upload — add them together")
 			}
 		case c.kind == photo.KindHEIC:
 			// Attached photos require a thumbnail, and HEIC pixels cannot be
 			// decoded here (no codec) — only the import path reads HEIC, for
 			// its position metadata.
 			res.Status = PhotoUploadResultStatusRejected
-			res.Reason = strp("HEIC (the iPhone default format) cannot be attached — attaching needs a thumbnail and HEIC pixels cannot be decoded here; convert to JPEG, or download it from Google Photos, which serves JPEG")
+			res.Reason = strp("iPhone-format (HEIC) photos can't be added here — convert to JPEG, or download the photo from Google Photos, which gives JPEG")
 		default: // a JPEG
 			var sc *photo.Sidecar
 			if v, ok := sidecarFor[i]; ok {
@@ -160,7 +160,7 @@ func (s *Server) storePhoto(ctx context.Context, decisionID int64, spanOffsetSec
 	thumb, w, h, err := photo.Thumbnail(e.data, m.Orientation, photo.DefaultThumbMaxPx, photo.DefaultThumbQuality)
 	if err != nil {
 		return store.PhotoRow{}, false, &photo.UnsupportedError{Kind: "undecodable",
-			Message: "the image could not be decoded — it may be corrupted or a format masquerading as JPEG"}
+			Message: "this image can't be opened — it may be damaged"}
 	}
 
 	sum := sha256.Sum256(e.data)
@@ -202,14 +202,14 @@ func (s *Server) ListCandidatePhotos(ctx context.Context, req ListCandidatePhoto
 		return nil, err
 	}
 	if cand == nil {
-		return ListCandidatePhotos404JSONResponse{Error: "no such candidate in the latest run — re-detection may have replaced it; reload the list"}, nil
+		return ListCandidatePhotos404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
 	}
 	dec, err := s.confirmedDecisionFor(ctx, cand.ID)
 	if err != nil {
 		return nil, err
 	}
 	if dec == nil {
-		return ListCandidatePhotos409JSONResponse{Error: "photos attach to confirmed adventures — confirm this candidate first"}, nil
+		return ListCandidatePhotos409JSONResponse{Error: "photos go on kept trips — keep this trip first"}, nil
 	}
 	rows, err := s.Store.ListPhotos(ctx, s.currentUser(ctx), dec.ID)
 	if err != nil {
@@ -283,7 +283,7 @@ func (s *Server) GetPhotoThumbnail(ctx context.Context, req GetPhotoThumbnailReq
 	if err != nil {
 		// The row exists but its file is gone — say so plainly rather than
 		// pretending the photo does not exist.
-		return GetPhotoThumbnail404JSONResponse{Error: "thumbnail file missing from the photos directory — the photo must be re-uploaded"}, nil
+		return GetPhotoThumbnail404JSONResponse{Error: "the preview is missing — upload the photo again"}, nil
 	}
 	return GetPhotoThumbnail200ImagejpegResponse{
 		Body:          bytes.NewReader(data),
@@ -353,7 +353,7 @@ func readParts(r *multipart.Reader) ([]uploadEntry, error) {
 		switch {
 		case len(entries) >= MaxUploadFiles:
 			io.Copy(io.Discard, part)
-			e.reject = fmt.Sprintf("over the %d-files-per-request limit — upload the rest in another request", MaxUploadFiles)
+			e.reject = fmt.Sprintf("more than %d files at once — upload the rest separately", MaxUploadFiles)
 		default:
 			data, err := io.ReadAll(io.LimitReader(part, MaxUploadBytes+1))
 			if err != nil {
@@ -362,7 +362,7 @@ func readParts(r *multipart.Reader) ([]uploadEntry, error) {
 			}
 			if len(data) > MaxUploadBytes {
 				io.Copy(io.Discard, part) // drain so the stream advances
-				e.reject = fmt.Sprintf("larger than the %d MB per-file limit", MaxUploadBytes>>20)
+				e.reject = fmt.Sprintf("larger than %d MB", MaxUploadBytes>>20)
 			} else {
 				e.data = data
 			}

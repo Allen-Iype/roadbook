@@ -32,7 +32,7 @@ const mono = localFont({
 // to be quiet; the committed faces carry the display and data roles.
 export const metadata: Metadata = {
   title: "Roadbook",
-  description: "The adventures you actually took.",
+  description: "Every trip you've taken, on one map.",
 };
 
 export default function RootLayout({

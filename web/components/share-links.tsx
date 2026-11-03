@@ -98,8 +98,8 @@ export function ShareLinks({
       </div>
       {shares.length === 0 ? (
         <p className="mt-2 max-w-[58ch] text-[13px] text-ink-2">
-          Not shared. A share link lets anyone who has it open this plate —
-          map, days, countries, and photos — without signing in.
+          Not shared. A link lets anyone who has it see this trip — map, days,
+          countries and photos — without signing in.
         </p>
       ) : (
         <ul className="mt-2 max-w-[58ch] text-[13px]">
@@ -118,7 +118,7 @@ export function ShareLinks({
                 disabled={isPending}
                 className="-my-3 shrink-0 cursor-pointer px-2 py-3 text-xs text-ink underline decoration-rule underline-offset-2 hover:decoration-ink disabled:opacity-60"
               >
-                Revoke
+                Stop sharing
               </button>
             </li>
           ))}
@@ -132,7 +132,7 @@ export function ShareLinks({
 
       <dialog
         ref={dialog}
-        aria-label="Share this adventure"
+        aria-label="Share this trip"
         className="m-auto w-[32rem] max-w-[calc(100vw-2rem)] border border-rule bg-paper p-0 text-ink shadow-lg backdrop:bg-ink/45"
         onClick={(e) => {
           if (e.target === dialog.current) dialog.current?.close();
@@ -149,29 +149,26 @@ export function ShareLinks({
           ) : (
             <>
               <h2 className="font-display text-xl font-semibold">
-                Share this adventure
+                Share this trip
               </h2>
               <p className="mt-3 text-sm leading-relaxed">
-                Anyone with the link can open this plate, without signing in.
+                Anyone with the link can see this trip, without signing in.
                 They will see:
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed">
-                <li>
-                  the route map, each leg marked observed, routed, unknown, or
-                  air — exactly as it is drawn for you;
-                </li>
-                <li>the day-by-day narrative, distances, and countries;</li>
+                <li>the route on the map, exactly as it is drawn for you;</li>
+                <li>the day-by-day account, distances and countries;</li>
                 <li>
                   {photoCount === 0
-                    ? "any photos you add to this adventure later, including ones from your photo imports."
+                    ? "any photos you add to this trip later, including ones from your uploads."
                     : photoCount === 1
-                      ? "the one photo on this adventure, and any you add later — photo imports included."
-                      : `all ${photoCount} photos on this adventure, and any you add later — photo imports included.`}
+                      ? "the one photo on this trip, and any you add later — photos from your uploads included."
+                      : `all ${photoCount} photos on this trip, and any you add later — photos from your uploads included.`}
                 </li>
               </ul>
               <p className="mt-3 text-sm leading-relaxed text-ink-2">
-                Nothing else of yours is reachable through it. You can revoke
-                the link from this page at any time.
+                Nothing else of yours is reachable through it. You can stop
+                sharing from this page at any time.
               </p>
               {state.step === "error" && (
                 <p role="alert" className="mt-3 text-sm text-red-700">
@@ -219,9 +216,8 @@ function CreatedPanel({
     <>
       <h2 className="font-display text-xl font-semibold">Link created</h2>
       <p className="mt-3 text-sm leading-relaxed">
-        Copy it now. Roadbook keeps only a fingerprint of this link, so it
-        cannot be shown again — but it can be revoked from this page at any
-        time.
+        Copy it now — Roadbook can&apos;t show this link again. You can stop
+        sharing from this page at any time.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <input

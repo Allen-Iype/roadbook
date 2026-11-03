@@ -23,6 +23,11 @@ describe("the landing page", () => {
     expect(html).toContain(e.desc);
   });
 
+  it("folds the legend behind a closed details (copy pass, words.md decision 2)", () => {
+    expect(html).toMatch(/<details class="legend-fold">\s*<summary>[^<]*<span[^>]*>i<\/span>What the lines mean<\/summary>/);
+    expect(html).not.toMatch(/<details class="legend-fold" open/);
+  });
+
   it("runs no script", () => {
     expect(html).not.toMatch(/<script\b/i);
   });

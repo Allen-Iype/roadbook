@@ -83,33 +83,37 @@ person was. `roadbook states -src <file>` replaces the table; `-if-empty`
 is what the compose startup runs.
 
 The home page is the life map: one map
-holding every confirmed adventure's route. Nothing is confirmed yet, so it
-points you at the **Candidates** page, where the 3 detected candidates
+holding every kept trip's route. Nothing is kept yet, so it
+points you at the **Trips to review** page, where the 3 detected candidates
 appear as cards led by their routes' shapes: a dense south-coast drive to
 Höfn, a sparse Westfjords trip to Ísafjörður, and an Akureyri weekend by
 air. The daily commute noise and a
 44 km day trip are correctly absent — near-home movement and trips without a
-far destination are not adventures. Confirm a candidate with a name and it
-joins the life map, and its plate cover joins the **Adventures** page — an
+far destination are not adventures. Keep a candidate with a name and it
+joins the life map, and its plate cover joins the **Trips** page — an
 atlas of framed covers (route shape, dates, distance with its composition,
 countries), newest first, numbered in the order travelled. Click a route on
 the map (or use the List control — everything on
-the map is equally reachable by keyboard) to open the adventure page: a
-cover of honest figures — distance with its measured/inferred composition,
-dates, countries and regions, any warnings in words, and a summary in the
-traveller's words (time away, time on the move by the source's account,
-stops, places passed through, farthest from home) — and the journey
-sliced into civil days, each with its fixes, transits, and dwells. Days the record
-cannot describe say so: the Westfjords trip's middle day reads "no movement
-observed" rather than inventing one. The Höfn drive renders mostly observed
+the map is equally reachable by keyboard) to open the trip page: a
+cover of honest figures — distance with its measured/inferred composition
+drawn as a bar, dates, countries and regions, any warnings in words, and a
+summary in the traveller's words (time away, time on the move by the
+source's account, stops, places passed through, farthest from home) — and
+the journey sliced into civil days, each with its fixes, transits, and
+dwells. Days the record cannot describe say so: the Westfjords trip's
+middle day reads "Nothing recorded this day" rather than inventing one.
+The four line kinds are drawn on every map; their names sit behind one
+"What the lines mean" control rather than printed under each map (the
+copy pass of 2026-11, `docs/product/`), and the account of the drawing
+is a closed fold at the foot of the trip page. The Höfn drive renders mostly observed
 legs; the Ísafjörður trip is dominated by honestly unknown gaps (a handful
 of fixes across 455 road-km); the Akureyri weekend draws its two flights as
 arcs, excluded from road-distance validation.
 
-The plate margin under the map offers the adventure as a file, in two
-formats: "Download as image" renders the plate as a 2400×1600 PNG — the
-map with its route, and the margin printed below it; "Download as
-overlay" renders a transparent 1080×1920 PNG of the route and figures
+The plate margin under the map offers the trip as a file, in two
+formats: "Download the map" renders the plate as a 2400×1600 PNG — the
+map with its route, and the margin printed below it; "Download for a
+story" renders a transparent 1080×1920 PNG of the route and figures
 alone, for dropping onto your own photo or story. See "The plate as a
 file" below for what each carries.
 
@@ -150,12 +154,11 @@ re-read it without asking you for the file again; detection runs
 automatically with default parameters and your candidates appear. Uploads
 are capped at 2 GiB. A wrong file — a Takeout zip, an old-format export, a
 PDF — is rejected at upload with a message saying what it was and a
-pointer back to the walkthrough for the right one; an image lands on a
-pointer to the photos section instead, because photos go in through their
-own door.
+pointer back to the walkthrough for the right one; an image is a wrong
+file too, with a note that photos go in from the **Uploads** page.
 
-Photos travel the same browser path: the front door's photos section (and
-the **Imports** page) opens your photo library directly — no export step —
+Photos travel the same browser path: the **Uploads** page's photos panel
+opens your photo library directly — no export step —
 and reports a per-file verdict for each photo rather than an all-or-nothing
 result. Detection runs automatically afterwards, exactly as for a Timeline
 upload.
@@ -176,7 +179,7 @@ after a new import — never touches your confirmations: decisions attach to
 adventures by a stable identity and survive re-detection; every detection
 run records the exact parameters that produced it.
 
-The **Imports** page in the UI lists every import attempt, including failed
+The **Uploads** page in the UI lists every upload, including failed
 ones, with what the file turned out to be and what to do about it.
 
 Photos can also be attached to a specific confirmed adventure. Camera
@@ -266,7 +269,7 @@ day-by-day narrative, countries, and the adventure's photos, including
 the ones that came in through the photo import. No account is needed to
 open it, in either mode. The link is the whole permission: the server
 keeps only a fingerprint of it, so the URL is shown once at creation, and
-revoking it (one tap on the same page) makes it stop opening immediately.
+"Stop sharing" (one tap on the same page) makes it stop opening immediately.
 Shared pages carry a `noindex` directive. Nothing else of yours is
 reachable through a link — not the life map, not other adventures.
 

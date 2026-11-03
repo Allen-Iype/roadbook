@@ -26,11 +26,12 @@ test("welcome: every rejection anchor has a real target", async ({ page }) => {
   }
 });
 
-test("welcome: both upload islands are present", async ({ page }) => {
-  // Two doors since phase 11: the Timeline export upload and the photo
-  // batch upload each carry their own file input.
+test("welcome: one upload island, the Timeline file", async ({ page }) => {
+  // The photos door left the start page in the copy pass (2026-11-02):
+  // the start page is for someone with a Timeline file; photos are added
+  // from the Uploads page.
   await page.goto("/welcome");
-  await expect(page.locator('input[type="file"]')).toHaveCount(2);
+  await expect(page.locator('input[type="file"]')).toHaveCount(1);
 });
 
 test("welcome: the primary action sits under the three steps and is a thumb-sized target", async ({ page }) => {
@@ -49,10 +50,6 @@ test("welcome: the primary action sits under the three steps and is a thumb-size
   const walkBox = await walkthroughs.boundingBox();
   expect(stepsBox!.y).toBeLessThan(box!.y);
   expect(box!.y).toBeLessThan(walkBox!.y);
-  // The photos door is present and second.
-  const photos = page.getByRole("button", { name: "Choose photos" });
-  await expect(photos).toBeVisible();
-  expect((await photos.boundingBox())!.y).toBeGreaterThan(box!.y);
 });
 
 test("welcome: the folded sections start closed and a rejection anchor opens its fold", async ({ page }) => {
@@ -70,9 +67,10 @@ test("welcome: the folded sections start closed and a rejection anchor opens its
   await page.goto(`/welcome#${WELCOME_SECTIONS.theFile}`);
   await expect(theFile).toHaveAttribute("open", "");
   await expect(theFile.getByText("Timeline.json")).toBeVisible();
-  // The walkthroughs keep their verification state visible before the fold.
-  await expect(page.locator(`#${WELCOME_SECTIONS.exportAndroid} summary`)).toContainText(/Verified \d+ \w+ \d{4}/);
-  await expect(page.locator(`#${WELCOME_SECTIONS.exportIphone} summary`)).toContainText("Unverified");
+  // The walkthroughs keep their verification state as page text — since
+  // the copy pass as the fold's last line, not a stamp on the summary.
+  await expect(page.locator(`#${WELCOME_SECTIONS.exportAndroid}`)).toContainText(/Checked \d+ \w+ \d{4}/);
+  await expect(page.locator(`#${WELCOME_SECTIONS.exportIphone}`)).toContainText("not yet checked");
 });
 
 test("candidates: every gallery card carries art, figures, and a decision", async ({ page }) => {
@@ -99,7 +97,7 @@ test("candidates: every gallery card carries art, figures, and a decision", asyn
   }
 });
 
-test("candidates: the run's figures are folded and closed; the intro teaches the term", async ({ page }) => {
+test("candidates: the run's figures are folded and closed; the intro is plain", async ({ page }) => {
   // Phase 16 CP3 (BRIEF §4): the detection run line ("Detection run 1 ·
   // 3 outliers dropped · FAR 100 km") is behind a closed <details> whose
   // summary carries only the count; the intro's "candidate" is a Term.
@@ -108,7 +106,10 @@ test("candidates: the run's figures are folded and closed; the intro teaches the
   await expect(fold).toBeAttached();
   await expect(fold).not.toHaveAttribute("open", "");
   await expect(page.getByText(/outliers dropped|Detection run|FAR \d+ km/)).toHaveCount(0);
-  await expect(page.locator("main p button.term", { hasText: "candidate" }).first()).toBeVisible();
+  // The copy pass (2026-11-03): the intro teaches no term, and the run
+  // number is gone from the fold.
+  await expect(page.getByText(/^Roadbook found these trips/)).toBeVisible();
+  await expect(fold.getByText(/Run \d+/)).toHaveCount(0);
 });
 
 test("candidates: bulk triage — selection summons the bar; score order sorts", async ({ page }) => {
@@ -121,7 +122,7 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   const n = await boxes.count();
   expect(n).toBeGreaterThan(0);
 
-  const bar = page.getByRole("region", { name: "Bulk decision" });
+  const bar = page.getByRole("region", { name: "Keep or leave out together" });
   await expect(bar).toBeHidden();
   // clickUntil, not .check(): a click before hydration silently no-ops
   // (the phase 7 trap) — clicking until the bar appears waits it out.
@@ -130,14 +131,14 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
   await expect(bar).toBeVisible();
   await expect(bar.getByText("1 selected")).toBeVisible();
   await expect(
-    bar.getByRole("button", { name: "Dismiss selected" }),
+    bar.getByRole("button", { name: "Leave out selected" }),
   ).toBeVisible();
   await bar.getByRole("button", { name: "Clear" }).click();
   await expect(bar).toBeHidden();
 
   // Select-all: scoped to undecided candidates, and the count says so.
   const selectAllBtn = page.getByRole("button", {
-    name: /^Select all \d+ undecided$/,
+    name: /^Select all \d+ to review$/,
   });
   if (await selectAllBtn.isVisible()) {
     const m = (await selectAllBtn.textContent())?.match(/(\d+)/);
@@ -171,8 +172,8 @@ test("imports: the panels say one thing each and the table has its own heading",
   // panel carries a heading, one short intro and its picker; the table is
   // its own section, headed, with word column names.
   await page.goto("/imports");
-  await expect(page.getByRole("heading", { level: 1, name: "Imports" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Add a Timeline export" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Uploads" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add your Timeline file" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Add photos" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Added so far" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Don't have the file yet?" })).toBeVisible();

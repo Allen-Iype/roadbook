@@ -104,6 +104,12 @@ a:hover { text-decoration-color:var(--ink); }
 }
 .plate .caption { margin-top:0.7rem; font-size:0.875rem; }
 .plate .caption b { font-weight:600; }
+/* The legend behind one closed fold (copy pass, docs/product/words.md decision 2): a <details>, since the page runs no script. */
+.legend-fold summary { display:flex; align-items:center; gap:0.4rem; min-height:44px; cursor:pointer; list-style:none; font-size:0.8125rem; text-decoration:underline; text-decoration-style:dotted; text-underline-offset:3px; }
+.legend-fold summary::-webkit-details-marker { display:none; }
+.legend-fold summary .i { display:inline-flex; width:1rem; height:1rem; align-items:center; justify-content:center; border:1px solid var(--ink); border-radius:50%; font-family:var(--font-display); font-size:0.625rem; font-weight:600; text-decoration:none; }
+.legend-fold[open] summary { margin-bottom:0.5rem; }
+.legend-fold .caption { margin-top:0; }
 
 /* What you get */
 .get { margin-top:3.5rem; padding-top:1.75rem; }
@@ -303,13 +309,16 @@ footer .made { margin-top:0.25rem; font-size:0.875rem; }
     </svg>
       </div>
       <figcaption>
+        <p class="caption"><b>All your trips on one map.</b> <span class="quiet">These are sample trips. Yours will be drawn the same way.</span></p>
+        <details class="legend-fold">
+          <summary><span class="i" aria-hidden="true">i</span>What the lines mean</summary>
         <ul class="legend" aria-label="Legend">
           <li><svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--observed)" stroke-width="3" stroke-linecap="round"/></svg><b>Observed</b><span><i class="dash">— </i>the phone recorded it</span></li>
           <li><svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--paper)" stroke-width="7"/><line x1="2" y1="4" x2="42" y2="4" stroke="var(--routed)" stroke-width="2.5" stroke-linecap="round"/></svg><b>Routed</b><span><i class="dash">— </i>drawn along roads</span></li>
           <li><svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--unknown)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 4"/></svg><b>Unknown</b><span><i class="dash">— </i>nothing recorded, straight line</span></li>
           <li><svg viewBox="0 0 44 8" aria-hidden="true"><line x1="2" y1="4" x2="42" y2="4" stroke="var(--air)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="0.1 5.5"/></svg><b>Air</b><span><i class="dash">— </i>a flight</span></li>
         </ul>
-        <p class="caption"><b>All your trips on one map.</b> <span class="quiet">These are sample trips. Yours will be drawn the same way.</span></p>
+        </details>
       </figcaption>
     </figure>
     </div>
@@ -359,8 +368,8 @@ footer .made { margin-top:0.25rem; font-size:0.875rem; }
     <h2 class="t-h2 sec-title">Three steps</h2>
     <ol>
       <li><p><b>Export your history from Google Maps.</b> It takes about two minutes on your phone and gives you one file. Step-by-step guides for Android and iPhone are inside.</p></li>
-      <li><p><b>Upload that file.</b> Roadbook reads it and finds the trips that stood out — the ones far from home, with somewhere you stayed.</p></li>
-      <li><p><b>Keep the ones that mattered.</b> Say yes to the real adventures and name them; the rest stay off the map.</p></li>
+      <li><p><b>Upload that file.</b> Your trips appear, found for you — the ones far from home, with somewhere you stayed.</p></li>
+      <li><p><b>Keep the ones that mattered.</b> Say yes to the real trips and name them; the rest stay off the map.</p></li>
     </ol>
     <p class="photos measure quiet">No Timeline history? Start from your photos instead. They already know where and when they were taken.</p>
   </section>
@@ -368,7 +377,7 @@ footer .made { margin-top:0.25rem; font-size:0.875rem; }
   <section class="sheet privacy">
     <div class="rule"></div>
     <h2 class="t-h2 sec-title">Privacy</h2>
-    <p class="measure">Your history stays in your own account. Nobody else can see it unless you share a link, and you can take that link back. Your export is kept so Roadbook can re-read it later. Photos are never kept, only where and when each was taken. Delete everything whenever you like. No ads, no trackers.</p>
+    <p class="measure">Your history stays in your own account. Nobody else can see it unless you share a link, and you can take that link back. Your Timeline file is kept, so you never have to upload it twice. Photos are never kept, only where and when each was taken. Delete everything whenever you like. No ads, no trackers.</p>
   </section>
 
   <section class="sheet wayin" id="in">
