@@ -149,3 +149,15 @@ settled on the way.
   labels (the old style; every other button on the site is capitalised).
 - **Would change our mind:** a tester hunting for "where did the one I
   left out go" — then the left-out state gains a line, not a new word.
+
+## 2026-11-03 — Trips
+
+- **Chosen:** copy.md §9 as approved. Heading "Trips"; one line under it
+  ("3 trips, the latest first, numbered in the order you travelled") with
+  no taught term — the `provenance` entry leaves `lib/terms.ts`, nothing
+  reads it now; the empty state is "No trips kept yet · Keep a trip under
+  Trips to review and it appears here"; the flag on a cover is read aloud
+  as "distance differs from Google's"; "Unnamed trip".
+- **Rejected:** keeping the plate Term on the intro line (decision 1
+  keeps the printed numeral, not the word in a sentence).
+- **Would change our mind:** nothing here; the shelf is the simplest page.

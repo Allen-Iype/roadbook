@@ -18,11 +18,6 @@ export const TERMS = {
     note:
       "Your kept trips are numbered in the order you travelled, the oldest first.",
   },
-  provenance: {
-    term: "The provenance bar",
-    note:
-      "Under every distance, this bar shows where the kilometres came from: how much of the route the phone recorded, and how much Roadbook drew in — along roads, as a straight line across a gap, or as a flight. Its colours are the legend's four kinds.",
-  },
   observed: {
     term: "Observed",
     note:

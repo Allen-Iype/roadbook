@@ -37,14 +37,13 @@ test("newest first, plate numbers chronological", async ({ page }) => {
 });
 
 test("the shelf teaches the plate number and the provenance bar once, above the covers", async ({ page }) => {
-  // Phase 16 CP3 (BRIEF §4): the two load-bearing terms the covers use
-  // (RESEARCH §4) are each a Term in the one line under the heading —
-  // tappable on a phone, where a hover title would never show.
+  // Copy pass (2026-11-03): one plain line under the heading — the
+  // count, the order — and no taught term; the legend sits behind its
+  // button at the foot.
   await page.goto("/adventures");
   const intro = page.locator("main > p").first();
-  await expect(intro).toContainText(/\d+ adventures?, the latest first/);
-  await expect(intro.locator("button.term", { hasText: "plate" })).toBeVisible();
-  await expect(intro.locator("button.term", { hasText: "The bar under each distance" })).toBeVisible();
+  await expect(intro).toContainText(/\d+ trips?, the latest first, numbered in the order you travelled/);
+  await expect(intro.locator("button.term")).toHaveCount(0);
   const firstCover = page.locator('main ul a[href^="/adventure/"]').first();
   expect((await intro.boundingBox())!.y).toBeLessThan((await firstCover.boundingBox())!.y);
 });

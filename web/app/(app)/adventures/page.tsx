@@ -9,7 +9,6 @@ import { Unreachable } from "@/components/unreachable";
 import { ProvenanceBar } from "@/components/provenance-bar";
 import { RouteThumb } from "@/components/route-thumb";
 import { SiteHeader } from "@/components/site-header";
-import { Term } from "@/components/term";
 import type { components } from "@/lib/api/schema";
 
 // The adventures atlas (phase 9 CP3, decided at the mockup STOP): every
@@ -64,19 +63,18 @@ export default async function AdventuresPage() {
       <Shell undecided={undecided} accountEmail={accountEmail}>
         <div className="mt-14 border border-rule bg-paper px-5 py-10 text-center sm:px-8">
           <h2 className="font-display text-2xl font-semibold">
-            No adventures yet
+            No trips kept yet
           </h2>
           <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
-            Your atlas fills as you confirm candidates — the trips Roadbook
-            found in your record.
+            Keep a trip under Trips to review and it appears here.
           </p>
           <p className="mt-5">
             <Link
               href="/candidates"
               className="inline-block border border-ink bg-paper px-5 py-2 font-semibold hover:bg-land"
             >
-              Review candidates
-              {undecided > 0 && <> — {undecided} undecided</>}
+              Review your trips
+              {undecided > 0 && <> · {undecided}</>}
             </Link>
           </p>
         </div>
@@ -121,11 +119,8 @@ export default async function AdventuresPage() {
           of three ragged ones (CP3 review). Phones are narrower than
           either cap. */}
       <p className="mt-1 max-w-[72ch] text-pretty text-sm text-ink-2">
-        {covers.length} adventure{covers.length === 1 ? "" : "s"}, the latest
-        first. Each is a <Term id="plate">plate</Term>, numbered in the order
-        you travelled.{" "}
-        <Term id="provenance">The bar under each distance</Term> shows how
-        much of it the phone recorded.
+        {covers.length} trip{covers.length === 1 ? "" : "s"}, the latest
+        first, numbered in the order you travelled.
       </p>
       <ul className="mt-6 grid list-none grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-7">
         {covers.map((c) => (
@@ -158,7 +153,7 @@ function Shell({
         instanceLabel={INSTANCE_LABEL}
         accountEmail={accountEmail}
       />
-      <h1 className="mt-8 font-display text-2xl font-semibold">Adventures</h1>
+      <h1 className="mt-8 font-display text-2xl font-semibold">Trips</h1>
       {children}
     </main>
   );
@@ -170,7 +165,7 @@ function Shell({
 // map (invariant 8 — kind is never merged, even at thumbnail scale).
 function PlateCover({ cover }: { cover: Cover }) {
   const { candidate, journey, plate } = cover;
-  const name = candidate.decision?.name ?? "Unnamed adventure";
+  const name = candidate.decision?.name ?? "Unnamed trip";
   // The served day count (phase 14 CP2) — the same figure the cover and
   // the CLI print, never a second derivation.
   const days = journey.summary.civil_days;
@@ -202,10 +197,10 @@ function PlateCover({ cover }: { cover: Cover }) {
           {journey.divergence_flagged && (
             <span
               className="shrink-0 text-flag"
-              title="The drawn distance and Google's differ — the adventure page says why"
+              title="The distance differs from Google's — the trip's page says why"
             >
               <span aria-hidden>⚑</span>
-              <span className="sr-only">distance flagged</span>
+              <span className="sr-only">distance differs from Google&apos;s</span>
             </span>
           )}
         </p>
