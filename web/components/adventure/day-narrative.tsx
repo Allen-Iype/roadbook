@@ -9,7 +9,7 @@
 // words, and a row per stay. The per-event rows (every transit and
 // recorded position) left the page — they were the reconstruction's
 // account, and `roadbook journey` prints every leg for anyone who wants
-// it. Two slots are reserved for phase 17 "places", which will serve
+// it. Two slots are reserved for phase 18 "places", which will serve
 // per-day regions and stop names: the day line gains a regions phrase in
 // front ("From Vesturland into Vestfirðir · …") and the stay row gains
 // "· near Ísafjörður" after its duration. Nothing else moves then.
@@ -147,7 +147,7 @@ function DaySection({
         />
       )}
       <p data-day-line className="pb-2 text-sm">
-        {/* phase 17 slot: regions phrase first — "From Vesturland into
+        {/* phase 18 slot: regions phrase first — "From Vesturland into
             Vestfirðir · " — then the line below. */}
         <DayLine day={day} journey={journey} candidate={candidate} />
         {legPhotos.length > 0 && (
@@ -284,7 +284,7 @@ function DayLine({
 }
 
 // A stay: the map's stop marker, a time, and one line — "Stayed 38 h".
-// phase 17 slot: "· near <place>" after the duration.
+// phase 18 slot: "· near <place>" after the duration.
 // aria-hidden on the glyph span must be undefined, not false, when the
 // label applies: React renders aria-hidden="false", which is honest but
 // noisy; absent is the plain form.

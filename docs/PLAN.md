@@ -680,7 +680,17 @@ UI.
 hiding of the legend, provenance bar or leg kinds (invariant 8), a dark
 theme, the unified timeline, auth surfaces. Zero Go diff is the target.
 
-### Phase 17 — Places: what a day can say (planned 2026-10-29, brief pending)
+### Phase 17 — Tester fixes (2026-11-04)
+
+Issues #1–#4 from the first testers: iPhone Timeline exports accepted,
+trips to review newest first, the plate numeral removed, a kept trip's
+name and notes editable on its page. Brief and decisions:
+`docs/phase-17/`.
+
+### Phase 18 — Places: what a day can say (planned 2026-10-29 as phase 17, brief pending)
+
+*Renumbered 2026-11-04: the tester fixes took 17 (phase 17 DECISIONS).
+Phase 16's records say "phase 17" for this phase; they are kept as written.*
 
 **Goal.** Let each day of an adventure name where it was. The phase 16 CP1
 review found the day narrative honest but useless to the person — it
