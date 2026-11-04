@@ -527,7 +527,7 @@ export interface components {
             status: "running" | "completed" | "failed";
             /** @description The user-facing failure message — prose, subject to rewording; never the queryable evidence. */
             error?: string;
-            /** @description The sniffer's stable format label (phone-timeline, records-json, semantic-history, …). Absent when the input was never recognised. */
+            /** @description The sniffer's stable format label (phone-timeline, phone-timeline-ios, records-json, semantic-history, …). Absent when the input was never recognised. */
             detected_format?: string;
             /** @description How many observations were genuinely new — the per-type counters record what the file contained; this records what the database gained. Zero on a duplicate upload ("nothing new"). Absent on rows from before this field existed. */
             inserted?: number;

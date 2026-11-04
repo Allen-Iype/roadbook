@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -27,10 +28,19 @@ import (
 // queryable — the label is evidence, the Message is prose.
 const PhoneTimelineFormat = "phone-timeline"
 
+// PhoneTimelineIOSFormat is the same on-device export as written by the
+// Google Maps iPhone app (phase 17, issue #4): a top-level array of the same
+// segments, positions as "geo:lat,lon", numbers written as strings, and
+// path points timed by minutes after their segment's start. Measured on a
+// tester's real export (docs/phase-17/BRIEF.md §1); parsed to the same
+// domain types, with Google's spellings normalised, so detection never
+// learns which phone the file came from (invariant 4).
+const PhoneTimelineIOSFormat = "phone-timeline-ios"
+
 // Stats reports what one parse saw. Skipped counts segments or points that were
 // present but unusable (bad shape, missing/invalid timestamps). Format is the
-// recognised input's stable slug (PhoneTimelineFormat on success — the only
-// format that parses today).
+// recognised input's stable slug on success: PhoneTimelineFormat or
+// PhoneTimelineIOSFormat.
 type Stats struct {
 	Visits       int
 	Activities   int
@@ -65,7 +75,7 @@ type rawSegment struct {
 	Activity *struct {
 		Start          json.RawMessage `json:"start"`
 		End            json.RawMessage `json:"end"`
-		DistanceMeters float64         `json:"distanceMeters"`
+		DistanceMeters flexFloat       `json:"distanceMeters"`
 		TopCandidate   struct {
 			Type string `json:"type"`
 		} `json:"topCandidate"`
@@ -73,7 +83,50 @@ type rawSegment struct {
 	TimelinePath []struct {
 		Point json.RawMessage `json:"point"`
 		Time  string          `json:"time"`
+		// iPhone: no timestamp, minutes after the segment's startTime.
+		OffsetMinutes *flexFloat `json:"durationMinutesOffsetFromStartTime"`
 	} `json:"timelinePath"`
+}
+
+// flexFloat decodes a JSON number or a number written as a string — the
+// iPhone export writes "1234.5" where the Android export writes 1234.5. An
+// empty string is zero; anything else is a type error, which the segment
+// loop counts as skipped.
+type flexFloat float64
+
+func (f *flexFloat) UnmarshalJSON(b []byte) error {
+	if len(b) > 0 && b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		s = strings.TrimSpace(s)
+		if s == "" {
+			*f = 0
+			return nil
+		}
+		v, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return &json.UnmarshalTypeError{Value: "string " + s, Type: reflect.TypeOf(0.0)}
+		}
+		*f = flexFloat(v)
+		return nil
+	}
+	var v float64
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	*f = flexFloat(v)
+	return nil
+}
+
+// normaliseKind writes Google's enum spellings one way. The Android export
+// spells them INFERRED_HOME and IN_PASSENGER_VEHICLE; the iPhone export
+// spells the same values "Inferred Home" and "in passenger vehicle".
+// Detection compares the Android spelling literally (detect/bases.go,
+// journey.go), so both shapes become it here. Idempotent on Android input.
+func normaliseKind(s string) string {
+	return strings.ToUpper(strings.Join(strings.Fields(s), "_"))
 }
 
 // Parse reads a Timeline export as a stream: constant memory regardless of
@@ -101,8 +154,15 @@ func Parse(r io.Reader) (domain.Observations, Stats, error) {
 	}
 
 	dec := json.NewDecoder(br)
-	if err := expectDelim(dec, '{'); err != nil {
-		return obs, st, err
+	first, err := dec.Token()
+	if err != nil {
+		return obs, st, truncated(err)
+	}
+	if d, ok := first.(json.Delim); ok && d == '[' {
+		return parseArray(dec, obs, st)
+	}
+	if d, ok := first.(json.Delim); !ok || d != '{' {
+		return obs, st, malformed(fmt.Errorf("expected '{' or '[', got %v", first))
 	}
 	var topKeys []string
 	found := false
@@ -122,23 +182,8 @@ func Parse(r io.Reader) (domain.Observations, Stats, error) {
 			if err := expectDelim(dec, '['); err != nil {
 				return obs, st, err
 			}
-			for dec.More() {
-				var seg rawSegment
-				if err := dec.Decode(&seg); err != nil {
-					// A type mismatch consumes the value and leaves the decoder
-					// usable: count and continue (defensive-parse rule). A syntax
-					// error or EOF means the stream itself is broken: stop.
-					var typeErr *json.UnmarshalTypeError
-					if errors.As(err, &typeErr) {
-						st.Skipped++
-						continue
-					}
-					return obs, st, truncated(err)
-				}
-				processSegment(seg, &obs, &st)
-			}
-			if _, err := dec.Token(); err != nil { // consume ']'
-				return obs, st, truncated(err)
+			if _, err := decodeSegments(dec, &obs, &st); err != nil {
+				return obs, st, err
 			}
 		case "rawSignals":
 			if err := parseRawSignals(dec, &obs, &st); err != nil {
@@ -167,6 +212,52 @@ func Parse(r io.Reader) (domain.Observations, Stats, error) {
 	return obs, st, nil
 }
 
+// parseArray reads the iPhone shape: the opening '[' is already consumed;
+// the elements are the segments themselves. A file whose elements are not
+// segments (no startTime anywhere) is not this export.
+func parseArray(dec *json.Decoder, obs domain.Observations, st Stats) (domain.Observations, Stats, error) {
+	segments, err := decodeSegments(dec, &obs, &st)
+	if err != nil {
+		return obs, st, err
+	}
+	if segments == 0 {
+		return obs, st, &UnsupportedInputError{
+			Kind:    "json-unrecognised",
+			Message: "this isn't the Timeline file from the phone; " + exportHint,
+		}
+	}
+	st.Format = PhoneTimelineIOSFormat
+	return obs, st, nil
+}
+
+// decodeSegments streams one segment array after its '[' and consumes the
+// closing ']'. It returns how many elements looked like segments (carried a
+// startTime). A type mismatch consumes the value and leaves the decoder
+// usable: count and continue (defensive-parse rule). A syntax error or EOF
+// means the stream itself is broken: stop.
+func decodeSegments(dec *json.Decoder, obs *domain.Observations, st *Stats) (int, error) {
+	segments := 0
+	for dec.More() {
+		var seg rawSegment
+		if err := dec.Decode(&seg); err != nil {
+			var typeErr *json.UnmarshalTypeError
+			if errors.As(err, &typeErr) {
+				st.Skipped++
+				continue
+			}
+			return segments, truncated(err)
+		}
+		if seg.StartTime != "" {
+			segments++
+		}
+		processSegment(seg, obs, st)
+	}
+	if _, err := dec.Token(); err != nil { // consume ']'
+		return segments, truncated(err)
+	}
+	return segments, nil
+}
+
 func processSegment(seg rawSegment, obs *domain.Observations, st *Stats) {
 	switch {
 	case seg.Visit != nil:
@@ -180,7 +271,7 @@ func processSegment(seg rawSegment, obs *domain.Observations, st *Stats) {
 			Start:        start,
 			End:          end,
 			Loc:          parseLoc(seg.Visit.TopCandidate.PlaceLocation),
-			SemanticType: seg.Visit.TopCandidate.SemanticType,
+			SemanticType: normaliseKind(seg.Visit.TopCandidate.SemanticType),
 		})
 		st.Visits++
 	case seg.Activity != nil:
@@ -195,18 +286,31 @@ func processSegment(seg rawSegment, obs *domain.Observations, st *Stats) {
 			End:       end,
 			From:      parseLoc(seg.Activity.Start),
 			To:        parseLoc(seg.Activity.End),
-			DistanceM: seg.Activity.DistanceMeters,
-			Mode:      seg.Activity.TopCandidate.Type,
+			DistanceM: float64(seg.Activity.DistanceMeters),
+			Mode:      normaliseKind(seg.Activity.TopCandidate.Type),
 		})
 		st.Activities++
 	case seg.TimelinePath != nil:
+		// iPhone points are timed from the segment: resolve them against
+		// startTime (in startTime's own zone) and refuse any past endTime.
+		segStart, errS := parseTime(seg.StartTime)
+		segEnd, errE := parseTime(seg.EndTime)
 		for _, pt := range seg.TimelinePath {
-			if pt.Time == "" {
-				st.Skipped++
-				continue
-			}
-			t, err := parseTime(pt.Time)
-			if err != nil {
+			var t time.Time
+			switch {
+			case pt.Time != "":
+				var err error
+				if t, err = parseTime(pt.Time); err != nil {
+					st.Skipped++
+					continue
+				}
+			case pt.OffsetMinutes != nil && errS == nil:
+				t = segStart.Add(time.Duration(float64(*pt.OffsetMinutes) * float64(time.Minute)))
+				if *pt.OffsetMinutes < 0 || (errE == nil && t.After(segEnd)) {
+					st.Skipped++
+					continue
+				}
+			default:
 				st.Skipped++
 				continue
 			}
@@ -420,9 +524,9 @@ func parseTime(s string) (time.Time, error) {
 	return time.Parse(time.RFC3339, s)
 }
 
-// parseLoc accepts the two shapes coordinates take in the export: a bare string
-// `"17.0°, 78.0°"` or an object `{"latLng": "17.0°, 78.0°"}`. Anything else
-// yields nil.
+// parseLoc accepts the shapes coordinates take in the export: a bare string
+// `"12.0°, 56.0°"`, an object `{"latLng": "12.0°, 56.0°"}`, or the iPhone's
+// `"geo:12.0,56.0"`. Anything else yields nil.
 func parseLoc(raw json.RawMessage) *domain.LatLng {
 	if len(raw) == 0 {
 		return nil
@@ -437,6 +541,7 @@ func parseLoc(raw json.RawMessage) *domain.LatLng {
 		}
 		s = obj.LatLng
 	}
+	s = strings.TrimPrefix(strings.TrimSpace(s), "geo:")
 	parts := strings.Split(strings.ReplaceAll(s, "°", ""), ",")
 	if len(parts) != 2 {
 		return nil

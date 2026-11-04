@@ -51,3 +51,45 @@ rejected, what would change our mind.
 - **Rejected:** synthetic-only (the spelling of `semanticType` would have
   been guessed, and was different from Android's).
 - **Would change our mind:** nothing.
+
+## 2026-11-04 — #4: one decoder for both shapes; the root token chooses
+
+- **Chosen:** `Parse` reads the first token: `{` is the Android object,
+  `[` the iPhone array. Both feed the same segment decoder, widened to read
+  numbers written as strings (`flexFloat`), `geo:` positions, and path
+  points timed by `durationMinutesOffsetFromStartTime` (resolved against
+  `startTime` in its own zone; negative or past `endTime` skipped and
+  counted). Success records `phone-timeline-ios`.
+- **Rejected:** a second segment struct and loop for iPhone — the shapes
+  share every field Roadbook reads; two copies would drift.
+- **Would change our mind:** Google diverging the two shapes in a field
+  Roadbook reads, beyond what a decoder type can absorb.
+
+## 2026-11-04 — #4: Google's spellings normalised in the parser, for both shapes
+
+- **Chosen:** visit kinds and activity modes go through one helper (words
+  joined by `_`, upper-cased): `Inferred Home` → `INFERRED_HOME`,
+  `in passenger vehicle` → `IN_PASSENGER_VEHICLE`. Idempotent on Android
+  input, so the Android fixtures and goldens are unchanged. `Home` (a
+  place the person labelled) becomes `HOME`, which detection does not use
+  as a base signal today — unchanged on purpose.
+- **Rejected:** teaching detection both spellings (the pure core would
+  carry a source's quirk; invariant 4).
+- **Would change our mind:** a third spelling that this rule mangles —
+  then a table, still in the parser.
+
+## 2026-11-04 — #4: verified against the reference detector, independently
+
+- **Chosen:** the tester's file is converted to the Android shape by a
+  separate Python script (not committed: its output holds real
+  coordinates; it lives only in the session and its output in `data/`),
+  the reference detector runs on that (a copy writing
+  `data/ios-candidates.json`, so `data/fixture-candidates.json` is never
+  touched), and `TestIOSRegression` compares the Go iPhone path to it
+  field for field. Result: 4 home bases and 60 candidates, all fields
+  equal. Committed tests: an inline iPhone sample, and the demo written in
+  both shapes (`testdata/demo/demo-ios.json`, same generator; visits and
+  activities identical, points within 30 s, same three trips).
+- **Rejected:** pinning numbers from the Go run alone (that tests the code
+  against itself).
+- **Would change our mind:** nothing.

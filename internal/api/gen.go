@@ -500,7 +500,7 @@ type Import struct {
 	// DetectStatus Status of the automatic detection that follows a successful upload import (phase 7 BRIEF §3D). Absent when no auto-detect was triggered (CLI imports, failed imports). A detection failure never marks the import failed — the import row describes the import.
 	DetectStatus *ImportDetectStatus `json:"detect_status,omitempty"`
 
-	// DetectedFormat The sniffer's stable format label (phone-timeline, records-json, semantic-history, …). Absent when the input was never recognised.
+	// DetectedFormat The sniffer's stable format label (phone-timeline, phone-timeline-ios, records-json, semantic-history, …). Absent when the input was never recognised.
 	DetectedFormat *string `json:"detected_format,omitempty"`
 
 	// Error The user-facing failure message — prose, subject to rewording; never the queryable evidence.

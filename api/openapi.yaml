@@ -1047,7 +1047,7 @@ components:
         detected_format:
           type: string
           description: >
-            The sniffer's stable format label (phone-timeline, records-json,
+            The sniffer's stable format label (phone-timeline, phone-timeline-ios, records-json,
             semantic-history, …). Absent when the input was never recognised.
         inserted:
           type: integer

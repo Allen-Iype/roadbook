@@ -121,6 +121,10 @@ func TestParseRejectsKnownWrongInputs(t *testing.T) {
 		{"My Activity export", `[{"header": "Maps", "title": "Searched", "titleUrl": "https://x"}]`, "my-activity"},
 		{"JSON but not a Timeline export", `{"settings": {}, "devices": []}`, "json-unrecognised"},
 		{"truncated mid-array", `{"semanticSegments": [{"startTime": "2025-01-01T10:00:00.000+05:30",`, "truncated"},
+		{"JSON array of non-segments", `[1, 2, {"name": "x"}]`, "json-unrecognised"},
+		{"empty JSON array", `[]`, "json-unrecognised"},
+		{"truncated iPhone array", `[{"startTime": "2025-01-01T10:00:00.000+05:30",`, "truncated"},
+		{"a JSON string, not a container", `"geo:1,2"`, "not-json"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -178,6 +182,127 @@ func TestProbe(t *testing.T) {
 	for p, n := range want {
 		if got[p] != n {
 			t.Errorf("path %s = %d, want %d", p, got[p], n)
+		}
+	}
+}
+
+// The iPhone app's shape of the same export (phase 17, issue #4): a top-level
+// array, geo: positions, numbers as strings, path points timed in minutes
+// after the segment's start, Google's enum values spelled in words.
+const sampleIOS = `[
+ {
+  "startTime": "2025-01-01T10:00:00.000+05:30",
+  "endTime": "2025-01-01T12:00:00.000+05:30",
+  "visit": {
+   "hierarchyLevel": "0",
+   "probability": "0.85",
+   "topCandidate": {
+    "placeID": "ChIJxyz",
+    "semanticType": "Inferred Home",
+    "probability": "0.6",
+    "placeLocation": "geo:10.500000,20.500000"
+   }
+  }
+ },
+ {
+  "startTime": "2025-01-01T12:00:00.000+05:30",
+  "endTime": "2025-01-01T13:00:00.000+05:30",
+  "activity": {
+   "start": "geo:10.500000,20.500000",
+   "end": "geo:10.600000,20.600000",
+   "distanceMeters": "15000.5",
+   "topCandidate": {"type": "in passenger vehicle", "probability": "0.000000"}
+  }
+ },
+ {
+  "startTime": "2025-01-01T07:30:00Z",
+  "endTime": "2025-01-01T09:30:00Z",
+  "timelinePath": [
+   {"point": "geo:10.700000,20.700000", "durationMinutesOffsetFromStartTime": "15"},
+   {"point": "geo:10.800000,20.800000", "durationMinutesOffsetFromStartTime": 30},
+   {"point": "geo:10.900000,20.900000", "durationMinutesOffsetFromStartTime": "121"},
+   {"point": "geo:11.000000,21.000000", "durationMinutesOffsetFromStartTime": "-1"},
+   {"point": "geo:11.100000,21.100000"}
+  ]
+ },
+ {
+  "startTime": "2025-01-01T14:00:00.000+05:30",
+  "endTime": "2025-01-01T15:00:00.000+05:30",
+  "activity": {
+   "start": "geo:10.6,20.6",
+   "end": "geo:10.7,20.7",
+   "distanceMeters": "not a number",
+   "topCandidate": {"type": "flying"}
+  }
+ },
+ {
+  "startTime": "2025-01-02T10:00:00.000+05:30",
+  "endTime": "2025-01-02T11:00:00.000+05:30",
+  "timelineMemory": {"destinations": [{"identifier": "x"}], "distanceFromOriginKms": "100"}
+ }
+]`
+
+func TestParseIOS(t *testing.T) {
+	obs, st, err := Parse(strings.NewReader(sampleIOS))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Format != PhoneTimelineIOSFormat {
+		t.Errorf("format = %q, want %q", st.Format, PhoneTimelineIOSFormat)
+	}
+	// Visit + activity parse; the activity with an unreadable distance is a
+	// type error, counted. Path: 2 points kept; past-end, negative and
+	// untimed points skipped.
+	if st.Visits != 1 || st.Activities != 1 || st.Points != 2 || st.Skipped != 4 {
+		t.Fatalf("stats = %+v, want 1 visit, 1 activity, 2 points, 4 skipped", st)
+	}
+
+	v := obs.Visits[0]
+	if v.SemanticType != "INFERRED_HOME" {
+		t.Errorf("semanticType = %q, want the Android spelling INFERRED_HOME", v.SemanticType)
+	}
+	if v.Loc == nil || v.Loc.Lat != 10.5 || v.Loc.Lon != 20.5 {
+		t.Errorf("visit loc = %v, want (10.5, 20.5)", v.Loc)
+	}
+	if _, off := v.Start.Zone(); off != 19800 {
+		t.Errorf("visit offset = %d s, want +05:30 kept", off)
+	}
+
+	a := obs.Activities[0]
+	if a.Mode != "IN_PASSENGER_VEHICLE" || a.DistanceM != 15000.5 {
+		t.Errorf("activity = %q %v m, want IN_PASSENGER_VEHICLE 15000.5 m", a.Mode, a.DistanceM)
+	}
+	if a.From == nil || a.To == nil || a.To.Lat != 10.6 {
+		t.Errorf("activity ends = %v → %v", a.From, a.To)
+	}
+
+	// Offsets resolve against startTime in startTime's own zone (UTC here).
+	want := []time.Time{
+		time.Date(2025, 1, 1, 7, 45, 0, 0, time.UTC),
+		time.Date(2025, 1, 1, 8, 0, 0, 0, time.UTC),
+	}
+	for i, w := range want {
+		if !obs.Points[i].Time.Equal(w) {
+			t.Errorf("point %d time = %v, want %v", i, obs.Points[i].Time, w)
+		}
+	}
+	if obs.Points[1].Loc == nil || obs.Points[1].Loc.Lat != 10.8 {
+		t.Errorf("point 1 loc = %v, want (10.8, 20.8)", obs.Points[1].Loc)
+	}
+}
+
+// Normalising Google's spellings must leave the Android export as it was.
+func TestNormaliseKind(t *testing.T) {
+	for in, want := range map[string]string{
+		"INFERRED_HOME":        "INFERRED_HOME",
+		"Inferred Home":        "INFERRED_HOME",
+		"Searched Address":     "SEARCHED_ADDRESS",
+		"in passenger vehicle": "IN_PASSENGER_VEHICLE",
+		"flying":               "FLYING",
+		"":                     "",
+	} {
+		if got := normaliseKind(in); got != want {
+			t.Errorf("normaliseKind(%q) = %q, want %q", in, got, want)
 		}
 	}
 }
