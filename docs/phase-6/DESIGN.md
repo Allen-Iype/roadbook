@@ -131,6 +131,17 @@ The Playwright legend spec now opens the control and reads the four
 entries. Decision record: `docs/product/words.md` (decision 2) and
 `docs/product/DECISIONS.md`.
 
+*Amendment (2026-11-10, phase 17, issue #2, maintainer-approved):* the
+plate numeral is gone from every surface: the covers on the trips shelf,
+the trip page's eyebrow (now just "KEPT TRIP"), the map margin (now "FULL
+ROUTE", or "DAY n HIGHLIGHTED"), the exported image and overlay, and the
+landing's sample covers. The first testers asked what "PLATE 2" meant,
+which is the trigger the copy pass named (`docs/product/words.md`, decision
+1). The double rule, the margin and the display type stay; the shelf's
+order (newest first) is read from the dates on each cover. `roman()` and
+the "plate" teaching term were removed with their last users. Decision
+record: `docs/phase-17/DECISIONS.md`.
+
 Standing recommendation confirmed: no home markers on the life map.
 
 ## 7. Parked

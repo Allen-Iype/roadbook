@@ -79,13 +79,6 @@ export default async function AdventurePage({
       : Promise.resolve([]),
   ]);
 
-  // The plate number: this adventure's position among confirmed adventures
-  // in date order — derived from the data on every render, never stored.
-  const confirmedIds = candidates
-    .filter((c) => c.decision?.action === "confirmed")
-    .sort((a, b) => a.span_start.localeCompare(b.span_start))
-    .map((c) => c.id);
-  const plate = confirmed ? confirmedIds.indexOf(id) + 1 : null;
   const undecided = candidates.filter((c) => !c.decision).length;
 
   return (
@@ -103,7 +96,6 @@ export default async function AdventurePage({
         photos={photos}
         importPhotos={importPhotos}
         styleUrl={MAP_STYLE_URL}
-        plate={plate}
         photosSection={
           photos !== null && candidate ? (
             <PhotosSection candidateId={candidate.id} photos={photos} />

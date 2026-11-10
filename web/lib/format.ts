@@ -93,26 +93,3 @@ export function sourceWords(source: string): string {
       return source;
   }
 }
-
-// Plate numbers are roman numerals in date order — atlas convention. Tens of
-// adventures at most (the charter's scale), so the compact form suffices.
-// Shared by the cover, the plate margin, and the exported image's label.
-export function roman(n: number): string {
-  const table: [number, string][] = [
-    [40, "XL"],
-    [10, "X"],
-    [9, "IX"],
-    [5, "V"],
-    [4, "IV"],
-    [1, "I"],
-  ];
-  let out = "";
-  let rest = n;
-  for (const [value, glyph] of table) {
-    while (rest >= value) {
-      out += glyph;
-      rest -= value;
-    }
-  }
-  return out;
-}

@@ -123,3 +123,32 @@ rejected, what would change our mind.
   legs are never routed"), which needs its own decision and its own line
   kind, visibly distinct from both recorded and routed.
 - **Would change our mind:** nothing in this phase.
+
+## 2026-11-10 — #1: newest first on Trips to review
+
+- **Chosen:** the review list's default order is newest first
+  (`span_start` descending, a sorted copy, the same rule as the Trips
+  shelf). The toggle reads "newest first · by score"; score order is
+  unchanged. The Go API's order (`seq`, oldest first) is untouched: the
+  order is a presentation choice, made where the page is rendered, as the
+  Trips shelf already does.
+- **Rejected:** changing the API's `ORDER BY` (a change to the contract
+  every client and Go test reads, for what the issue describes as a page's
+  order); an "oldest first" third option (nobody asked).
+- **Would change our mind:** a tester working through a long queue
+  wanting the old order back; then it becomes a third toggle link.
+
+## 2026-11-10 — #2: the plate numeral removed everywhere
+
+- **Chosen:** "PLATE n" / "PLATE II" leaves the covers, the trip page's
+  eyebrow and map margin, the exported image and overlay, and the
+  landing's sample covers (with its `.plate-no` style in all three landing
+  pages). The order it encoded is read from the dates; the e2e order checks
+  read a `data-start` hook. `roman()` and the "plate" teaching term went
+  with their last users. DESIGN §6 and words.md decision 1 amended, dated.
+- **Rejected:** keeping the numeral and teaching it better (the copy pass
+  set this exact trigger for removal); keeping it only on the exported
+  image (one meaning per word: a number nobody can decode is worse on a
+  picture with nothing to tap).
+- **Would change our mind:** testers asking for a way to refer to a trip
+  by number; then a plain "Trip 12", not a roman numeral.

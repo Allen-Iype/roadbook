@@ -59,7 +59,6 @@ export type ExportSpec = {
   selectedDay: number | null;
   styleUrl: string;
   name: string;
-  plate: number | null;
   startTruncated: boolean;
   endTruncated: boolean;
 };
@@ -209,7 +208,6 @@ export async function exportPlateImage(
     const input: PlateInput = {
       journey: spec.journey,
       name: spec.name,
-      plate: spec.plate,
       startTruncated: spec.startTruncated,
       endTruncated: spec.endTruncated,
       selectedDay: spec.selectedDay,
@@ -258,7 +256,6 @@ export async function exportOverlayImage(
     {
       journey: spec.journey,
       name: spec.name,
-      plate: spec.plate,
       startTruncated: spec.startTruncated,
       endTruncated: spec.endTruncated,
       selectedDay: spec.selectedDay,

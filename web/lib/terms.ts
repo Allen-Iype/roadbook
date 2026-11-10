@@ -13,11 +13,6 @@
 //
 // Pure module (no React) so vitest can read it.
 export const TERMS = {
-  plate: {
-    term: "Plate",
-    note:
-      "Your kept trips are numbered in the order you travelled, the oldest first.",
-  },
   observed: {
     term: "Observed",
     note:

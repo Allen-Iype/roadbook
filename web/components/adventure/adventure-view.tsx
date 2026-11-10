@@ -26,8 +26,7 @@ import { useMemo, useState } from "react";
 
 import { LegendInfo } from "@/components/legend-info";
 import { ProvenanceBar } from "@/components/provenance-bar";
-import { Term } from "@/components/term";
-import { fmtHours, fmtMode, roman } from "@/lib/format";
+import { fmtHours, fmtMode } from "@/lib/format";
 import { fmtDateRange, isFixLeg, sliceDays } from "@/lib/slice-days";
 import { DayNarrative } from "./day-narrative";
 import { ImportPhotosStrip, PhotoStrip } from "./photo-strip";
@@ -59,7 +58,6 @@ export function AdventureView({
   photos,
   importPhotos,
   styleUrl,
-  plate,
   shared,
   thumbs = OWNER_THUMBS,
   photosSection,
@@ -72,8 +70,6 @@ export function AdventureView({
   /** Records span-joined to this candidate (CP4) — any candidate, read-time. */
   importPhotos: ImportPhoto[];
   styleUrl: string;
-  /** Position among confirmed adventures in date order; null if unconfirmed. */
-  plate: number | null;
   /** Set on the shared view: the cover facts, and read-only everywhere. */
   shared?: SharedCover;
   /** Which thumbnail proxies the tiles and markers load through. */
@@ -116,7 +112,6 @@ export function AdventureView({
       <Cover
         journey={journey}
         candidate={candidate}
-        plate={plate}
         shared={shared}
         name={name}
       />
@@ -124,8 +119,9 @@ export function AdventureView({
       {journey.legs.length > 0 && (
         <aside className="mt-6 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0">
           {/* The plate: map framed with a double rule, its margin printed
-              below — legend, scale bar (on the canvas), and plate label as
-              marginalia (DESIGN §6). */}
+              below — legend, scale bar (on the canvas), and the view label
+              as marginalia (DESIGN §6; the plate numeral left it in phase
+              17, #2). */}
           <div className="border border-ink [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
             <RouteMap
               journey={journey}
@@ -139,15 +135,7 @@ export function AdventureView({
           <div className="border border-t-0 border-ink bg-paper px-4 py-2.5 [outline:1px_solid_var(--color-ink)] [outline-offset:3px]">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <span className="font-display text-[11.5px] font-semibold tracking-[0.22em]">
-                {selected !== null ? (
-                  `DAY ${selected} HIGHLIGHTED`
-                ) : plate !== null ? (
-                  <>
-                    <Term id="plate">PLATE {roman(plate)}</Term> · FULL ROUTE
-                  </>
-                ) : (
-                  "FULL ROUTE"
-                )}
+                {selected !== null ? `DAY ${selected} HIGHLIGHTED` : "FULL ROUTE"}
               </span>
               {/* The legend, the markers and the bar's note behind one
                   button (copy pass decision 2). */}
@@ -166,7 +154,6 @@ export function AdventureView({
                 selectedDay={selected}
                 styleUrl={styleUrl}
                 name={name}
-                plate={plate}
                 startTruncated={truncation?.start_truncated ?? false}
                 endTruncated={truncation?.end_truncated ?? false}
               />
@@ -234,13 +221,11 @@ export function AdventureView({
 function Cover({
   journey,
   candidate,
-  plate,
   shared,
   name,
 }: {
   journey: Journey;
   candidate?: Candidate;
-  plate: number | null;
   shared?: SharedCover;
   name: string;
 }) {
@@ -255,21 +240,13 @@ function Cover({
 
   return (
     <header className="lg:col-start-1 lg:row-start-1">
-      {/* The shared eyebrow names what a stranger is looking at; the plate
-          number is the owner's atlas register and stays theirs. */}
+      {/* The eyebrow names what is being looked at. The plate numeral that
+          followed KEPT TRIP went in phase 17 (#2). */}
       <p className="text-[11.5px] tracking-[0.24em] text-ink-2">
         {shared ? (
           "SHARED TRIP"
         ) : confirmed ? (
-          <>
-            KEPT TRIP
-            {plate !== null && (
-              <>
-                {" · "}
-                <Term id="plate">PLATE {roman(plate)}</Term>
-              </>
-            )}
-          </>
+          "KEPT TRIP"
         ) : decision?.action === "dismissed" ? (
           "LEFT OUT"
         ) : (

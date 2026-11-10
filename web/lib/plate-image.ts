@@ -28,7 +28,6 @@
 // draw, the same figures, and its own ground under every mark (a halo
 // under the route, paper casing around every glyph). `layoutFor` picks.
 import { fmtDateRange } from "@/lib/slice-days";
-import { roman } from "@/lib/format";
 import { LEGEND_ENTRIES, type LegendKind } from "@/lib/legend";
 import { fitProjection } from "@/lib/route-thumb";
 import { INK } from "@/lib/tokens";
@@ -59,9 +58,6 @@ export type PlateInput = {
   journey: PlateJourney;
   /** The cover's name: the decision name, or "Trip of <date>". */
   name: string;
-  /** Position among confirmed adventures in date order; null on the shared
-   * view and for unconfirmed candidates. */
-  plate: number | null;
   startTruncated: boolean;
   endTruncated: boolean;
   /** 1-based highlighted day, or null for the full route. */
@@ -296,11 +292,10 @@ export function truncationText(start: boolean, end: boolean): string | null {
   return parts.length === 0 ? null : parts.join(" ");
 }
 
-/** The plate label, exactly as the on-screen margin prints it. */
-export function plateLabel(plate: number | null, selectedDay: number | null): string {
-  if (selectedDay !== null) return `DAY ${selectedDay} HIGHLIGHTED`;
-  if (plate !== null) return `PLATE ${roman(plate)} · FULL ROUTE`;
-  return "FULL ROUTE";
+/** The view label, exactly as the on-screen margin prints it. No plate
+ * numeral since phase 17 (#2). */
+export function plateLabel(selectedDay: number | null): string {
+  return selectedDay !== null ? `DAY ${selectedDay} HIGHLIGHTED` : "FULL ROUTE";
 }
 
 /** roadbook-plate-<slug>.png: the name lowercased to ASCII letters, digits
@@ -386,7 +381,7 @@ export function plateLayout(input: PlateInput): PlateLayout {
     op: "text",
     x: right,
     y,
-    text: plateLabel(input.plate, input.selectedDay),
+    text: plateLabel(input.selectedDay),
     align: "right",
     role: "display",
     size: 11.5,
@@ -643,7 +638,7 @@ export function overlayLayout(
     op: "text",
     x: left,
     y,
-    text: plateLabel(input.plate, sel),
+    text: plateLabel(sel),
     align: "left",
     role: "display",
     size: 11,
