@@ -328,6 +328,13 @@ specific user or region surfaces the first time someone else's export is importe
 Adopted into the backlog from the Dawarich comparison or moved here from a phase;
 none is scheduled:
 
+- Snapped lines (added 2026-11-10, phase 17 STOP 1b; asked for by the
+  maintainer). Recorded points drawn along the road they were on, by map
+  matching against OSM (OSRM's match service, in the batch `roadbook
+  route`, cached like routing). Changes invariant 6 — recorded stretches
+  are never routed today — so it needs a brief, a charter decision and its
+  own line kind, distinct from both recorded and routed. Comes after the
+  needle filter, which it cannot replace (`docs/phase-17/DECISIONS.md`).
 - Landing cut (added 2026-11-03, copy pass close; `docs/product/LOG.md`).
   The landing is still cluttered: eight blocks, two pictures of a trip, two
   "Make mine" buttons. A layout cut — one picture, one button, one-line

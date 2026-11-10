@@ -62,6 +62,29 @@ type Params struct {
 	// deleting: rows are untouched, RejectedSpeed counts.
 	MaxSpeedKmh    float64 `json:"max_speed_kmh"`
 	ClusterRadiusM float64 `json:"cluster_radius_m"`
+	// ExcursionMinKm, ExcursionReturnRatio and ExcursionMaxMinutes drive
+	// excursion rejection, the second pass over the same clusters (phase 17,
+	// STOP 1b). A cluster is rejected iff its entry AND exit chords both
+	// exceed ExcursionMinKm, its neighbours lie within ExcursionReturnRatio
+	// × the shorter of those chords of each other, and the neighbours are at
+	// most ExcursionMaxMinutes apart: a needle out to one place and straight
+	// back, with no trail of points leading there. The measured failure is
+	// the iPhone export's fallback positions — a handful of fixed places,
+	// tens of km off, standing in for the phone while it had no proper fix,
+	// inside a single path segment. Their implied speeds run 24–471 km/h,
+	// under MaxSpeedKmh, so the teleport pass cannot see them, and lowering
+	// MaxSpeedKmh would cut real driving and flights; the shape is what
+	// separates them. 120 minutes is the measured line (phase 17 DECISIONS):
+	// shorter windows left needles standing, longer ones began taking
+	// multi-point, hour-long clusters from the Android archive that may be
+	// real errands. Stated blind spot: a real out-and-back of over
+	// ExcursionMinKm inside the window with no point recorded on the way
+	// out or back disappears from the map. ExcursionMinKm 0 disables the
+	// pass. Flagging, never deleting: rows are untouched, RejectedExcursion
+	// counts.
+	ExcursionMinKm       float64 `json:"excursion_min_km"`
+	ExcursionReturnRatio float64 `json:"excursion_return_ratio"`
+	ExcursionMaxMinutes  float64 `json:"excursion_max_minutes"`
 	// DivergenceWarnPct: the ground reconstruction (observed + routed +
 	// unknown chords — air excluded by construction) is compared against
 	// Google's own ground figure (activity distances minus FLYING ones —
@@ -78,6 +101,7 @@ func DefaultParams() Params {
 	return Params{
 		GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300,
 		MaxAccuracyM: 0, AirSpeedMinKmh: 250, MaxSpeedKmh: 900, ClusterRadiusM: 1000,
+		ExcursionMinKm: 20, ExcursionReturnRatio: 0.25, ExcursionMaxMinutes: 120,
 		DivergenceWarnPct: 15,
 	}
 }
@@ -173,6 +197,10 @@ type Journey struct {
 	// Unlike the two above, these are rejected after selection — the test
 	// needs temporal context — so they are included in the InWindow counts.
 	RejectedSpeed int
+	// RejectedExcursion counts points in excursion clusters (see
+	// ExcursionMinKm), rejected after the teleport pass, likewise included in
+	// the InWindow counts.
+	RejectedExcursion int
 
 	TotalKm    float64 // ObservedKm + InferredKm: the chord sum over all kept points
 	ObservedKm float64
@@ -275,6 +303,9 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 	// Teleport rejection runs on the full sorted stream, before thinning,
 	// so cluster edges see the finest temporal context available.
 	pts, j.RejectedSpeed = rejectTeleports(pts, p)
+	// Excursion rejection runs on what the teleport pass kept, so its
+	// neighbours are already free of impossible jumps.
+	pts, j.RejectedExcursion = rejectExcursions(pts, p)
 
 	// Thinning: keep-earliest at ThinSpacingSeconds, no source preference.
 	var kept []TimedPoint
@@ -344,17 +375,7 @@ func rejectTeleports(pts []TimedPoint, p Params) ([]TimedPoint, int) {
 		return pts, 0
 	}
 
-	// Cluster: a maximal run of consecutive points within ClusterRadiusM of
-	// the run's first point.
-	type cluster struct{ start, end int } // half-open [start, end)
-	var clusters []cluster
-	cs := 0
-	for i := 1; i <= len(pts); i++ {
-		if i == len(pts) || geo.HaversineM(pts[cs].Loc, pts[i].Loc) > p.ClusterRadiusM {
-			clusters = append(clusters, cluster{cs, i})
-			cs = i
-		}
-	}
+	clusters := clustersOf(pts, p.ClusterRadiusM)
 
 	// Implied speed between two points. Trace timestamps are minute-
 	// truncated, so a same-minute displacement divides by zero without
@@ -375,16 +396,62 @@ func rejectTeleports(pts []TimedPoint, p Params) ([]TimedPoint, int) {
 		return km / h
 	}
 
+	return walkClusters(pts, clusters, func(entryFrom, first, last, next TimedPoint) bool {
+		impossible := speed(entryFrom, first) > p.MaxSpeedKmh || speed(last, next) > p.MaxSpeedKmh
+		bridgeable := speed(entryFrom, next) <= p.MaxSpeedKmh
+		return impossible && bridgeable
+	})
+}
+
+// rejectExcursions drops needle-shaped clusters — far from both neighbours
+// while the neighbours sit close together, inside a short time (see
+// Params.ExcursionMinKm for the rule and its reasoning). It walks the same
+// clusters with the same anchor as rejectTeleports, so a run of consecutive
+// phantoms at one wrong place falls together.
+func rejectExcursions(pts []TimedPoint, p Params) ([]TimedPoint, int) {
+	if p.ExcursionMinKm <= 0 || len(pts) < 3 {
+		return pts, 0
+	}
+	km := func(a, b TimedPoint) float64 { return geo.HaversineM(a.Loc, b.Loc) / 1000 }
+	return walkClusters(pts, clustersOf(pts, p.ClusterRadiusM), func(entryFrom, first, last, next TimedPoint) bool {
+		out, back := km(entryFrom, first), km(last, next)
+		if out <= p.ExcursionMinKm || back <= p.ExcursionMinKm {
+			return false
+		}
+		if km(entryFrom, next) >= p.ExcursionReturnRatio*math.Min(out, back) {
+			return false
+		}
+		return next.Time.Sub(entryFrom.Time).Minutes() <= p.ExcursionMaxMinutes
+	})
+}
+
+// cluster is a half-open index range [start, end) into a sorted point stream.
+type cluster struct{ start, end int }
+
+// clustersOf splits the stream into maximal runs of consecutive points
+// within radiusM of the run's first point.
+func clustersOf(pts []TimedPoint, radiusM float64) []cluster {
+	var clusters []cluster
+	cs := 0
+	for i := 1; i <= len(pts); i++ {
+		if i == len(pts) || geo.HaversineM(pts[cs].Loc, pts[i].Loc) > radiusM {
+			clusters = append(clusters, cluster{cs, i})
+			cs = i
+		}
+	}
+	return clusters
+}
+
+// walkClusters judges every interior cluster with reject, keeping an anchor
+// at the last accepted cluster so a rejected cluster's neighbours are judged
+// against each other. The first and last clusters have no neighbour on one
+// side and are never judged. It returns the input slice itself when nothing
+// is rejected, and a new slice otherwise; pts is never modified.
+func walkClusters(pts []TimedPoint, clusters []cluster, reject func(entryFrom, first, last, next TimedPoint) bool) ([]TimedPoint, int) {
 	rejected := make([]bool, len(clusters))
 	prev := 0 // index of the last accepted cluster
 	for i := 1; i < len(clusters)-1; i++ {
-		entryFrom := pts[clusters[prev].end-1]
-		first := pts[clusters[i].start]
-		last := pts[clusters[i].end-1]
-		next := pts[clusters[i+1].start]
-		impossible := speed(entryFrom, first) > p.MaxSpeedKmh || speed(last, next) > p.MaxSpeedKmh
-		bridgeable := speed(entryFrom, next) <= p.MaxSpeedKmh
-		if impossible && bridgeable {
+		if reject(pts[clusters[prev].end-1], pts[clusters[i].start], pts[clusters[i].end-1], pts[clusters[i+1].start]) {
 			rejected[i] = true
 		} else {
 			prev = i

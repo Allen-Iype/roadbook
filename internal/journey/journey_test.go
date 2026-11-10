@@ -433,3 +433,159 @@ func TestAssemble(t *testing.T) {
 		}
 	})
 }
+
+// Excursion rejection (phase 17, STOP 1b): the iPhone export's fallback
+// positions are needles — one place tens of km off, visited and left
+// within minutes, with nothing recorded on the way. 0.35° of latitude is
+// about 39 km, the measured typical distance.
+func TestExcursionRejection(t *testing.T) {
+	p := journey.DefaultParams()
+
+	t.Run("a single phantom point out and straight back is rejected", func(t *testing.T) {
+		// 39 km in 6 minutes is about 390 km/h: under MaxSpeedKmh, so the
+		// teleport pass keeps it; the shape is what gives it away.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(6 * 60), Loc: loc(10.35, 70)},
+				{Time: at(12 * 60), Loc: loc(10.001, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.RejectedSpeed != 0 {
+			t.Fatalf("teleport pass rejected %d, want 0 (the case it cannot see)", j.RejectedSpeed)
+		}
+		if j.RejectedExcursion != 1 {
+			t.Fatalf("rejected = %d, want 1", j.RejectedExcursion)
+		}
+		if j.TotalKm > 1 {
+			t.Errorf("total = %.1f km, want < 1 (no 78 km needle)", j.TotalKm)
+		}
+	})
+
+	t.Run("a slow phantom is rejected too — speed does not separate them", func(t *testing.T) {
+		// 39 km out over 50 minutes reads as an ordinary 47 km/h drive.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(50 * 60), Loc: loc(10.35, 70)},
+				{Time: at(100 * 60), Loc: loc(10.001, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3*3600), p)
+		if j.RejectedExcursion != 1 {
+			t.Fatalf("rejected = %d, want 1", j.RejectedExcursion)
+		}
+	})
+
+	t.Run("a run of phantoms at one place falls together", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(5 * 60), Loc: loc(10.35, 70)},
+				{Time: at(10 * 60), Loc: loc(10.35, 70)},
+				{Time: at(15 * 60), Loc: loc(10.351, 70)},
+				{Time: at(20 * 60), Loc: loc(10.35, 70)},
+				{Time: at(25 * 60), Loc: loc(10.002, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.RejectedExcursion != 4 {
+			t.Fatalf("rejected = %d, want the whole 4-point run", j.RejectedExcursion)
+		}
+	})
+
+	t.Run("a real out-and-back with a trail of points is kept", func(t *testing.T) {
+		// The same 39 km and back, but recorded along the way: every hop is
+		// a few km, so no cluster is far from both its neighbours.
+		var pts []domain.PathPoint
+		for i := 0; i <= 10; i++ {
+			pts = append(pts, domain.PathPoint{Time: at(i * 5 * 60), Loc: loc(10+0.035*float64(i), 70)})
+		}
+		for i := 9; i >= 0; i-- {
+			pts = append(pts, domain.PathPoint{Time: at((20 - i) * 5 * 60), Loc: loc(10+0.035*float64(i), 70)})
+		}
+		j := journey.Assemble(domain.Observations{Points: pts}, t0, at(3*3600), p)
+		if j.RejectedExcursion != 0 {
+			t.Errorf("rejected = %d, want 0 (a recorded road out and back)", j.RejectedExcursion)
+		}
+	})
+
+	t.Run("an out-and-back longer than the window is kept", func(t *testing.T) {
+		// Away three hours with nothing recorded on the way: plausibly a
+		// real errand, and outside what the rule claims to know.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(90 * 60), Loc: loc(10.35, 70)},
+				{Time: at(180 * 60), Loc: loc(10.001, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(4*3600), p)
+		if j.RejectedExcursion != 0 {
+			t.Errorf("rejected = %d, want 0 (beyond ExcursionMaxMinutes)", j.RejectedExcursion)
+		}
+	})
+
+	t.Run("going somewhere and staying there is kept", func(t *testing.T) {
+		// Out 39 km and on another 39 km: the neighbours are not close
+		// together, so this is travel, not a needle.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(30 * 60), Loc: loc(10.35, 70)},
+				{Time: at(60 * 60), Loc: loc(10.70, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(2*3600), p)
+		if j.RejectedExcursion != 0 {
+			t.Errorf("rejected = %d, want 0", j.RejectedExcursion)
+		}
+	})
+
+	t.Run("a short hop out and back stays under ExcursionMinKm", func(t *testing.T) {
+		// About 11 km: the neighbourhood errand, never judged.
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(15 * 60), Loc: loc(10.1, 70)},
+				{Time: at(30 * 60), Loc: loc(10.001, 70)},
+			},
+		}
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.RejectedExcursion != 0 {
+			t.Errorf("rejected = %d, want 0", j.RejectedExcursion)
+		}
+	})
+
+	t.Run("ExcursionMinKm 0 disables excursion rejection", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(6 * 60), Loc: loc(10.35, 70)},
+				{Time: at(12 * 60), Loc: loc(10.001, 70)},
+			},
+		}
+		off := p
+		off.ExcursionMinKm = 0
+		j := journey.Assemble(obs, t0, at(3600), off)
+		if j.RejectedExcursion != 0 {
+			t.Errorf("rejected = %d, want 0 with the filter off", j.RejectedExcursion)
+		}
+	})
+
+	t.Run("the observations are not modified", func(t *testing.T) {
+		obs := domain.Observations{
+			Points: []domain.PathPoint{
+				{Time: at(0), Loc: loc(10, 70)},
+				{Time: at(6 * 60), Loc: loc(10.35, 70)},
+				{Time: at(12 * 60), Loc: loc(10.001, 70)},
+			},
+		}
+		before := *obs.Points[1].Loc
+		j := journey.Assemble(obs, t0, at(3600), p)
+		if j.RejectedExcursion != 1 || len(obs.Points) != 3 || *obs.Points[1].Loc != before {
+			t.Errorf("observations changed or rule did not fire: %+v", obs.Points)
+		}
+	})
+}

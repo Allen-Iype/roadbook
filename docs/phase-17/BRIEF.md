@@ -75,6 +75,45 @@ into the pure core, and every future source would add more); converting the
 iPhone file to the Android shape in the browser (business logic in the Next
 layer, and a second copy of the parser to keep in step).
 
+### Needles: fallback positions in the iPhone export (added 2026-11-10, STOP 1b)
+
+**What.** Once STOP 1 read the tester's file, its maps showed needles: a
+line that runs 20–40 km to one place and straight back. The points are in
+the export itself. Over the whole file there are 13.2 out-and-back jumps
+per 1,000 path points against 0.3 on the Android fixture; 96 % land on five
+recurring places; 829 sit inside a single path segment, where Google's own
+offsets only increase, so they are not a timing error in the new parser.
+The likely cause is a fallback position (a cell tower or an area centre)
+standing in for the phone while it had no proper fix.
+
+**How they reach the map.** Every map — life map, covers, review gallery,
+trip page, shared view, downloaded image — is drawn from one assembly,
+`journey.Assemble` (`internal/journey/journey.go`, called from
+`internal/api/server.go`). Assembly already rejects "teleports": clusters
+whose entry or exit implies more than 900 km/h. The needles imply 24–471
+km/h (median 131), so they pass.
+
+**The fix.** A second pass over the same clusters, after the teleport
+pass: drop a cluster when both hops to it exceed 20 km, its two neighbours
+lie within a quarter of the shorter hop of each other, and the neighbours
+are at most 120 minutes apart. A real trip out and back leaves a trail of
+points, so no single cluster is far from both its neighbours; a needle has
+no trail. Three named parameters (`ExcursionMinKm`, `ExcursionReturnRatio`,
+`ExcursionMaxMinutes`) with the reasoning in their comment, a counter
+(`RejectedExcursion`), rows untouched.
+
+**Why there.** Not in the parser: it must hand the file through as it is
+(invariant 2 — inputs are never altered, and rejection is a derived
+judgement that may change). Not in detection: the needles are under 100 km
+and never a destination, and detection is held field for field to the
+reference detector. The map layer is where they do harm, and it already
+has the same kind of filter.
+
+**Rejected:** a lower speed limit (24 km/h needles exist; it would cut real
+driving and flights); a list of "known bad" places (exact-coordinate
+recurrence does not separate them — home points recur more); snapping the
+points to roads (it would draw the needle along real roads; see §4).
+
 ### Owner-only words on a kept trip
 
 **What.** A kept trip is a row in `decisions` (`migrations/00001_init.sql`):
@@ -122,6 +161,31 @@ can be added later as an explicit choice.
   iPhone by construction. A private regression test reads
   `data/ios-timeline.json` when present and skips otherwise, like the
   archive's.
+
+### #4, continued — needles on iPhone maps (STOP 1b)
+
+- `internal/journey/journey.go`: the excursion pass and its three
+  parameters (defaults 20 km, 0.25, 120 minutes; `ExcursionMinKm` 0 turns it
+  off); the cluster builder and the walk shared with the teleport pass.
+- `cmd/roadbook`: `journey` gains `-excursion-km`, `-excursion-ratio`,
+  `-excursion-min`, and the anomaly line counts excursions.
+- Tests: unit cases in `journey_test.go` (a single needle, a slow needle, a
+  run of four, a recorded out-and-back kept, a longer absence kept, onward
+  travel kept, a short hop kept, the switch, the input untouched); the
+  goldens unchanged; `needles_test.go` counts needles on the trips of each
+  private dataset before and after — the source of every figure below.
+
+| dataset | trips | needles before | after | points set aside |
+|---|---|---|---|---|
+| tester's iPhone export | 60 | 67 on 7 trips | 4 on 4 trips | 63 |
+| Android fixture | 18 | 0 | 0 | 0 |
+| maintainer's archive | 66 | 3 on 2 trips | 0 | 3 |
+
+The window was measured, not chosen: at 60 minutes 13 needles stayed; at
+180 the pass began taking multi-point clusters with an hour's stay from
+the archive, which may be real errands. Stated blind spot: a real trip of
+over 20 km out and back within two hours, with nothing recorded on the way,
+disappears from the map. The four needles left are longer than two hours.
 
 ### #1 — newest first (STOP 2)
 
@@ -180,12 +244,19 @@ schema should have one before it is ever displayed in an image or a share.
 - Raw-signal data on iPhone: the iPhone export has none.
 - Places or names derived from `placeID` (phase 18 "places" covers names).
 - Anything on the life map's own list order (not in #1).
+- Snapping recorded points to roads (map matching against OSM). Asked
+  for at STOP 1b; it cannot remove needles, and drawing recorded stretches
+  along computed roads changes invariant 6 — its own phase, with a brief
+  (PLAN.md backlog, "Snapped lines").
 
 ## 5. Checkpoints
 
 - **STOP 0** — this brief. Gate entry in DECISIONS.
 - **STOP 1** — #4: `make test`; the real file parsed by the CLI into a
   scratch database and uploaded through the browser on the scratch stack.
+- **STOP 1b** — needles: `make test` (goldens unchanged, needle counts
+  pinned), the affected trips looked at before and after on the scratch
+  stack.
 - **STOP 2** — #1 + #2: vitest, Playwright at 390/768/1280, screenshots.
 - **STOP 3** — #3: `make test` (database suites), migration up and down,
   Playwright edit-and-reload on the scratch stack.

@@ -93,3 +93,33 @@ rejected, what would change our mind.
 - **Rejected:** pinning numbers from the Go run alone (that tests the code
   against itself).
 - **Would change our mind:** nothing.
+
+## 2026-11-10 — #4: needles on iPhone maps fixed inside phase 17 (STOP 1b)
+
+- **Chosen:** a second rejection pass in journey assembly, by shape: a
+  cluster more than 20 km from both neighbours, the neighbours within a
+  quarter of the shorter hop of each other, at most 120 minutes apart.
+  Named parameters, a counter, rows untouched. On the trips: tester 67 → 4
+  needles, Android fixture 0 → 0 with nothing set aside, archive 3 → 0
+  (`internal/journey/needles_test.go`). Inside phase 17 because #4 is not
+  fixed while an iPhone user's maps look broken.
+- **Rejected:** lowering the 900 km/h teleport limit (needles run 24–471
+  km/h); a list of recurring bad places (recurrence does not separate
+  them); filtering in the parser (inputs are passed through as they are)
+  or in detection (needles are under 100 km; detection stays with the
+  reference); a 60-minute window (13 needles left) or 180 (took hour-long
+  clusters from the archive).
+- **Would change our mind:** a real trip missing a stretch it recorded —
+  then the window shortens, or the pass asks for a single-point cluster.
+
+## 2026-11-10 — Snapping to roads is its own phase
+
+- **Chosen:** the maintainer asked whether recorded points could be
+  matched to OSM roads so routes follow the road. Not in phase 17: a PLAN.md
+  backlog entry, "Snapped lines", to be briefed on its own.
+- **Rejected:** doing it now. Matching cannot remove a needle (it draws it
+  along real roads), so the filter comes first either way; and drawing
+  recorded stretches along computed roads changes invariant 6 ("observed
+  legs are never routed"), which needs its own decision and its own line
+  kind, visibly distinct from both recorded and routed.
+- **Would change our mind:** nothing in this phase.
