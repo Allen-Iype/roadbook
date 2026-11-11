@@ -286,7 +286,8 @@ One migration, one command, no network call at run time.
 ### Go
 
 - **`internal/places`** (new): the embedded list — OpenStreetMap city and
-  town nodes worldwide, about 113,600 rows, about 1.9 MB gzipped — and
+  town nodes worldwide, 113,584 rows, 2,396,071 bytes gzipped as built
+  (the 1.90 MB measured in §2.5 carried no ids) — and
   its parser, on the pattern of `internal/states`. Columns: OSM node id,
   name, class (`city` | `town`), population where tagged, latitude,
   longitude. The name is the `name` tag when it is Latin script, else

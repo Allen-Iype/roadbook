@@ -113,3 +113,52 @@ rejected, what would change our mind.
 - **Rejected:** starting code before the list comparison was finished —
   the first recommendation would have shipped the weaker list.
 - **Would change our mind:** not applicable.
+
+## 2026-11-11 — #15: the list file carries OpenStreetMap ids, and is 2.4 MB for it
+
+- **Chosen:** each row is `id, name, class, population, latitude,
+  longitude`, the id written with OpenStreetMap's type letter
+  ("n60741085"), positions to five decimals (about a metre). 113,584
+  rows, 2,396,071 bytes — against the 1,902,986 measured for the brief,
+  whose trial list had no ids or class. The id is the table's key, and
+  what a later row about a place would keep.
+- **Rejected:** no ids, a serial key (smaller by about 0.4 MB, but
+  reloading the list would renumber every place, and nothing could refer
+  to one across loads); the bare node number (a later list with ways or
+  relations would collide — their numbers overlap); seven decimals as
+  OpenStreetMap gives them (2,628,644 bytes for precision no "near" can
+  use).
+- **Would change our mind:** nothing in view; the file is already an
+  exception to the 1 MB rule at either size.
+
+## 2026-11-11 — #15: the list is built by a Go command kept beside it
+
+- **Chosen:** `go run ./internal/places/gen -dir <dir>` — two Overpass
+  queries (cities, towns), the raw answers kept in `<dir>`, the name rule
+  (Latin-script `name`, else `name:en`, else left out and counted), rows
+  sorted by id, gzip with no name or timestamp. With `-cached` it rebuilds
+  from raw answers already fetched, byte-identically; a fresh fetch never
+  will, because OpenStreetMap moves. The package doc records the fetch
+  date, the raw answers' checksums and the embedded file's, and
+  `TestBundled` pins the embedded checksum and the row count.
+- **Rejected:** the shell-and-Python scripts used for the brief's
+  measurement (a second language for one build step, and Python's
+  "is this Latin?" test differs in detail from Go's); committing the raw
+  answers (6.8 MB more, for a re-derivation nobody needs to repeat
+  often); filtering the whole-world file (tens of GB for 115,417 nodes).
+- **Would change our mind:** the public Overpass server refusing these
+  queries; then the whole-world file, filtered once.
+
+## 2026-11-11 — #15: one statement loads the list; `-if-empty` counts before it reads
+
+- **Chosen:** `ReplacePlaces` sends the columns as six arrays and inserts
+  with `unnest` in a single statement inside the delete-and-replace
+  transaction: 113,584 rows in about a second on the test database.
+  `roadbook places -if-empty` counts the table before it decompresses the
+  list, so every start after the first costs one query.
+- **Rejected:** one INSERT per row as `ReplaceStates` does (fine for
+  4,589 rows; a round trip per place here, at every fresh instance's
+  first start); pgx's COPY (the position column is built by a PostGIS
+  function, which COPY cannot call).
+- **Would change our mind:** a village-sized list making the single
+  statement's arrays too large; then the same statement in batches.

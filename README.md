@@ -82,6 +82,18 @@ never from routed road geometry: inference does not testify to where a
 person was. `roadbook states -src <file>` replaces the table; `-if-empty`
 is what the compose startup runs.
 
+Towns load the same way. The list a stop is named from is every
+OpenStreetMap node tagged as a city or a town, worldwide — 113,584 places,
+2.4 MB inside the binary, the second named exception to the 1 MB rule —
+loaded into a `places` table at first start with no network fetch.
+`internal/places/` records when it was fetched and its checksum, and
+`go run ./internal/places/gen` is the tool that built it; OpenStreetMap
+changes by the minute, so the committed file is the record. A larger list
+in the same format (one with villages, say) replaces it with
+`roadbook places -src <file>`. Place data © OpenStreetMap contributors,
+available under the Open Database License; the embedded list is offered
+under the same licence.
+
 The home page is the life map: one map
 holding every kept trip's route. Nothing is kept yet, so it
 points you at the **Trips to review** page, where the 3 detected candidates

@@ -8,8 +8,8 @@
 #   scripts/pilot/host/backup-stack.sh <slug> <stage-dir>
 #
 # Writes into <stage-dir> (must exist, must be empty):
-#   db.sql.gz     plain-format dump, data of `countries` and `states`
-#                 excluded (regenerable: the api refills them at startup
+#   db.sql.gz     plain-format dump, data of `countries`, `states` and
+#                 `places` excluded (regenerable: the api refills them at startup
 #                 with -if-empty; their schema and the goose version table
 #                 are kept)
 #   photos.tar    the photos volume (thumbnails)
@@ -69,6 +69,7 @@ chmod 777 "$STAGE"
 compose exec -T db pg_dump -U roadbook -d roadbook \
   --format=plain --no-owner --no-privileges \
   --exclude-table-data=countries --exclude-table-data=states \
+  --exclude-table-data=places \
   > "$STAGE/db.sql" </dev/null
 
 # 2. Volumes, as the user that owns them.

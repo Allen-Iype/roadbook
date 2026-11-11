@@ -23,6 +23,7 @@ import (
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
 	"roadbook/internal/photosource"
+	"roadbook/internal/places"
 	"roadbook/internal/route"
 	"roadbook/internal/states"
 	"roadbook/internal/store"
@@ -55,6 +56,8 @@ func main() {
 		err = runCountries(os.Args[2:])
 	case "states":
 		err = runStates(os.Args[2:])
+	case "places":
+		err = runPlaces(os.Args[2:])
 	case "serve":
 		err = runServe(os.Args[2:])
 	case "backup":
@@ -77,6 +80,7 @@ func usage() {
   roadbook import  -src <timeline export.json> [-db url] [-from date] [-to date] [-label name]
   roadbook countries [-src <admin-0 geojson[.gz]>] [-if-empty] [-db url]
   roadbook states  [-src <admin-1 geojson[.gz]>] [-if-empty] [-db url]
+  roadbook places  [-src <places list.tsv[.gz]>] [-if-empty] [-db url]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
   roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
   roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh]
@@ -93,6 +97,9 @@ bundled Natural Earth 1:110m set by default, or a higher-resolution admin-0
 file from disk via -src. Replaces the table wholesale; never fetches.
 'states' does the same for admin-1 regions (states, provinces): the embedded
 Natural Earth 1:10m set by default — the only scale that covers the world.
+'places' loads the named settlements a stop is named from: the embedded
+OpenStreetMap list of cities and towns by default, or a larger list in the
+same format via -src. Replaces the table wholesale; never fetches.
 'detect' finds adventure candidates: from a file (prints only) or from the
 database (persists a run and its candidates, then prints).
 'journey' assembles one window of observations into observed and gap legs and
@@ -404,6 +411,68 @@ func runStates(args []string) error {
 		return err
 	}
 	fmt.Printf("loaded %d states from %s\n", len(list), label)
+	return nil
+}
+
+// runPlaces loads the list of named settlements — the third reference table,
+// after countries and states, and the same shape of command: the embedded
+// list by default, a file via -src, wholesale replacement, and -if-empty for
+// the compose startup line. The embedded list needs no network; neither does
+// a file. Nothing here ever fetches.
+func runPlaces(args []string) error {
+	fs := flag.NewFlagSet("places", flag.ExitOnError)
+	src := fs.String("src", "", "places list, tab-separated, .tsv or .gz (default: embedded OpenStreetMap cities and towns)")
+	source := fs.String("source", places.SourceOSM, "what to record as the rows' source when loading -src")
+	ifEmpty := fs.Bool("if-empty", false, "load only when the places table is empty (startup-safe: never overwrites an existing load)")
+	db := dbFlag(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	s, err := openStore(ctx, *db)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+	// Checked before the list is parsed: at every start after the first this
+	// is the whole command, and it should cost one count, not a decompress.
+	if *ifEmpty {
+		n, err := s.CountPlaces(ctx)
+		if err != nil {
+			return err
+		}
+		if n > 0 {
+			fmt.Printf("places table already holds %d rows; -if-empty leaves it untouched\n", n)
+			return nil
+		}
+	}
+
+	var list []places.Place
+	label := "embedded OpenStreetMap cities and towns"
+	if *src == "" {
+		list, err = places.Bundled()
+		if err != nil {
+			return err
+		}
+		*source = places.SourceOSM
+	} else {
+		f, err := os.Open(*src)
+		if err != nil {
+			return err
+		}
+		list, err = places.Parse(f)
+		f.Close()
+		if err != nil {
+			return fmt.Errorf("cannot load %s: %w", filepath.Base(*src), err)
+		}
+		label = filepath.Base(*src)
+	}
+
+	if err := s.ReplacePlaces(ctx, list, *source); err != nil {
+		return err
+	}
+	fmt.Printf("loaded %d places from %s\n", len(list), label)
 	return nil
 }
 
