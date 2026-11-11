@@ -381,7 +381,7 @@ type BulkDecisionItem struct {
 	// Id Candidate id from the latest run.
 	Id int64 `json:"id"`
 
-	// Name Required, non-empty, when action is "confirmed".
+	// Name Required, non-empty, at most 120 characters, when action is "confirmed".
 	Name *string `json:"name,omitempty"`
 }
 
@@ -449,18 +449,30 @@ type Decision struct {
 	Id     int64          `json:"id"`
 
 	// Name Present when action is confirmed.
-	Name      *string   `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
+
+	// Notes The owner's own words on a kept trip (phase 17). Absent when none were written. Never on a shared view.
+	Notes     *string   `json:"notes,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // DecisionAction defines model for Decision.Action.
 type DecisionAction string
 
+// DecisionEdit defines model for DecisionEdit.
+type DecisionEdit struct {
+	// Name The trip's name; surrounding space is trimmed.
+	Name string `json:"name"`
+
+	// Notes Plain text; absent or blank clears the notes.
+	Notes *string `json:"notes,omitempty"`
+}
+
 // DecisionRequest defines model for DecisionRequest.
 type DecisionRequest struct {
 	Action DecisionRequestAction `json:"action"`
 
-	// Name Required when action is confirmed.
+	// Name Required when action is confirmed; at most 120 characters.
 	Name *string `json:"name,omitempty"`
 }
 
@@ -967,6 +979,9 @@ type UploadPhotoImportMultipartBody struct {
 // DecideCandidatesBulkJSONRequestBody defines body for DecideCandidatesBulk for application/json ContentType.
 type DecideCandidatesBulkJSONRequestBody = BulkDecisionRequest
 
+// EditDecisionJSONRequestBody defines body for EditDecision for application/json ContentType.
+type EditDecisionJSONRequestBody = DecisionEdit
+
 // DecideCandidateJSONRequestBody defines body for DecideCandidate for application/json ContentType.
 type DecideCandidateJSONRequestBody = DecisionRequest
 
@@ -999,6 +1014,9 @@ type ServerInterface interface {
 	// DecideCandidatesBulk Decide several candidates in one atomic request
 	// (POST /candidates/decisions)
 	DecideCandidatesBulk(w http.ResponseWriter, r *http.Request)
+	// EditDecision Change a kept trip's name and notes
+	// (PATCH /candidates/{id}/decision)
+	EditDecision(w http.ResponseWriter, r *http.Request, id int64)
 	// DecideCandidate Confirm or dismiss a candidate
 	// (POST /candidates/{id}/decision)
 	DecideCandidate(w http.ResponseWriter, r *http.Request, id int64)
@@ -1193,6 +1211,32 @@ func (siw *ServerInterfaceWrapper) DecideCandidatesBulk(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DecideCandidatesBulk(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EditDecision operation middleware
+func (siw *ServerInterfaceWrapper) EditDecision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EditDecision(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1835,6 +1879,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/decisions", wrapper.DecideCandidatesBulk)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/journey", wrapper.GetCandidateJourney)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/name-suggestion", wrapper.SuggestCandidateName)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/candidates/{id}/decision", wrapper.EditDecision)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/decision", wrapper.DecideCandidate)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/candidates/{id}/photos", wrapper.ListCandidatePhotos)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/candidates/{id}/photos", wrapper.UploadCandidatePhotos)
@@ -2088,6 +2133,71 @@ func (response DecideCandidatesBulk401JSONResponse) VisitDecideCandidatesBulkRes
 type DecideCandidatesBulk404JSONResponse Error
 
 func (response DecideCandidatesBulk404JSONResponse) VisitDecideCandidatesBulkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditDecisionRequestObject struct {
+	Id   int64 `json:"id"`
+	Body *EditDecisionJSONRequestBody
+}
+
+type EditDecisionResponseObject interface {
+	VisitEditDecisionResponse(w http.ResponseWriter) error
+}
+
+type EditDecision200JSONResponse Decision
+
+func (response EditDecision200JSONResponse) VisitEditDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditDecision400JSONResponse Error
+
+func (response EditDecision400JSONResponse) VisitEditDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditDecision401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response EditDecision401JSONResponse) VisitEditDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditDecision404JSONResponse Error
+
+func (response EditDecision404JSONResponse) VisitEditDecisionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -3258,6 +3368,9 @@ type StrictServerInterface interface {
 	// DecideCandidatesBulk Decide several candidates in one atomic request
 	// (POST /candidates/decisions)
 	DecideCandidatesBulk(ctx context.Context, request DecideCandidatesBulkRequestObject) (DecideCandidatesBulkResponseObject, error)
+	// EditDecision Change a kept trip's name and notes
+	// (PATCH /candidates/{id}/decision)
+	EditDecision(ctx context.Context, request EditDecisionRequestObject) (EditDecisionResponseObject, error)
 	// DecideCandidate Confirm or dismiss a candidate
 	// (POST /candidates/{id}/decision)
 	DecideCandidate(ctx context.Context, request DecideCandidateRequestObject) (DecideCandidateResponseObject, error)
@@ -3508,6 +3621,39 @@ func (sh *strictHandler) DecideCandidatesBulk(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DecideCandidatesBulkResponseObject); ok {
 		if err := validResponse.VisitDecideCandidatesBulkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EditDecision operation middleware
+func (sh *strictHandler) EditDecision(w http.ResponseWriter, r *http.Request, id int64) {
+	var request EditDecisionRequestObject
+
+	request.Id = id
+
+	var body EditDecisionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EditDecision(ctx, request.(EditDecisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EditDecision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EditDecisionResponseObject); ok {
+		if err := validResponse.VisitEditDecisionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

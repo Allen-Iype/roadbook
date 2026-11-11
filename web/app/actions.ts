@@ -43,6 +43,32 @@ export async function decideCandidate(
   return { ok: true };
 }
 
+// A kept trip's name and the owner's notes (phase 17, #3). Its own
+// endpoint, not a re-decide: editing can never change whether the trip is
+// kept, and a later re-decide never blanks the notes. Every page that shows
+// the name is revalidated.
+export async function editTrip(
+  candidateId: number,
+  name: string,
+  notes: string,
+): Promise<DecideResult> {
+  const { error, response } = await api.PATCH("/candidates/{id}/decision", {
+    params: { path: { id: candidateId } },
+    body: { name, notes },
+  });
+  if (error) {
+    return {
+      ok: false,
+      error: error.error ?? `couldn't save the name and notes (error ${response.status})`,
+    };
+  }
+  revalidatePath(`/adventure/${candidateId}`);
+  revalidatePath("/adventures");
+  revalidatePath("/candidates");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export type BulkDecideResult =
   | { ok: true; decided: number }
   | { ok: false; error: string };

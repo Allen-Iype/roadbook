@@ -152,3 +152,52 @@ rejected, what would change our mind.
   picture with nothing to tap).
 - **Would change our mind:** testers asking for a way to refer to a trip
   by number; then a plain "Trip 12", not a roman numeral.
+
+## 2026-11-10 — #3: limits, and the name limit on every write
+
+- **Chosen:** the proposed limits, agreed by the maintainer: a name of at
+  most 120 characters, notes of at most 4,000, counted in characters (Go
+  counts runes; the browser counts code points; the spec's `maxLength`
+  says the same). The 120 applies to every write of a name — the new edit,
+  the single confirm and the bulk confirm — so a name can never be saved
+  that the edit form then refuses to save unchanged. Notes keep their line
+  breaks and inner spacing; trailing space goes; blank notes clear them.
+- **Rejected:** a name limit only on the edit (two rules for one field);
+  counting bytes (an Icelandic or Malayalam name would hit the limit at
+  half the length of an English one).
+- **Would change our mind:** a real name over 120 characters, or notes
+  that want more than a few paragraphs — then the limit rises, and the
+  candidate list stops carrying notes.
+
+## 2026-11-10 — #3: where the words sit, and how they read
+
+- **Chosen:** on the trip page's header, under the dates and above the
+  distance: the notes set in the display serif (the book's own face, so
+  the traveller's words read as part of the trip, not as interface text),
+  then one text control, "Edit name or add notes" (or "Edit name and
+  notes" once there are some). Editing replaces both in place: the name in
+  the heading's face, the notes box, a character count, Save and Cancel;
+  Escape cancels. A slot on `AdventureView` (`ownerWords`) that the shared
+  view never fills, on top of the API never sending notes there.
+- **Rejected:** an edit control on the Trips covers (a cover is one link);
+  a rich-text or Markdown editor (plain text was the brief); notes on the
+  shared view (owner-only by decision).
+- **Would change our mind:** testers not finding the control, or wanting
+  notes per day rather than per trip.
+
+## 2026-11-10 — #3: the e2e that writes, and what it taught
+
+- **Chosen:** `web/e2e/edit-trip.spec.ts` edits the second kept trip, at
+  the desktop project only (so three projects never race one row, and
+  never share.spec's first trip), and puts the name back and clears the
+  notes in a `finally`, so a failing run still leaves the stack as it
+  found it. Two traps found on the way: `app/loading.tsx`'s own `h1` sits
+  hidden in the DOM while a reloaded page streams in (the spec reads
+  `article h1`), and a streamed node first arrives in a hidden container
+  with zero height (the line-break check polls). Twenty serial repeats
+  green before it was kept.
+- **Rejected:** a read-only spec for #3 (it would not prove the write
+  path end to end); resetting through the API from the spec (the browser
+  side has no API access by design).
+- **Would change our mind:** e2e ever pointed at a stack holding real
+  data — this spec would then need to be skipped there, like share.spec.

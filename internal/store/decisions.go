@@ -2,7 +2,10 @@ package store
 
 import (
 	"context"
+	"errors"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"roadbook/internal/domain"
 )
@@ -15,6 +18,7 @@ type DecisionRow struct {
 	ID          int64
 	Action      string // 'confirmed' | 'dismissed'
 	Name        *string
+	Notes       *string // the owner's own words (migration 15); nil = none
 	AnchorStart time.Time
 	AnchorEnd   time.Time
 	AnchorDest  domain.LatLng
@@ -22,8 +26,16 @@ type DecisionRow struct {
 	UpdatedAt   time.Time
 }
 
-const decisionCols = `id, action, name, anchor_span_start, anchor_span_end,
+const decisionCols = `id, action, name, notes, anchor_span_start, anchor_span_end,
 	anchor_dest_lat, anchor_dest_lon, created_at, updated_at`
+
+// scanDecision reads one row in decisionCols order.
+func scanDecision(row interface{ Scan(...any) error }) (DecisionRow, error) {
+	var d DecisionRow
+	err := row.Scan(&d.ID, &d.Action, &d.Name, &d.Notes, &d.AnchorStart, &d.AnchorEnd,
+		&d.AnchorDest.Lat, &d.AnchorDest.Lon, &d.CreatedAt, &d.UpdatedAt)
+	return d, err
+}
 
 func (s *Store) ListDecisions(ctx context.Context, userID string) ([]DecisionRow, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+decisionCols+` FROM decisions WHERE user_id = $1 ORDER BY id`, userID)
@@ -33,9 +45,8 @@ func (s *Store) ListDecisions(ctx context.Context, userID string) ([]DecisionRow
 	defer rows.Close()
 	var out []DecisionRow
 	for rows.Next() {
-		var d DecisionRow
-		if err := rows.Scan(&d.ID, &d.Action, &d.Name, &d.AnchorStart, &d.AnchorEnd,
-			&d.AnchorDest.Lat, &d.AnchorDest.Lon, &d.CreatedAt, &d.UpdatedAt); err != nil {
+		d, err := scanDecision(rows)
+		if err != nil {
 			return nil, err
 		}
 		out = append(out, d)
@@ -45,13 +56,9 @@ func (s *Store) ListDecisions(ctx context.Context, userID string) ([]DecisionRow
 
 // InsertDecision records a new decision with its anchor snapshot.
 func (s *Store) InsertDecision(ctx context.Context, userID, action string, name *string, anchor CandidateRow) (DecisionRow, error) {
-	var d DecisionRow
-	err := s.pool.QueryRow(ctx, `INSERT INTO decisions (user_id, action, name, anchor_span_start, anchor_span_end, anchor_dest_lat, anchor_dest_lon)
+	return scanDecision(s.pool.QueryRow(ctx, `INSERT INTO decisions (user_id, action, name, anchor_span_start, anchor_span_end, anchor_dest_lat, anchor_dest_lon)
 		VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING `+decisionCols,
-		userID, action, name, anchor.SpanStart, anchor.SpanEnd, anchor.Dest.Lat, anchor.Dest.Lon).
-		Scan(&d.ID, &d.Action, &d.Name, &d.AnchorStart, &d.AnchorEnd,
-			&d.AnchorDest.Lat, &d.AnchorDest.Lon, &d.CreatedAt, &d.UpdatedAt)
-	return d, err
+		userID, action, name, anchor.SpanStart, anchor.SpanEnd, anchor.Dest.Lat, anchor.Dest.Lon))
 }
 
 // BulkDecision is one item of an atomic bulk triage write (phase 11 §6.1).
@@ -95,12 +102,25 @@ func (s *Store) DecideBulk(ctx context.Context, userID string, items []BulkDecis
 // UpdateDecision re-decides in place, refreshing the anchor to the candidate
 // the user is looking at now (BRIEF §3.1). The user overwriting their own
 // decision is the one legitimate mutation of user data.
+// Notes are not in the SET list: a re-decide never blanks what the owner
+// wrote (phase 17, #3).
 func (s *Store) UpdateDecision(ctx context.Context, userID string, id int64, action string, name *string, anchor CandidateRow) (DecisionRow, error) {
-	var d DecisionRow
-	err := s.pool.QueryRow(ctx, `UPDATE decisions SET action=$2, name=$3, anchor_span_start=$4, anchor_span_end=$5,
+	return scanDecision(s.pool.QueryRow(ctx, `UPDATE decisions SET action=$2, name=$3, anchor_span_start=$4, anchor_span_end=$5,
 		anchor_dest_lat=$6, anchor_dest_lon=$7, updated_at=now() WHERE id=$1 AND user_id=$8 RETURNING `+decisionCols,
-		id, action, name, anchor.SpanStart, anchor.SpanEnd, anchor.Dest.Lat, anchor.Dest.Lon, userID).
-		Scan(&d.ID, &d.Action, &d.Name, &d.AnchorStart, &d.AnchorEnd,
-			&d.AnchorDest.Lat, &d.AnchorDest.Lon, &d.CreatedAt, &d.UpdatedAt)
-	return d, err
+		id, action, name, anchor.SpanStart, anchor.SpanEnd, anchor.Dest.Lat, anchor.Dest.Lon, userID))
+}
+
+// EditDecisionText changes a kept trip's name and notes (phase 17, #3) and
+// nothing else: not the action, not the anchor. Only a confirmed row of
+// this user's is touched; ok is false when there is none — unknown id,
+// another user's row, or a dismissed decision, which has no name to edit.
+// A nil notes clears them.
+func (s *Store) EditDecisionText(ctx context.Context, userID string, id int64, name string, notes *string) (DecisionRow, bool, error) {
+	d, err := scanDecision(s.pool.QueryRow(ctx, `UPDATE decisions SET name=$3, notes=$4, updated_at=now()
+		WHERE id=$1 AND user_id=$2 AND action='confirmed' RETURNING `+decisionCols,
+		id, userID, name, notes))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return DecisionRow{}, false, nil
+	}
+	return d, err == nil, err
 }

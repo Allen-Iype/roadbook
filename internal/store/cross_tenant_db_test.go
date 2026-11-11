@@ -175,6 +175,11 @@ func TestCrossTenantWritesCannotTouchOtherRows(t *testing.T) {
 	if _, err := s.UpdateDecision(ctx, userB, decA.ID, "dismissed", nil, candA); err == nil {
 		t.Error("UpdateDecision of A's decision as B succeeded — want no-rows error")
 	}
+	// Editing A's name and notes from B's scope finds nothing (phase 17, #3).
+	hijackNotes := "hijack notes"
+	if _, ok, err := s.EditDecisionText(ctx, userB, decA.ID, name, &hijackNotes); err != nil || ok {
+		t.Errorf("EditDecisionText of A's decision as B: ok %v, err %v — want not found", ok, err)
+	}
 	id := decA.ID
 	if err := s.DecideBulk(ctx, userB, []store.BulkDecision{{Anchor: candA, Action: "confirmed", Name: &name, UpdateID: &id}}); err != nil {
 		// The bulk update silently affects zero rows inside its tx; the
@@ -185,7 +190,7 @@ func TestCrossTenantWritesCannotTouchOtherRows(t *testing.T) {
 	if err != nil || len(decs) != 1 {
 		t.Fatalf("A's decisions after B's attempts: %d, err %v", len(decs), err)
 	}
-	if decs[0].Action != "confirmed" || decs[0].Name == nil || *decs[0].Name != "Seed journey" {
+	if decs[0].Action != "confirmed" || decs[0].Name == nil || *decs[0].Name != "Seed journey" || decs[0].Notes != nil {
 		t.Errorf("A's decision was altered from B's scope: %+v", decs[0])
 	}
 	if err := s.SetImportDetectStatus(ctx, userB, 1, "failed"); err != nil {

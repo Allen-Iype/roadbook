@@ -8,6 +8,7 @@ import { Unreachable } from "@/components/unreachable";
 import { INSTANCE_LABEL } from "@/lib/instance";
 import { requireUser } from "@/lib/session";
 import { AdventureView } from "@/components/adventure/adventure-view";
+import { EditTrip } from "@/components/adventure/edit-trip";
 import { ShareLinks } from "@/components/share-links";
 import { PhotosSection } from "./photos-section";
 
@@ -99,6 +100,15 @@ export default async function AdventurePage({
         photosSection={
           photos !== null && candidate ? (
             <PhotosSection candidateId={candidate.id} photos={photos} />
+          ) : undefined
+        }
+        ownerWords={
+          confirmed && candidate ? (
+            <EditTrip
+              candidateId={candidate.id}
+              name={candidate.decision?.name ?? ""}
+              notes={candidate.decision?.notes}
+            />
           ) : undefined
         }
         shareControls={

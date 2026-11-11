@@ -62,6 +62,7 @@ export function AdventureView({
   thumbs = OWNER_THUMBS,
   photosSection,
   shareControls,
+  ownerWords,
 }: {
   journey: Journey;
   candidate?: Candidate;
@@ -78,6 +79,8 @@ export function AdventureView({
   photosSection?: React.ReactNode;
   /** The owner's share-link controls; absent on the shared view. */
   shareControls?: React.ReactNode;
+  /** The owner's name-and-notes control (phase 17, #3); never on the shared view. */
+  ownerWords?: React.ReactNode;
 }) {
   // Memoised: these feed effect dependencies in RouteMap, and a fresh array
   // identity per render would tear the map down on every day selection.
@@ -114,6 +117,7 @@ export function AdventureView({
         candidate={candidate}
         shared={shared}
         name={name}
+        ownerWords={shared ? undefined : ownerWords}
       />
 
       {journey.legs.length > 0 && (
@@ -223,11 +227,13 @@ function Cover({
   candidate,
   shared,
   name,
+  ownerWords,
 }: {
   journey: Journey;
   candidate?: Candidate;
   shared?: SharedCover;
   name: string;
+  ownerWords?: React.ReactNode;
 }) {
   // The day count is the SERVED figure (phase 14 CP2): the same rule the
   // narrative's sliceDays applies, computed in Go and printed by the CLI.
@@ -282,6 +288,8 @@ function Cover({
             "Still under way when your file ends."}
         </p>
       )}
+
+      {ownerWords}
 
       <TripBlock
         journey={journey}

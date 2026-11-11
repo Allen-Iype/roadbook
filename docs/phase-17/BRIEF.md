@@ -216,6 +216,10 @@ label leaves the marginalia). "plate" stays only as an internal code word.
   box, Save / Cancel; notes show under the heading as plain text. Hidden on
   shared views. This also makes the triage bar's existing sentence ("Rename
   any from its card or its page") true.
+- As built (2026-11-10): limits 120 / 4,000 characters, the name limit on
+  every write of a name; the control sits under the dates, the notes in
+  the display serif; `web/e2e/edit-trip.spec.ts` writes and restores
+  (DECISIONS, three #3 entries).
 
 ## 3. The real choices, with a recommendation
 

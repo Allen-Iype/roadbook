@@ -60,6 +60,7 @@ func (a anchorRef) key() string {
 type archivedDecision struct {
 	Action    string    `json:"action"`
 	Name      *string   `json:"name,omitempty"`
+	Notes     *string   `json:"notes,omitempty"` // phase 17; absent in older archives
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	anchorRef
@@ -110,7 +111,7 @@ func Write(ctx context.Context, s *store.Store, files store.PhotoFiles, w io.Wri
 		ref := anchorRef{SpanStart: d.AnchorStart, SpanEnd: d.AnchorEnd, DestLat: d.AnchorDest.Lat, DestLon: d.AnchorDest.Lon}
 		anchorByID[d.ID] = ref
 		outDecs = append(outDecs, archivedDecision{
-			Action: d.Action, Name: d.Name, CreatedAt: d.CreatedAt, UpdatedAt: d.UpdatedAt, anchorRef: ref,
+			Action: d.Action, Name: d.Name, Notes: d.Notes, CreatedAt: d.CreatedAt, UpdatedAt: d.UpdatedAt, anchorRef: ref,
 		})
 	}
 
@@ -229,7 +230,7 @@ func Restore(ctx context.Context, s *store.Store, files store.PhotoFiles, r io.R
 	restoreDecisions := func() error {
 		for _, d := range decs {
 			row := store.DecisionRow{
-				Action: d.Action, Name: d.Name,
+				Action: d.Action, Name: d.Name, Notes: d.Notes,
 				AnchorStart: d.SpanStart, AnchorEnd: d.SpanEnd,
 				AnchorDest: domain.LatLng{Lat: d.DestLat, Lon: d.DestLon},
 				CreatedAt:  d.CreatedAt, UpdatedAt: d.UpdatedAt,
