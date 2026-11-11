@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 
+	"roadbook/internal/domain"
+	"roadbook/internal/journey"
 	"roadbook/internal/places"
 )
 
@@ -53,4 +55,59 @@ func (s *Store) CountPlaces(ctx context.Context) (int64, error) {
 	var n int64
 	err := s.pool.QueryRow(ctx, `SELECT count(*) FROM places`).Scan(&n)
 	return n, err
+}
+
+// PlacesForPoints finds, for each point, the nearest row of the places
+// table and the distance to it — one query for the whole list, answers in
+// the points' order. An empty input or an unloaded table yields answers
+// with Found false, never an error: no names is a state the page shows.
+//
+// How the query reads. unnest turns the two arrays back into one row per
+// point, numbered by WITH ORDINALITY. CROSS JOIN LATERAL then runs the
+// inner SELECT once per point, and may refer to that point — a plain join
+// could not. The inner SELECT is the nearest-neighbour search: ORDER BY
+// geog <-> point LIMIT 1 walks the GiST index outward from the point and
+// stops at the first row, instead of measuring every place.
+//
+// The distance is on a sphere (ST_Distance's last argument false), the same
+// model as geo.HaversineM, which every other distance in Roadbook uses; the
+// spheroid's extra accuracy is a fraction of a percent, far below what
+// "near" means.
+func (s *Store) PlacesForPoints(ctx context.Context, pts []domain.LatLng) ([]journey.NearestPlace, error) {
+	out := make([]journey.NearestPlace, len(pts))
+	if len(pts) == 0 {
+		return out, nil
+	}
+	lons := make([]float64, len(pts))
+	lats := make([]float64, len(pts))
+	for i, p := range pts {
+		lons[i] = p.Lon
+		lats[i] = p.Lat
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT p.ord, n.name, n.source, n.dist_m
+		FROM unnest($1::float8[], $2::float8[]) WITH ORDINALITY AS p(lon, lat, ord)
+		CROSS JOIN LATERAL (
+			SELECT pl.name, pl.source,
+			       ST_Distance(pl.geog, ST_SetSRID(ST_MakePoint(p.lon, p.lat), 4326)::geography, false) AS dist_m
+			FROM places pl
+			ORDER BY pl.geog <-> ST_SetSRID(ST_MakePoint(p.lon, p.lat), 4326)::geography
+			LIMIT 1
+		) n`, lons, lats)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var ord int
+		var n journey.NearestPlace
+		var distM float64
+		if err := rows.Scan(&ord, &n.Name, &n.Source, &distM); err != nil {
+			return nil, err
+		}
+		n.Found = true
+		n.DistanceKm = distM / 1000
+		out[ord-1] = n
+	}
+	return out, rows.Err()
 }

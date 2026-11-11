@@ -162,3 +162,46 @@ rejected, what would change our mind.
   function, which COPY cannot call).
 - **Would change our mind:** a village-sized list making the single
   statement's arrays too large; then the same statement in batches.
+
+## 2026-11-11 — #16: the position kind sits on the stop, and the wording band is served
+
+- **Chosen:** `Stop.named_from` (`recorded` | `visit`) says whose
+  position was looked up, on the stop itself; `Stop.place` carries `name`,
+  `distance_km`, `source` and `near`. `near` is decided in Go from the
+  echoed `place_params` (10 km and 25 km), so the page, the command and
+  any later surface word the same stop the same way.
+- **Rejected:** the brief's shape, `place.position` — the region (#17) is
+  looked up at the same position and can exist where no place is within
+  the limit, so the kind cannot live inside `place`; leaving the band to
+  the web (two implementations of one comparison, and the kind of logic
+  the Next layer is not to hold).
+- **Would change our mind:** nothing in view.
+
+## 2026-11-11 — #16: the page and the command name stops through one function
+
+- **Chosen:** `api.StopNames` — positions (pure), one nearest-place query,
+  the naming rule (pure) — called by the journey handler and by `roadbook
+  journey -candidate N`. The journey loader now also reads the visits
+  overlapping the window; `Assemble` still ignores them, and the goldens
+  and the three reference pins are unmoved.
+- **Rejected:** a separate visits query in the handler (two loaders for
+  one window); naming inside `Assemble` (it would need the database, and
+  the golden contract pins its output).
+- **Would change our mind:** nothing in view.
+
+## 2026-11-11 — #16: what the first run showed
+
+- **Chosen (recorded, not decided):** with the embedded list and default
+  parameters, of stops that have a position: fixture 506 near, 67 "N km
+  from", 1 unnamed of 574; archive 1,912 / 302 / 1 of 2,215 (12 more have
+  no position at all); iPhone export 735 / 84 / 2 of 821 (3 with none)
+  — `TestStopNamesOn…` in `internal/api`, counts only. The demo names 11
+  of its 15 stops: four stops of its south-coast trip are more than 25 km
+  from any OpenStreetMap city or town (`TestDemoStopsAreNamed`). The
+  brief's demo row (§2.2) measured only the four stops with a recorded
+  position and so missed this.
+- **Rejected:** widening `max_km` to name those four — "40 km from" a
+  town is not where the stop was.
+- **Would change our mind:** this is evidence for the village list
+  (#13), to be weighed at the STOP 1 review with the maintainer's own
+  trips.

@@ -374,6 +374,24 @@ func (e SessionInfoMode) Valid() bool {
 	}
 }
 
+// Defines values for StopNamedFrom.
+const (
+	Recorded StopNamedFrom = "recorded"
+	Visit    StopNamedFrom = "visit"
+)
+
+// Valid indicates whether the value is a known member of the StopNamedFrom enum.
+func (e StopNamedFrom) Valid() bool {
+	switch e {
+	case Recorded:
+		return true
+	case Visit:
+		return true
+	default:
+		return false
+	}
+}
+
 // BulkDecisionItem defines model for BulkDecisionItem.
 type BulkDecisionItem struct {
 	Action BulkDecisionItemAction `json:"action"`
@@ -631,8 +649,11 @@ type Journey struct {
 	ObservedKm    float64   `json:"observed_km"`
 
 	// Params Exactly the parameters that produced this assembly (invariant 3).
-	Params        map[string]interface{} `json:"params"`
-	RawPointsKept int                    `json:"raw_points_kept"`
+	Params map[string]interface{} `json:"params"`
+
+	// PlaceParams The naming thresholds that produced every `Stop.place` (invariant 3).
+	PlaceParams   PlaceParams `json:"place_params"`
+	RawPointsKept int         `json:"raw_points_kept"`
 
 	// RoutedKm Routed road distance summed over road legs. 0 when nothing is routed — the product is fully usable without a router.
 	RoutedKm float64 `json:"routed_km"`
@@ -828,6 +849,12 @@ type PhotoUploadResults struct {
 	Results []PhotoUploadResult `json:"results"`
 }
 
+// PlaceParams The naming thresholds that produced every `Stop.place` (invariant 3).
+type PlaceParams struct {
+	MaxKm  float64 `json:"max_km"`
+	NearKm float64 `json:"near_km"`
+}
+
 // Run defines model for Run.
 type Run struct {
 	Id              int64 `json:"id"`
@@ -930,8 +957,30 @@ type Stop struct {
 	DisplacementKm float64   `json:"displacement_km"`
 	End            time.Time `json:"end"`
 	Loc            LatLng    `json:"loc"`
-	Points         int       `json:"points"`
-	Start          time.Time `json:"start"`
+
+	// NamedFrom Which position the stop's place (and region) was looked up at. `recorded` is the stop's own `loc` — points the phone recorded during the halt. `visit` means the stop has no points of its own (`points` is 0, `loc` is not a position) and the coordinate came from Google's visit record covering the same time: Google's statement, not a traced position, and a surface that prints the place says so. Absent when the stop has neither.
+	NamedFrom *StopNamedFrom `json:"named_from,omitempty"`
+
+	// Place The nearest listed settlement to a stop, when one lies within `place_params.max_km` — absent otherwise, and absent on every stop when `roadbook places` has not been run. Looked up in the places table (embedded OpenStreetMap cities and towns by default), never over the network. A name is an inference and carries what it rests on: the distance, the list, and (on the stop) which position was looked up. Nothing here knows a town's outline, so the honest words are "near" and "N km from", never "in".
+	Place  *StopPlace `json:"place,omitempty"`
+	Points int        `json:"points"`
+	Start  time.Time  `json:"start"`
+}
+
+// StopNamedFrom Which position the stop's place (and region) was looked up at. `recorded` is the stop's own `loc` — points the phone recorded during the halt. `visit` means the stop has no points of its own (`points` is 0, `loc` is not a position) and the coordinate came from Google's visit record covering the same time: Google's statement, not a traced position, and a surface that prints the place says so. Absent when the stop has neither.
+type StopNamedFrom string
+
+// StopPlace The nearest listed settlement to a stop, when one lies within `place_params.max_km` — absent otherwise, and absent on every stop when `roadbook places` has not been run. Looked up in the places table (embedded OpenStreetMap cities and towns by default), never over the network. A name is an inference and carries what it rests on: the distance, the list, and (on the stop) which position was looked up. Nothing here knows a town's outline, so the honest words are "near" and "N km from", never "in".
+type StopPlace struct {
+	// DistanceKm Great-circle distance from the looked-up position to the place.
+	DistanceKm float64 `json:"distance_km"`
+	Name       string  `json:"name"`
+
+	// Near True within `place_params.near_km` ("near X"); false means the distance belongs in the wording ("N km from X"). Decided once, in the API, so every surface words the same stop the same way.
+	Near bool `json:"near"`
+
+	// Source Which list named it — "osm" for the embedded OpenStreetMap list.
+	Source string `json:"source"`
 }
 
 // TimedPoint defines model for TimedPoint.

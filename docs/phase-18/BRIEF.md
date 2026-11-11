@@ -323,10 +323,11 @@ One migration, one command, no network call at run time.
   `StatesForPoints`). Named parameters, echoed in the response
   (invariant 3): `PlaceNearKm` 10, `PlaceMaxKm` 25 — starting values to be
   read against real trips at STOP 1.
-- **`api/openapi.yaml`**: `Stop` gains optional `place` — `name`,
-  `distance_km`, `source` (`osm`), `position` (`recorded` | `visit`) — and
-  optional `state`; `Leg` gains `states`; the journey echoes the two
-  parameters. Go and TypeScript regenerated. The shared view carries the
+- **`api/openapi.yaml`**: `Stop` gains optional `named_from` (`recorded` |
+  `visit`), optional `place` — `name`, `distance_km`, `source` (`osm`),
+  `near` — and optional `state`; `Leg` gains `states`; the journey echoes
+  the two parameters as `place_params` (as built, #16: the position kind
+  moved onto the stop and the wording band is served — DECISIONS). Go and TypeScript regenerated. The shared view carries the
   same `Journey` schema, so it inherits.
 - **The name suggestion** (confirm step): the default suggester changes
   from "none" to the places table, through the existing `internal/suggest`

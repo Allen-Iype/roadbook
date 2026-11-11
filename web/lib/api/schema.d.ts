@@ -727,6 +727,32 @@ export interface components {
              * @description First-to-last straight line during the halt, not path sum.
              */
             displacement_km: number;
+            /**
+             * @description Which position the stop's place (and region) was looked up at. `recorded` is the stop's own `loc` — points the phone recorded during the halt. `visit` means the stop has no points of its own (`points` is 0, `loc` is not a position) and the coordinate came from Google's visit record covering the same time: Google's statement, not a traced position, and a surface that prints the place says so. Absent when the stop has neither.
+             * @enum {string}
+             */
+            named_from?: "recorded" | "visit";
+            place?: components["schemas"]["StopPlace"];
+        };
+        /** @description The nearest listed settlement to a stop, when one lies within `place_params.max_km` — absent otherwise, and absent on every stop when `roadbook places` has not been run. Looked up in the places table (embedded OpenStreetMap cities and towns by default), never over the network. A name is an inference and carries what it rests on: the distance, the list, and (on the stop) which position was looked up. Nothing here knows a town's outline, so the honest words are "near" and "N km from", never "in". */
+        StopPlace: {
+            name: string;
+            /**
+             * Format: double
+             * @description Great-circle distance from the looked-up position to the place.
+             */
+            distance_km: number;
+            /** @description Which list named it — "osm" for the embedded OpenStreetMap list. */
+            source: string;
+            /** @description True within `place_params.near_km` ("near X"); false means the distance belongs in the wording ("N km from X"). Decided once, in the API, so every surface words the same stop the same way. */
+            near: boolean;
+        };
+        /** @description The naming thresholds that produced every `Stop.place` (invariant 3). */
+        PlaceParams: {
+            /** Format: double */
+            near_km: number;
+            /** Format: double */
+            max_km: number;
         };
         Country: {
             /** @description ISO 3166-1 alpha-2 where Natural Earth provides one (Kosovo's XK is user-assigned); territories without any alpha-2 carry Natural Earth's three-letter ADM0_A3 instead. */
@@ -751,6 +777,7 @@ export interface components {
             params: {
                 [key: string]: unknown;
             };
+            place_params: components["schemas"]["PlaceParams"];
             legs: components["schemas"]["Leg"][];
             stops: components["schemas"]["Stop"][];
             /** @description Countries the route's points fall in, ordered by first appearance along the journey. Derived locally by point-in-polygon against bundled Natural Earth polygons — never a network lookup. Empty when `roadbook countries` has not been run. Border-adjacent points can misattribute at 1:110m resolution; the UI labels this line as derived. */

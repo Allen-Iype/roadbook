@@ -802,6 +802,12 @@ func runJourney(args []string) error {
 	var crossed []store.CountryRef
 	var regions []store.StateRef
 	attributed := false
+	// Where each stop was (phase 18) — also a database lookup, so DB mode
+	// only; the same api.StopNames call the page's handler makes.
+	var positions []journey.StopPosition
+	var names []*journey.StopName
+	placeParams := journey.DefaultPlaceParams()
+	var placesLoaded int64
 	// The candidate's home-relative figure (owner surfaces only, BRIEF
 	// §3E); -1 in file mode, where there is no candidate.
 	destKm := -1
@@ -845,6 +851,12 @@ func runJourney(args []string) error {
 			return err
 		}
 		if regions, err = s.StatesForPoints(ctx, pts); err != nil {
+			return err
+		}
+		if positions, names, err = api.StopNames(ctx, s, j, obs.Visits, placeParams); err != nil {
+			return err
+		}
+		if placesLoaded, err = s.CountPlaces(ctx); err != nil {
 			return err
 		}
 		attributed = true
@@ -989,6 +1001,38 @@ func runJourney(args []string) error {
 		fmt.Printf("%3d %s .. %s (%.0f min) displacement %.2f km, %d points, near [%.4f, %.4f]\n",
 			i+1, s.Start.Format("15:04:05"), s.End.Format("15:04:05"),
 			s.End.Sub(s.Start).Minutes(), s.DisplacementKm, s.Points, s.Loc.Lat, s.Loc.Lon)
+	}
+
+	// The names the page prints beside each stop, with what each rests on:
+	// the wording, the distance, the list, and whose position was looked up
+	// ("visit" = Google's visit record, for a stop with no points of its
+	// own). One line per stop, so a stop that goes unnamed says why.
+	if attributed {
+		named := 0
+		for _, n := range names {
+			if n != nil {
+				named++
+			}
+		}
+		fmt.Printf("\n=== places: %d of %d stops named (near within %.0f km, named within %.0f km) ===\n",
+			named, len(j.Stops), placeParams.NearKm, placeParams.MaxKm)
+		if placesLoaded == 0 {
+			fmt.Println("the places table is empty — run `roadbook places` to load the list; no stop can be named without it")
+		}
+		for i := range j.Stops {
+			switch {
+			case names[i] != nil && names[i].Near:
+				fmt.Printf("%3d near %s (%.1f km, %s, %s position)\n",
+					i+1, names[i].Name, names[i].DistanceKm, names[i].Source, positions[i].Kind)
+			case names[i] != nil:
+				fmt.Printf("%3d %.0f km from %s (%s, %s position)\n",
+					i+1, names[i].DistanceKm, names[i].Name, names[i].Source, positions[i].Kind)
+			case positions[i].OK:
+				fmt.Printf("%3d — no listed place within %.0f km (%s position)\n", i+1, placeParams.MaxKm, positions[i].Kind)
+			default:
+				fmt.Printf("%3d — no position: no points during the stop and no visit record over it\n", i+1)
+			}
+		}
 	}
 	return nil
 }

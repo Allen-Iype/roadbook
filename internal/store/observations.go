@@ -288,8 +288,10 @@ func (s *Store) LoadObservations(ctx context.Context, userID string) (domain.Obs
 
 // LoadJourneyInputs reads only what journey assembly needs — activities
 // overlapping the window plus path points and raw positions inside it — so a
-// journey request does not load the whole observation corpus. Visits stay
-// empty; assembly does not use them.
+// journey request does not load the whole observation corpus. Visits
+// overlapping the window are loaded too (phase 18): assembly still does not
+// read them, but a stop with no recorded position of its own is named from
+// the visit that covers it (journey.StopPositions).
 func (s *Store) LoadJourneyInputs(ctx context.Context, userID string, winStart, winEnd time.Time) (domain.Observations, error) {
 	var obs domain.Observations
 
@@ -350,6 +352,28 @@ func (s *Store) LoadJourneyInputs(ctx context.Context, userID string, winStart, 
 		}
 		obs.RawPositions = append(obs.RawPositions, domain.RawPosition{
 			Time: withOffset(ts, off), Loc: locOf(lat, lon), AccuracyM: acc, Source: src,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return obs, err
+	}
+
+	rows, err = s.pool.Query(ctx, `SELECT start_ts, start_offset_sec, end_ts, end_offset_sec, lat, lon, semantic_type
+		FROM visits WHERE user_id = $3 AND end_ts >= $1 AND start_ts <= $2 ORDER BY start_ts, id`, winStart, winEnd, userID)
+	if err != nil {
+		return obs, err
+	}
+	for rows.Next() {
+		var start, end time.Time
+		var soff, eoff int
+		var lat, lon *float64
+		var st string
+		if err := rows.Scan(&start, &soff, &end, &eoff, &lat, &lon, &st); err != nil {
+			return obs, err
+		}
+		obs.Visits = append(obs.Visits, domain.Visit{
+			Start: withOffset(start, soff), End: withOffset(end, eoff),
+			Loc: locOf(lat, lon), SemanticType: st,
 		})
 	}
 	return obs, rows.Err()

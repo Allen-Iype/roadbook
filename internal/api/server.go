@@ -161,6 +161,25 @@ func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.Cand
 		out.ModeBreakdown = &apiBd
 	}
 
+	// Where each stop was (phase 18): the nearest listed town, when one is
+	// close enough to say. Absent, never empty, on a stop that goes unnamed;
+	// the thresholds are echoed so the wording can be explained afterwards.
+	pp := journey.DefaultPlaceParams()
+	out.PlaceParams = PlaceParams{NearKm: pp.NearKm, MaxKm: pp.MaxKm}
+	positions, names, err := StopNames(ctx, s.Store, j, obs.Visits, pp)
+	if err != nil {
+		return Journey{}, j, err
+	}
+	for i := range out.Stops {
+		if positions[i].OK {
+			from := StopNamedFrom(positions[i].Kind)
+			out.Stops[i].NamedFrom = &from
+		}
+		if n := names[i]; n != nil {
+			out.Stops[i].Place = &StopPlace{Name: n.Name, DistanceKm: n.DistanceKm, Source: n.Source, Near: n.Near}
+		}
+	}
+
 	// Countries crossed: every point the route draws, against the loaded
 	// polygons, in one query (BRIEF §1.4). Gap-leg endpoints duplicate the
 	// neighbouring observed points; the query's GROUP BY absorbs that.
