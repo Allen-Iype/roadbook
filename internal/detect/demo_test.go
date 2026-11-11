@@ -2,9 +2,12 @@ package detect_test
 
 import (
 	"os"
+	"reflect"
 	"testing"
+	"time"
 
 	"roadbook/internal/detect"
+	"roadbook/internal/domain"
 	"roadbook/internal/timeline"
 )
 
@@ -63,6 +66,64 @@ func TestDemoDataset(t *testing.T) {
 		}
 		if c.StartTruncated || c.EndTruncated {
 			t.Errorf("candidate %d truncated (%v/%v) — the demo window fully contains its journeys", i+1, c.StartTruncated, c.EndTruncated)
+		}
+	}
+}
+
+// TestDemoDatasetIOS holds the iPhone-shaped copy of the demo (phase 17,
+// issue #4; written by the same generator) to the Android file's result.
+// Visits and activities must parse identically; path points carry whole-
+// minute offsets on iPhone, so each may sit up to 30 s from its twin, and
+// detection must still find the same bases, the same three trips, the same
+// destinations and stops.
+func TestDemoDatasetIOS(t *testing.T) {
+	parse := func(path string) (domain.Observations, timeline.Stats) {
+		t.Helper()
+		f, err := os.Open(path)
+		if err != nil {
+			t.Fatalf("the demo datasets are committed and must exist: %v", err)
+		}
+		defer f.Close()
+		obs, st, err := timeline.Parse(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return obs, st
+	}
+	android, stA := parse("../../testdata/demo/demo.json")
+	ios, stI := parse("../../testdata/demo/demo-ios.json")
+
+	if stI.Format != timeline.PhoneTimelineIOSFormat || stA.Format != timeline.PhoneTimelineFormat {
+		t.Errorf("formats = %q / %q", stA.Format, stI.Format)
+	}
+	if stI.Visits != stA.Visits || stI.Activities != stA.Activities || stI.Points != stA.Points || stI.Skipped != 0 {
+		t.Fatalf("iPhone counts = %d/%d/%d (%d skipped), Android %d/%d/%d",
+			stI.Visits, stI.Activities, stI.Points, stI.Skipped, stA.Visits, stA.Activities, stA.Points)
+	}
+	if !reflect.DeepEqual(ios.Visits, android.Visits) {
+		t.Error("visits differ between the iPhone and Android shapes")
+	}
+	if !reflect.DeepEqual(ios.Activities, android.Activities) {
+		t.Error("activities differ between the iPhone and Android shapes")
+	}
+	for i := range android.Points {
+		a, b := android.Points[i], ios.Points[i]
+		if d := a.Time.Sub(b.Time); d > 30*time.Second || d < -30*time.Second || !reflect.DeepEqual(a.Loc, b.Loc) {
+			t.Fatalf("point %d: Android %v %v, iPhone %v %v", i, a.Time, a.Loc, b.Time, b.Loc)
+		}
+	}
+
+	p := detect.DefaultParams()
+	ra, ri := detect.Run(android, p), detect.Run(ios, p)
+	if len(ri.Bases) != len(ra.Bases) || ri.OutliersDropped != ra.OutliersDropped || len(ri.Candidates) != len(ra.Candidates) {
+		t.Fatalf("iPhone bases/outliers/candidates = %d/%d/%d, Android %d/%d/%d",
+			len(ri.Bases), ri.OutliersDropped, len(ri.Candidates), len(ra.Bases), ra.OutliersDropped, len(ra.Candidates))
+	}
+	for i := range ra.Candidates {
+		a, b := ra.Candidates[i], ri.Candidates[i]
+		if a.Start.Format("2006-01-02") != b.Start.Format("2006-01-02") || a.DestKm != b.DestKm || a.Stops != b.Stops || a.Dest != b.Dest {
+			t.Errorf("candidate %d: Android {%s %d km, %d stops}, iPhone {%s %d km, %d stops}",
+				i+1, a.Start.Format("2006-01-02"), a.DestKm, a.Stops, b.Start.Format("2006-01-02"), b.DestKm, b.Stops)
 		}
 	}
 }

@@ -713,6 +713,12 @@ func runJourney(args []string) error {
 		"teleport rejection: cluster edge speed above this is impossible (0 = off)")
 	fs.Float64Var(&p.ClusterRadiusM, "cluster-m", p.ClusterRadiusM,
 		"teleport rejection: cluster radius, metres")
+	fs.Float64Var(&p.ExcursionMinKm, "excursion-km", p.ExcursionMinKm,
+		"excursion rejection: both hops out and back longer than this, km (0 = off)")
+	fs.Float64Var(&p.ExcursionReturnRatio, "excursion-ratio", p.ExcursionReturnRatio,
+		"excursion rejection: neighbours closer than this share of the shorter hop")
+	fs.Float64Var(&p.ExcursionMaxMinutes, "excursion-min", p.ExcursionMaxMinutes,
+		"excursion rejection: out and back within this many minutes")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -807,9 +813,9 @@ func runJourney(args []string) error {
 	fmt.Printf("points: %d trace + %d raw in window -> %d kept (%d trace + %d raw)\n",
 		j.TracePointsInWindow, j.RawPointsInWindow, j.MergedPoints(),
 		j.TracePointsKept, j.RawPointsKept)
-	if j.RejectedNullIsland+j.RejectedAccuracy+j.RejectedSpeed > 0 {
-		fmt.Printf("anomalies excluded from assembly (rows untouched): %d null-island, %d accuracy, %d teleport\n",
-			j.RejectedNullIsland, j.RejectedAccuracy, j.RejectedSpeed)
+	if j.RejectedNullIsland+j.RejectedAccuracy+j.RejectedSpeed+j.RejectedExcursion > 0 {
+		fmt.Printf("anomalies excluded from assembly (rows untouched): %d null-island, %d accuracy, %d teleport, %d excursion\n",
+			j.RejectedNullIsland, j.RejectedAccuracy, j.RejectedSpeed, j.RejectedExcursion)
 	}
 	obsPct, infPct := 0.0, 0.0
 	if j.TotalKm > 0 {

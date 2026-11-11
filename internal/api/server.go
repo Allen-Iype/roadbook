@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"unicode"
+	"unicode/utf8"
 
 	"roadbook/internal/auth"
 	"roadbook/internal/detect"
@@ -340,6 +342,9 @@ func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequest
 		if trimmed == "" {
 			return DecideCandidate400JSONResponse{Error: "confirming requires a non-empty name"}, nil
 		}
+		if n := utf8.RuneCountInString(trimmed); n > maxNameRunes {
+			return DecideCandidate400JSONResponse{Error: fmt.Sprintf("the name is %d characters; the most is %d", n, maxNameRunes)}, nil
+		}
 		name = &trimmed
 	}
 
@@ -368,6 +373,64 @@ func (s *Server) DecideCandidate(ctx context.Context, req DecideCandidateRequest
 		return nil, err
 	}
 	return DecideCandidate200JSONResponse(toAPIDecision(row)), nil
+}
+
+// Limits on the owner's words (phase 17, #3), counted in characters
+// (runes), as the spec's maxLength counts them. Generous for a title and a
+// few paragraphs; small enough that the candidate list, which carries
+// every decision, stays a few kilobytes per trip at most.
+const (
+	maxNameRunes  = 120
+	maxNotesRunes = 4000
+)
+
+// EditDecision changes a kept trip's name and notes (phase 17, #3) and
+// nothing else. The candidate id resolves to its matched decision exactly
+// as DecideCandidate resolves it; only a confirmed decision is editable.
+func (s *Server) EditDecision(ctx context.Context, req EditDecisionRequestObject) (EditDecisionResponseObject, error) {
+	name := strings.TrimSpace(req.Body.Name)
+	if name == "" {
+		return EditDecision400JSONResponse{Error: "a trip needs a name"}, nil
+	}
+	if n := utf8.RuneCountInString(name); n > maxNameRunes {
+		return EditDecision400JSONResponse{Error: fmt.Sprintf("the name is %d characters; the most is %d", n, maxNameRunes)}, nil
+	}
+	var notes *string
+	if req.Body.Notes != nil {
+		// Trailing space goes; the owner's line breaks and indentation
+		// inside the text stay as typed.
+		if t := strings.TrimRightFunc(*req.Body.Notes, unicode.IsSpace); strings.TrimSpace(t) != "" {
+			if n := utf8.RuneCountInString(t); n > maxNotesRunes {
+				return EditDecision400JSONResponse{Error: fmt.Sprintf("the notes are %d characters; the most is %d", n, maxNotesRunes)}, nil
+			}
+			notes = &t
+		}
+	}
+
+	user := s.currentUser(ctx)
+	cand, err := s.Store.LatestCandidate(ctx, user, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	if cand == nil {
+		return EditDecision404JSONResponse{Error: "this trip isn't in your list any more — reload the page"}, nil
+	}
+	_, _, _, matched, err := s.matchedState(ctx)
+	if err != nil {
+		return nil, err
+	}
+	did, ok := matched[cand.ID]
+	if !ok {
+		return EditDecision404JSONResponse{Error: "only a kept trip has a name to change — keep it first"}, nil
+	}
+	row, ok, err := s.Store.EditDecisionText(ctx, user, did, name, notes)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return EditDecision404JSONResponse{Error: "only a kept trip has a name to change — keep it first"}, nil
+	}
+	return EditDecision200JSONResponse(toAPIDecision(row)), nil
 }
 
 // DecideCandidatesBulk is the atomic bulk-triage write (phase 11 §6.1):
@@ -405,6 +468,9 @@ func (s *Server) DecideCandidatesBulk(ctx context.Context, req DecideCandidatesB
 			}
 			if trimmed == "" {
 				return DecideCandidatesBulk400JSONResponse{Error: fmt.Sprintf("candidate %d: confirming requires a non-empty name", it.Id)}, nil
+			}
+			if n := utf8.RuneCountInString(trimmed); n > maxNameRunes {
+				return DecideCandidatesBulk400JSONResponse{Error: fmt.Sprintf("candidate %d: the name is %d characters; the most is %d", it.Id, n, maxNameRunes)}, nil
 			}
 			name = &trimmed
 		}
@@ -501,5 +567,5 @@ func toAPICandidate(c store.CandidateRow) Candidate {
 }
 
 func toAPIDecision(d store.DecisionRow) Decision {
-	return Decision{Id: d.ID, Action: DecisionAction(d.Action), Name: d.Name, UpdatedAt: d.UpdatedAt}
+	return Decision{Id: d.ID, Action: DecisionAction(d.Action), Name: d.Name, Notes: d.Notes, UpdatedAt: d.UpdatedAt}
 }

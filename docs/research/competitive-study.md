@@ -364,7 +364,7 @@ Concrete and verified; each maps to a proposal in §4.
 
 Effort: S = under a day, M = a few days with a brief, L = its own checkpoint.
 "Phase fit" refers to the current position: phase 16 (reading load) at its
-CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
+CP4 close with a zero-Go-diff target, then phase 18 (places), brief pending.
 
 ### P1. Read the iOS Google Maps export
 
@@ -395,7 +395,9 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
   (file name `location-history.json` per mahlernim; verify on a device).
   Zero change to `internal/detect` and `internal/journey` (invariant 4).
 - **Phase fit.** Not phase 16 (Go diff). A standalone change between the
-  phase 16 close and phase 17 CP1, or alongside 17.
+  phase 16 close and phase 18 CP1, or alongside 18.
+  *Taken up 2026-11-04 as phase 17 (issue #4), proven on a tester's real
+  export; Places renumbered to 18.*
 - **Dawarich report.** §1.1 covers sniffing and the three Takeout-era
   variants; it does not mention the iOS array. New.
 - **Licence.** Shape knowledge only; fixtures written here.
@@ -426,7 +428,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
 - **Touches.** `internal/detect` (bases fallback, score input), `internal/
   journey` (summary field beside `Summarize`), `api/openapi.yaml` (summary
   and day fields), CLI `journey` print, web day narrative and summary block.
-- **Phase fit.** Phase 17: "night N near <place>" is the sentence the
+- **Phase fit.** Phase 18: "night N near <place>" is the sentence the
   places phase exists to fill, and its brief is pending.
 - **Dawarich report.** Not covered (Dawarich has no home or night concept).
 - **Licence.** reitti is AGPL like Roadbook; idea only regardless.
@@ -450,7 +452,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
   lives beside `Assemble` like `ModeBreakdown`.
 - **Touches.** `internal/journey` (new pure function), `api/openapi.yaml`,
   CLI print, web plate and day rows, DESIGN §6 if the plate gains a tile.
-- **Phase fit.** After phase 17; own small brief. Depends on routed legs
+- **Phase fit.** After phase 18; own small brief. Depends on routed legs
   existing for the adventure (null-router instances get "not measurable").
 - **Dawarich report.** Not covered; Dawarich rejected speed colouring, which
   this is not (curvature is not speed and does not use the colour channel).
@@ -475,7 +477,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
 - **Touches.** `internal/journey`, `api/openapi.yaml`, web (`terms.ts`-style
   sentence table), CLI print.
 - **Phase fit.** Subject matter is phase 16's, but it is a Go change; fold
-  into the phase 17 brief as the narrative's second half, or a phase 16
+  into the phase 18 brief as the narrative's second half, or a phase 16
   follow-on after CP4.
 - **Dawarich report.** Not covered.
 - **Licence.** BUSL: idea only; the reason vocabulary is Roadbook's own.
@@ -575,7 +577,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
   and the regression case are new.
 - **Licence.** MIT; idea only.
 
-### P10. A town-label policy for the plate (input to phase 17)
+### P10. A town-label policy for the plate (input to phase 18)
 
 - **What.** When the gazetteer lands: label towns the route passed within a
   named distance in a "rode through" style, force a label at each day
@@ -583,9 +585,9 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
   cap the count, resolve overlaps by a stable score (forced, then visited,
   then population).
 - **Inspired by.** Lashmar (card and video label policies).
-- **Problem.** Phase 17 needs a label policy, not only names; this one was
+- **Problem.** Phase 18 needs a label policy, not only names; this one was
   tuned on motorcycle tours.
-- **Effort.** S–M on top of phase 17; `plate-image.ts` and the live map.
+- **Effort.** S–M on top of phase 18; `plate-image.ts` and the live map.
 - **Dawarich report.** Not covered.
 - **Licence.** Policy, not code; Natural Earth, never `cities.json`.
 
@@ -610,7 +612,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
 - **Inspired by.** Lashmar (which does it automatically; do not).
 - **Problem.** Monsoon rides are defined by the rain.
 - **Effort.** S–M; the Nominatim opt-in pattern already exists.
-- **Phase fit.** Later; pairs with phase 17's batch-and-cache shape.
+- **Phase fit.** Later; pairs with phase 18's batch-and-cache shape.
 - **Dawarich report.** Not covered. **Licence.** Open-Meteo CC BY 4.0.
 
 ### P13. Replay: design notes for the backlog item
@@ -639,7 +641,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
 - Offset-less timestamp handling: never sort by a placeholder clock
   (mahlernim; S, parser) — add a `probe` check before assuming it occurs.
 - Legacy `timelineObjects` carries place names and addresses
-  (GoogleTimelineMapper); leave a source-asserted name slot in phase 17's
+  (GoogleTimelineMapper); leave a source-asserted name slot in phase 18's
   schema for when the backlog legacy parser lands.
 
 ### P15. An atlas index: the figures across all confirmed adventures
@@ -661,7 +663,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
   DESIGN.md; zero new data.
 - **Touches.** `internal/journey` or a sibling package, `api/openapi.yaml`,
   web.
-- **Phase fit.** Its own checkpoint after phase 17 (names make the
+- **Phase fit.** Its own checkpoint after phase 18 (names make the
   highlights read); a first cut without names is possible earlier.
 - **Dawarich report.** §2 rejected "monthly stats, insights, digests" as
   coverage analytics. §7 argues the distinction: aggregates over *confirmed
@@ -680,7 +682,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
 - Automatic third-party calls (Lashmar's weather and road matching): every
   network call stays opt-in and disclosed.
 - Google Places resolution of `placeId` (kurupted): paid API, per-visit
-  disclosure to Google; phase 17's offline gazetteer is the chosen path.
+  disclosure to Google; phase 18's offline gazetteer is the chosen path.
 - Canned narrative prose (reitti memories): the day narrative states
   measured facts only.
 - Mode detection by speed bands (reitti, GeoPulse): rejected in the Dawarich
@@ -697,7 +699,7 @@ CP4 close with a zero-Go-diff target, then phase 17 (places), brief pending.
    and four independent projects agree on the shape. The message fix is a
    one-line change that can land first.
 2. **P2, nights.** It serves three needs with one definition: the narrative
-   sentence phase 17 is about to need a place name for, a home fallback for
+   sentence phase 18 is about to need a place name for, a home fallback for
    sources without `INFERRED_HOME` (which P1 may add to), and the rider's
    own memory of a tour. It is pure, parameterised, and leaves every current
    pin byte-identical by construction.
@@ -714,10 +716,10 @@ Roadbook can detect or say.
 
 **Why the rest wait.** P4 (explanations) is strong but is a Go change in a
 phase that targets none, and its sentences will read better once P2 and
-phase 17 give them places and nights to name. P5 moves regression pins and
+phase 18 give them places and nights to name. P5 moves regression pins and
 deserves its own detect brief. P6 needs a schema and UI design pass. P9's
 test can land any time; its rule needs an offline evaluation first. P10–P13
-depend on phase 17, the GPX endpoint, or the replay item respectively. P14
+depend on phase 18, the GPX endpoint, or the replay item respectively. P14
 is backlog.
 
 ---
@@ -867,7 +869,7 @@ start, end, location and dwell, countries and states crossed, the summary
 per-mode km and hours as Google asserted them, Google's own ground figure
 and the divergence flag, point counts kept, photos placed. Per candidate:
 destination distance from home, track km, days, score breakdown, repeat
-count. Per run: home bases with eras. Not held: place names (phase 17),
+count. Per run: home bases with eras. Not held: place names (phase 18),
 per-point speed or altitude outside the `rawSignals` window, elevation,
 weather, nights (proposal P2).
 
@@ -885,7 +887,7 @@ Three tiers follow.
 | stops and dwell hours per year | summary | — |
 | longest adventure (km, days), most stops | journey, summary | — |
 | farthest destination from home per year | candidate `dest_km` | owner-only, never on a share or export, same rule as the plate |
-| repeat destinations (visited on more than one adventure) | candidate `repeat` and destination | names wait for phase 17; "a place 420 km north-east, three times" is honest without them |
+| repeat destinations (visited on more than one adventure) | candidate `repeat` and destination | names wait for phase 18; "a place 420 km north-east, three times" is honest without them |
 | destinations radar by bearing and log-distance from home | bases and candidate destination | the one bespoke picture worth drawing; log scale puts a 150 km weekend and a 3,000 km flight on one disc |
 | away-days year strip | windows | two states only, away or not; reitti's five day types need commute detection |
 | air versus ground km per year | air km | — |
@@ -898,8 +900,8 @@ Three tiers follow.
 | figure | needs | proposal |
 |---|---|---|
 | nights away, longest stretch, nights per stop, second base | a night definition over stops | P2 |
-| "slept in" versus "passed through" countries and states | nights plus per-stop region | P2 and phase 17 |
-| named top destinations, breadcrumbs, "Day 2: Jispa" | gazetteer | phase 17 |
+| "slept in" versus "passed through" countries and states | nights plus per-stop region | P2 and phase 18 |
+| named top destinations, breadcrumbs, "Day 2: Jispa" | gazetteer | phase 18 |
 | vehicle on the plate and in the year's mode bar | user-asserted label | P6 |
 | bends and twistiness per leg and per year | routed geometry, measurability rule | P3 |
 | an explanation sentence per leg, stop and gap | reason codes | P4 |
@@ -941,7 +943,7 @@ card later if wanted.
   in {year − 1}; 6,200 km, against 3,100." with the import caveat when
   the earlier year is partial.
 - **Nights, named places, vehicle and bends** join their cards as P2,
-  phase 17, P6 and P3 land, each in the wording its proposal fixes.
+  phase 18, P6 and P3 land, each in the wording its proposal fixes.
 - **Presentation rules borrowed:** a plain-words `(?)` on every card;
   footnotes stating the day and night definitions and the provenance
   rule; a card that cannot be computed is omitted, never shown as zero;

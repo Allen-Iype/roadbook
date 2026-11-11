@@ -45,12 +45,12 @@ func (s *Store) ListAllPhotos(ctx context.Context, userID string) ([]PhotoRow, e
 func (s *Store) RestoreDecision(ctx context.Context, userID string, d DecisionRow) (int64, bool, error) {
 	var id int64
 	err := s.pool.QueryRow(ctx, `INSERT INTO decisions (user_id, action, name, anchor_span_start, anchor_span_end,
-			anchor_dest_lat, anchor_dest_lon, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+			anchor_dest_lat, anchor_dest_lon, created_at, updated_at, notes)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 		ON CONFLICT (user_id, anchor_span_start, anchor_span_end, anchor_dest_lat, anchor_dest_lon) DO NOTHING
 		RETURNING id`,
 		userID, d.Action, d.Name, d.AnchorStart, d.AnchorEnd, d.AnchorDest.Lat, d.AnchorDest.Lon,
-		d.CreatedAt, d.UpdatedAt).Scan(&id)
+		d.CreatedAt, d.UpdatedAt, d.Notes).Scan(&id)
 	if err == nil {
 		return id, true, nil
 	}

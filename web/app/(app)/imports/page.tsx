@@ -94,12 +94,13 @@ function Shell({
   );
 }
 
-// What the sniffer's label means in words (phase 16 CP3). The two formats
+// What the sniffer's label means in words (phase 16 CP3). The formats
 // that import are named for the person; a rejected file keeps the label the
 // sniffer gave it ("pdf", "zip", "kml"), which already says what it was.
 // Presentation only — the label itself travels unchanged from Go.
 const FORMAT_LABELS: Record<string, string> = {
   "phone-timeline": "Timeline export",
+  "phone-timeline-ios": "Timeline export (iPhone)",
   photos: "Photos",
 };
 

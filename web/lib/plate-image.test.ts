@@ -67,7 +67,6 @@ const journey: PlateJourney = {
 const base: PlateInput = {
   journey,
   name: "South coast drive",
-  plate: 1,
   startTruncated: false,
   endTruncated: false,
   selectedDay: null,
@@ -80,7 +79,6 @@ const legendWords = LEGEND_ENTRIES.flatMap((e) => [e.label, `— ${e.desc}`]);
 describe("plateLayout — the legend can never be omitted (invariant 8)", () => {
   const variants: [string, PlateInput][] = [
     ["full input", base],
-    ["shared view: no plate number", { ...base, plate: null }],
     ["highlighted day", { ...base, selectedDay: 2 }],
     ["no attribution", { ...base, attribution: null }],
     ["no map view", { ...base, mapView: null }],
@@ -136,7 +134,9 @@ describe("plateLayout — what else the margin says", () => {
     expect(s).toContain(
       "24–26 April 2026 · Iceland · Suðurland, Austurland · 3 days",
     );
-    expect(s).toContain("PLATE I · FULL ROUTE");
+    expect(s).toContain("FULL ROUTE");
+    // No plate numeral anywhere on the image (phase 17, #2).
+    expect(s.some((x) => /PLATE/.test(x))).toBe(false);
     expect(s).toContain("ROADBOOK");
   });
 
@@ -149,16 +149,15 @@ describe("plateLayout — what else the margin says", () => {
     expect(without).toContain("ROADBOOK");
   });
 
-  it("labels a highlighted day and drops the plate number then", () => {
+  it("labels a highlighted day in place of FULL ROUTE", () => {
     const s = layoutStrings(plateLayout({ ...base, selectedDay: 2 }));
     expect(s).toContain("DAY 2 HIGHLIGHTED");
-    expect(s.some((x) => x.startsWith("PLATE"))).toBe(false);
+    expect(s).not.toContain("FULL ROUTE");
   });
 
-  it("reads FULL ROUTE without a plate number (the shared view)", () => {
-    expect(plateLabel(null, null)).toBe("FULL ROUTE");
-    expect(plateLabel(4, null)).toBe("PLATE IV · FULL ROUTE");
-    expect(plateLabel(4, 3)).toBe("DAY 3 HIGHLIGHTED");
+  it("reads FULL ROUTE, or the highlighted day — never a plate numeral", () => {
+    expect(plateLabel(null)).toBe("FULL ROUTE");
+    expect(plateLabel(3)).toBe("DAY 3 HIGHLIGHTED");
   });
 
   it("prints the truncation words with the flag glyph when the window is cut", () => {
@@ -321,7 +320,6 @@ const days = [
 const overlayBase = {
   journey: overlayJourney,
   name: "South coast drive",
-  plate: 1,
   startTruncated: false,
   endTruncated: false,
   selectedDay: null as number | null,
@@ -349,7 +347,7 @@ describe("overlayLayout — the transparent format", () => {
     const p = layoutStrings(plateLayout({ ...base, journey: overlayJourney }));
     for (const x of ["South coast drive", "700 km", "100% recorded by the phone",
       "observed 699.6 km · routed 0.0 km · unknown 0.0 km · air 0.0 km",
-      "24–26 April 2026 · Iceland · Suðurland, Austurland · 3 days", "PLATE I · FULL ROUTE", "ROADBOOK"]) {
+      "24–26 April 2026 · Iceland · Suðurland, Austurland · 3 days", "FULL ROUTE", "ROADBOOK"]) {
       expect(s).toContain(x);
       expect(p).toContain(x);
     }

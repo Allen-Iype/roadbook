@@ -1,7 +1,7 @@
 // The adventures atlas (phase 9 CP4): structural truths of the grid as the
 // CP3 review decided them — plate covers with the honest figures, newest
-// first with chronological plate numbers, the legend on the page, and the
-// header naming where the reader is.
+// first (no plate numeral since phase 17, #2), the legend on the page, and
+// the header naming where the reader is.
 import { expect, test } from "@playwright/test";
 
 import { openLegend } from "./helpers";
@@ -16,33 +16,33 @@ test("every cover is a link carrying art, figures, and a provenance bar", async 
     await expect(cover.locator("svg").first()).toBeVisible();
     // The mono dateline pairs the range with the km figure.
     await expect(cover.getByText(/\d+ km/)).toBeVisible();
-    await expect(cover.getByText(/PLATE \d+/)).toBeAttached();
+    // Phase 17 (#2): the cover carries no plate numeral.
+    await expect(cover.getByText(/PLATE/)).toHaveCount(0);
   }
 });
 
-test("newest first, plate numbers chronological", async ({ page }) => {
-  // The CP3 review's ordering decision, as a testable statement: display
-  // order is recency, the number is the order travelled — so reading down
-  // the grid, plate numbers strictly decrease.
+test("newest first", async ({ page }) => {
+  // The CP3 review's ordering decision, proven by the dates themselves now
+  // the numeral is gone (phase 17, #2): reading down the grid, each trip
+  // starts no later than the one above it.
   await page.goto("/adventures");
-  const labels = await page
+  const starts = await page
     .locator('main ul a[href^="/adventure/"]')
-    .allTextContents();
-  const plates = labels.map((t) => Number(/PLATE (\d+)/.exec(t)?.[1]));
-  expect(plates.length).toBeGreaterThan(0);
-  for (const p of plates) expect(Number.isNaN(p)).toBe(false);
-  for (let i = 1; i < plates.length; i++) {
-    expect(plates[i]).toBeLessThan(plates[i - 1]);
+    .evaluateAll((els) => els.map((el) => el.getAttribute("data-start") ?? ""));
+  expect(starts.length).toBeGreaterThan(1);
+  for (let i = 1; i < starts.length; i++) {
+    expect(starts[i] <= starts[i - 1]).toBe(true);
   }
 });
 
-test("the shelf teaches the plate number and the provenance bar once, above the covers", async ({ page }) => {
+test("one plain line above the covers: the count and the order", async ({ page }) => {
   // Copy pass (2026-11-03): one plain line under the heading — the
   // count, the order — and no taught term; the legend sits behind its
   // button at the foot.
   await page.goto("/adventures");
   const intro = page.locator("main > p").first();
-  await expect(intro).toContainText(/\d+ trips?, the latest first, numbered in the order you travelled/);
+  await expect(intro).toContainText(/\d+ trips?, the latest first\./);
+  await expect(intro).not.toContainText(/numbered/);
   await expect(intro.locator("button.term")).toHaveCount(0);
   const firstCover = page.locator('main ul a[href^="/adventure/"]').first();
   expect((await intro.boundingBox())!.y).toBeLessThan((await firstCover.boundingBox())!.y);

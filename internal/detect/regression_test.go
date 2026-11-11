@@ -33,6 +33,19 @@ func TestArchiveRegression(t *testing.T) {
 		"../../data/archive-candidates.json")
 }
 
+// TestIOSRegression is the iPhone export (phase 17, issue #4) held to the same
+// reference. The tester's export is parsed by the Go iPhone path; the
+// expected file comes from the reference detector run on an independent
+// conversion of the same file to the Android shape (a Python converter, kept
+// out of the repository because its output carries real coordinates). Both
+// sides agreeing means the iPhone path reads the file as the Android path
+// would have read the same history.
+func TestIOSRegression(t *testing.T) {
+	compareWithReference(t,
+		"../../data/ios-timeline.json",
+		"../../data/ios-candidates.json")
+}
+
 type expected struct {
 	Params map[string]float64 `json:"params"`
 	Bases  []struct {

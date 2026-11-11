@@ -328,6 +328,13 @@ specific user or region surfaces the first time someone else's export is importe
 Adopted into the backlog from the Dawarich comparison or moved here from a phase;
 none is scheduled:
 
+- Snapped lines (added 2026-11-10, phase 17 STOP 1b; asked for by the
+  maintainer). Recorded points drawn along the road they were on, by map
+  matching against OSM (OSRM's match service, in the batch `roadbook
+  route`, cached like routing). Changes invariant 6 — recorded stretches
+  are never routed today — so it needs a brief, a charter decision and its
+  own line kind, distinct from both recorded and routed. Comes after the
+  needle filter, which it cannot replace (`docs/phase-17/DECISIONS.md`).
 - Landing cut (added 2026-11-03, copy pass close; `docs/product/LOG.md`).
   The landing is still cluttered: eight blocks, two pictures of a trip, two
   "Make mine" buttons. A layout cut — one picture, one button, one-line
@@ -680,7 +687,17 @@ UI.
 hiding of the legend, provenance bar or leg kinds (invariant 8), a dark
 theme, the unified timeline, auth surfaces. Zero Go diff is the target.
 
-### Phase 17 — Places: what a day can say (planned 2026-10-29, brief pending)
+### Phase 17 — Tester fixes (2026-11-04)
+
+Issues #1–#4 from the first testers: iPhone Timeline exports accepted,
+trips to review newest first, the plate numeral removed, a kept trip's
+name and notes editable on its page. Brief and decisions:
+`docs/phase-17/`.
+
+### Phase 18 — Places: what a day can say (planned 2026-10-29 as phase 17, brief pending)
+
+*Renumbered 2026-11-04: the tester fixes took 17 (phase 17 DECISIONS).
+Phase 16's records say "phase 17" for this phase; they are kept as written.*
 
 **Goal.** Let each day of an adventure name where it was. The phase 16 CP1
 review found the day narrative honest but useless to the person — it

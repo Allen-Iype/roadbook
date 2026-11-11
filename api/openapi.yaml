@@ -394,6 +394,54 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+    patch:
+      operationId: editDecision
+      summary: Change a kept trip's name and notes
+      description: >
+        Phase 17, issue #3. Replaces the name and the notes of the
+        confirmed decision matched to this candidate, and nothing else — not
+        the action, not the anchor — so editing can never re-decide a trip,
+        and a later re-decide never blanks the notes. Notes are the owner's
+        own words: plain text, returned only on the owner's own reads, never
+        on a shared view. Absent or blank notes clear them. Limits are
+        counted in characters (Unicode code points).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Candidate id from the latest run.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionEdit"
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "200":
+          description: The decision as stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Decision"
+        "400":
+          description: Invalid request — a blank name, or a name or notes over the limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: >
+            No such candidate in the latest run, or the candidate has no kept
+            decision (only a kept trip has a name to edit).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /candidates/{id}/photos:
     post:
@@ -1047,7 +1095,7 @@ components:
         detected_format:
           type: string
           description: >
-            The sniffer's stable format label (phone-timeline, records-json,
+            The sniffer's stable format label (phone-timeline, phone-timeline-ios, records-json,
             semantic-history, …). Absent when the input was never recognised.
         inserted:
           type: integer
@@ -1276,6 +1324,11 @@ components:
         name:
           type: string
           description: Present when action is confirmed.
+        notes:
+          type: string
+          description: >
+            The owner's own words on a kept trip (phase 17). Absent when
+            none were written. Never on a shared view.
         updated_at:
           type: string
           format: date-time
@@ -1307,7 +1360,22 @@ components:
           enum: [confirmed, dismissed]
         name:
           type: string
-          description: Required when action is confirmed.
+          maxLength: 120
+          description: Required when action is confirmed; at most 120 characters.
+
+    DecisionEdit:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: The trip's name; surrounding space is trimmed.
+        notes:
+          type: string
+          maxLength: 4000
+          description: Plain text; absent or blank clears the notes.
 
     TimedPoint:
       type: object
@@ -1667,7 +1735,8 @@ components:
           enum: [confirmed, dismissed]
         name:
           type: string
-          description: Required, non-empty, when action is "confirmed".
+          maxLength: 120
+          description: Required, non-empty, at most 120 characters, when action is "confirmed".
 
     BulkDecisionRequest:
       type: object

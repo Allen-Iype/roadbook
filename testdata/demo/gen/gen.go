@@ -30,9 +30,16 @@
 //     path points — the gap classifies as air by speed and renders as an
 //     arc, excluded from ground validation.
 //
-// The output is the current phone-export shape only — the one supported
-// format (BRIEF §5). No rawSignals section: a real export carries one only
-// for its final ~30 days, and none of the demo's honesty states needs it.
+// The output is the current phone-export shape (BRIEF §5). No rawSignals
+// section: a real export carries one only for its final ~30 days, and none
+// of the demo's honesty states needs it.
+//
+// The same record is also written in the iPhone app's shape (phase 17,
+// issue #4) to testdata/demo/demo-ios.json: a top-level array, positions as
+// "geo:lat,lon", numbers as strings, Google's spellings as the iPhone writes
+// them ("Inferred Home", "in passenger vehicle"), and path points timed in
+// whole minutes after their segment's start — so a point lands up to 30 s
+// from its Android twin. internal/detect pins both files to the same result.
 package main
 
 import (
@@ -40,10 +47,14 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"time"
 )
 
-const outPath = "testdata/demo/demo.json"
+const (
+	outPath    = "testdata/demo/demo.json"
+	outPathIOS = "testdata/demo/demo-ios.json"
+)
 
 type latLng struct{ lat, lon float64 }
 
@@ -309,4 +320,84 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("wrote %s: %d segments, %d bytes\n", outPath, len(segs), len(out))
+
+	ios := make([]seg, len(segs))
+	for i, s := range segs {
+		ios[i] = toIOS(s)
+	}
+	outIOS, err := json.MarshalIndent(ios, "", " ")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "gen:", err)
+		os.Exit(1)
+	}
+	outIOS = append(outIOS, '\n')
+	if err := os.WriteFile(outPathIOS, outIOS, 0o644); err != nil {
+		fmt.Fprintln(os.Stderr, "gen:", err)
+		os.Exit(1)
+	}
+	fmt.Printf("wrote %s: %d segments, %d bytes\n", outPathIOS, len(ios), len(outIOS))
+}
+
+// toIOS rewrites one Android-shaped segment the way the iPhone app writes
+// it. Field names are the measured ones (docs/phase-17/BRIEF.md §1).
+func toIOS(s seg) seg {
+	out := seg{"startTime": s["startTime"], "endTime": s["endTime"]}
+	switch {
+	case s["visit"] != nil:
+		tc := s["visit"].(seg)["topCandidate"].(seg)
+		out["visit"] = seg{
+			"hierarchyLevel": "0",
+			"probability":    "0.900000",
+			"topCandidate": seg{
+				"placeID":       "demo",
+				"semanticType":  iosSpelling(tc["semanticType"].(string), true),
+				"probability":   "0.800000",
+				"placeLocation": geo(tc["placeLocation"].(seg)["latLng"].(string)),
+			},
+		}
+	case s["activity"] != nil:
+		a := s["activity"].(seg)
+		out["activity"] = seg{
+			"start":          geo(a["start"].(seg)["latLng"].(string)),
+			"end":            geo(a["end"].(seg)["latLng"].(string)),
+			"distanceMeters": fmt.Sprintf("%.6f", a["distanceMeters"].(float64)),
+			"topCandidate": seg{
+				"type":        iosSpelling(a["topCandidate"].(seg)["type"].(string), false),
+				"probability": "0.000000",
+			},
+		}
+	case s["timelinePath"] != nil:
+		start, _ := time.Parse(time.RFC3339, s["startTime"].(string))
+		var pts []seg
+		for _, p := range s["timelinePath"].([]seg) {
+			t, _ := time.Parse(time.RFC3339, p["time"].(string))
+			pts = append(pts, seg{
+				"point":                              geo(p["point"].(string)),
+				"durationMinutesOffsetFromStartTime": fmt.Sprintf("%d", int(t.Sub(start).Round(time.Minute)/time.Minute)),
+			})
+		}
+		out["timelinePath"] = pts
+	}
+	return out
+}
+
+// geo turns "64.1°, -21.9°" into "geo:64.1,-21.9".
+func geo(c string) string {
+	c = strings.ReplaceAll(c, "°", "")
+	parts := strings.Split(c, ",")
+	return "geo:" + strings.TrimSpace(parts[0]) + "," + strings.TrimSpace(parts[1])
+}
+
+// iosSpelling writes INFERRED_HOME as "Inferred Home" (visit kinds, title
+// case) and IN_PASSENGER_VEHICLE as "in passenger vehicle" (modes, lower).
+func iosSpelling(s string, title bool) string {
+	words := strings.Split(strings.ToLower(s), "_")
+	if title {
+		for i, w := range words {
+			if w != "" {
+				words[i] = strings.ToUpper(w[:1]) + w[1:]
+			}
+		}
+	}
+	return strings.Join(words, " ")
 }

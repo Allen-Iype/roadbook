@@ -149,6 +149,17 @@ test("candidates: bulk triage — selection summons the bar; score order sorts",
     await expect(bar).toBeHidden();
   }
 
+  // The default order (phase 17, #1): newest first, by the cards' starts.
+  await page.goto("/candidates");
+  const starts = await page
+    .locator("main [data-candidate-card]")
+    .evaluateAll((els) => els.map((el) => el.getAttribute("data-start") ?? ""));
+  expect(starts.length).toBeGreaterThan(1);
+  for (let i = 1; i < starts.length; i++) {
+    expect(starts[i] <= starts[i - 1]).toBe(true);
+  }
+  await expect(page.getByText("newest first", { exact: true })).toBeVisible();
+
   // The sweep order: ?sort=score renders scores non-increasing.
   await page.goto("/candidates?sort=score");
   // The score element, not card textContent: concatenated text runs the

@@ -38,7 +38,9 @@ export default async function CandidatesPage({
     session?.mode === "oidc" ? (session.email ?? "") : undefined;
 
   // ?sort=score is the sweep order (phase 11 §6.1): score-descending, built
-  // for clearing a long queue in one sitting. Default stays chronological.
+  // for clearing a long queue in one sitting. The default is newest first
+  // (phase 17, #1: the first testers looked for their latest trip and found
+  // it at the bottom of sixty).
   // A search param rather than client state: the order is part of the URL a
   // person can share or reload, and the server sorts before any HTML ships.
   const { sort } = await searchParams;
@@ -70,10 +72,12 @@ export default async function CandidatesPage({
   );
 
   // Sort a copy — never the fetched array. Unscored candidates (pre-scoring
-  // runs) sink to the end rather than interleaving as zeros.
+  // runs) sink to the end rather than interleaving as zeros. By date is
+  // span_start descending, as on the Trips shelf (lexical is chronological
+  // for RFC 3339 within these strings' shared shape).
   const ordered = byScore
     ? [...data.candidates].sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
-    : data.candidates;
+    : [...data.candidates].sort((a, b) => b.span_start.localeCompare(a.span_start));
 
   return (
     <Shell accountEmail={accountEmail}>
@@ -192,14 +196,14 @@ function SortToggle({ byScore }: { byScore: boolean }) {
             href="/candidates"
             className="underline decoration-rule underline-offset-2 hover:text-ink"
           >
-            by date
+            newest first
           </Link>
           <span className="text-ink-2"> · </span>
           <span className="font-semibold">by score</span>
         </>
       ) : (
         <>
-          <span className="font-semibold">by date</span>
+          <span className="font-semibold">newest first</span>
           <span className="text-ink-2"> · </span>
           <Link
             href="/candidates?sort=score"
@@ -293,9 +297,11 @@ function CandidateCard({
 }) {
   return (
     // data-candidate-card + data-undecided drive the sweep's focus advance
-    // (DecideCell walks to the next undecided card after a decision).
+    // (DecideCell walks to the next undecided card after a decision);
+    // data-start is the e2e order check's hook (phase 17, #1).
     <div
       data-candidate-card={c.id}
+      data-start={c.span_start}
       data-undecided={c.decision ? undefined : "true"}
       className="border border-rule bg-paper"
     >

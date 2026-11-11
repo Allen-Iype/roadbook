@@ -64,7 +64,6 @@ export default async function SharedAdventurePage({
         photos={shared.photos}
         importPhotos={shared.import_photos}
         styleUrl={MAP_STYLE_URL}
-        plate={null}
         shared={{
           name: shared.name,
           start_truncated: shared.start_truncated,

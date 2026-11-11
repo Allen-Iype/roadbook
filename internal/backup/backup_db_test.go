@@ -44,6 +44,10 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	if _, err := src.InsertDecision(ctx, store.SelfUser, "dismissed", nil, anchor(10)); err != nil {
 		t.Fatal(err)
 	}
+	// The owner's notes (phase 17, #3) are irreplaceable user data too.
+	if _, ok, err := src.EditDecisionText(ctx, store.SelfUser, confirmed.ID, "March hills", str("Rain on day two.\nWorth it.")); err != nil || !ok {
+		t.Fatalf("edit notes: ok %v, err %v", ok, err)
+	}
 
 	jpeg := []byte("not-really-jpeg-but-bytes-are-bytes")
 	if err := srcFiles.WriteThumb("hash1", jpeg); err != nil {
@@ -102,6 +106,9 @@ func TestBackupRestoreRoundTrip(t *testing.T) {
 	}
 	if got.Name == nil || *got.Name != "March hills" {
 		t.Errorf("restored name = %v, want March hills", got.Name)
+	}
+	if got.Notes == nil || *got.Notes != "Rain on day two.\nWorth it." {
+		t.Errorf("restored notes = %v, want the two lines", got.Notes)
 	}
 	if !got.AnchorStart.Equal(confirmed.AnchorStart) || !got.CreatedAt.Equal(confirmed.CreatedAt) {
 		t.Errorf("timestamps not preserved: anchor %v vs %v, created %v vs %v",

@@ -51,7 +51,7 @@ is the screen it is met on first; the audit has every line.
 | undecided | **to review** / **left** | header count, select-all, empty states | |
 | decision, decisions | **choice**, choices | orphaned-decisions line, delete dialog, aria "bulk decision" | |
 | score | score | /candidates cards | Kept: plain English, taught in place by its note; the breakdown labels are already words. |
-| plate, PLATE II, plate number | **see decision 1** | /adventures intro and covers, eyebrow, map margin, sharing text, welcome fold, shared-view footer | |
+| plate, PLATE II, plate number | **removed (decision 1, amended 2026-11-10)** | /adventures intro and covers, eyebrow, map margin, sharing text, welcome fold, shared-view footer | |
 | life map | **your map** ("← Map" in links) | "← Life map", welcome fold, empty states | |
 | atlas | kept in the two taglines only ("an atlas of your own travels") | landing and sign-in taglines | Everywhere else ("your atlas fills…") it goes. |
 
@@ -141,6 +141,9 @@ Whether a stretch was recorded or drawn is not something they ask.
    the word leaves every sentence. "Provenance" goes everywhere.
    *Rejected:* keeping and teaching both, the 2026-10-28 line. *Would change
    our mind:* a tester asking what the numeral means.
+   *Amended 2026-11-10 (phase 17, issue #2):* that happened — the first
+   testers asked what "PLATE 2" meant. The numeral is removed everywhere;
+   the dates on each cover carry the order. See `docs/phase-17/DECISIONS.md`.
 
 2. **The legend.** The four line styles stay drawn exactly as they are
    (CLAUDE.md invariants 5 and 8 are untouched: the kind is in the geometry).

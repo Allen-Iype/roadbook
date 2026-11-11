@@ -185,7 +185,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Change a kept trip's name and notes
+         * @description Phase 17, issue #3. Replaces the name and the notes of the confirmed decision matched to this candidate, and nothing else — not the action, not the anchor — so editing can never re-decide a trip, and a later re-decide never blanks the notes. Notes are the owner's own words: plain text, returned only on the owner's own reads, never on a shared view. Absent or blank notes clear them. Limits are counted in characters (Unicode code points).
+         */
+        patch: operations["editDecision"];
         trace?: never;
     };
     "/candidates/{id}/photos": {
@@ -527,7 +531,7 @@ export interface components {
             status: "running" | "completed" | "failed";
             /** @description The user-facing failure message — prose, subject to rewording; never the queryable evidence. */
             error?: string;
-            /** @description The sniffer's stable format label (phone-timeline, records-json, semantic-history, …). Absent when the input was never recognised. */
+            /** @description The sniffer's stable format label (phone-timeline, phone-timeline-ios, records-json, semantic-history, …). Absent when the input was never recognised. */
             detected_format?: string;
             /** @description How many observations were genuinely new — the per-type counters record what the file contained; this records what the database gained. Zero on a duplicate upload ("nothing new"). Absent on rows from before this field existed. */
             inserted?: number;
@@ -653,6 +657,8 @@ export interface components {
             action: "confirmed" | "dismissed";
             /** @description Present when action is confirmed. */
             name?: string;
+            /** @description The owner's own words on a kept trip (phase 17). Absent when none were written. Never on a shared view. */
+            notes?: string;
             /** Format: date-time */
             updated_at: string;
         };
@@ -665,8 +671,14 @@ export interface components {
         DecisionRequest: {
             /** @enum {string} */
             action: "confirmed" | "dismissed";
-            /** @description Required when action is confirmed. */
+            /** @description Required when action is confirmed; at most 120 characters. */
             name?: string;
+        };
+        DecisionEdit: {
+            /** @description The trip's name; surrounding space is trimmed. */
+            name: string;
+            /** @description Plain text; absent or blank clears the notes. */
+            notes?: string;
         };
         TimedPoint: {
             /** Format: date-time */
@@ -847,7 +859,7 @@ export interface components {
             id: number;
             /** @enum {string} */
             action: "confirmed" | "dismissed";
-            /** @description Required, non-empty, when action is "confirmed". */
+            /** @description Required, non-empty, at most 120 characters, when action is "confirmed". */
             name?: string;
         };
         BulkDecisionRequest: {
@@ -1401,6 +1413,52 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             /** @description No such candidate in the latest run (stale id after re-detection). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    editDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Candidate id from the latest run. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionEdit"];
+            };
+        };
+        responses: {
+            /** @description The decision as stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Decision"];
+                };
+            };
+            /** @description Invalid request — a blank name, or a name or notes over the limit. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description No such candidate in the latest run, or the candidate has no kept decision (only a kept trip has a name to edit). */
             404: {
                 headers: {
                     [name: string]: unknown;

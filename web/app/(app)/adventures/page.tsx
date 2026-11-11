@@ -19,9 +19,9 @@ import type { components } from "@/lib/api/schema";
 // shelf. Covers are static SVG (lib/route-thumb.ts) — a MapLibre instance
 // per tile would exhaust the browser's WebGL context cap.
 //
-// Order, as decided: newest first. Plate numbers are chronological — the
-// number is the atlas register (the order travelled), not the sort key,
-// so numbering and display order deliberately disagree.
+// Order, as decided: newest first. Covers carry no number (phase 17, #2:
+// "PLATE 2" was the first testers' question, the trigger words.md decision
+// 1 named) — the dates on each cover are the order.
 export const dynamic = "force-dynamic";
 
 type Candidate = components["schemas"]["Candidate"];
@@ -30,8 +30,6 @@ type Journey = components["schemas"]["Journey"];
 type Cover = {
   candidate: Candidate;
   journey: Journey;
-  /** Chronological plate number, 1-based, oldest journey = PLATE 1. */
-  plate: number;
 };
 
 export default async function AdventuresPage() {
@@ -96,31 +94,27 @@ export default async function AdventuresPage() {
         return r?.data ? { candidate, journey: r.data } : null;
       }),
     )
-  ).filter((c): c is Omit<Cover, "plate"> => c !== null);
+  ).filter((c): c is Cover => c !== null);
 
-  // Plate numbers come from travel order (span_start ascending — lexical
-  // is chronological for RFC 3339 within these strings' shared shape);
-  // display order is newest first.
-  const chronological = [...withJourneys].sort((a, b) =>
-    a.candidate.span_start.localeCompare(b.candidate.span_start),
+  // Newest first (span_start descending — lexical is chronological for
+  // RFC 3339 within these strings' shared shape).
+  const covers: Cover[] = [...withJourneys].sort((a, b) =>
+    b.candidate.span_start.localeCompare(a.candidate.span_start),
   );
-  const covers: Cover[] = chronological
-    .map((c, i) => ({ ...c, plate: i + 1 }))
-    .reverse();
 
   return (
     <Shell undecided={undecided} accountEmail={accountEmail}>
       {/* Phase 16 CP3: the two teaching lines the shelf owes a newcomer
-          (RESEARCH §4) — the plate number and the provenance bar each
-          taught once, above the first cover they appear on, as Terms. A
-          cover is one link, so the teaching cannot sit inside it. */}
+          (RESEARCH §4), taught once above the first cover, since a cover
+          is one link and the teaching cannot sit inside it. The numbering
+          half went with the numeral (phase 17, #2). */}
       {/* 72ch, not the body-text 58: a two-sentence line under a heading
           above a full-width grid sets as two lines at laptop width instead
           of three ragged ones (CP3 review). Phones are narrower than
           either cap. */}
       <p className="mt-1 max-w-[72ch] text-pretty text-sm text-ink-2">
         {covers.length} trip{covers.length === 1 ? "" : "s"}, the latest
-        first, numbered in the order you travelled.
+        first.
       </p>
       <ul className="mt-6 grid list-none grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-7">
         {covers.map((c) => (
@@ -164,7 +158,7 @@ function Shell({
 // the art carries the same reserved inks and non-color channels as every
 // map (invariant 8 — kind is never merged, even at thumbnail scale).
 function PlateCover({ cover }: { cover: Cover }) {
-  const { candidate, journey, plate } = cover;
+  const { candidate, journey } = cover;
   const name = candidate.decision?.name ?? "Unnamed trip";
   // The served day count (phase 14 CP2) — the same figure the cover and
   // the CLI print, never a second derivation.
@@ -174,17 +168,11 @@ function PlateCover({ cover }: { cover: Cover }) {
   return (
     <Link
       href={`/adventure/${candidate.id}`}
+      data-start={candidate.span_start}
       className="group block border border-ink bg-paper no-underline [outline:1px_solid_var(--color-ink)] [outline-offset:3px] focus-visible:[outline:2px_solid_var(--color-ink)]"
     >
-      <div className="relative border-b border-rule">
+      <div className="border-b border-rule">
         <RouteThumb legs={journey.legs} className="block h-auto w-full" />
-        {/* Paper behind the number so route art never strikes through it. */}
-        <span
-          className="absolute right-2.5 top-2 bg-paper pl-1.5 font-display text-[11px] font-semibold tracking-[0.22em] text-ink-2"
-          aria-hidden
-        >
-          PLATE {plate}
-        </span>
       </div>
       <div className="px-3.5 py-3">
         <p className="text-[10px] uppercase tracking-[0.22em] text-ink-2">
