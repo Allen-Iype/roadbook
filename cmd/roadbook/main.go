@@ -808,6 +808,9 @@ func runJourney(args []string) error {
 	var names []*journey.StopName
 	placeParams := journey.DefaultPlaceParams()
 	var placesLoaded int64
+	// Regions per leg and per stop (phase 18, #17): api.Regions, as served.
+	var legStates [][]store.StateRef
+	var stopStates []*store.StateRef
 	// The candidate's home-relative figure (owner surfaces only, BRIEF
 	// §3E); -1 in file mode, where there is no candidate.
 	destKm := -1
@@ -857,6 +860,9 @@ func runJourney(args []string) error {
 			return err
 		}
 		if placesLoaded, err = s.CountPlaces(ctx); err != nil {
+			return err
+		}
+		if legStates, stopStates, err = api.Regions(ctx, s, j, positions); err != nil {
 			return err
 		}
 		attributed = true
@@ -1032,6 +1038,34 @@ func runJourney(args []string) error {
 			default:
 				fmt.Printf("%3d — no position: no points during the stop and no visit record over it\n", i+1)
 			}
+		}
+
+		// Regions leg by leg and stop by stop — what a day's line is built
+		// from. From each leg's own timestamped points only (a gap's two
+		// endpoints), never routed geometry. A leg or stop in no region
+		// prints a dash.
+		regionLine := func(rs []store.StateRef) string {
+			if len(rs) == 0 {
+				return "—"
+			}
+			names := make([]string, len(rs))
+			for i, r := range rs {
+				names[i] = r.Name
+			}
+			return strings.Join(names, " → ")
+		}
+		fmt.Printf("\n=== regions: %d legs, %d stops ===\n", len(j.Legs), len(j.Stops))
+		for i, l := range j.Legs {
+			fmt.Printf("leg  %3d %-8s %s .. %s  %s\n", i+1, l.Kind,
+				l.Start().Format("02 Jan 15:04"), l.End().Format("02 Jan 15:04"), regionLine(legStates[i]))
+		}
+		for i, s := range j.Stops {
+			var rs []store.StateRef
+			if stopStates[i] != nil {
+				rs = []store.StateRef{*stopStates[i]}
+			}
+			fmt.Printf("stop %3d          %s .. %s  %s\n", i+1,
+				s.Start.Format("02 Jan 15:04"), s.End.Format("02 Jan 15:04"), regionLine(rs))
 		}
 	}
 	return nil

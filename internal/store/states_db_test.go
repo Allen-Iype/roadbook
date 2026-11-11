@@ -108,3 +108,53 @@ func TestStatesForPoints(t *testing.T) {
 		t.Errorf("open sea = %v, want nothing", got)
 	}
 }
+
+// The ungrouped form (phase 18): one answer per point, in the points'
+// order — repeats kept, the sea a nil — where StatesForPoints folds the
+// same points into one list. Before any load every answer is nil.
+func TestStateForEachPoint(t *testing.T) {
+	s := storetest.Open(t)
+	ctx := context.Background()
+
+	westfjords := domain.LatLng{Lat: 66.07, Lon: -23.12}
+	south := domain.LatLng{Lat: 63.93, Lon: -21.00}
+	sea := domain.LatLng{Lat: 60.0, Lon: -30.0}
+	pts := []domain.LatLng{south, westfjords, sea, south}
+
+	got, err := s.StateForEachPoint(ctx, pts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != len(pts) {
+		t.Fatalf("unloaded: %d answers for %d points", len(got), len(pts))
+	}
+	for i, r := range got {
+		if r != nil {
+			t.Fatalf("unloaded table attributed point %d: %+v", i, r)
+		}
+	}
+	if got, err := s.StateForEachPoint(ctx, nil); err != nil || len(got) != 0 {
+		t.Fatalf("no points: %v, %d answers", err, len(got))
+	}
+
+	if err := s.ReplaceStates(ctx, icelandStates(t)); err != nil {
+		t.Fatal(err)
+	}
+	got, err = s.StateForEachPoint(ctx, pts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"Suðurland", "Vestfirðir", "", "Suðurland"}
+	for i, w := range want {
+		name := ""
+		if got[i] != nil {
+			name = got[i].Name
+			if got[i].CountryCode != "IS" || got[i].Code == "" {
+				t.Errorf("point %d: %+v", i, got[i])
+			}
+		}
+		if name != w {
+			t.Errorf("point %d = %q, want %q", i, name, w)
+		}
+	}
+}

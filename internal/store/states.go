@@ -82,3 +82,47 @@ func (s *Store) StatesForPoints(ctx context.Context, pts []domain.LatLng) ([]Sta
 	}
 	return out, rows.Err()
 }
+
+// StateForEachPoint attributes every point to its admin-1 region
+// separately — the ungrouped form of StatesForPoints (phase 18): the same
+// single indexed containment query, but one answer per point, in the
+// points' order, so the caller can say which leg or stop was in which
+// region. The answer is nil for a point outside every polygon (open sea, or
+// the gaps between Natural Earth's coastlines and the real ones), and for
+// every point when the table is not loaded.
+//
+// A point exactly on a shared border can sit in two polygons. The lower
+// adm1_code wins, so the answer does not depend on row order.
+func (s *Store) StateForEachPoint(ctx context.Context, pts []domain.LatLng) ([]*StateRef, error) {
+	out := make([]*StateRef, len(pts))
+	if len(pts) == 0 {
+		return out, nil
+	}
+	lons := make([]float64, len(pts))
+	lats := make([]float64, len(pts))
+	for i, p := range pts {
+		lons[i] = p.Lon
+		lats[i] = p.Lat
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT p.ord, st.adm1_code, st.name, st.country_code
+		FROM unnest($1::float8[], $2::float8[]) WITH ORDINALITY AS p(lon, lat, ord)
+		JOIN states st
+		  ON ST_Contains(st.geom, ST_SetSRID(ST_MakePoint(p.lon, p.lat), 4326))
+		ORDER BY p.ord, st.adm1_code`, lons, lats)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var ord int
+		var r StateRef
+		if err := rows.Scan(&ord, &r.Code, &r.Name, &r.CountryCode); err != nil {
+			return nil, err
+		}
+		if out[ord-1] == nil { // first row per point is the lowest code
+			out[ord-1] = &r
+		}
+	}
+	return out, rows.Err()
+}

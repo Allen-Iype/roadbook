@@ -302,11 +302,11 @@ describe("filename", () => {
 
 const t2 = "2026-04-24T12:00:00Z";
 const legs: Leg[] = [
-  { kind: "observed", points: [pt(64.0, -21.0), pt(64.1, -20.5), pt(64.2, -20.0)], distance_km: 84, start: t, end: t2 },
-  { kind: "gap", gap_kind: "road", points: [pt(64.2, -20.0), pt(64.3, -19.0)], distance_km: 50, routed_points: [{ lat: 64.2, lon: -20.0 }, { lat: 64.25, lon: -19.5 }, { lat: 64.3, lon: -19.0 }], routed_km: 55, start: t2, end: t2 },
-  { kind: "gap", gap_kind: "unknown", points: [pt(64.3, -19.0), pt(64.4, -18.0)], distance_km: 40, start: t2, end: t2 },
-  { kind: "gap", gap_kind: "air", points: [pt(64.4, -18.0), pt(65.6, -18.1)], distance_km: 130, start: t2, end: t2 },
-  { kind: "observed", points: [pt(65.6, -18.1)], distance_km: 0, start: t2, end: t2 },
+  { states: [], kind: "observed", points: [pt(64.0, -21.0), pt(64.1, -20.5), pt(64.2, -20.0)], distance_km: 84, start: t, end: t2 },
+  { states: [], kind: "gap", gap_kind: "road", points: [pt(64.2, -20.0), pt(64.3, -19.0)], distance_km: 50, routed_points: [{ lat: 64.2, lon: -20.0 }, { lat: 64.25, lon: -19.5 }, { lat: 64.3, lon: -19.0 }], routed_km: 55, start: t2, end: t2 },
+  { states: [], kind: "gap", gap_kind: "unknown", points: [pt(64.3, -19.0), pt(64.4, -18.0)], distance_km: 40, start: t2, end: t2 },
+  { states: [], kind: "gap", gap_kind: "air", points: [pt(64.4, -18.0), pt(65.6, -18.1)], distance_km: 130, start: t2, end: t2 },
+  { states: [], kind: "observed", points: [pt(65.6, -18.1)], distance_km: 0, start: t2, end: t2 },
 ];
 const stops: Stop[] = [
   { start: t, end: t2, loc: { lat: 64.2, lon: -20.0 }, points: 3, displacement_km: 0 },

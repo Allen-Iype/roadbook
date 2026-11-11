@@ -180,6 +180,25 @@ func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.Cand
 		}
 	}
 
+	// Which regions each leg and each stop was in (phase 18, #17). Every
+	// leg carries a list — empty, never absent, like the trip-level list
+	// below; a stop's region is absent when its position is in none.
+	legStates, stopStates, err := Regions(ctx, s.Store, j, positions)
+	if err != nil {
+		return Journey{}, j, err
+	}
+	for i := range out.Legs {
+		out.Legs[i].States = make([]State, 0, len(legStates[i]))
+		for _, r := range legStates[i] {
+			out.Legs[i].States = append(out.Legs[i].States, State{Code: r.Code, Name: r.Name, CountryCode: r.CountryCode})
+		}
+	}
+	for i := range out.Stops {
+		if r := stopStates[i]; r != nil {
+			out.Stops[i].State = &State{Code: r.Code, Name: r.Name, CountryCode: r.CountryCode}
+		}
+	}
+
 	// Countries crossed: every point the route draws, against the loaded
 	// polygons, in one query (BRIEF §1.4). Gap-leg endpoints duplicate the
 	// neighbouring observed points; the query's GROUP BY absorbs that.

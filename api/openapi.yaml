@@ -1393,11 +1393,23 @@ components:
 
     Leg:
       type: object
-      required: [kind, points, distance_km, start, end]
+      required: [kind, points, distance_km, start, end, states]
       properties:
         kind:
           type: string
           enum: [observed, gap]
+        states:
+          type: array
+          description: >
+            The admin-1 regions this leg's `points` fall in, each once, in
+            order of first appearance along the leg — what lets a day say
+            which regions it crossed, where `Journey.states` lists the whole
+            trip's. From the timestamped points only (a gap's two
+            endpoints), never from `routed_points`: inference does not
+            testify to where a person was. Empty when no point falls in a
+            region, and on every leg when `roadbook states` has not been run.
+          items:
+            $ref: "#/components/schemas/State"
         gap_kind:
           type: string
           enum: [unknown, road, air]
@@ -1469,9 +1481,13 @@ components:
             (`points` is 0, `loc` is not a position) and the coordinate came
             from Google's visit record covering the same time: Google's
             statement, not a traced position, and a surface that prints the
-            place says so. Absent when the stop has neither.
+            place says so. Absent when the stop has neither. `state`, the
+            admin-1 region of that same position, is absent when the
+            position is outside every region or there is none.
         place:
           $ref: "#/components/schemas/StopPlace"
+        state:
+          $ref: "#/components/schemas/State"
 
     StopPlace:
       type: object

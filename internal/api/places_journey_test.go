@@ -10,6 +10,7 @@ import (
 
 	"roadbook/internal/api"
 	"roadbook/internal/places"
+	"roadbook/internal/states"
 )
 
 // The demo's stops, named (phase 18, #16). The demo is fiction over public
@@ -161,4 +162,120 @@ var demoStopNames = []string{
 	"trip 1: from Hvolsvöllur (visit) · — ×4 · near Höfn (visit) · near Selfoss (visit)",
 	"trip 2: near Ísafjörður (visit)",
 	"trip 3: near Reykjanesbær (recorded) · near Akureyri (recorded) · near Akureyri (visit) · from Akureyri (visit) · near Akureyri (visit) · near Akureyri (recorded) · near Reykjanesbær (recorded)",
+}
+
+// The demo's regions, leg by leg and stop by stop (phase 18, #17): what a
+// day's line will be built from. Iceland's regions only are loaded — the
+// demo never leaves the country, and the full file is the states package's
+// own test. Before the load every leg carries an empty list, never an
+// absent one.
+func TestDemoRegionsPerLegAndStop(t *testing.T) {
+	ts, s, _ := newUploadServer(t)
+	ctx := context.Background()
+
+	body, ctype := multipartUpload(t, demoExport)
+	resp := postUpload(t, ts, body, ctype)
+	if resp.StatusCode != http.StatusAccepted {
+		t.Fatalf("demo upload: HTTP %d", resp.StatusCode)
+	}
+	accepted := decodeJSON[api.Import](t, resp.Body)
+	resp.Body.Close()
+	pollImport(t, ts, accepted.Id, func(i api.Import) bool {
+		return i.Status == "completed" && i.DetectStatus != nil && *i.DetectStatus == "completed"
+	})
+	var list api.CandidateList
+	fetchJSON(t, ts.URL+"/candidates", &list)
+
+	// Raw JSON for the unloaded check: "states":[] must be on the wire.
+	for _, c := range list.Candidates {
+		var raw struct {
+			Legs []map[string]json.RawMessage `json:"legs"`
+		}
+		fetchJSON(t, fmt.Sprintf("%s/candidates/%d/journey", ts.URL, c.Id), &raw)
+		for i, l := range raw.Legs {
+			if string(l["states"]) != "[]" {
+				t.Fatalf("trip %d leg %d, unloaded table: states = %s, want []", c.Id, i, l["states"])
+			}
+		}
+	}
+
+	all, err := states.Bundled()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var iceland []states.State
+	for _, st := range all {
+		if st.CountryCode == "IS" {
+			iceland = append(iceland, st)
+		}
+	}
+	if err := s.ReplaceStates(ctx, iceland); err != nil {
+		t.Fatal(err)
+	}
+
+	var got []string
+	for n, c := range list.Candidates {
+		var j api.Journey
+		fetchJSON(t, fmt.Sprintf("%s/candidates/%d/journey", ts.URL, c.Id), &j)
+
+		var legs, stops []string
+		tripLevel := map[string]bool{}
+		for _, st := range j.States {
+			tripLevel[st.Code] = true
+		}
+		for _, l := range j.Legs {
+			var names []string
+			seen := map[string]bool{}
+			for _, st := range l.States {
+				if seen[st.Code] {
+					t.Fatalf("trip %d: a leg lists %s twice", n+1, st.Name)
+				}
+				seen[st.Code] = true
+				// A leg's regions come from the same points as the trip's
+				// list, so they can never name one the cover does not.
+				if !tripLevel[st.Code] {
+					t.Fatalf("trip %d: leg region %s is not in the trip's list", n+1, st.Name)
+				}
+				names = append(names, st.Name)
+			}
+			line := "—"
+			if len(names) > 0 {
+				line = strings.Join(names, " → ")
+			}
+			legs = append(legs, line)
+		}
+		for _, st := range j.Stops {
+			line := "—"
+			if st.State != nil {
+				line = st.State.Name
+			}
+			stops = append(stops, line)
+		}
+		got = append(got,
+			fmt.Sprintf("trip %d legs: %s", n+1, strings.Join(fold(legs), " | ")),
+			fmt.Sprintf("trip %d stops: %s", n+1, strings.Join(fold(stops), " | ")))
+	}
+	for _, g := range got {
+		t.Log(g)
+	}
+	if strings.Join(got, "\n") != strings.Join(demoRegions, "\n") {
+		t.Errorf("demo regions moved.\n got:\n  %s\nwant:\n  %s", strings.Join(got, "\n  "), strings.Join(demoRegions, "\n  "))
+	}
+}
+
+// What the demo carries. A dash is a leg or stop whose points fall in no
+// region: Natural Earth's 1:10m coastline runs a few hundred metres inside
+// the real one in places, so a harbour town or a shoreline road can sit
+// outside every polygon (the caution TestStatesForPoints already records).
+// Trip 2 shows the cost: its Westfjords legs are single recorded positions
+// on the shore and carry no region, while its one stop, a little inland,
+// does. Recorded as found (docs/phase-18/DECISIONS.md); whether a point
+// just off a coast should take the nearest region is a decision of its own.
+var demoRegions = []string{
+	"trip 1 legs: Suðurland ×5 | — | Suðurland → Austurland | Austurland ×4 | — | Austurland → Suðurland | Suðurland ×2",
+	"trip 1 stops: Suðurland ×2 | — | Austurland ×2 | — | Suðurland",
+	"trip 2 legs: — ×3 | Vesturland ×2",
+	"trip 2 stops: Vestfirðir",
+	"trip 3 legs: Suðurnes ×4 | — | Norðurland eystra ×5 | — | Suðurnes ×2",
+	"trip 3 stops: Suðurnes | — | Norðurland eystra ×3 | — | Suðurnes",
 }

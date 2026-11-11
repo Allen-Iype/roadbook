@@ -10,8 +10,8 @@ package api_test
 //
 // Nothing is imported into the database: the export is parsed in memory,
 // detection and assembly run as the pure functions they are, and only the
-// places table (the embedded public list) is loaded, so the nearest-place
-// query is the real one.
+// two reference tables are loaded (the embedded public lists of places and
+// regions), so the nearest-place and region queries are the real ones.
 
 import (
 	"context"
@@ -24,6 +24,7 @@ import (
 	"roadbook/internal/detect"
 	"roadbook/internal/journey"
 	"roadbook/internal/places"
+	"roadbook/internal/states"
 	"roadbook/internal/store"
 	"roadbook/internal/store/storetest"
 	"roadbook/internal/timeline"
@@ -34,6 +35,10 @@ type nameCount struct {
 	recorded, visit, noPosition int // which position each stop is looked up at
 	near, from, unnamed         int // of the stops that have a position
 	tripsWithUnnamed            int
+	// Regions (#17): legs and positioned stops whose points fall in no
+	// admin-1 polygon, and legs that cross from one region into another.
+	legs, legsNoRegion, legsCrossing int
+	stopsNoRegion                    int
 }
 
 func namesOn(t *testing.T, s *store.Store, srcPath string) nameCount {
@@ -64,6 +69,24 @@ func namesOn(t *testing.T, s *store.Store, srcPath string) nameCount {
 		if err != nil {
 			t.Fatal(err)
 		}
+		legStates, stopStates, err := api.Regions(ctx, s, j, positions)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, ls := range legStates {
+			c.legs++
+			switch {
+			case len(ls) == 0:
+				c.legsNoRegion++
+			case len(ls) > 1:
+				c.legsCrossing++
+			}
+		}
+		for i := range j.Stops {
+			if positions[i].OK && stopStates[i] == nil {
+				c.stopsNoRegion++
+			}
+		}
 		unnamedHere := false
 		for i := range j.Stops {
 			c.stops++
@@ -90,6 +113,8 @@ func namesOn(t *testing.T, s *store.Store, srcPath string) nameCount {
 			c.tripsWithUnnamed++
 		}
 	}
+	t.Logf("%s: regions: %d legs, %d in no region, %d crossing a border; %d positioned stops in no region",
+		srcPath, c.legs, c.legsNoRegion, c.legsCrossing, c.stopsNoRegion)
 	t.Logf("%s: %d trips, %d stops; position: %d recorded, %d from a visit, %d none; named: %d near, %d \"N km from\", %d beyond the limit (on %d trips)",
 		srcPath, c.trips, c.stops, c.recorded, c.visit, c.noPosition, c.near, c.from, c.unnamed, c.tripsWithUnnamed)
 	return c
@@ -103,6 +128,13 @@ func placesStore(t *testing.T) *store.Store {
 		t.Fatal(err)
 	}
 	if err := s.ReplacePlaces(context.Background(), list, places.SourceOSM); err != nil {
+		t.Fatal(err)
+	}
+	regions, err := states.Bundled()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.ReplaceStates(context.Background(), regions); err != nil {
 		t.Fatal(err)
 	}
 	return s
@@ -133,9 +165,12 @@ func TestStopNamesOnTheIPhoneExport(t *testing.T) {
 // within 10 km, named within 25 km).
 var (
 	fixtureNames = nameCount{trips: 18, stops: 574, recorded: 485, visit: 89, noPosition: 0,
-		near: 506, from: 67, unnamed: 1, tripsWithUnnamed: 1}
+		near: 506, from: 67, unnamed: 1, tripsWithUnnamed: 1,
+		legs: 2594, legsNoRegion: 28, legsCrossing: 61, stopsNoRegion: 15}
 	archiveNames = nameCount{trips: 66, stops: 2227, recorded: 1875, visit: 340, noPosition: 12,
-		near: 1912, from: 302, unnamed: 1, tripsWithUnnamed: 1}
+		near: 1912, from: 302, unnamed: 1, tripsWithUnnamed: 1,
+		legs: 9622, legsNoRegion: 47, legsCrossing: 176, stopsNoRegion: 23}
 	iphoneNames = nameCount{trips: 60, stops: 824, recorded: 744, visit: 77, noPosition: 3,
-		near: 735, from: 84, unnamed: 2, tripsWithUnnamed: 1}
+		near: 735, from: 84, unnamed: 2, tripsWithUnnamed: 1,
+		legs: 3872, legsNoRegion: 22, legsCrossing: 128, stopsNoRegion: 15}
 )

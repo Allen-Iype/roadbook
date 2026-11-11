@@ -62,8 +62,8 @@ describe("route layers — the four-way encoding at every zoom", () => {
   it("a stationary observed leg becomes a fix point; a (0,0) stop is absent", () => {
     const fc = routeFeatures({
       legs: [
-        { kind: "observed", points: [pt(64, -21)], distance_km: 0, start: t, end: t },
-        { kind: "gap", gap_kind: "unknown", points: [pt(64, -21), pt(64, -20)], distance_km: 10, start: t, end: t },
+        { states: [], kind: "observed", points: [pt(64, -21)], distance_km: 0, start: t, end: t },
+        { states: [], kind: "gap", gap_kind: "unknown", points: [pt(64, -21), pt(64, -20)], distance_km: 10, start: t, end: t },
       ],
       stops: [
         { start: t, end: t, loc: { lat: 0, lon: 0 }, points: 0, displacement_km: 0 },

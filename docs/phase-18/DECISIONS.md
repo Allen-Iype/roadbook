@@ -205,3 +205,46 @@ rejected, what would change our mind.
 - **Would change our mind:** this is evidence for the village list
   (#13), to be weighed at the STOP 1 review with the maintainer's own
   trips.
+
+## 2026-11-11 — #17: regions ride on each leg and stop as whole objects, each once per leg
+
+- **Chosen:** `Leg.states` is a list of `State` objects (code, name,
+  country) — every region the leg's own timestamped points fall in, each
+  once, in order of first appearance; always present, empty when there is
+  none. `Stop.state` is the region of the position the stop was named
+  from. One ungrouped containment query for all of a trip's leg points
+  and stop positions (`store.StateForEachPoint`), shaped by `api.Regions`,
+  which the handler and `roadbook journey -candidate N` both call.
+- **Rejected:** region codes pointing into `Journey.states` (a stop named
+  from a visit position can be in a region no leg point touched, so the
+  code would point at nothing); the full sequence of region changes along
+  a leg (positions scatter across a border that follows a river or a
+  ridge, and the list would flicker A, B, A, B); regions from routed
+  geometry (inference does not testify to where a person was — the
+  trip-level rule, kept); deriving the trip-level list from the per-point
+  answers to save a query (the cover's list is pinned as it is).
+- **Would change our mind:** the day line at STOP 2 needing the order of
+  crossings within one long leg; then a run-collapsed sequence with a
+  minimum run length.
+
+## 2026-11-11 — #17: what the first run showed — coasts
+
+- **Chosen (recorded, not decided):** a leg or stop whose points fall in
+  no admin-1 polygon carries no region. On the private datasets that is
+  rare: 47 of 9,622 legs and 23 positioned stops on the archive, 28 of
+  2,594 and 15 on the fixture, 22 of 3,872 and 15 on the iPhone export
+  (`TestStopNamesOn…`, counts only). On the demo it is 7 of 33 legs and 4
+  of 15 stops (`TestDemoRegionsPerLegAndStop`): Natural Earth's 1:10m
+  coastline runs inside the real one in places, the demo is a coastal
+  country, and its Westfjords trip — single recorded positions on the
+  shore — has three legs with no region while its one stop, slightly
+  inland, is in Vestfirðir. This is the same effect the phase 14 test
+  noted for the trip-level list.
+- **Rejected for now:** giving a point just off a coast the nearest
+  region within a small named distance. It would fix the demo's day
+  lines, but it also changes what a trip's cover lists unless the two
+  rules are allowed to differ, and that is a decision for the maintainer,
+  not a detail of this issue.
+- **Would change our mind:** the demo's day lines reading wrong at STOP 2
+  — then the nearest-region rule, for the cover and the day together,
+  with its distance as a named parameter.

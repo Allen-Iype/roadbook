@@ -41,3 +41,57 @@ func StopNames(ctx context.Context, st *store.Store, j journey.Journey, visits [
 	}
 	return positions, journey.NameStops(nearest, p), nil
 }
+
+// Regions attributes each leg and each stop of a journey to admin-1 regions
+// (phase 18, #17) — what lets a day say "Vesturland → Vestfirðir" where the
+// cover could only list the whole trip's regions. Like StopNames it is
+// shared by the handler and `roadbook journey -candidate`.
+//
+// legs[i] is the regions leg i's points fall in, each once, in order of
+// first appearance; stops[i] is the region of the position stop i was
+// looked up at (positions comes from StopNames, so a stop with no points of
+// its own is attributed at its visit position, the same one that named it),
+// or nil. All of it is empty when the states table is not loaded.
+//
+// Only the leg's own timestamped points are asked — for a gap, its two
+// endpoints — never routed road geometry: inference does not testify to
+// where a person was (the rule the trip-level list already follows).
+func Regions(ctx context.Context, st *store.Store, j journey.Journey, positions []journey.StopPosition) (legs [][]store.StateRef, stops []*store.StateRef, err error) {
+	// Every leg point, then every stop position, in one query.
+	var pts []domain.LatLng
+	for _, l := range j.Legs {
+		for _, p := range l.Points {
+			pts = append(pts, p.Loc)
+		}
+	}
+	nLeg := len(pts)
+	var stopIdx []int
+	for i, pos := range positions {
+		if pos.OK {
+			pts = append(pts, pos.Loc)
+			stopIdx = append(stopIdx, i)
+		}
+	}
+	each, err := st.StateForEachPoint(ctx, pts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	legs = make([][]store.StateRef, len(j.Legs))
+	k := 0
+	for i, l := range j.Legs {
+		seen := map[string]bool{}
+		for range l.Points {
+			if r := each[k]; r != nil && !seen[r.Code] {
+				seen[r.Code] = true
+				legs[i] = append(legs[i], *r)
+			}
+			k++
+		}
+	}
+	stops = make([]*store.StateRef, len(positions))
+	for n, i := range stopIdx {
+		stops[i] = each[nLeg+n]
+	}
+	return legs, stops, nil
+}
