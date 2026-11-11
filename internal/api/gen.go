@@ -750,7 +750,7 @@ type NameSuggestion struct {
 	// Name Absent when there is nothing to suggest.
 	Name *string `json:"name,omitempty"`
 
-	// Source Which suggester answered — "none" for the null implementation.
+	// Source Where the answer came from: the list that named the place ("osm") when the places table suggested one, "places" when it had nothing within the limit, "none" for the null implementation, "nominatim" for the network geocoder.
 	Source string `json:"source"`
 }
 

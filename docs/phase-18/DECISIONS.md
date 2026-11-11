@@ -248,3 +248,44 @@ rejected, what would change our mind.
 - **Would change our mind:** the demo's day lines reading wrong at STOP 2
   — then the nearest-region rule, for the cover and the day together,
   with its distance as a named parameter.
+
+## 2026-11-11 — #18: the trip-name suggestion defaults to the places table
+
+- **Chosen:** `suggest.Places` — the nearest listed town to the trip's
+  destination, within the same 25 km limit that names a stop — is the
+  default suggester (`ROADBOOK_GEOCODER=places`, in the binary and in
+  compose). It asks the same `PlacesForPoints` the stops use, so a trip is
+  never offered a name its own page would not print. `none` and
+  `nominatim` remain; only `nominatim` reaches the network. The demo's
+  three trips are suggested Höfn, Ísafjörður and Akureyri
+  (`TestDemoNameSuggestionsFromPlaces`). No change to the web: the
+  confirm step and bulk keep already handle a suggestion being present or
+  absent.
+- **Rejected:** leaving the default at `none` and making places opt-in
+  (every instance already carries the list; an empty name box where a
+  name is known helps nobody); composing a longer name here ("Trip to
+  Höfn") — the suggestion is prefill the traveller edits, and wording
+  belongs to the page.
+- **Would change our mind:** bulk keep producing rows of identical names
+  (several trips to one town) that testers find confusing; then the web
+  adds the month to a repeated suggestion.
+
+## 2026-11-11 — STOP 1 review: the list and the two distances stand
+
+- **Chosen:** after the maintainer read one of their own trips through
+  `roadbook journey -candidate` (19 of 19 stops named, 17 from a recorded
+  position and 2 from the visit record), the town names were accepted as
+  matching memory. Cities and towns, "near" within 10 km and named within
+  25 km, go to the web half unchanged.
+- **Rejected for now:** adding villages (#13), a nearest-region rule for
+  points just off a coast, and retuning the two distances. Each waits for
+  what testers say once names are on the page, not for more reading by
+  the maintainer.
+- **Would change our mind:** testers reporting stays with no name or a
+  name they do not recognise (villages), day lines that miss a region
+  they were in (coast rule), or "near" read as wrong at the far end of
+  its band (the 10 km parameter).
+- **Noted, outside this phase:** a trip's "km from home" is a straight
+  line to the farthest place stayed, and the maintainer remembered the
+  one-way road distance, which is longer. A wording question for the trip
+  page, to be tracked on its own.

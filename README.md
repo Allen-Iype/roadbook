@@ -230,7 +230,7 @@ default — an empty or absent `.env` brings the stack up.
 |---|---|---|
 | `POSTGRES_PASSWORD` | `roadbook` | compose-internal database password |
 | `ROADBOOK_MAP_STYLE` | bundled Roadbook style | map style URL |
-| `ROADBOOK_GEOCODER` | `none` | name suggestion at confirm time (`nominatim` to opt in) |
+| `ROADBOOK_GEOCODER` | `places` | name suggestion at confirm time: `places` is the nearest town from the built-in list, offline; `none` suggests nothing; `nominatim` opts in to a geocoding service |
 | `ROADBOOK_NOMINATIM_URL` | nominatim.openstreetmap.org | geocoder endpoint when opted in |
 | `ROADBOOK_INSTANCE_LABEL` | empty | label in the header when you run several instances |
 | `ROADBOOK_AUTH` | `off` | `oidc` turns on accounts (below) |
@@ -241,8 +241,9 @@ default — an empty or absent `.env` brings the stack up.
 
 Map tiles are the one thing the browser fetches from a third party — the
 viewport you look at leaks to the style's tile host. Point
-`ROADBOOK_MAP_STYLE` at your own tile server to close even that. The
-geocoder is off by default for the same reason: a self-hosted product makes
+`ROADBOOK_MAP_STYLE` at your own tile server to close even that. Names
+come from the list of towns inside the binary, and a network geocoder is
+off unless you opt in, for the same reason: a self-hosted product makes
 no surprise network calls.
 
 ### One person or several: the two modes

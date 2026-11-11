@@ -480,8 +480,8 @@ func runServe(args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	db := dbFlag(fs)
 	addr := fs.String("addr", ":8080", "listen address")
-	geocoder := fs.String("geocoder", envOr("ROADBOOK_GEOCODER", "none"),
-		"name suggester: none | nominatim (default $ROADBOOK_GEOCODER)")
+	geocoder := fs.String("geocoder", envOr("ROADBOOK_GEOCODER", "places"),
+		"name suggester: places | none | nominatim (default $ROADBOOK_GEOCODER, else places)")
 	nominatimURL := fs.String("nominatim-url", envOr("ROADBOOK_NOMINATIM_URL", "https://nominatim.openstreetmap.org"),
 		"Nominatim base URL (default $ROADBOOK_NOMINATIM_URL)")
 	photosDir := fs.String("photos-dir", envOr("ROADBOOK_PHOTOS_DIR", "data/photos"),
@@ -509,24 +509,29 @@ func runServe(args []string) error {
 		return fmt.Errorf("-user-cap / ROADBOOK_USER_CAP must be a whole number >= 0, got %q", *userCapFlag)
 	}
 
-	// The Suggester seam (BRIEF §1.7): null by default — a self-hosted
-	// product makes no surprise network calls; the geocoder is opt-in.
-	var sug suggest.Suggester
-	switch *geocoder {
-	case "none":
-		sug = suggest.Null{}
-	case "nominatim":
-		sug = suggest.NewNominatim(*nominatimURL)
-	default:
-		return fmt.Errorf("unknown -geocoder %q: use none or nominatim", *geocoder)
-	}
-
 	ctx := context.Background()
 	s, err := openStore(ctx, *db)
 	if err != nil {
 		return err
 	}
 	defer s.Close()
+
+	// The Suggester seam (BRIEF §1.7). The default is the places table
+	// (phase 18): the nearest listed town to the trip's destination, from
+	// the list embedded in the binary — offline, so the rule that a
+	// self-hosted product makes no surprise network calls still holds.
+	// "none" suggests nothing; a network geocoder stays opt-in.
+	var sug suggest.Suggester
+	switch *geocoder {
+	case "places":
+		sug = suggest.NewPlaces(s)
+	case "none":
+		sug = suggest.Null{}
+	case "nominatim":
+		sug = suggest.NewNominatim(*nominatimURL)
+	default:
+		return fmt.Errorf("unknown -geocoder %q: use places, none or nominatim", *geocoder)
+	}
 
 	photos := store.PhotoFiles{Dir: *photosDir}
 	if err := photos.Init(); err != nil {

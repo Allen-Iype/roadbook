@@ -5,12 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"roadbook/internal/api"
+	"roadbook/internal/detect"
 	"roadbook/internal/places"
 	"roadbook/internal/states"
+	"roadbook/internal/store"
+	"roadbook/internal/store/storetest"
+	"roadbook/internal/suggest"
 )
 
 // The demo's stops, named (phase 18, #16). The demo is fiction over public
@@ -279,3 +284,67 @@ var demoRegions = []string{
 	"trip 3 legs: Suðurnes ×4 | — | Norðurland eystra ×5 | — | Suðurnes ×2",
 	"trip 3 stops: Suðurnes | — | Norðurland eystra ×3 | — | Suðurnes",
 }
+
+// The trip-name suggestion, offline (phase 18, #18): with the places table
+// loaded, the default suggester answers with the nearest listed town to
+// each demo trip's destination; before the load it answers with nothing and
+// no error — the confirm step then simply has no prefill, as it always has
+// on an instance without a geocoder.
+func TestDemoNameSuggestionsFromPlaces(t *testing.T) {
+	s := storetest.Open(t)
+	ctx := context.Background()
+	uploads := store.UploadFiles{Dir: t.TempDir()}
+	if err := uploads.Init(); err != nil {
+		t.Fatal(err)
+	}
+	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Uploads: uploads, Suggester: suggest.NewPlaces(s)}
+	ts := httptest.NewServer(api.HandlerFromMux(api.NewStrictHandler(srv, []api.StrictMiddlewareFunc{srv.AuthMiddleware}), http.NewServeMux()))
+	t.Cleanup(ts.Close)
+
+	body, ctype := multipartUpload(t, demoExport)
+	resp := postUpload(t, ts, body, ctype)
+	if resp.StatusCode != http.StatusAccepted {
+		t.Fatalf("demo upload: HTTP %d", resp.StatusCode)
+	}
+	accepted := decodeJSON[api.Import](t, resp.Body)
+	resp.Body.Close()
+	pollImport(t, ts, accepted.Id, func(i api.Import) bool {
+		return i.Status == "completed" && i.DetectStatus != nil && *i.DetectStatus == "completed"
+	})
+	var list api.CandidateList
+	fetchJSON(t, ts.URL+"/candidates", &list)
+
+	suggestions := func() []string {
+		var out []string
+		for _, c := range list.Candidates {
+			var sug api.NameSuggestion
+			fetchJSON(t, fmt.Sprintf("%s/candidates/%d/name-suggestion", ts.URL, c.Id), &sug)
+			name := "—"
+			if sug.Name != nil {
+				name = *sug.Name
+			}
+			out = append(out, fmt.Sprintf("%s (%s)", name, sug.Source))
+		}
+		return out
+	}
+
+	if got, want := strings.Join(suggestions(), " · "), "— (places) · — (places) · — (places)"; got != want {
+		t.Errorf("unloaded table: %s, want %s", got, want)
+	}
+
+	bundled, err := places.Bundled()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.ReplacePlaces(ctx, bundled, places.SourceOSM); err != nil {
+		t.Fatal(err)
+	}
+	got := strings.Join(suggestions(), " · ")
+	t.Log(got)
+	if got != demoSuggestions {
+		t.Errorf("demo suggestions moved: %s, want %s", got, demoSuggestions)
+	}
+}
+
+// The nearest listed town to each demo trip's destination, in the API's order.
+const demoSuggestions = "Höfn (osm) · Ísafjörður (osm) · Akureyri (osm)"

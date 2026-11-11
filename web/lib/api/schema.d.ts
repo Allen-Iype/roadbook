@@ -157,7 +157,7 @@ export interface paths {
         };
         /**
          * A proposed name for the candidate's adventure
-         * @description One-shot lookup on the destination coordinate through the configured Suggester (BRIEF §1.7) — the null implementation by default, a reverse geocoder when enabled at serve time. The suggestion is prefill for the confirm step's name input and is never applied automatically. An absent name is a real answer: nothing to suggest.
+         * @description One-shot lookup on the destination coordinate through the configured Suggester (BRIEF §1.7) — by default the nearest town in the places table, offline (phase 18); nothing at all, or a network reverse geocoder, when configured so at serve time. The suggestion is prefill for the confirm step's name input and is never applied automatically. An absent name is a real answer: nothing to suggest.
          */
         get: operations["suggestCandidateName"];
         put?: never;
@@ -647,7 +647,7 @@ export interface components {
         NameSuggestion: {
             /** @description Absent when there is nothing to suggest. */
             name?: string;
-            /** @description Which suggester answered — "none" for the null implementation. */
+            /** @description Where the answer came from: the list that named the place ("osm") when the places table suggested one, "places" when it had nothing within the limit, "none" for the null implementation, "nominatim" for the network geocoder. */
             source: string;
         };
         Decision: {
