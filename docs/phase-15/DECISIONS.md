@@ -270,3 +270,31 @@ mind. Written as decisions are made, not reconstructed.
   roll back on with a short `roll_keep_for`; a decision to drop the
   landing's no-script claim for any other reason → the log stays, the
   sentence changes with it.
+
+## 2026-11-12 — The funnel stops counting a monitor and scanners as visits (#11)
+
+- **Chosen:** in `scripts/pilot/host/funnel.py`: `monitor` and
+  `sitewatch` join the bot pattern; an address that asks for a stock
+  probe path (`/wp-…`, `/.env`, `/.git`, `*.php` and the like, on any
+  host including the bare address) is a scanner for that day and all its
+  requests that day go to `bots`; a new `browsers` column counts landing
+  loads followed within 120 seconds by a font or image fetch from the
+  same masked address. `landing` and `browsers` are printed side by side
+  as an upper and a lower bound. `--record DIR --recount` replaces the
+  rows of every whole day the log still covers; older days stay as first
+  recorded, with the new column blank, not zero. Tested on a made-up log
+  (`funnel_test.py`, standard library). Measured on the host's log the
+  day of the change: the eight days in it went from 1,008 landing loads
+  to 390, of which 23 were browsers.
+- **Rejected:** replacing `landing` with `browsers` (the landing is
+  cached for an hour, so a returning visitor fetches no assets; the lower
+  bound alone would under-count them); requiring an `Accept-Language`
+  header (a heuristic about one header that a scanner can add in a line,
+  where the asset fetch is what a rendering browser actually does);
+  zeroing or estimating the days older than the log (they hold only
+  totals; a corrected figure for them would be invented).
+- **Would change our mind:** `landing` staying many times `browsers`
+  after this change with no probe paths to explain it → the page-fetchers
+  have a signature worth naming, or `landing` is dropped from the trend
+  and `browsers` read alone.
+
