@@ -298,3 +298,31 @@ mind. Written as decisions are made, not reconstructed.
   have a signature worth naming, or `landing` is dropped from the trend
   and `browsers` read alone.
 
+## 2026-11-12 — The host watches failed uploads and disk space (#12)
+
+- **Chosen:** two signals in the existing operator scripts, no app code.
+  (1) `accounts.sh` ends with the last 14 days of failed uploads as day,
+  kind (`imports.detected_format`), accounts and attempts, and its totals
+  line carries `failed_uploads=`; `funnel.py --record --failed-from app`
+  writes a nightly `failed` column, read through `accounts.sh
+  --failed-by-day` so the query and the compose invocation live in one
+  place. A night the database cannot be read leaves the cell blank, not
+  zero. (2) `backup-nightly.sh` reads how full the root filesystem and
+  Docker's data directory are before staging: at or above 80 % the ping
+  body says so and the run still succeeds; at or above 92 % the run
+  reports failure so the email goes out; the backup is attempted either
+  way. Both thresholds are named variables, overridable from the
+  environment for testing. Each stack's line carries the size of its
+  uploads and photos volumes as staged.
+- **Rejected:** a metrics agent or a dashboard (two numbers a night do
+  not need a service); a separate disk cron with its own alert path (the
+  nightly job already has a dead-man check and an email on failure);
+  measuring the volumes with `du` under Docker's directory (needs root;
+  the staged tars are the same figure and already exist); printing the
+  failed import's message or file name (the kind is enough to act on,
+  and the message can quote the file).
+- **Would change our mind:** disk growing faster than a nightly reading
+  can warn about (many large uploads in a day) → a check at upload time,
+  in Go, as its own issue; failures that are not format problems (server
+  errors) → 5xx per day joins the funnel.
+

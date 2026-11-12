@@ -121,7 +121,7 @@ class Recording(unittest.TestCase):
         class Args:
             pass
         a = Args()
-        a.log_dir, a.record, a.recount = d, d, recount
+        a.log_dir, a.record, a.recount, a.failed_from = d, d, recount, None
         funnel.record(a, UTC)
 
     def setUp(self):
@@ -136,6 +136,7 @@ class Recording(unittest.TestCase):
 
     def test_an_old_file_gains_the_new_column_blank_and_recount_replaces(self):
         old_columns = [c for c in funnel.COLUMNS if c != "browsers"]
+        self.assertEqual(funnel.RECORD_ONLY, ["failed"])
         with tempfile.TemporaryDirectory() as d:
             # The log begins three days ago (a partial day), then two whole days.
             write_log(d, [
@@ -165,6 +166,8 @@ class Recording(unittest.TestCase):
             self.assertEqual(rows[self.day(9)]["landing"], "7")
             self.assertEqual(rows[self.day(2)]["landing"], "2")   # untouched
             self.assertEqual(rows[self.day(1)]["landing"], "1")
+            # No database was asked: failed is blank everywhere, never zero.
+            self.assertEqual({r["failed"] for r in rows.values()}, {""})
 
             self.run_record(d, recount=False)   # idempotent
             self.assertEqual(len(read_csv(d, "funnel.csv")), 4)
@@ -180,6 +183,45 @@ class Recording(unittest.TestCase):
             self.assertEqual(src, [[self.day(9), "(none)", "7"],
                                    [self.day(2), "(none)", "1"],
                                    [self.day(1), "ig-bio", "1"]])
+
+
+class FailedUploads(unittest.TestCase):
+    def test_the_days_failures_join_the_row_and_a_quiet_day_is_zero(self):
+        today = dt.datetime.now(UTC).date()
+        yesterday = (today - dt.timedelta(days=1)).isoformat()
+        asked = []
+        real = funnel.failed_by_day
+
+        def fake(slug):
+            asked.append(slug)
+            return {(today - dt.timedelta(days=2)).isoformat(): 3}
+        funnel.failed_by_day = fake
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                ts = dt.datetime(today.year, today.month, today.day, tzinfo=UTC).timestamp()
+                write_log(d, [line(ts - 2 * 86400 - 3600, "192.0.2.0", "/"),
+                              line(ts - 2 * 86400 + 3600, "192.0.2.0", "/"),
+                              line(ts - 3600, "192.0.2.0", "/")])
+
+                class Args:
+                    pass
+                a = Args()
+                a.log_dir, a.record, a.recount, a.failed_from = d, d, True, "app"
+                funnel.record(a, UTC)
+                rows = funnel_rows(d)
+        finally:
+            funnel.failed_by_day = real
+        self.assertEqual(asked, ["app"])
+        self.assertEqual(rows[(today - dt.timedelta(days=2)).isoformat()]["failed"], "3")
+        self.assertEqual(rows[yesterday]["failed"], "0")
+
+    def test_an_unreadable_database_is_unknown(self):
+        # accounts.sh needs docker and an instance env; here it has neither.
+        os.environ["ROADBOOK_PILOT_DIR"] = "/nonexistent"
+        try:
+            self.assertIsNone(funnel.failed_by_day("app"))
+        finally:
+            del os.environ["ROADBOOK_PILOT_DIR"]
 
 
 if __name__ == "__main__":

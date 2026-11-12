@@ -21,6 +21,20 @@
 #                            secret, endpoint, no_check_bucket) — no
 #                            rclone.conf file exists on the host.
 #
+# Disk (issue #12). The uploads volume keeps every export on purpose and
+# the photos volume grows with each person, and a full disk fails uploads,
+# the dump and this job together. So before anything else the job reads
+# how full the root filesystem and Docker's data directory are:
+#   at or above DISK_WARN_PCT   "disk 83% used" in the ping body; the run
+#                               still reports success
+#   at or above DISK_FAIL_PCT   the same line, and the run reports /fail so
+#                               the email goes out
+# The backup is attempted either way. Each stack's line also carries the
+# size of its two volumes as staged (uploads, photos), so growth per
+# person can be read back from the check's history.
+#   ROADBOOK_DISK_WARN_PCT, ROADBOOK_DISK_FAIL_PCT   override the two
+#                               thresholds (for testing them; see RUNBOOK)
+#
 # State under $ROADBOOK_BACKUP_DIR (default /srv/pilot/backups):
 #   <slug>.db.fingerprint, <slug>.files.fingerprint
 #                        each written only after its push returned clean,
@@ -39,6 +53,8 @@ PILOT_DIR=${ROADBOOK_PILOT_DIR:-$HOME/pilot}
 BDIR=${ROADBOOK_BACKUP_DIR:-/srv/pilot/backups}
 REMOTE=${ROADBOOK_BACKUP_REMOTE:-}
 PING=${ROADBOOK_PING_URL:-}
+DISK_WARN_PCT=${ROADBOOK_DISK_WARN_PCT:-80}
+DISK_FAIL_PCT=${ROADBOOK_DISK_FAIL_PCT:-92}
 
 ping() {  # ping <suffix> <body>
   [ -n "$PING" ] || { echo "(no ping url) $1: $2"; return 0; }
@@ -57,6 +73,29 @@ ping /start ""
 mkdir -p "$BDIR/stage"
 BODY=""
 FAIL=0
+
+# Disk first, so the figure is in the body even if staging then fails for
+# want of space. One line per distinct filesystem: on this host Docker's
+# directory sits on the root filesystem, and saying it twice says nothing.
+DOCKER_DIR=$(docker info -f '{{.DockerRootDir}}' 2>/dev/null || true)
+SEEN=""
+for MOUNT in / ${DOCKER_DIR:-}; do
+  # POSIX df: filesystem, 1024-blocks, used, available, capacity, mount.
+  set -- $(df -Pk "$MOUNT" 2>/dev/null | tail -1)
+  [ $# -ge 6 ] || continue
+  case " $SEEN " in *" $1 "*) continue ;; esac
+  SEEN="$SEEN $1"
+  PCT=${5%\%}
+  LINE="disk $PCT% used ($((($3 + 524288) / 1048576)) of $((($2 + 524288) / 1048576)) GB, $6)"
+  if [ "$PCT" -ge "$DISK_FAIL_PCT" ]; then
+    LINE="$LINE — FULL: at or above $DISK_FAIL_PCT%"
+    FAIL=1
+  elif [ "$PCT" -ge "$DISK_WARN_PCT" ]; then
+    LINE="$LINE — warning: at or above $DISK_WARN_PCT%"
+  fi
+  echo "$LINE"; BODY="$BODY$LINE
+"
+done
 
 for d in "$PILOT_DIR"/instances/*/; do
   [ -d "$d" ] || continue
@@ -78,6 +117,11 @@ for d in "$PILOT_DIR"/instances/*/; do
   fi
 
   STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+  # The two volumes as staged: a tar's size is its volume's contents.
+  VOLS=""
+  for V in uploads photos; do
+    [ -f "$STAGE/$V.tar" ] && VOLS="$VOLS $V $(du -h "$STAGE/$V.tar" | cut -f1 | tr -d ' ')"
+  done
   LINE="$SLUG:"
   for PART in db files; do
     NOW=$(printf '%s\n' "$FP" | sed -n "s/^$PART //p")
@@ -104,6 +148,7 @@ for d in "$PILOT_DIR"/instances/*/; do
     rm -f "$STAGE/$NAME"
   done
   case "$LINE" in *pushed*|*FAILED*) ;; *) LINE="$SLUG: unchanged, skipped" ;; esac
+  [ -z "$VOLS" ] || LINE="$LINE [$(echo $VOLS)]"
   echo "$LINE"; BODY="$BODY$LINE
 "
   rm -rf "$STAGE" "$ERR"

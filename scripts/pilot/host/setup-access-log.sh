@@ -94,7 +94,10 @@ sudo chmod 644 /etc/logrotate.d/caddy-access
 # The nightly totals. 01:30 UTC: after logrotate's daily run (00:00 + up
 # to an hour) and, for any Asian or European day boundary, after
 # yesterday has ended. Persistent=true catches a night the host slept
-# through (reboots are 23:30 UTC). Root reads the 0640 log.
+# through (reboots are 23:30 UTC). Root reads the 0640 log. --failed-from
+# app adds the day's failed uploads from the app stack's database (issue
+# #12); root runs docker, and accounts.sh finds the instance under
+# /srv/pilot by its own default.
 sudo tee /etc/systemd/system/roadbook-funnel.service >/dev/null <<UNIT
 [Unit]
 Description=Roadbook front funnel — append yesterday's totals
@@ -102,7 +105,7 @@ After=caddy.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 -I $HERE/funnel.py --log-dir $LOG_DIR --tz $FUNNEL_TZ --record $FRONT
+ExecStart=/usr/bin/python3 -I $HERE/funnel.py --log-dir $LOG_DIR --tz $FUNNEL_TZ --record $FRONT --failed-from app
 UNIT
 sudo tee /etc/systemd/system/roadbook-funnel.timer >/dev/null <<UNIT
 [Unit]

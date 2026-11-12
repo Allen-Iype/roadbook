@@ -49,6 +49,13 @@ DIR/sources.csv, once (a day already present is skipped), and prints
 nothing; "back" there means seen in the seven days before. The log is kept seven days; these counts are kept for good —
 they hold no address, only totals per day.
 
+`--failed-from SLUG` (nightly mode only; the timer passes `app`) adds a
+`failed` column: upload attempts that failed that day, read from that
+stack's database through accounts.sh --failed-by-day. The front's log
+cannot see it — an upload that fails still returns normally — and without
+it a run of failures is found only when a person reports one. If the
+database cannot be read the cell is left blank, never zero.
+
 `--record DIR --recount` replaces, instead of skipping, the rows of every
 whole day the log still covers — for when the counting rule itself changed
 (2026-11-12: monitors and scanners were being counted as landing visits).
@@ -100,6 +107,9 @@ LANDING_ASSET = re.compile(r"^/(fonts/|shots/)")
 BROWSER_WINDOW_S = 120
 INSIDE = re.compile(r"^/(adventures|candidates|imports|adventure/[^/]+|shared/[^/]+)$")
 
+# Recorded nightly but not printed by the table: it comes from the app's
+# database, not from the log (see --failed-from).
+RECORD_ONLY = ["failed"]
 COLUMNS = ["landing", "browsers", "ig app", "built", "make mine", "started", "signed in", "refused",
            "welcome", "inside", "uploads", "demo", "bots", "people", "back"]
 IG_UA = re.compile(r"Instagram", re.IGNORECASE)
@@ -280,6 +290,26 @@ def count(files, first, today, tz):
     return counts, people, sources, unreadable, earliest
 
 
+def failed_by_day(slug):
+    """day (ISO) → failed upload attempts, from the stack's database; None
+    when it cannot be read (stack down, no docker) — unknown, not zero."""
+    import subprocess
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "accounts.sh")
+    try:
+        out = subprocess.run(
+            ["sh", script, "--failed-by-day", slug], stdin=subprocess.DEVNULL,
+            capture_output=True, text=True, timeout=60, check=True).stdout
+    except (OSError, subprocess.SubprocessError) as e:
+        print(f"failed uploads not read for {slug}: {e}", file=sys.stderr)
+        return None
+    found = {}
+    for row in out.splitlines():
+        day, _, n = row.partition("|")
+        if n.strip().isdigit():
+            found[day.strip()] = int(n)
+    return found
+
+
 def record(args, tz):
     """Nightly: append yesterday once to funnel.csv and sources.csv under
     --record. With --recount: replace every whole day the log covers."""
@@ -303,6 +333,7 @@ def record(args, tz):
     # funnel.csv is read whole and written whole: a few hundred short rows,
     # and it lets a column added later take its place in the header with
     # the older days left blank — unknown, not zero.
+    failed = failed_by_day(args.failed_from) if args.failed_from else None
     rows = {}
     if os.path.exists(fpath):
         with open(fpath, newline="") as fh:
@@ -316,12 +347,16 @@ def record(args, tz):
             continue
         row = counts.get(d, {})
         rows[day] = {"day": day, **{c: row.get(c, 0) for c in COLUMNS}}
+        # A day with no failures is absent from the query's answer: zero.
+        # A database that was not asked, or did not answer: blank.
+        rows[day]["failed"] = "" if failed is None else failed.get(day, 0)
         changed = True
     if not changed:
         return
     tmp = fpath + ".tmp"
     with open(tmp, "w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=["day"] + COLUMNS, restval="", extrasaction="ignore")
+        w = csv.DictWriter(fh, fieldnames=["day"] + COLUMNS + RECORD_ONLY,
+                           restval="", extrasaction="ignore")
         w.writeheader()
         for day in sorted(rows):
             w.writerow(rows[day])
@@ -357,6 +392,8 @@ def main():
     ap.add_argument("--log-dir", default="/var/log/caddy")
     ap.add_argument("--record", metavar="DIR", default=None,
                     help="nightly mode: append yesterday to DIR/funnel.csv and DIR/sources.csv, print nothing")
+    ap.add_argument("--failed-from", metavar="SLUG", default=None,
+                    help="with --record: add the day's failed uploads from that stack's database")
     ap.add_argument("--recount", action="store_true",
                     help="with --record: replace the rows of every whole day the log covers")
     args = ap.parse_args()
@@ -367,6 +404,8 @@ def main():
         tz = ZoneInfo(args.tz)
     if args.recount and not args.record:
         ap.error("--recount goes with --record DIR")
+    if args.failed_from and not args.record:
+        ap.error("--failed-from goes with --record DIR")
     if args.record:
         record(args, tz)
         return
