@@ -30,7 +30,7 @@
 # error, not a silent half) → unpack both volumes as the api's own user
 # (existing files are overwritten; content-hash names make same-name
 # same-content) → bring the stack up. The api's startup refills the
-# excluded `countries`/`states` tables with -if-empty.
+# excluded `countries`/`states`/`places` tables with -if-empty.
 set -eu
 
 [ $# -ge 2 ] || { echo "usage: $0 <slug> <bundle.tar | -> [--force]" >&2; exit 2; }

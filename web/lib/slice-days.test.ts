@@ -24,6 +24,7 @@ function pt(t: string, lat = 65.0, lon = -21.0) {
 function observed(start: string, end: string, km: number, points: number): Leg {
   return {
     kind: "observed",
+    states: [],
     points: Array.from({ length: points }, (_, i) =>
       pt(i === 0 ? start : end),
     ),
@@ -42,6 +43,7 @@ function gap(
 ): Leg {
   return {
     kind: "gap",
+    states: [],
     gap_kind: gapKind,
     points: [pt(start), pt(end)],
     distance_km: chordKm,

@@ -316,8 +316,9 @@ paths:
       summary: A proposed name for the candidate's adventure
       description: >
         One-shot lookup on the destination coordinate through the configured
-        Suggester (BRIEF §1.7) — the null implementation by default, a
-        reverse geocoder when enabled at serve time. The suggestion is
+        Suggester (BRIEF §1.7) — by default the nearest town in the places
+        table, offline (phase 18); nothing at all, or a network reverse
+        geocoder, when configured so at serve time. The suggestion is
         prefill for the confirm step's name input and is never applied
         automatically. An absent name is a real answer: nothing to suggest.
       parameters:
@@ -1309,7 +1310,11 @@ components:
           description: Absent when there is nothing to suggest.
         source:
           type: string
-          description: Which suggester answered — "none" for the null implementation.
+          description: >
+            Where the answer came from: the list that named the place ("osm")
+            when the places table suggested one, "places" when it had
+            nothing within the limit, "none" for the null implementation,
+            "nominatim" for the network geocoder.
 
     Decision:
       type: object
@@ -1393,11 +1398,23 @@ components:
 
     Leg:
       type: object
-      required: [kind, points, distance_km, start, end]
+      required: [kind, points, distance_km, start, end, states]
       properties:
         kind:
           type: string
           enum: [observed, gap]
+        states:
+          type: array
+          description: >
+            The admin-1 regions this leg's `points` fall in, each once, in
+            order of first appearance along the leg — what lets a day say
+            which regions it crossed, where `Journey.states` lists the whole
+            trip's. From the timestamped points only (a gap's two
+            endpoints), never from `routed_points`: inference does not
+            testify to where a person was. Empty when no point falls in a
+            region, and on every leg when `roadbook states` has not been run.
+          items:
+            $ref: "#/components/schemas/State"
         gap_kind:
           type: string
           enum: [unknown, road, air]
@@ -1459,6 +1476,64 @@ components:
           type: number
           format: double
           description: First-to-last straight line during the halt, not path sum.
+        named_from:
+          type: string
+          enum: [recorded, visit]
+          description: >
+            Which position the stop's place (and region) was looked up at.
+            `recorded` is the stop's own `loc` — points the phone recorded
+            during the halt. `visit` means the stop has no points of its own
+            (`points` is 0, `loc` is not a position) and the coordinate came
+            from Google's visit record covering the same time: Google's
+            statement, not a traced position, and a surface that prints the
+            place says so. Absent when the stop has neither. `state`, the
+            admin-1 region of that same position, is absent when the
+            position is outside every region or there is none.
+        place:
+          $ref: "#/components/schemas/StopPlace"
+        state:
+          $ref: "#/components/schemas/State"
+
+    StopPlace:
+      type: object
+      description: >
+        The nearest listed settlement to a stop, when one lies within
+        `place_params.max_km` — absent otherwise, and absent on every stop
+        when `roadbook places` has not been run. Looked up in the places
+        table (embedded OpenStreetMap cities and towns by default), never
+        over the network. A name is an inference and carries what it rests
+        on: the distance, the list, and (on the stop) which position was
+        looked up. Nothing here knows a town's outline, so the honest words
+        are "near" and "N km from", never "in".
+      required: [name, distance_km, source, near]
+      properties:
+        name:
+          type: string
+        distance_km:
+          type: number
+          format: double
+          description: Great-circle distance from the looked-up position to the place.
+        source:
+          type: string
+          description: Which list named it — "osm" for the embedded OpenStreetMap list.
+        near:
+          type: boolean
+          description: >
+            True within `place_params.near_km` ("near X"); false means the
+            distance belongs in the wording ("N km from X"). Decided once,
+            in the API, so every surface words the same stop the same way.
+
+    PlaceParams:
+      type: object
+      description: The naming thresholds that produced every `Stop.place` (invariant 3).
+      required: [near_km, max_km]
+      properties:
+        near_km:
+          type: number
+          format: double
+        max_km:
+          type: number
+          format: double
 
     Country:
       type: object
@@ -1498,7 +1573,7 @@ components:
     Journey:
       type: object
       required:
-        [window_start, window_end, params, legs, stops, countries, states, summary, total_km,
+        [window_start, window_end, params, place_params, legs, stops, countries, states, summary, total_km,
          observed_km, inferred_km, air_km, unknown_km, routed_km, ground_km,
          google_km, google_ground_km, merged_points, trace_points_kept,
          raw_points_kept]
@@ -1513,6 +1588,8 @@ components:
           type: object
           additionalProperties: true
           description: Exactly the parameters that produced this assembly (invariant 3).
+        place_params:
+          $ref: "#/components/schemas/PlaceParams"
         legs:
           type: array
           items:

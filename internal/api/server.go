@@ -161,6 +161,44 @@ func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.Cand
 		out.ModeBreakdown = &apiBd
 	}
 
+	// Where each stop was (phase 18): the nearest listed town, when one is
+	// close enough to say. Absent, never empty, on a stop that goes unnamed;
+	// the thresholds are echoed so the wording can be explained afterwards.
+	pp := journey.DefaultPlaceParams()
+	out.PlaceParams = PlaceParams{NearKm: pp.NearKm, MaxKm: pp.MaxKm}
+	positions, names, err := StopNames(ctx, s.Store, j, obs.Visits, pp)
+	if err != nil {
+		return Journey{}, j, err
+	}
+	for i := range out.Stops {
+		if positions[i].OK {
+			from := StopNamedFrom(positions[i].Kind)
+			out.Stops[i].NamedFrom = &from
+		}
+		if n := names[i]; n != nil {
+			out.Stops[i].Place = &StopPlace{Name: n.Name, DistanceKm: n.DistanceKm, Source: n.Source, Near: n.Near}
+		}
+	}
+
+	// Which regions each leg and each stop was in (phase 18, #17). Every
+	// leg carries a list — empty, never absent, like the trip-level list
+	// below; a stop's region is absent when its position is in none.
+	legStates, stopStates, err := Regions(ctx, s.Store, j, positions)
+	if err != nil {
+		return Journey{}, j, err
+	}
+	for i := range out.Legs {
+		out.Legs[i].States = make([]State, 0, len(legStates[i]))
+		for _, r := range legStates[i] {
+			out.Legs[i].States = append(out.Legs[i].States, State{Code: r.Code, Name: r.Name, CountryCode: r.CountryCode})
+		}
+	}
+	for i := range out.Stops {
+		if r := stopStates[i]; r != nil {
+			out.Stops[i].State = &State{Code: r.Code, Name: r.Name, CountryCode: r.CountryCode}
+		}
+	}
+
 	// Countries crossed: every point the route draws, against the loaded
 	// polygons, in one query (BRIEF §1.4). Gap-leg endpoints duplicate the
 	// neighbouring observed points; the query's GROUP BY absorbs that.

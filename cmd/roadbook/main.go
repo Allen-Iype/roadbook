@@ -23,6 +23,7 @@ import (
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
 	"roadbook/internal/photosource"
+	"roadbook/internal/places"
 	"roadbook/internal/route"
 	"roadbook/internal/states"
 	"roadbook/internal/store"
@@ -55,6 +56,8 @@ func main() {
 		err = runCountries(os.Args[2:])
 	case "states":
 		err = runStates(os.Args[2:])
+	case "places":
+		err = runPlaces(os.Args[2:])
 	case "serve":
 		err = runServe(os.Args[2:])
 	case "backup":
@@ -77,6 +80,7 @@ func usage() {
   roadbook import  -src <timeline export.json> [-db url] [-from date] [-to date] [-label name]
   roadbook countries [-src <admin-0 geojson[.gz]>] [-if-empty] [-db url]
   roadbook states  [-src <admin-1 geojson[.gz]>] [-if-empty] [-db url]
+  roadbook places  [-src <places list.tsv[.gz]>] [-if-empty] [-db url]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
   roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
   roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh]
@@ -93,6 +97,9 @@ bundled Natural Earth 1:110m set by default, or a higher-resolution admin-0
 file from disk via -src. Replaces the table wholesale; never fetches.
 'states' does the same for admin-1 regions (states, provinces): the embedded
 Natural Earth 1:10m set by default — the only scale that covers the world.
+'places' loads the named settlements a stop is named from: the embedded
+OpenStreetMap list of cities and towns by default, or a larger list in the
+same format via -src. Replaces the table wholesale; never fetches.
 'detect' finds adventure candidates: from a file (prints only) or from the
 database (persists a run and its candidates, then prints).
 'journey' assembles one window of observations into observed and gap legs and
@@ -407,12 +414,74 @@ func runStates(args []string) error {
 	return nil
 }
 
+// runPlaces loads the list of named settlements — the third reference table,
+// after countries and states, and the same shape of command: the embedded
+// list by default, a file via -src, wholesale replacement, and -if-empty for
+// the compose startup line. The embedded list needs no network; neither does
+// a file. Nothing here ever fetches.
+func runPlaces(args []string) error {
+	fs := flag.NewFlagSet("places", flag.ExitOnError)
+	src := fs.String("src", "", "places list, tab-separated, .tsv or .gz (default: embedded OpenStreetMap cities and towns)")
+	source := fs.String("source", places.SourceOSM, "what to record as the rows' source when loading -src")
+	ifEmpty := fs.Bool("if-empty", false, "load only when the places table is empty (startup-safe: never overwrites an existing load)")
+	db := dbFlag(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	s, err := openStore(ctx, *db)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+	// Checked before the list is parsed: at every start after the first this
+	// is the whole command, and it should cost one count, not a decompress.
+	if *ifEmpty {
+		n, err := s.CountPlaces(ctx)
+		if err != nil {
+			return err
+		}
+		if n > 0 {
+			fmt.Printf("places table already holds %d rows; -if-empty leaves it untouched\n", n)
+			return nil
+		}
+	}
+
+	var list []places.Place
+	label := "embedded OpenStreetMap cities and towns"
+	if *src == "" {
+		list, err = places.Bundled()
+		if err != nil {
+			return err
+		}
+		*source = places.SourceOSM
+	} else {
+		f, err := os.Open(*src)
+		if err != nil {
+			return err
+		}
+		list, err = places.Parse(f)
+		f.Close()
+		if err != nil {
+			return fmt.Errorf("cannot load %s: %w", filepath.Base(*src), err)
+		}
+		label = filepath.Base(*src)
+	}
+
+	if err := s.ReplacePlaces(ctx, list, *source); err != nil {
+		return err
+	}
+	fmt.Printf("loaded %d places from %s\n", len(list), label)
+	return nil
+}
+
 func runServe(args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	db := dbFlag(fs)
 	addr := fs.String("addr", ":8080", "listen address")
-	geocoder := fs.String("geocoder", envOr("ROADBOOK_GEOCODER", "none"),
-		"name suggester: none | nominatim (default $ROADBOOK_GEOCODER)")
+	geocoder := fs.String("geocoder", envOr("ROADBOOK_GEOCODER", "places"),
+		"name suggester: places | none | nominatim (default $ROADBOOK_GEOCODER, else places)")
 	nominatimURL := fs.String("nominatim-url", envOr("ROADBOOK_NOMINATIM_URL", "https://nominatim.openstreetmap.org"),
 		"Nominatim base URL (default $ROADBOOK_NOMINATIM_URL)")
 	photosDir := fs.String("photos-dir", envOr("ROADBOOK_PHOTOS_DIR", "data/photos"),
@@ -440,24 +509,29 @@ func runServe(args []string) error {
 		return fmt.Errorf("-user-cap / ROADBOOK_USER_CAP must be a whole number >= 0, got %q", *userCapFlag)
 	}
 
-	// The Suggester seam (BRIEF §1.7): null by default — a self-hosted
-	// product makes no surprise network calls; the geocoder is opt-in.
-	var sug suggest.Suggester
-	switch *geocoder {
-	case "none":
-		sug = suggest.Null{}
-	case "nominatim":
-		sug = suggest.NewNominatim(*nominatimURL)
-	default:
-		return fmt.Errorf("unknown -geocoder %q: use none or nominatim", *geocoder)
-	}
-
 	ctx := context.Background()
 	s, err := openStore(ctx, *db)
 	if err != nil {
 		return err
 	}
 	defer s.Close()
+
+	// The Suggester seam (BRIEF §1.7). The default is the places table
+	// (phase 18): the nearest listed town to the trip's destination, from
+	// the list embedded in the binary — offline, so the rule that a
+	// self-hosted product makes no surprise network calls still holds.
+	// "none" suggests nothing; a network geocoder stays opt-in.
+	var sug suggest.Suggester
+	switch *geocoder {
+	case "places":
+		sug = suggest.NewPlaces(s)
+	case "none":
+		sug = suggest.Null{}
+	case "nominatim":
+		sug = suggest.NewNominatim(*nominatimURL)
+	default:
+		return fmt.Errorf("unknown -geocoder %q: use places, none or nominatim", *geocoder)
+	}
 
 	photos := store.PhotoFiles{Dir: *photosDir}
 	if err := photos.Init(); err != nil {
@@ -733,6 +807,15 @@ func runJourney(args []string) error {
 	var crossed []store.CountryRef
 	var regions []store.StateRef
 	attributed := false
+	// Where each stop was (phase 18) — also a database lookup, so DB mode
+	// only; the same api.StopNames call the page's handler makes.
+	var positions []journey.StopPosition
+	var names []*journey.StopName
+	placeParams := journey.DefaultPlaceParams()
+	var placesLoaded int64
+	// Regions per leg and per stop (phase 18, #17): api.Regions, as served.
+	var legStates [][]store.StateRef
+	var stopStates []*store.StateRef
 	// The candidate's home-relative figure (owner surfaces only, BRIEF
 	// §3E); -1 in file mode, where there is no candidate.
 	destKm := -1
@@ -776,6 +859,15 @@ func runJourney(args []string) error {
 			return err
 		}
 		if regions, err = s.StatesForPoints(ctx, pts); err != nil {
+			return err
+		}
+		if positions, names, err = api.StopNames(ctx, s, j, obs.Visits, placeParams); err != nil {
+			return err
+		}
+		if placesLoaded, err = s.CountPlaces(ctx); err != nil {
+			return err
+		}
+		if legStates, stopStates, err = api.Regions(ctx, s, j, positions); err != nil {
 			return err
 		}
 		attributed = true
@@ -920,6 +1012,66 @@ func runJourney(args []string) error {
 		fmt.Printf("%3d %s .. %s (%.0f min) displacement %.2f km, %d points, near [%.4f, %.4f]\n",
 			i+1, s.Start.Format("15:04:05"), s.End.Format("15:04:05"),
 			s.End.Sub(s.Start).Minutes(), s.DisplacementKm, s.Points, s.Loc.Lat, s.Loc.Lon)
+	}
+
+	// The names the page prints beside each stop, with what each rests on:
+	// the wording, the distance, the list, and whose position was looked up
+	// ("visit" = Google's visit record, for a stop with no points of its
+	// own). One line per stop, so a stop that goes unnamed says why.
+	if attributed {
+		named := 0
+		for _, n := range names {
+			if n != nil {
+				named++
+			}
+		}
+		fmt.Printf("\n=== places: %d of %d stops named (near within %.0f km, named within %.0f km) ===\n",
+			named, len(j.Stops), placeParams.NearKm, placeParams.MaxKm)
+		if placesLoaded == 0 {
+			fmt.Println("the places table is empty — run `roadbook places` to load the list; no stop can be named without it")
+		}
+		for i := range j.Stops {
+			switch {
+			case names[i] != nil && names[i].Near:
+				fmt.Printf("%3d near %s (%.1f km, %s, %s position)\n",
+					i+1, names[i].Name, names[i].DistanceKm, names[i].Source, positions[i].Kind)
+			case names[i] != nil:
+				fmt.Printf("%3d %.0f km from %s (%s, %s position)\n",
+					i+1, names[i].DistanceKm, names[i].Name, names[i].Source, positions[i].Kind)
+			case positions[i].OK:
+				fmt.Printf("%3d — no listed place within %.0f km (%s position)\n", i+1, placeParams.MaxKm, positions[i].Kind)
+			default:
+				fmt.Printf("%3d — no position: no points during the stop and no visit record over it\n", i+1)
+			}
+		}
+
+		// Regions leg by leg and stop by stop — what a day's line is built
+		// from. From each leg's own timestamped points only (a gap's two
+		// endpoints), never routed geometry. A leg or stop in no region
+		// prints a dash.
+		regionLine := func(rs []store.StateRef) string {
+			if len(rs) == 0 {
+				return "—"
+			}
+			names := make([]string, len(rs))
+			for i, r := range rs {
+				names[i] = r.Name
+			}
+			return strings.Join(names, " → ")
+		}
+		fmt.Printf("\n=== regions: %d legs, %d stops ===\n", len(j.Legs), len(j.Stops))
+		for i, l := range j.Legs {
+			fmt.Printf("leg  %3d %-8s %s .. %s  %s\n", i+1, l.Kind,
+				l.Start().Format("02 Jan 15:04"), l.End().Format("02 Jan 15:04"), regionLine(legStates[i]))
+		}
+		for i, s := range j.Stops {
+			var rs []store.StateRef
+			if stopStates[i] != nil {
+				rs = []store.StateRef{*stopStates[i]}
+			}
+			fmt.Printf("stop %3d          %s .. %s  %s\n", i+1,
+				s.Start.Format("02 Jan 15:04"), s.End.Format("02 Jan 15:04"), regionLine(rs))
+		}
 	}
 	return nil
 }

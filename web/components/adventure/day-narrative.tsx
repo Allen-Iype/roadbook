@@ -9,16 +9,20 @@
 // words, and a row per stay. The per-event rows (every transit and
 // recorded position) left the page — they were the reconstruction's
 // account, and `roadbook journey` prints every leg for anyone who wants
-// it. Two slots are reserved for phase 18 "places", which will serve
-// per-day regions and stop names: the day line gains a regions phrase in
-// front ("From Vesturland into Vestfirðir · …") and the stay row gains
-// "· near Ísafjörður" after its duration. Nothing else moves then.
+// it.
+//
+// Phase 18 "places" filled the two slots that revision reserved: the day
+// line opens with the regions the day was in ("Suðurland to Austurland ·
+// …") and a stay row ends with its nearest listed town ("· near Höfn").
+// The words come from lib/day-places.ts; the lookups are the API's.
 //
 // No "use client" directive: this module renders inside the adventure view,
 // which is already a client component — the directive marks entry points
 // into the client graph, not every file in it.
 import { StopDot } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
+import { Term } from "@/components/term";
+import { dayRegions, regionsPhrase, stayPhrases } from "@/lib/day-places";
 import {
   clockOf,
   dayComposition,
@@ -102,6 +106,11 @@ function DaySection({
   // rows that used to hold them are gone; the day is their slot now.
   const legPhotos = day.legIndices.flatMap((i) => byLeg.get(i) ?? []);
   const stays = day.events.filter(isStay);
+  // One phrase per stay row; a run of stays near the same town says so once.
+  const places = stayPhrases(
+    stays.map((e) => e.stopIndex),
+    journey,
+  );
   return (
     <section
       className={active ? "border-t-2 border-ink" : "border-t border-rule"}
@@ -147,8 +156,6 @@ function DaySection({
         />
       )}
       <p data-day-line className="pb-2 text-sm">
-        {/* phase 18 slot: regions phrase first — "From Vesturland into
-            Vestfirðir · " — then the line below. */}
         <DayLine day={day} journey={journey} candidate={candidate} />
         {legPhotos.length > 0 && (
           <>
@@ -160,7 +167,14 @@ function DaySection({
       {stays.length > 0 && (
         <ol className="pb-2">
           {stays.map((e, i) => (
-            <StayRow key={i} event={e} day={day} journey={journey} byStop={byStop} />
+            <StayRow
+              key={i}
+              event={e}
+              day={day}
+              journey={journey}
+              byStop={byStop}
+              place={places[i]}
+            />
           ))}
         </ol>
       )}
@@ -204,6 +218,13 @@ function DayLine({
     return <span className="italic text-ink-2">Nothing recorded this day.</span>;
   }
   const parts: React.ReactNode[] = [];
+  // Where the day was, first: the regions of its legs and stays, from the
+  // recorded points only. A day with none (off a coastline, or nothing
+  // recorded while moving) simply starts with the next part.
+  const regions = regionsPhrase(dayRegions(day, journey));
+  if (regions !== undefined) {
+    parts.push(<span data-day-regions>{regions}</span>);
+  }
   const start = day.events.find((e) => e.type === "windowEdge" && e.edge === "start");
   const end = day.events.find((e) => e.type === "windowEdge" && e.edge === "end");
   if (start) {
@@ -283,8 +304,13 @@ function DayLine({
   );
 }
 
-// A stay: the map's stop marker, a time, and one line — "Stayed 38 h".
-// phase 18 slot: "· near <place>" after the duration.
+// A stay: the map's stop marker, a time, and one line — "Stayed 38 h ·
+// near Höfn". The place is the nearest listed town to the stay's position
+// (never "in"). Where the phone recorded no position for the stay, the
+// position is the one in Google's record of the visit; the name is then a
+// Term, whose dotted underline marks it as resting on Google's word and
+// whose note says so. The marker stays hollow: the map still draws no
+// such stop.
 // aria-hidden on the glyph span must be undefined, not false, when the
 // label applies: React renders aria-hidden="false", which is honest but
 // noisy; absent is the plain form.
@@ -293,11 +319,15 @@ function StayRow({
   day,
   journey,
   byStop,
+  place,
 }: {
   event: Stay;
   day: Day;
   journey: Journey;
   byStop: Map<number, DisplayPhoto[]>;
+  /** "near Höfn" / "16 km from Höfn"; undefined when the stay has no name
+   * or the row above already said it. */
+  place?: string;
 }) {
   // A stay's photo appears on the day it was taken — the one stay event
   // instance (begin, intermediate day, end) whose civil date matches.
@@ -355,6 +385,25 @@ function StayRow({
       <span className="font-mono text-xs text-ink-2">{time}</span>
       <span>
         {words}
+        {place !== undefined && (
+          // inline-block: the dot and the phrase wrap together or not at
+          // all, so a narrow row never ends on a dangling dot or splits
+          // "near" from its town; max-w-full lets a very long name still
+          // wrap inside the block instead of pushing the page sideways.
+          // The space sits outside the block: leading white space inside
+          // an inline-block is collapsed away.
+          <>
+            {" "}
+            <span className="inline-block max-w-full text-ink-2" data-stay-place>
+              {"· "}
+              {s.named_from === "visit" ? (
+                <Term id="visitPlace">{place}</Term>
+              ) : (
+                place
+              )}
+            </span>
+          </>
+        )}
         {photos.length > 0 && (
           <>
             {" "}

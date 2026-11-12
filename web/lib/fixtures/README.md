@@ -9,6 +9,9 @@ gaps are `unknown` or `air`.
 
 They exist for the cross-language parity test (`summary-parity.test.ts`):
 the served `summary.civil_days` against the narrative's `sliceDays`.
+`day-places.test.ts` pins each demo day's regions line from the same files,
+so they must come from an instance with countries, regions and places
+loaded (the default start-up does all three).
 
 Regenerate after a contract change:
 

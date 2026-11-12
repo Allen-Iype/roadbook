@@ -694,38 +694,26 @@ trips to review newest first, the plate numeral removed, a kept trip's
 name and notes editable on its page. Brief and decisions:
 `docs/phase-17/`.
 
-### Phase 18 — Places: what a day can say (planned 2026-10-29 as phase 17, brief pending)
+### Phase 18 — Places: what a day can say (2026-11-11 → 2026-11-12)
 
 *Renumbered 2026-11-04: the tester fixes took 17 (phase 17 DECISIONS).
 Phase 16's records say "phase 17" for this phase; they are kept as written.*
 
-**Goal.** Let each day of an adventure name where it was. The phase 16 CP1
-review found the day narrative honest but useless to the person — it
-recounted the reconstruction (positions, gaps), because nothing the system
-holds names a place: the Timeline export carries coordinates and an opaque
-Google `placeId` the parser never reads, visits are not loaded into the
-journey, and countries and regions are served once per journey, not per
-day or stop. The phase serves per-leg and per-stop regions (one ungrouped
-`ST_Contains` pass over the same embedded Natural Earth admin-1 set) and
-stop names from two sources: an embedded offline gazetteer (Natural Earth
-populated places, public domain — every instance names its stops with no
-service, "near Ísafjörður") and an opt-in batch Nominatim pass cached
-like `route_cache`, the row recording which source named it. The routing
-pattern throughout (invariant 7): a `Namer` interface, Null by default,
-`roadbook places` as the batch CLI, `serve` reads the cache only;
-`roadbook journey -candidate N` prints every served name and region
-(invariant 13). The web fills the two slots phase 16 left in the day line
-and the stay row; the shared view inherits.
+Each day of a trip names where it was: the regions it crossed on the day
+line, and the nearest listed town on each stay row ("near Ísafjörður",
+"16 km from Höfn"). The names come from OpenStreetMap's cities and towns,
+embedded and loaded into a `places` table at start-up; stays the phone
+recorded no position for are named from Google's record of the visit; the
+trip-name suggestion uses the same list, so nothing reaches a service by
+default. Issues #15–#19. Brief, decisions, the list comparison and the
+log: `docs/phase-18/`.
 
-**Sequencing.** After phase 16 closes (its CP2–CP4 are front door, copy
-diet, close). Brief before any code; the gazetteer's size and licence are
-measured at the brief (the 1 MB rule's named-exception procedure if it is
-over). Decided at the phase 16 CP1 STOP, 2026-10-29 (`docs/phase-16/
-DECISIONS.md`), over re-scoping phase 16 to carry the Go work.
-
-**Excludes.** Google's `placeId` (paid API, terms); any runtime service
-dependency in `serve`; instantaneous speed; visits as stops and
-"farthest that day" unless the brief takes them on evidence.
+What changed from the plan as first written (2026-10-29), each on
+measurement recorded in the brief: the list is OpenStreetMap's, not
+Natural Earth's populated places; there is no Nominatim pass and no
+`Namer` interface; the list lives in Postgres, not in Go memory. Carried:
+villages (#13), a nearest-region rule for points just off a coast, and
+the wording distances — all waiting on tester input.
 
 ### Gated alongside — not in the sequence until their evidence arrives
 

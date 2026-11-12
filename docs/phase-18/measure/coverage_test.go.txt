@@ -1,0 +1,269 @@
+package journey_test
+
+// Phase 18 brief measurement, step 3. NOT part of the build: the .txt suffix
+// keeps it out of `go test ./...`. To regenerate the brief's tables:
+//
+//	sh docs/phase-18/measure/fetch.sh "$DIR"        # DIR outside the repo
+//	cp docs/phase-18/measure/coverage_test.go.txt internal/journey/zz_coverage_test.go
+//	GAZ_DIR="$DIR" go test ./internal/journey -run TestZZCoverage -v
+//	rm internal/journey/zz_coverage_test.go
+//
+// It reads the committed demo and, when present, the private datasets in
+// data/. Only counts and distance percentiles are printed — never a
+// coordinate or a place name — so its output is safe to quote.
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"roadbook/internal/detect"
+	"roadbook/internal/domain"
+	"roadbook/internal/geo"
+	"roadbook/internal/journey"
+	"roadbook/internal/timeline"
+)
+
+type gazPlace struct {
+	name string
+	loc  domain.LatLng
+	cc   string // country code; empty in the OSM tables
+}
+
+func loadGaz(t *testing.T, path string) []gazPlace {
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	var out []gazPlace
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		c := strings.Split(sc.Text(), "\t")
+		lat, _ := strconv.ParseFloat(c[1], 64)
+		lon, _ := strconv.ParseFloat(c[2], 64)
+		out = append(out, gazPlace{c[0], domain.LatLng{Lat: lat, Lon: lon}, c[4]})
+	}
+	return out
+}
+
+func nearest(g []gazPlace, loc domain.LatLng) (string, float64) {
+	p, km := nearestPlace(g, loc)
+	return p.name, km
+}
+
+func nearestPlace(g []gazPlace, loc domain.LatLng) (gazPlace, float64) {
+	best, name := 1e18, gazPlace{}
+	for _, p := range g {
+		if dl := p.loc.Lat - loc.Lat; dl > 3 || dl < -3 {
+			continue
+		}
+		if m := geo.HaversineM(loc, p.loc); m < best {
+			best, name = m, p
+		}
+	}
+	return name, best / 1000
+}
+
+func pctl(v []float64, p float64) float64 {
+	if len(v) == 0 {
+		return -1
+	}
+	return v[int(float64(len(v)-1)*p)]
+}
+
+func share(v []float64, km float64) string {
+	if len(v) == 0 {
+		return "  -"
+	}
+	n := 0
+	for _, x := range v {
+		if x <= km {
+			n++
+		}
+	}
+	return fmt.Sprintf("%3.0f%%", 100*float64(n)/float64(len(v)))
+}
+
+// overnight: the stop covers 02:00 on the clock of its own timestamps.
+func overnight(s journey.Stop) bool {
+	for tt := s.Start; tt.Before(s.End); tt = tt.Add(30 * time.Minute) {
+		if tt.Hour() == 2 {
+			return true
+		}
+	}
+	return false
+}
+
+func TestZZCoverage(t *testing.T) {
+	dir := os.Getenv("GAZ_DIR")
+	if dir == "" {
+		t.Skip("GAZ_DIR not set")
+	}
+	gnames := []string{"ne_10m_populated_places", "cities15000", "cities5000", "cities1000", "cities500"}
+	// The worldwide OSM city+town list (osm_world.sh) joins the main table
+	// when it has been built.
+	if _, err := os.Stat(dir + "/osm_ct_world.tsv"); err == nil {
+		gnames = append(gnames, "osm_ct_world")
+	}
+	gazs := map[string][]gazPlace{}
+	for _, g := range gnames {
+		gazs[g] = loadGaz(t, dir+"/"+g+".tsv")
+	}
+	osm := map[string][]gazPlace{}
+	for _, g := range []string{"osm_ct", "osm_ctv", "osm_all"} {
+		if _, err := os.Stat(dir + "/" + g + ".tsv"); err == nil {
+			osm[g] = loadGaz(t, dir+"/"+g+".tsv")
+		}
+	}
+	for _, sp := range []string{
+		"../../testdata/demo/demo.json",
+		"../../data/fixture-2025-04.timeline.json",
+		"../../data/Timeline.json",
+		"../../data/ios-timeline.json",
+	} {
+		src, err := os.Open(sp)
+		if err != nil {
+			t.Logf("== %s: not present, skipped", sp)
+			continue
+		}
+		obs, _, err := timeline.Parse(src)
+		src.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		res := detect.Run(obs, detect.DefaultParams())
+
+		type located struct {
+			loc   domain.LatLng
+			long  bool
+			night bool
+		}
+		var stops []located
+		var perTrip, runsPerTrip, agree []float64
+		total, noPos, noPosVisit := 0, 0, 0
+		for _, c := range res.Candidates {
+			j := journey.Assemble(obs, c.Start, c.End, journey.DefaultParams())
+			rows, runs, last := 0, 0, "\x00"
+			for _, s := range j.Stops {
+				total++
+				// The located visit overlapping the stop longest, if any.
+				var vloc domain.LatLng
+				var bestOv time.Duration
+				found := false
+				for _, v := range obs.Visits {
+					if v.Loc == nil || v.End.Before(s.Start) || v.Start.After(s.End) {
+						continue
+					}
+					a, b := s.Start, s.End
+					if v.Start.After(a) {
+						a = v.Start
+					}
+					if v.End.Before(b) {
+						b = v.End
+					}
+					if ov := b.Sub(a); ov >= bestOv {
+						bestOv, vloc, found = ov, *v.Loc, true
+					}
+				}
+				loc := s.Loc
+				switch {
+				case s.Points == 0 && !found:
+					noPos++
+					continue
+				case s.Points == 0:
+					noPos++
+					noPosVisit++
+					loc = vloc
+				default:
+					if found {
+						agree = append(agree, geo.HaversineM(s.Loc, vloc)/1000)
+					}
+					stops = append(stops, located{s.Loc, s.End.Sub(s.Start) >= time.Hour, overnight(s)})
+				}
+				rows++
+				name, km := nearest(gazs["cities5000"], loc)
+				if km > 25 {
+					name = ""
+				}
+				if name != last {
+					runs++
+					last = name
+				}
+			}
+			perTrip = append(perTrip, float64(rows))
+			runsPerTrip = append(runsPerTrip, float64(runs))
+		}
+		sort.Float64s(perTrip)
+		sort.Float64s(runsPerTrip)
+		sort.Float64s(agree)
+		nLong, nNight := 0, 0
+		for _, s := range stops {
+			if s.long {
+				nLong++
+			}
+			if s.night {
+				nNight++
+			}
+		}
+		t.Logf("== %s: %d trips, %d stops; %d with a recorded position (%d of an hour or more, %d overnight); %d without, of which %d overlap a located visit",
+			sp, len(res.Candidates), total, len(stops), nLong, nNight, noPos, noPosVisit)
+		t.Logf("   stop vs overlapping visit (%d pairs): p50 %.2f km, p90 %.2f km, within 1 km %s",
+			len(agree), pctl(agree, .5), pctl(agree, .9), share(agree, 1))
+		t.Logf("   nameable stops per trip: p50 %.0f, max %.0f; runs of one name per trip (cities5000, 25 km): p50 %.0f, max %.0f",
+			pctl(perTrip, .5), pctl(perTrip, 1), pctl(runsPerTrip, .5), pctl(runsPerTrip, 1))
+		for _, g := range gnames {
+			for _, sel := range []string{"all", ">=1h", "night"} {
+				var d []float64
+				for _, s := range stops {
+					if sel == ">=1h" && !s.long || sel == "night" && !s.night {
+						continue
+					}
+					_, km := nearest(gazs[g], s.loc)
+					d = append(d, km)
+				}
+				sort.Float64s(d)
+				t.Logf("   %-24s %-5s n=%4d  p50 %5.1f km  p90 %5.1f km  <=5 %s  <=10 %s  <=25 %s  <=50 %s",
+					g, sel, len(d), pctl(d, .5), pctl(d, .9), share(d, 5), share(d, 10), share(d, 25), share(d, 50))
+			}
+		}
+
+		// OpenStreetMap comparison (osm_trim.py). The OSM tables cover India
+		// and Iceland only, so the comparison is held to stops whose nearest
+		// cities5000 place is in one of those two countries.
+		if len(osm["osm_ctv"]) == 0 {
+			continue
+		}
+		var covered []located
+		for _, s := range stops {
+			if p, _ := nearestPlace(gazs["cities5000"], s.loc); p.cc == "IN" || p.cc == "IS" {
+				covered = append(covered, s)
+			}
+		}
+		t.Logf("   OSM comparison: %d of %d located stops are in India or Iceland", len(covered), len(stops))
+		for _, g := range []string{"cities5000", "cities1000", "osm_ct", "osm_ctv", "osm_all"} {
+			table := gazs[g]
+			if table == nil {
+				table = osm[g]
+			}
+			for _, sel := range []string{"all", "night"} {
+				var d []float64
+				for _, s := range covered {
+					if sel == "night" && !s.night {
+						continue
+					}
+					_, km := nearest(table, s.loc)
+					d = append(d, km)
+				}
+				sort.Float64s(d)
+				t.Logf("   %-24s %-5s n=%4d  p50 %5.2f km  p90 %5.1f km  <=2 %s  <=5 %s  <=10 %s  <=25 %s",
+					g, sel, len(d), pctl(d, .5), pctl(d, .9), share(d, 2), share(d, 5), share(d, 10), share(d, 25))
+			}
+		}
+	}
+}

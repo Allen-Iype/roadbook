@@ -14,6 +14,7 @@ const pt = (lat: number, lon: number) => ({ t, lat, lon });
 
 const observed = (coords: [number, number][]): Leg => ({
   kind: "observed",
+  states: [],
   points: coords.map(([lat, lon]) => pt(lat, lon)),
   distance_km: 10,
   start: t,
@@ -27,6 +28,7 @@ const gap = (
   routed?: [number, number][],
 ): Leg => ({
   kind: "gap",
+  states: [],
   gap_kind: gapKind,
   points: [pt(...a), pt(...b)],
   distance_km: 100,
