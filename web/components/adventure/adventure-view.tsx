@@ -467,6 +467,12 @@ function DrawingAccount({ journey }: { journey: Journey }) {
       </p>
       <ModeLine journey={journey} />
       <DivergenceFigures journey={journey} />
+      {/* The towns on the stay rows come from the embedded OpenStreetMap
+          list (phase 18); its licence asks for this credit wherever the
+          names are shown. Absent when no stay was named. */}
+      {journey.stops.some((s) => s.place !== undefined) && (
+        <p data-place-credit>Place names © OpenStreetMap contributors</p>
+      )}
     </div>
   );
 }

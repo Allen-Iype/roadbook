@@ -289,3 +289,55 @@ rejected, what would change our mind.
   line to the farthest place stayed, and the maintainer remembered the
   one-way road distance, which is longer. A wording question for the trip
   page, to be tracked on its own.
+
+## 2026-11-12 — #19: how a day says its regions
+
+- **Chosen:** the day line opens with the regions of the day's legs and
+  stays in time order, each listed once where the day first reached it:
+  one is its name, two read "A to B", three or more are a list, and a day
+  that ends in the region it started in after leaving it reads "A to B
+  and back" (`web/lib/day-places.ts`, `dayRegions` + `regionsPhrase`).
+  The demo's nine day lines are pinned in `day-places.test.ts`.
+- **Rejected:** the full sequence with repeats ("A, B, A" — and "A, B, A,
+  B" on a road that follows a border); arrows between names (read aloud
+  as "right arrow"); "From A into B", the phase-16 placeholder, which
+  does not extend past two; composing the phrase in Go (wording belongs
+  to the page; the API serves the regions).
+- **Would change our mind:** testers reading "A to B" on a day that only
+  clipped B as a claim to have travelled there — then a minimum distance
+  inside a region, as a named parameter in Go.
+
+## 2026-11-12 — #19: the town on a stay row, and whose position named it
+
+- **Chosen:** "· near X" or "· N km from X" after the stay's words, in
+  the muted ink, printed on the first row of a run of consecutive stays
+  in a day that share the phrase. The API's `place.near` decides the
+  wording; the page rounds the distance to whole kilometres. A name from
+  Google's visit record is a `Term` (dotted underline, note
+  `TERMS.visitPlace`); the hollow marker and its "not on the map" title
+  stay, because the map still draws no such stop. The dot and the phrase
+  wrap as one block, so a phone-width row never ends on a dangling dot.
+- **Rejected:** a name on every row (a day around one town would say it
+  seven times — measured in the brief, §2.4); a second marker shape for
+  visit-named stays (a third stop glyph the legend would have to teach);
+  hiding the difference between a recorded and a visit position (the
+  source of a claim stays visible).
+- **Would change our mind:** readers taking an unnamed row after a named
+  one as "same place" when it is in fact unnamed — then unnamed rows that
+  break a run say so, or every row carries its name.
+
+## 2026-11-12 — #19: where the OpenStreetMap credit sits
+
+- **Chosen:** "Place names © OpenStreetMap contributors" as the last line
+  of the page-foot account "How this route was drawn", shown when any
+  stay on the trip was named; one paragraph on the landing's
+  how-it's-built page; the README (since #15). The shared view inherits
+  all of it, being the same component.
+- **Rejected:** a credit on every stay row or under the narrative (the
+  map already carries OpenStreetMap's credit for its tiles in view; the
+  licence asks for a credit reasonably reachable from the names, and the
+  account is where the page's other sources are stated).
+- **Would change our mind:** OpenStreetMap's attribution guidance being
+  read as requiring the credit visible without a tap; then it moves under
+  the last day.
+

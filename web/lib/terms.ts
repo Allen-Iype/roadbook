@@ -43,6 +43,11 @@ export const TERMS = {
     note:
       "How much this looks like a trip, from 0 to 100: how far from home, how long you stayed, how much your phone recorded. It only sets the order; you decide.",
   },
+  visitPlace: {
+    term: "Place from Google's record",
+    note:
+      "Your phone recorded no position during this stay. Google's own record of the visit has one, and this is the nearest town to it. The stay is not drawn on the map.",
+  },
 } as const;
 
 export type TermKey = keyof typeof TERMS;
