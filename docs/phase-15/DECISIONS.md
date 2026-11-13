@@ -270,3 +270,59 @@ mind. Written as decisions are made, not reconstructed.
   roll back on with a short `roll_keep_for`; a decision to drop the
   landing's no-script claim for any other reason → the log stays, the
   sentence changes with it.
+
+## 2026-11-12 — The funnel stops counting a monitor and scanners as visits (#11)
+
+- **Chosen:** in `scripts/pilot/host/funnel.py`: `monitor` and
+  `sitewatch` join the bot pattern; an address that asks for a stock
+  probe path (`/wp-…`, `/.env`, `/.git`, `*.php` and the like, on any
+  host including the bare address) is a scanner for that day and all its
+  requests that day go to `bots`; a new `browsers` column counts landing
+  loads followed within 120 seconds by a font or image fetch from the
+  same masked address. `landing` and `browsers` are printed side by side
+  as an upper and a lower bound. `--record DIR --recount` replaces the
+  rows of every whole day the log still covers; older days stay as first
+  recorded, with the new column blank, not zero. Tested on a made-up log
+  (`funnel_test.py`, standard library). Measured on the host's log the
+  day of the change: the eight days in it went from 1,008 landing loads
+  to 390, of which 23 were browsers.
+- **Rejected:** replacing `landing` with `browsers` (the landing is
+  cached for an hour, so a returning visitor fetches no assets; the lower
+  bound alone would under-count them); requiring an `Accept-Language`
+  header (a heuristic about one header that a scanner can add in a line,
+  where the asset fetch is what a rendering browser actually does);
+  zeroing or estimating the days older than the log (they hold only
+  totals; a corrected figure for them would be invented).
+- **Would change our mind:** `landing` staying many times `browsers`
+  after this change with no probe paths to explain it → the page-fetchers
+  have a signature worth naming, or `landing` is dropped from the trend
+  and `browsers` read alone.
+
+## 2026-11-12 — The host watches failed uploads and disk space (#12)
+
+- **Chosen:** two signals in the existing operator scripts, no app code.
+  (1) `accounts.sh` ends with the last 14 days of failed uploads as day,
+  kind (`imports.detected_format`), accounts and attempts, and its totals
+  line carries `failed_uploads=`; `funnel.py --record --failed-from app`
+  writes a nightly `failed` column, read through `accounts.sh
+  --failed-by-day` so the query and the compose invocation live in one
+  place. A night the database cannot be read leaves the cell blank, not
+  zero. (2) `backup-nightly.sh` reads how full the root filesystem and
+  Docker's data directory are before staging: at or above 80 % the ping
+  body says so and the run still succeeds; at or above 92 % the run
+  reports failure so the email goes out; the backup is attempted either
+  way. Both thresholds are named variables, overridable from the
+  environment for testing. Each stack's line carries the size of its
+  uploads and photos volumes as staged.
+- **Rejected:** a metrics agent or a dashboard (two numbers a night do
+  not need a service); a separate disk cron with its own alert path (the
+  nightly job already has a dead-man check and an email on failure);
+  measuring the volumes with `du` under Docker's directory (needs root;
+  the staged tars are the same figure and already exist); printing the
+  failed import's message or file name (the kind is enough to act on,
+  and the message can quote the file).
+- **Would change our mind:** disk growing faster than a nightly reading
+  can warn about (many large uploads in a day) → a check at upload time,
+  in Go, as its own issue; failures that are not format problems (server
+  errors) → 5xx per day joins the funnel.
+
