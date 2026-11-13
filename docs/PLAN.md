@@ -726,6 +726,18 @@ untouched. Issues #14 and #22. Brief, decisions and the log:
 `docs/phase-19/`. The other half of the same proposal — deriving home
 from nights where Google's home label is missing — is backlog (#23).
 
+### Phase 20 — Far trips without a long stop (2026-11-13)
+
+Detection finds a trip that went far and came back with no long stay in
+the file: out from one home and back to the same one, beyond `FAR_KM`
+for at least `MIN_FAR_MIN` (30) minutes, with a short time near home
+(`MIN_HOME_MIN`, 30) not counted as a return. Such a trip is marked
+`reached` (migration 17) and says "no long stop there" on its review
+card. Tried only when the dwell rule fails, so existing candidates are
+unchanged; a journey between two homes still is not a trip. Issue #8.
+Brief, decisions and the log: `docs/phase-20/`. Carried: an outing cut
+in two by a stray position near home appears as two trips.
+
 ### Gated alongside — not in the sequence until their evidence arrives
 
 - **Ingestion (photos as a source, GPX).** Photos-as-source was chartered
