@@ -168,13 +168,13 @@ var (
 		near: 506, from: 67, unnamed: 1, tripsWithUnnamed: 1,
 		legs: 2594, legsNoRegion: 28, legsCrossing: 61, stopsNoRegion: 15}
 	// The archive and iPhone lines were re-pinned 2026-11-13 by phase 20,
-	// which adds trips reached without a long stop (2 and 22). As measured
+	// which adds trips reached without a long stop (1 and 19). As measured
 	// by phase 18: archive 66 trips, 2227 stops, 9622 legs; iPhone 60
 	// trips, 824 stops, 3872 legs.
-	archiveNames = nameCount{trips: 68, stops: 2240, recorded: 1886, visit: 340, noPosition: 14,
-		near: 1923, from: 302, unnamed: 1, tripsWithUnnamed: 1,
-		legs: 9636, legsNoRegion: 47, legsCrossing: 176, stopsNoRegion: 23}
-	iphoneNames = nameCount{trips: 82, stops: 893, recorded: 799, visit: 91, noPosition: 3,
-		near: 800, from: 88, unnamed: 2, tripsWithUnnamed: 1,
-		legs: 4444, legsNoRegion: 27, legsCrossing: 134, stopsNoRegion: 18}
+	archiveNames = nameCount{trips: 67, stops: 2237, recorded: 1884, visit: 340, noPosition: 13,
+		near: 1921, from: 302, unnamed: 1, tripsWithUnnamed: 1,
+		legs: 9635, legsNoRegion: 47, legsCrossing: 176, stopsNoRegion: 23}
+	iphoneNames = nameCount{trips: 79, stops: 890, recorded: 796, visit: 91, noPosition: 3,
+		near: 798, from: 87, unnamed: 2, tripsWithUnnamed: 1,
+		legs: 4407, legsNoRegion: 26, legsCrossing: 130, stopsNoRegion: 17}
 )

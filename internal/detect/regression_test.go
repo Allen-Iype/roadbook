@@ -111,7 +111,8 @@ func compareWithReference(t *testing.T, srcPath, expPath string) {
 	for name, want := range map[string]float64{
 		"NEAR_M": p.NearM, "FAR_KM": p.FarKm, "MIN_OBS": float64(p.MinObs),
 		"MIN_HRS": p.MinHrs, "MIN_DWELL_MIN": p.MinDwellMin, "MAX_KMH": p.MaxKmh,
-		"MIN_FAR_MIN": p.MinFarMin,
+		"MIN_FAR_MIN":  p.MinFarMin,
+		"MIN_HOME_MIN": p.MinHomeMin,
 	} {
 		if got, ok := exp.Params[name]; !ok || got != want {
 			t.Fatalf("expected file %s was produced with %s=%v, defaults use %v — regenerate it",

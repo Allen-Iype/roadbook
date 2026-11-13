@@ -137,6 +137,12 @@ def spans_of(visits,acts,paths):
             kinds=dict(kinds),
             ok=bool(dw) and max(dw)>P['FAR_KM'] and (e-s+1)>=P['MIN_OBS'] and dur>=P['MIN_HRS'],
             gates=(e-s+1)>=P['MIN_OBS'] and dur>=P['MIN_HRS']))
+    # minutes of observations near home between each span and the next
+    for k,x in enumerate(out):
+        if k+1<len(sp):
+            a,b=sp[k][1]+1,sp[k+1][0]-1
+            x['home_after']=(max(obs[i][1] for i in range(a,b+1))-obs[a][0]).total_seconds()/60
+    for k,x in enumerate(out): x['k']=k
     return out,bases,nb
 
 def overlap(a0,a1,b0,b1): return a0<=b1 and b0<=a1
@@ -147,6 +153,15 @@ def cls(x):
     """same: left and came back to one base. diff: home to home. cut: touches the edge of the file."""
     if x['b0'] is None or x['b1'] is None: return 'cut'
     return 'same' if x['b0']==x['b1'] else 'diff'
+MIN_HOME_MIN=30  # as built: a time near home shorter than this is looked through
+def chain_cls(sp,x,M):
+    """cls() asked of the chain of spans joined by times near home shorter than M minutes."""
+    i=j=x['k']
+    while i>0 and sp[i-1]['home_after']<M: i-=1
+    while j+1<len(sp) and sp[j]['home_after']<M: j+=1
+    b0,b1=sp[i]['b0'],sp[j]['b1']
+    if b0 is None or b1 is None: return 'cut'
+    return 'same' if b0==b1 else 'diff'
 def row(label,xs):
     c=collections.Counter(cls(x) for x in xs)
     print(f'   {label:<34} +{len(xs):>3}   same base {c["same"]:>3}   home to home {c["diff"]:>3}   cut {c["cut"]:>3}')
@@ -174,7 +189,16 @@ if __name__=='__main__':
         print(' rule 3, continuously beyond FAR_KM for at least T minutes (any class):')
         for T in (0,10,20,30,45,60,90,120,180): row(f'T = {T}',[x for x in reach if x['run_min']>=T])
         add=[x for x in reach if cls(x)=='same' and x['run_min']>=MIN_FAR_MIN]
-        print(f' recommended (rule 3, same base only, T = {MIN_FAR_MIN}): {len(cands)} -> {len(cands)+len(add)}')
+        print(f' recommended in the brief (rule 3, same base only, T = {MIN_FAR_MIN}): {len(cands)} -> {len(cands)+len(add)}')
+        far_run=[x for x in reach if x['run_min']>=MIN_FAR_MIN]
+        print(' as built: the same-base question looks through a time near home shorter than M minutes:')
+        for M in (0,10,15,30,60,120,180,360):
+            ch=[x for x in far_run if chain_cls(sp,x,M)=='same']
+            g=f", Google's groupings found {found([m for m in mem if m['km'] is not None and m['km']>=P['FAR_KM']],cands+ch)}" if mem else ''
+            print(f'   M = {M:<4} {len(cands)} -> {len(cands)+len(ch)}{g}')
+        built=[x for x in far_run if chain_cls(sp,x,MIN_HOME_MIN)=='same']
+        lost=[x for x in add if x not in built]
+        print(f'   at M = {MIN_HOME_MIN}: {len(lost)} of the brief\'s added spans are no longer added; {sum(1 for x in built if x not in add)} are new')
         # Score, from score.go's default weights and anchors, with destination dwell taken as 0.
         cl=lambda v,f:max(0,min(1,v/f))
         def sc(x,km): d=x['dur']/24; return round(100*(.35*cl(km,1000)+.20*cl(x['n']/d,48)+.15*cl(d,7)),1)
@@ -190,6 +214,7 @@ if __name__=='__main__':
             print(f'   still not found: {len(missed)}; of those overlapping a home-to-home span that reaches beyond FAR_KM: {h2h}; the rest overlap no such span')
         if LIST:
             for x in add:
+                if x not in built: print('   (not added as built, next line)')
                 q=[r for r in x['runs'] if r['min']>=MIN_FAR_MIN]
                 fv=[(round(m),round(k)) for m,k in x['vs'] if k>P['FAR_KM']]
                 print(f'   + {x["t0"].strftime("%Y-%m-%d %H:%M")}  {x["dur"]:6.1f} h  beyond FAR for {max(r["min"] for r in q):4.0f} min  reached {max(r["far"] for r in q):5.0f} km  far visits (min, km) {fv}  modes {sorted(set(a[0] for a in x["acts"] if a[0]))}')

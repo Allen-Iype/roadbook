@@ -357,6 +357,28 @@ func TestReached(t *testing.T) {
 	}
 	short := DefaultParams()
 	short.MinFarMin = 10
+	// A time near home counts as having come home from five minutes up.
+	quick := DefaultParams()
+	quick.MinHomeMin = 5
+	// A journey from one home to another on day 5, with two stray positions
+	// back near the first home ten minutes apart partway along. They cut the
+	// journey into two spans; the first leaves the first home and "returns"
+	// to it. This is the shape found in a real archive after STOP 1.
+	strayTransit := func() domain.Observations {
+		far := loc(14, 20)
+		var visits []domain.Visit
+		for d := 1; d <= 8; d++ {
+			visits = append(visits, homeVisit(d, home))
+			visits = append(visits, domain.Visit{
+				Start: at(d, 18, 0), End: at(d, 19, 0), Loc: far, SemanticType: "INFERRED_HOME",
+			})
+		}
+		return domain.Observations{Visits: visits, Points: []domain.PathPoint{
+			pt(5, 9, 10, 10.5), pt(5, 9, 30, 11), pt(5, 9, 50, 11.2), pt(5, 10, 10, 11.2), pt(5, 10, 20, 11),
+			pt(5, 10, 40, 10.1), pt(5, 10, 50, 10.1), // the stray pair, 11 km from the first home
+			pt(5, 11, 20, 11.5), pt(5, 12, 0, 12.5), pt(5, 13, 0, 13), pt(5, 14, 0, 13.5), pt(5, 15, 0, 13.6),
+		}}
+	}
 
 	cases := []struct {
 		name      string
@@ -434,6 +456,29 @@ func TestReached(t *testing.T) {
 			}(),
 			params:    DefaultParams(),
 			wantCands: 0,
+		},
+		{
+			name:      "home to home cut by stray positions near the first home is still transit: the test looks through a short time near home",
+			obs:       strayTransit(),
+			params:    DefaultParams(),
+			wantCands: 0,
+		},
+		{
+			name:      "the same journey qualifies when MIN_HOME_MIN is under the stray pair's ten minutes: the threshold is the parameter",
+			obs:       strayTransit(),
+			params:    quick,
+			wantCands: 1,
+			wantKm:    133, // 1.2°, the first half's farthest point
+		},
+		{
+			name: "an outing cut in two by a stray pair near home is still found, as two: both halves leave and return to one home",
+			obs: framed(nil,
+				pt(10, 9, 0, 10.5), pt(10, 9, 15, 10.7), pt(10, 9, 30, 11), pt(10, 10, 0, 11.1), pt(10, 10, 20, 11),
+				pt(10, 10, 40, 10.1), pt(10, 10, 50, 10.1),
+				pt(10, 11, 20, 11), pt(10, 11, 40, 11.1), pt(10, 12, 0, 11), pt(10, 12, 30, 10.6), pt(10, 13, 0, 10.5)),
+			params:    DefaultParams(),
+			wantCands: 2,
+			wantKm:    122,
 		},
 	}
 	for _, tc := range cases {

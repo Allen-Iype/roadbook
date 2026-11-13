@@ -427,3 +427,80 @@ steadily past 60 minutes with no second flat part.
 - **Close.** LOG.md, PLAN.md, the PR, the host rebuild (migration 17
   applies at start-up), a comment on #8 asking the tester to look at
   their list again.
+
+---
+
+## 7. Amendment, 2026-11-13 — the rule as first built admitted a false trip
+
+Written after STOP 1 was committed, during STOP 2. Sections 1 to 6 stand
+as the record of what was agreed; where this section differs, it is the
+rule as built.
+
+### What went wrong
+
+§1 says the observations either side of a span are near a home, and that
+when both are nearest the same home "no corridor can explain the
+distance". That holds only if the observations near home are real. On
+the archive, one of the two spans the rule added was a journey from one
+home to another. Partway along, the export holds two positions back
+near the first home, minutes apart. The outlier pass (§1 of the phase 1
+design: drop a point faster than `MAX_KMH` from *both* neighbours) keeps
+them, because each is slow relative to the other. They end the
+away-span, so the journey is two spans: the first leaves the first home
+and "returns" to it, with far more than 30 minutes beyond `FAR_KM`
+between. It qualified. The second half ends at the other home and was
+correctly rejected.
+
+This is bug 3 reached by a different road, and the brief's §2.6 had the
+warning in it: stray positions near home were listed as something the
+phase does not fix, on the reasoning that they only split outings. They
+also split transits.
+
+### The correction
+
+"Out and back" is asked of the **chain** a span belongs to. A time near
+home that lasts less than `MIN_HOME_MIN` (new parameter, default 30
+minutes, measured from its first observation's start to the latest end
+among its observations) does not count as having come home: the test
+looks through it to the neighbouring span, and repeats in both
+directions. The observations compared are the ones either side of the
+whole chain. A chain that touches the edge of the file is cut, as a span
+was.
+
+What does not change: the spans. They are still found the way step 4 of
+the detection rule finds them, with the same dates, observation counts
+and track distances; the dwell rule is untouched; a candidate found by
+a dwelt destination cannot be affected, because the chain is consulted
+only by `reachedDest`. Joining the spans instead would have moved the
+dates of existing candidates and is rejected in the decision log.
+
+### Measured (`measure.py`, the lines under "as built")
+
+| dataset | before | §2.4's rule | as built | Google's groupings found |
+|---|---|---|---|---|
+| fixture | 18 | 18 | 18 | none in the file |
+| archive | 66 | 68 | 67 | 39 of 45, unchanged |
+| iPhone export | 60 | 82 | 79 | 28 of 28, unchanged |
+| demo | 3 | 3 | 3 | none in the file |
+
+- The counts are the same for any `MIN_HOME_MIN` from 15 to 120 minutes
+  on both private datasets. Below 15 the false trip is admitted again.
+  From 180 the iPhone count rises, as chains grow long enough to end
+  where they began.
+- The three spans the iPhone export no longer gains are legs of a single
+  chain that starts at one home and ends at another. §2 cited the
+  longest of them as an example of what the rule finds; it is withdrawn
+  as evidence. Whether a far detour inside a journey between homes is a
+  trip is the question §5 already left out.
+- Both trips named in #8 are still found.
+
+### Still not fixed
+
+A real outing cut in two by a stray position near home is found as two
+trips, each a round trip in its own right. `TestReached` has a case
+that records this as the current behaviour. It is the detection-side
+counterpart of phase 17's needles and wants its own issue.
+
+### Checkpoint figures
+
+Where §6 says 18 / 68 / 82 / 3, read 18 / 67 / 79 / 3.

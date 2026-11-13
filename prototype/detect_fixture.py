@@ -6,7 +6,7 @@ import statistics as st
 SRC=sys.argv[1] if len(sys.argv)>1 else 'data/fixture-2025-04.segments.timeline.json'
 # Where the expected file is written. It holds real coordinates: keep it under data/.
 OUT=sys.argv[2] if len(sys.argv)>2 else 'data/fixture-candidates.json'
-P=dict(NEAR_M=25000, FAR_KM=100, MIN_OBS=5, MIN_HRS=1.0, MIN_DWELL_MIN=60, MAX_KMH=900, MIN_FAR_MIN=30)
+P=dict(NEAR_M=25000, FAR_KM=100, MIN_OBS=5, MIN_HRS=1.0, MIN_DWELL_MIN=60, MAX_KMH=900, MIN_FAR_MIN=30, MIN_HOME_MIN=30)
  
 def hav(a,b):
     R=6371008.8;p1,p2=math.radians(a[0]),math.radians(b[0]);dp=p2-p1;dl=math.radians(b[1]-a[1])
@@ -91,9 +91,25 @@ dist=[hd(o[0],o[2]) for o in obs]
 # qualify (the corridor between two homes is far from both), nor do spans cut
 # by the edge of the file. Destination: the farthest visit beyond FAR_KM of any
 # length; failing that, the farthest observation in a qualifying far run.
-def reached(s,e):
-    if s==0 or e==len(obs)-1: return None
-    if nb(obs[s-1][0],obs[s-1][2])!=nb(obs[e+1][0],obs[e+1][2]): return None
+#
+# "Leaves and returns" is asked of the chain the span belongs to, not the span
+# alone: a time near home shorter than MIN_HOME_MIN does not count as having
+# come home, so the test looks through it to the next span, and on, in both
+# directions. Stray positions near a home in the middle of a home-to-home
+# journey otherwise cut it into a first half that reads as a round trip.
+def home_min(k):
+    # how long the observations between span k and span k+1 last
+    a,b=sp[k][1]+1,sp[k+1][0]-1
+    return (max(obs[i][1] for i in range(a,b+1))-obs[a][0]).total_seconds()/60
+def reached(k):
+    s,e=sp[k]
+    i=k
+    while i>0 and home_min(i-1)<P['MIN_HOME_MIN']: i-=1
+    j=k
+    while j+1<len(sp) and home_min(j)<P['MIN_HOME_MIN']: j+=1
+    cs,ce=sp[i][0],sp[j][1]
+    if cs==0 or ce==len(obs)-1: return None
+    if nb(obs[cs-1][0],obs[cs-1][2])!=nb(obs[ce+1][0],obs[ce+1][2]): return None
     run=vis=None;i=s
     while i<=e:
         if dist[i]/1000<=P['FAR_KM']: i+=1;continue
@@ -116,7 +132,7 @@ for i in range(len(obs)):
 if cur: sp.append(tuple(cur))
 ak=[a['s'] for a in acts]; vk=[v['s'] for v in visits]
 cand=[]
-for s,e in sp:
+for k,(s,e) in enumerate(sp):
     t0,t1=obs[s][0],obs[e][1]
     dw=[]
     for j in range(bisect.bisect_left(vk,t0),bisect.bisect_right(vk,t1)):
@@ -128,7 +144,7 @@ for s,e in sp:
     rch=False
     if dw and max(dw)[0]/1000>P['FAR_KM']: dwmax,far=max(dw)
     else:
-        r=reached(s,e)
+        r=reached(k)
         if r is None: continue
         (dwmax,far),rch=r,True
     km=0;modes=collections.Counter()

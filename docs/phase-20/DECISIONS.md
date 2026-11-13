@@ -109,3 +109,53 @@ our mind. Written as the decisions were made.
   agreement: nothing in `data/` is modified by a tool); writing them
   outside `data/` (they hold real coordinates).
 - **Would change our mind:** nothing.
+
+## 2026-11-13 — "Out and back" is asked of a chain of spans, not one span
+
+- **Chosen:** found while previewing the review page on the archive: one
+  of its two added trips was a journey between two homes. Two stray
+  positions near the first home, minutes apart, partway along, ended the
+  span there; the first half then left and "returned to" the same home
+  and qualified. Outlier rejection keeps such a pair because each
+  vouches for the other. The same-base test now looks through a time
+  near home shorter than `MIN_HOME_MIN` to the neighbouring span, and on
+  in both directions, and compares the observations either side of the
+  whole chain. Spans are not joined: dates, counts and the dwell rule
+  are untouched, and a candidate found by a dwelt destination cannot
+  change. Counts become 18 / 67 / 79 / 3; the three the iPhone export
+  loses are legs of one chain that starts at one home and ends at
+  another.
+- **Rejected:** joining the spans themselves (every existing candidate
+  beside a short time near home would change dates, and the pinned
+  counts with them); raising outlier rejection to catch pairs (it would
+  be a second, different change to every dataset); requiring the return
+  to be a visit (a day trip often ends with path points only, and both
+  trips named in #8 would be judged on whichever segment kind happened
+  to come first).
+- **Would change our mind:** a real out-and-back trip lost because its
+  chain runs on into a later journey to another home.
+
+## 2026-11-13 — MIN_HOME_MIN is 30 minutes
+
+- **Chosen:** 30. The counts do not move anywhere from 15 to 120 minutes
+  on the archive or the iPhone export (`measure.py`, "as built"); below
+  15 the false trip returns, and from 180 the iPhone count starts to
+  rise again as chains grow long enough to end at their starting home.
+  Google's groupings found stay at 39 and 28 across the whole range.
+- **Rejected:** reusing `MIN_FAR_MIN` (same value today, different
+  question: invariant 3 wants each threshold named for what it decides);
+  reusing `MIN_HRS` (60 is inside the flat range, but that parameter
+  rejects short spans and would couple two unrelated rules).
+- **Would change our mind:** an export where real stops at home of under
+  half an hour separate real day trips to different homes.
+
+## 2026-11-13 — The earlier entries' counts are superseded, not rewritten
+
+- **Chosen:** the entries above that say 2 and 22 more trips, and 68 and
+  82, record the rule as first built and committed. As it stands the
+  figures are 1 and 19, 67 and 79. The six private count pins and the
+  reference output beside the pinned files were regenerated a second
+  time the same way.
+- **Rejected:** editing the earlier entries (a decision log records what
+  was decided when).
+- **Would change our mind:** nothing.

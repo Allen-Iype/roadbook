@@ -99,9 +99,9 @@ func checkNeedles(t *testing.T, got, want needleCount) {
 
 func TestNeedlesIOS(t *testing.T) {
 	checkNeedles(t, needlesOn(t, "../../data/ios-timeline.json"),
-		// Re-pinned 2026-11-13 (phase 20): 22 more trips, reached without a
+		// Re-pinned 2026-11-13 (phase 20): 19 more trips, reached without a
 		// long stop. Before: 60 trips, 67 needles on 7, 4 left on 4, 63 set aside.
-		needleCount{trips: 82, before: 100, tripsBefore: 11, after: 8, tripsAfter: 5, rejected: 89})
+		needleCount{trips: 79, before: 99, tripsBefore: 10, after: 8, tripsAfter: 5, rejected: 88})
 }
 
 func TestNeedlesFixture(t *testing.T) {
@@ -111,5 +111,5 @@ func TestNeedlesFixture(t *testing.T) {
 
 func TestNeedlesArchive(t *testing.T) {
 	checkNeedles(t, needlesOn(t, "../../data/Timeline.json"),
-		needleCount{trips: 68, before: 3, tripsBefore: 2, rejected: 3}) // 66 trips before phase 20
+		needleCount{trips: 67, before: 3, tripsBefore: 2, rejected: 3}) // 66 trips before phase 20
 }
