@@ -220,8 +220,7 @@ export default async function WelcomePage() {
             <Step n={2}>
               <strong className="font-semibold text-ink">Your trips are found.</strong>{" "}
               Roadbook reads the file and picks out the trips: time well away
-              from home, with somewhere you stayed. Home is worked out from
-              your own data.
+              from home. Home is worked out from your own data.
             </Step>
             <Step n={3}>
               <strong className="font-semibold text-ink">You choose.</strong>{" "}

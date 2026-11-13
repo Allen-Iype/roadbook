@@ -101,9 +101,8 @@ export default async function CandidatesPage({
               Roadbook looked and found no trips.
             </p>
             <p className="mt-2 text-ink-2">
-              Your file was read. A trip is time well away from home with a
-              real stay somewhere; short outings and pass-throughs
-              don&apos;t count.
+              Your file was read. A trip is time well away from home; short
+              outings and pass-throughs don&apos;t count.
             </p>
             <p className="mt-2 text-ink-2">
               More data may change that:{" "}
@@ -231,6 +230,10 @@ function RunSummary({ list }: { list: CandidateList }) {
   if (!list.run) return null;
   const n = list.candidates.length;
   const far = list.run.params["FAR_KM"];
+  // Present on runs made since phase 20, which also find a trip out and
+  // back from one home with no long stay. An older run did not, and its
+  // sentence stays as it was: the line describes the run on screen.
+  const outAndBack = typeof list.run.params["MIN_FAR_MIN"] === "number";
   const dropped = list.run.outliers_dropped;
   return (
     <details className="group mt-5 max-w-[72ch] text-xs text-ink-2">
@@ -243,7 +246,14 @@ function RunSummary({ list }: { list: CandidateList }) {
         </span>
       </summary>
       <p className="mt-2 pl-5 leading-relaxed">
-        {typeof far === "number" ? (
+        {typeof far === "number" && outAndBack ? (
+          <>
+            Time spent more than{" "}
+            <span className="font-mono">{far} km</span> from home counts as
+            a trip when you stayed somewhere out there, or went out and came
+            back to the same home.{" "}
+          </>
+        ) : typeof far === "number" ? (
           <>
             Time spent more than{" "}
             <span className="font-mono">{far} km</span> from home, with
@@ -358,6 +368,16 @@ function CandidateCard({
           {c.days} day{c.days === 1 ? "" : "s"} · {c.dest_km} km from home ·{" "}
           {c.track_km} km travelled · {c.stops} stop{c.stops === 1 ? "" : "s"}
           {c.repeat > 0 && <> · visited {c.repeat}× before</>}
+          {/* A reached trip (phase 20): the distance above is to a place
+              the phone was recorded at, with no long stay there. Said on
+              the same line as the distance so the figure is never read as
+              a place stayed; the Term carries the explanation. */}
+          {c.reached && (
+            <>
+              {" · "}
+              <Term id="reached">no long stop there</Term>
+            </>
+          )}
         </p>
         <DecideCell
           candidateId={c.id}

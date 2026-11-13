@@ -27,6 +27,15 @@ type Params struct {
 	MinHrs      float64 `json:"MIN_HRS"`       // reject spans shorter than this
 	MinDwellMin float64 `json:"MIN_DWELL_MIN"` // a stop counts as dwelling only at or above this
 	MaxKmh      float64 `json:"MAX_KMH"`       // implied-speed outlier threshold; must clear real air travel
+	// MinFarMin is the second way a span qualifies (phase 20, issue #8): a
+	// span that leaves and returns to the same base, and was continuously
+	// beyond FarKm for at least this many minutes, is a candidate even with
+	// no dwelt destination.
+	MinFarMin float64 `json:"MIN_FAR_MIN"`
+	// MinHomeMin is how long a time near home must last to count as having
+	// come home, for the same-base test above only: a shorter one is looked
+	// through to the next span. It never joins or splits spans.
+	MinHomeMin float64 `json:"MIN_HOME_MIN"`
 
 	Score ScoreParams `json:"SCORE"` // confidence-scoring weights and anchors (score.go)
 	Synth SynthParams `json:"SYNTH"` // stay-point visit synthesis over photo fixes (synth.go)
@@ -35,7 +44,7 @@ type Params struct {
 
 // DefaultParams are the measured defaults from the exploration phase.
 func DefaultParams() Params {
-	return Params{NearM: 25000, FarKm: 100, MinObs: 5, MinHrs: 1.0, MinDwellMin: 60, MaxKmh: 900,
+	return Params{NearM: 25000, FarKm: 100, MinObs: 5, MinHrs: 1.0, MinDwellMin: 60, MaxKmh: 900, MinFarMin: 30, MinHomeMin: 30,
 		Score: DefaultScoreParams(), Synth: DefaultSynthParams(), Bases: DefaultBaseParams()}
 }
 
@@ -62,15 +71,20 @@ type Candidate struct {
 	Start          time.Time
 	End            time.Time
 	Days           float64       // duration, rounded to 1 decimal
-	DestKm         int           // distance home → farthest place dwelt (never merely passed through)
+	DestKm         int           // distance home → farthest place dwelt; for a Reached candidate, → the place reached
 	TrackKm        int           // sum of activity distances within the span
 	Stops          int           // dwelt visits within the span
-	Dest           domain.LatLng // farthest dwelt place, rounded to 4 decimals
+	Dest           domain.LatLng // farthest dwelt place (or, when Reached, the place reached), rounded to 4 decimals
 	Modes          []ModeCount   // top 3 modes
 	Repeat         int           // earlier candidates with a destination within 60 km
 	ObsCount       int           // observations in the span
 	StartTruncated bool          // span begins at the first observation of the window (bug 4)
 	EndTruncated   bool          // span ends at the last observation of the window
+	// Reached: the span has no dwelt destination beyond FarKm and qualified
+	// by the round-trip rule instead (reachedDest). Dest is then somewhere
+	// the traveller got to, not somewhere they are known to have stayed, and
+	// nothing downstream may present it as a stay.
+	Reached bool
 
 	// Confidence score, 0–100, with the per-component breakdown that
 	// reproduces it (BRIEF §1.6). Ranking support only: no threshold on it
@@ -91,6 +105,7 @@ type obs struct {
 	start time.Time
 	end   time.Time
 	loc   domain.LatLng
+	visit bool // the observation is a visit (Google's or synthetic), not a point passed
 }
 
 // Run detects adventure candidates. See the package comment: the structure
@@ -145,7 +160,7 @@ func Run(o domain.Observations, p Params) Result {
 	}
 
 	var cands []Candidate
-	for _, sp := range spans {
+	for k, sp := range spans {
 		t0, t1 := all[sp.s].start, all[sp.e].end
 
 		// A destination is somewhere you dwelt, never a point passed through:
@@ -162,22 +177,25 @@ func Run(o domain.Observations, p Params) Result {
 				dwells = append(dwells, dwell{homeDistM(bases, v.Start, *v.Loc), *v.Loc, v.End.Sub(v.Start).Hours()})
 			}
 		}
-		if len(dwells) == 0 {
+		durHrs := t1.Sub(t0).Hours()
+		if sp.e-sp.s+1 < p.MinObs || durHrs < p.MinHrs {
 			continue
 		}
-		best := dwells[0]
-		for _, d := range dwells[1:] {
-			// Python max() on (dist, [lat, lon]) tuples: farthest wins, exact
-			// distance ties break by coordinate.
-			if d.distM > best.distM ||
-				(d.distM == best.distM && (d.loc.Lat > best.loc.Lat ||
-					(d.loc.Lat == best.loc.Lat && d.loc.Lon > best.loc.Lon))) {
+		var best dwell
+		for i, d := range dwells {
+			if i == 0 || farther(d.distM, d.loc, best.distM, best.loc) {
 				best = d
 			}
 		}
-		durHrs := t1.Sub(t0).Hours()
-		if best.distM/1000 <= p.FarKm || sp.e-sp.s+1 < p.MinObs || durHrs < p.MinHrs {
-			continue
+		reached := false
+		if len(dwells) == 0 || best.distM/1000 <= p.FarKm {
+			// No dwelt destination. The second way to qualify (phase 20):
+			// out and back from one base, with sustained time beyond FarKm.
+			distM, l, ok := reachedDest(all, dist, spans, k, bases, p)
+			if !ok {
+				continue
+			}
+			best, reached = dwell{distM: distM, loc: l}, true
 		}
 
 		var trackM float64
@@ -229,6 +247,7 @@ func Run(o domain.Observations, p Params) Result {
 			// the import boundary, not ended by a return home. Mark, don't guess.
 			StartTruncated: sp.s == 0,
 			EndTruncated:   sp.e == len(all)-1,
+			Reached:        reached,
 			Score:          score,
 			ScoreBreakdown: breakdown,
 		})
@@ -256,25 +275,25 @@ func flatten(visits []domain.Visit, acts []domain.Activity, pts []domain.PathPoi
 	var all []obs
 	for _, v := range visits {
 		if v.Loc != nil {
-			all = append(all, obs{v.Start, v.End, *v.Loc})
+			all = append(all, obs{v.Start, v.End, *v.Loc, true})
 		}
 	}
 	for _, a := range acts {
 		if a.From != nil {
-			all = append(all, obs{a.Start, a.Start, *a.From})
+			all = append(all, obs{a.Start, a.Start, *a.From, false})
 		}
 		if a.To != nil {
-			all = append(all, obs{a.End, a.End, *a.To})
+			all = append(all, obs{a.End, a.End, *a.To, false})
 		}
 	}
 	for _, pt := range pts {
 		if pt.Loc != nil {
-			all = append(all, obs{pt.Time, pt.Time, *pt.Loc})
+			all = append(all, obs{pt.Time, pt.Time, *pt.Loc, false})
 		}
 	}
 	for _, rp := range photos {
 		if rp.Loc != nil {
-			all = append(all, obs{rp.Time, rp.Time, *rp.Loc})
+			all = append(all, obs{rp.Time, rp.Time, *rp.Loc, false})
 		}
 	}
 	sort.SliceStable(all, func(i, j int) bool { return all[i].start.Before(all[j].start) })
@@ -339,6 +358,135 @@ func findSpans(dist []float64, nearM float64) []span {
 		spans = append(spans, span{cur, last})
 	}
 	return spans
+}
+
+// farther is Python's max() on (dist, [lat, lon]) tuples: the greater distance
+// wins, and exact distance ties break by coordinate.
+func farther(aM float64, a domain.LatLng, bM float64, b domain.LatLng) bool {
+	return aM > bM || (aM == bM && (a.Lat > b.Lat || (a.Lat == b.Lat && a.Lon > b.Lon)))
+}
+
+// reachedDest decides whether a span with no dwelt destination is a trip all
+// the same, and where it went (phase 20, issue #8; docs/phase-20/BRIEF.md).
+//
+// The dwell rule reads only the durations of visit segments, so it misses a
+// traveller who was far from home for hours while the export holds no visit
+// there, or only short ones. Dropping the dwell requirement outright is bug 3
+// again: the middle of the road between two homes is beyond FarKm from both.
+// What separates the two is where the span starts and ends. The observations
+// either side of a span are near a base by the definition of a span; when
+// both are nearest the same base the traveller went out and came back, and
+// no corridor can explain the distance.
+//
+// "Out and back" is asked of the chain a span belongs to, not of the span
+// alone. Stray positions near a home in the middle of a journey between two
+// homes cut it into two spans, and the first then reads as a round trip. So a
+// time near home shorter than MinHomeMin does not count as having come home:
+// the test looks through it to the neighbouring span, and on, in both
+// directions, and compares the observations either side of the whole chain.
+// The spans themselves are not joined; only this question is widened.
+//
+// So a span qualifies when all of these hold:
+//   - its chain does not touch the edge of the window (one end is unknown);
+//   - the observations before and after its chain are nearest the same base;
+//   - it has a far run — consecutive observations each beyond FarKm —
+//     lasting at least MinFarMin from its first observation's start to its
+//     latest end. The minimum keeps a lone stray position from qualifying.
+//
+// The destination is the farthest visit beyond FarKm of any length (a visit,
+// however brief, is the export saying the traveller stopped there); failing
+// that, the farthest observation inside a qualifying far run. Only
+// observations that survived outlier rejection are considered.
+func reachedDest(all []obs, dist []float64, spans []span, k int, bases []Base, p Params) (float64, domain.LatLng, bool) {
+	sp := spans[k]
+	first, last := k, k
+	for first > 0 && homeMin(all, spans, first-1) < p.MinHomeMin {
+		first--
+	}
+	for last+1 < len(spans) && homeMin(all, spans, last) < p.MinHomeMin {
+		last++
+	}
+	cs, ce := spans[first].s, spans[last].e
+	if cs == 0 || ce == len(all)-1 {
+		return 0, domain.LatLng{}, false
+	}
+	before, after := all[cs-1], all[ce+1]
+	if nearestBase(bases, before.start, before.loc) != nearestBase(bases, after.start, after.loc) {
+		return 0, domain.LatLng{}, false
+	}
+
+	var (
+		runDistM, visitDistM float64
+		runLoc, visitLoc     domain.LatLng
+		haveRun, haveVisit   bool
+	)
+	for i := sp.s; i <= sp.e; {
+		if dist[i]/1000 <= p.FarKm {
+			i++
+			continue
+		}
+		j, end := i, all[i].end
+		for j+1 <= sp.e && dist[j+1]/1000 > p.FarKm {
+			j++
+			if all[j].end.After(end) {
+				end = all[j].end
+			}
+		}
+		qualifies := end.Sub(all[i].start).Minutes() >= p.MinFarMin
+		for k := i; k <= j; k++ {
+			if all[k].visit && (!haveVisit || farther(dist[k], all[k].loc, visitDistM, visitLoc)) {
+				visitDistM, visitLoc, haveVisit = dist[k], all[k].loc, true
+			}
+			if qualifies && (!haveRun || farther(dist[k], all[k].loc, runDistM, runLoc)) {
+				runDistM, runLoc, haveRun = dist[k], all[k].loc, true
+			}
+		}
+		i = j + 1
+	}
+	if !haveRun {
+		return 0, domain.LatLng{}, false
+	}
+	if haveVisit {
+		return visitDistM, visitLoc, true
+	}
+	return runDistM, runLoc, true
+}
+
+// homeMin is how many minutes the observations between span k and span k+1
+// last, from the first one's start to the latest end among them. Two spans
+// always have at least one observation between them.
+func homeMin(all []obs, spans []span, k int) float64 {
+	a, b := spans[k].e+1, spans[k+1].s-1
+	end := all[a].end
+	for i := a + 1; i <= b; i++ {
+		if all[i].end.After(end) {
+			end = all[i].end
+		}
+	}
+	return end.Sub(all[a].start).Minutes()
+}
+
+// nearestBase is the index of the base nearest loc among those active at t,
+// falling back to all bases outside every era — the same set homeDistM
+// measures against. Ties go to the earlier base.
+func nearestBase(bases []Base, t time.Time, loc domain.LatLng) int {
+	d := civilDate(t)
+	pick := func(activeOnly bool) int {
+		best, bestM := -1, 0.0
+		for i, b := range bases {
+			if activeOnly && (d.Before(b.From) || d.After(b.To)) {
+				continue
+			}
+			if m := geo.HaversineM(b.Center, loc); best < 0 || m < bestM {
+				best, bestM = i, m
+			}
+		}
+		return best
+	}
+	if i := pick(true); i >= 0 {
+		return i
+	}
+	return pick(false)
 }
 
 // homeDistM is distance to the nearest base active at t; if no base is active

@@ -444,13 +444,16 @@ type Candidate struct {
 	Decision *Decision `json:"decision,omitempty"`
 	Dest     LatLng    `json:"dest"`
 
-	// DestKm Distance home → farthest place dwelt, never merely passed through.
+	// DestKm Distance from home to the destination. The destination is the farthest place dwelt (a visit of at least MIN_DWELL_MIN), never a point merely passed through — unless `reached` is true, when it is the place the trip got to and no long stay is recorded there.
 	DestKm       int         `json:"dest_km"`
 	EndTruncated bool        `json:"end_truncated"`
 	Id           int64       `json:"id"`
 	Modes        []ModeCount `json:"modes"`
 	ObsCount     int         `json:"obs_count"`
-	Repeat       int         `json:"repeat"`
+
+	// Reached The span has no dwelt destination beyond FAR_KM and qualified another way: it left one home base, was continuously beyond FAR_KM for at least MIN_FAR_MIN minutes, and returned to the same base. `dest` is then the farthest brief visit beyond FAR_KM, or failing one the farthest recorded position of that time, and must not be presented as a place stayed. False on candidates stored before the rule existed.
+	Reached bool `json:"reached"`
+	Repeat  int  `json:"repeat"`
 
 	// Score Confidence 0–100 from named weighted components (weights recorded in the run's params). Ranking and decision support only — never a filter, never auto-confirmation. Absent on candidates stored before scoring existed: not scored is different information than a low score.
 	Score *float64 `json:"score,omitempty"`

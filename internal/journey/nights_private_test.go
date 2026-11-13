@@ -93,8 +93,12 @@ func TestNightsOnTheIPhoneExport(t *testing.T) {
 var (
 	fixtureNights = nightCount{trips: 18, tripsWithNights: 15, nights: 123,
 		atStop: 91, moving: 22, unknown: 10, atStopWithoutOwnPosition: 3, civilDaysMinusTripsCounted: 123}
-	archiveNights = nightCount{trips: 66, tripsWithNights: 58, nights: 568,
-		atStop: 444, moving: 45, unknown: 79, atStopWithoutOwnPosition: 18, civilDaysMinusTripsCounted: 568}
-	iphoneNights = nightCount{trips: 60, tripsWithNights: 53, nights: 264,
-		atStop: 193, moving: 9, unknown: 62, atStopWithoutOwnPosition: 17, civilDaysMinusTripsCounted: 264}
+	// The archive and iPhone lines were re-pinned 2026-11-13 by phase 20,
+	// which adds trips reached without a long stop (1 and 19). As measured
+	// by phase 19: archive 66 trips, 58 with a night, 568 nights = 444 / 45
+	// / 79; iPhone 60 trips, 53 with a night, 264 nights = 193 / 9 / 62.
+	archiveNights = nightCount{trips: 67, tripsWithNights: 59, nights: 569,
+		atStop: 444, moving: 46, unknown: 79, atStopWithoutOwnPosition: 18, civilDaysMinusTripsCounted: 569}
+	iphoneNights = nightCount{trips: 79, tripsWithNights: 56, nights: 281,
+		atStop: 203, moving: 10, unknown: 68, atStopWithoutOwnPosition: 17, civilDaysMinusTripsCounted: 281}
 )

@@ -349,3 +349,19 @@ func TestPhotoRoundTrip(t *testing.T) {
 		t.Errorf("second delete reported ok=%v, want false", okDel)
 	}
 }
+
+// TestReachedRoundTrips: the mark that a candidate qualified without a dwelt
+// destination (phase 20, migration 17) is stored and read back per row. Losing
+// it would present a place merely reached as a place stayed.
+func TestReachedRoundTrips(t *testing.T) {
+	s := storetest.Open(t)
+	day := func(d int) time.Time { return time.Date(2025, 3, d, 9, 0, 0, 0, time.UTC) }
+	stayed := candidate(day(1), day(3), domain.LatLng{Lat: 12.30, Lon: 45.60})
+	reached := candidate(day(10), day(10).Add(8*time.Hour), domain.LatLng{Lat: 13.40, Lon: 46.70})
+	reached.Reached, reached.Stops = true, 0
+
+	rows := saveRun(t, s, stayed, reached)
+	if rows[0].Reached || !rows[1].Reached {
+		t.Errorf("reached read back as %v, %v; want false, true", rows[0].Reached, rows[1].Reached)
+	}
+}
