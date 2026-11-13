@@ -43,6 +43,14 @@ export const TERMS = {
     note:
       "How much this looks like a trip, from 0 to 100: how far from home, how long you stayed, how much your phone recorded. It only sets the order; you decide.",
   },
+  // Phase 20 (issue #8): a trip found without a long stay far from home.
+  // The card's distance is then to a place reached, not a place stayed
+  // (the API's `reached`), and the card must say so where the distance is.
+  reached: {
+    term: "No long stop there",
+    note:
+      "Your phone recorded you this far from home and back again, but no long stay out there. The distance is to the farthest place it recorded you.",
+  },
   visitPlace: {
     term: "Place from Google's record",
     note:

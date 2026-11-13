@@ -81,8 +81,8 @@ export default async function HomePage() {
             </h1>
             <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
               Your file was read, and nothing in it counted as a trip. A trip
-              is time well away from home, with somewhere you stayed; short
-              outings and pass-throughs don&apos;t count.
+              is time well away from home; short outings and pass-throughs
+              don&apos;t count.
             </p>
             <p className="mx-auto mt-3 max-w-[52ch] text-ink-2">
               More data may change that:{" "}
