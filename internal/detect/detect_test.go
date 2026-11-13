@@ -1,6 +1,7 @@
 package detect
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -96,18 +97,33 @@ func TestRun(t *testing.T) {
 				if c.StartTruncated || c.EndTruncated {
 					t.Errorf("unexpected truncation flags: start=%v end=%v", c.StartTruncated, c.EndTruncated)
 				}
+				if c.Reached {
+					t.Error("Reached = true on a candidate with a dwelt destination")
+				}
 			},
 		},
 		{
-			name: "passing through without dwelling is not an adventure (bug 3)",
+			// Until phase 20 this case expected nothing, under the name
+			// "passing through without dwelling is not an adventure (bug 3)".
+			// Its data was never bug 3: it leaves the only home, is 111 km
+			// out for two hours, and comes back. Bug 3 is the corridor
+			// between two homes, which has its own cases below and in
+			// TestReached. Issue #8 is exactly this trip being missed.
+			name: "out and back with only a short stop far away is a reached candidate (#8)",
 			obs: func() domain.Observations {
 				tv, tp := trip(10, loc(11, 20), 30) // 30 min < MIN_DWELL_MIN
 				visits := append(homeDays(1, 8, home), tv...)
 				visits = append(visits, homeVisit(11, home))
 				return domain.Observations{Visits: visits, Points: tp}
 			}(),
-			wantCands:    0,
+			wantCands:    1,
 			wantOutliers: 0,
+			check: func(t *testing.T, r Result) {
+				c := r.Candidates[0]
+				if !c.Reached || c.Stops != 0 || c.DestKm != 111 {
+					t.Errorf("Reached=%v Stops=%d DestKm=%d, want true 0 111", c.Reached, c.Stops, c.DestKm)
+				}
+			},
 		},
 		{
 			name: "a dwelt destination inside FAR_KM is not far enough",
@@ -315,6 +331,131 @@ func TestRun(t *testing.T) {
 			}
 			if tc.check != nil {
 				tc.check(t, r)
+			}
+		})
+	}
+}
+
+// TestReached covers the second way a span qualifies (phase 20, issue #8;
+// docs/phase-20/BRIEF.md): out and back from one base with sustained time
+// beyond FAR_KM, and no dwelt destination. One case per failure the brief
+// names. Latitudes: 10.5 is away but not far (≈56 km), 11 and above is far.
+func TestReached(t *testing.T) {
+	home := loc(10, 20)
+	pt := func(day, hour, min int, lat float64) domain.PathPoint {
+		return domain.PathPoint{Time: at(day, hour, min), Loc: loc(lat, 20)}
+	}
+	// An outing on day 10 between two days at home.
+	framed := func(extra []domain.Visit, pts ...domain.PathPoint) domain.Observations {
+		visits := append(homeDays(1, 8, home), extra...)
+		visits = append(visits, homeVisit(11, home))
+		return domain.Observations{Visits: visits, Points: pts}
+	}
+	// Five observations over three hours, an hour of them beyond FAR.
+	outing := []domain.PathPoint{
+		pt(10, 9, 0, 10.5), pt(10, 10, 0, 11), pt(10, 10, 40, 11.1), pt(10, 11, 0, 11), pt(10, 12, 0, 10.5),
+	}
+	short := DefaultParams()
+	short.MinFarMin = 10
+
+	cases := []struct {
+		name      string
+		obs       domain.Observations
+		params    Params
+		wantCands int
+		wantKm    int // checked when a candidate is expected
+	}{
+		{
+			name:      "an hour beyond FAR with no visit at all: the stop is missing from the data",
+			obs:       framed(nil, outing...),
+			params:    DefaultParams(),
+			wantCands: 1,
+			wantKm:    122, // the farthest point of the far run, 1.1°
+		},
+		{
+			name: "a brief visit beyond FAR is the destination, ahead of a farther point passed",
+			obs: framed([]domain.Visit{
+				{Start: at(10, 10, 10), End: at(10, 10, 30), Loc: loc(11, 20), SemanticType: "UNKNOWN"},
+			}, outing...),
+			params:    DefaultParams(),
+			wantCands: 1,
+			wantKm:    111,
+		},
+		{
+			name: "twenty minutes beyond FAR is under MIN_FAR_MIN",
+			obs: framed(nil,
+				pt(10, 9, 0, 10.5), pt(10, 10, 0, 11), pt(10, 10, 20, 11), pt(10, 11, 0, 10.5), pt(10, 12, 0, 10.5)),
+			params:    DefaultParams(),
+			wantCands: 0,
+		},
+		{
+			name: "the same twenty minutes qualify when MIN_FAR_MIN is lowered: the threshold is the parameter",
+			obs: framed(nil,
+				pt(10, 9, 0, 10.5), pt(10, 10, 0, 11), pt(10, 10, 20, 11), pt(10, 11, 0, 10.5), pt(10, 12, 0, 10.5)),
+			params:    short,
+			wantCands: 1,
+			wantKm:    111,
+		},
+		{
+			name: "one stray position beyond FAR is not a trip",
+			obs: framed(nil,
+				pt(10, 9, 0, 10.5), pt(10, 10, 0, 11), pt(10, 11, 0, 10.5), pt(10, 12, 0, 10.5), pt(10, 13, 0, 10.5)),
+			params:    DefaultParams(),
+			wantCands: 0,
+		},
+		{
+			name: "a span cut by the end of the window has no known return, so it cannot qualify this way",
+			obs: domain.Observations{
+				Visits: homeDays(1, 8, home),
+				Points: outing,
+			},
+			params:    DefaultParams(),
+			wantCands: 0,
+		},
+		{
+			name: "home to home with a short stop in the corridor is still transit (bug 3 held)",
+			obs: func() domain.Observations {
+				far := loc(14, 20) // ≈445 km away; the midpoint is >100 km from both
+				var visits []domain.Visit
+				for d := 1; d <= 8; d++ {
+					visits = append(visits, homeVisit(d, home))
+					visits = append(visits, domain.Visit{
+						Start: at(d, 18, 0), End: at(d, 19, 0), Loc: far, SemanticType: "INFERRED_HOME",
+					})
+				}
+				// Day 5: leaves the first home after its morning visit, stops
+				// half an hour mid-corridor, arrives at the second by evening.
+				visits = append(visits, domain.Visit{
+					Start: at(5, 12, 0), End: at(5, 12, 30), Loc: loc(12, 20), SemanticType: "UNKNOWN",
+				})
+				return domain.Observations{Visits: visits, Points: []domain.PathPoint{
+					pt(5, 10, 0, 11), pt(5, 11, 0, 11.5), pt(5, 13, 0, 12.5), pt(5, 14, 0, 13), pt(5, 15, 0, 13.5),
+				}}
+			}(),
+			params:    DefaultParams(),
+			wantCands: 0,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Visits must be in start order, as an export is.
+			sort.SliceStable(tc.obs.Visits, func(i, j int) bool { return tc.obs.Visits[i].Start.Before(tc.obs.Visits[j].Start) })
+			r := Run(tc.obs, tc.params)
+			if len(r.Candidates) != tc.wantCands {
+				t.Fatalf("candidates = %d, want %d", len(r.Candidates), tc.wantCands)
+			}
+			if tc.wantCands == 0 {
+				return
+			}
+			c := r.Candidates[0]
+			if !c.Reached {
+				t.Error("Reached = false, want true")
+			}
+			if c.DestKm != tc.wantKm {
+				t.Errorf("DestKm = %d, want %d", c.DestKm, tc.wantKm)
+			}
+			if c.Stops != 0 {
+				t.Errorf("Stops = %d, want 0", c.Stops)
 			}
 		})
 	}

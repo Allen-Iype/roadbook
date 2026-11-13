@@ -7,12 +7,24 @@ package detect_test
 // data/fixture-candidates.json; a copy of it pointed at the full archive writes
 // data/archive-candidates.json), so this file compares Go against Python
 // field-for-field without embedding any real value in committed code.
+//
+// Regenerating (the second argument is where the expected file is written):
+//
+//	python3 prototype/detect_fixture.py data/fixture-2025-04.segments.timeline.json data/fixture-candidates.json
+//	python3 prototype/detect_fixture.py data/Timeline.json data/archive-candidates.json
+//	python3 prototype/detect_fixture.py data/ios-timeline.as-android.json data/ios-candidates.json
+//
+// ROADBOOK_EXPECTED_DIR, when set, is a directory holding expected files of
+// the same three names, read in place of data/. It exists so a changed
+// detector can be held against freshly generated reference output before the
+// files in data/ are replaced.
 
 import (
 	"encoding/json"
 	"errors"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -64,11 +76,15 @@ type expected struct {
 		Dest    []float64      `json:"dest"`
 		Modes   map[string]int `json:"modes"`
 		Repeat  int            `json:"repeat"`
+		Reached bool           `json:"reached"`
 	} `json:"candidates"`
 }
 
 func compareWithReference(t *testing.T, srcPath, expPath string) {
 	t.Helper()
+	if dir := os.Getenv("ROADBOOK_EXPECTED_DIR"); dir != "" {
+		expPath = filepath.Join(dir, filepath.Base(expPath))
+	}
 	src, err := os.Open(srcPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		t.Skipf("private dataset %s not present; skipping", srcPath)
@@ -95,6 +111,7 @@ func compareWithReference(t *testing.T, srcPath, expPath string) {
 	for name, want := range map[string]float64{
 		"NEAR_M": p.NearM, "FAR_KM": p.FarKm, "MIN_OBS": float64(p.MinObs),
 		"MIN_HRS": p.MinHrs, "MIN_DWELL_MIN": p.MinDwellMin, "MAX_KMH": p.MaxKmh,
+		"MIN_FAR_MIN": p.MinFarMin,
 	} {
 		if got, ok := exp.Params[name]; !ok || got != want {
 			t.Fatalf("expected file %s was produced with %s=%v, defaults use %v — regenerate it",
@@ -140,6 +157,9 @@ func compareWithReference(t *testing.T, srcPath, expPath string) {
 			t.Errorf("candidate %d metrics = {days %v dest %d track %d stops %d rpt %d}, want {days %v dest %d track %d stops %d rpt %d}",
 				i, got.Days, got.DestKm, got.TrackKm, got.Stops, got.Repeat,
 				want.Days, want.DestKm, want.TrackKm, want.Stops, want.Repeat)
+		}
+		if got.Reached != want.Reached {
+			t.Errorf("candidate %d reached = %v, want %v", i, got.Reached, want.Reached)
 		}
 		if got.Dest.Lat != want.Dest[0] || got.Dest.Lon != want.Dest[1] {
 			t.Errorf("candidate %d dest = (%v,%v), want (%v,%v)", i, got.Dest.Lat, got.Dest.Lon, want.Dest[0], want.Dest[1])

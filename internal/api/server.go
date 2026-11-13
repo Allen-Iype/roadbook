@@ -606,6 +606,7 @@ func toAPICandidate(c store.CandidateRow) Candidate {
 		ObsCount:       c.ObsCount,
 		StartTruncated: c.StartTruncated,
 		EndTruncated:   c.EndTruncated,
+		Reached:        c.Reached,
 		Modes:          modes,
 		Score:          c.Score,
 	}

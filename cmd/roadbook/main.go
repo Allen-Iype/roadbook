@@ -610,6 +610,7 @@ func runDetect(args []string) error {
 	fs.Float64Var(&p.MinHrs, "min-hrs", p.MinHrs, "minimum span duration, hours")
 	fs.Float64Var(&p.MinDwellMin, "min-dwell-min", p.MinDwellMin, "minimum stay to count as dwelling, minutes")
 	fs.Float64Var(&p.MaxKmh, "max-kmh", p.MaxKmh, "implied-speed outlier threshold, km/h")
+	fs.Float64Var(&p.MinFarMin, "min-far-min", p.MinFarMin, "a span out and back from one home base with no dwelt destination qualifies when continuously beyond -far-km this long, minutes")
 	fs.Float64Var(&p.Score.WeightDistance, "score-w-distance", p.Score.WeightDistance, "score weight: distance from home")
 	fs.Float64Var(&p.Score.WeightDwell, "score-w-dwell", p.Score.WeightDwell, "score weight: destination dwell")
 	fs.Float64Var(&p.Score.WeightDensity, "score-w-density", p.Score.WeightDensity, "score weight: observation density")
@@ -725,8 +726,9 @@ func runDetect(args []string) error {
 	fmt.Println()
 
 	fmt.Printf("\n=== %d candidates ===\n", len(res.Candidates))
-	fmt.Printf("%3s %-11s %5s %8s %6s %5s %4s %5s %-5s %s\n",
-		"#", "start", "days", "dest_km", "track", "stops", "rpt", "score", "trunc", "dest")
+	fmt.Printf("%3s %-11s %5s %8s %6s %5s %4s %5s %-5s %-7s %s\n",
+		"#", "start", "days", "dest_km", "track", "stops", "rpt", "score", "trunc", "reached", "dest")
+	nReached := 0
 	for i, c := range res.Candidates {
 		trunc := ""
 		if c.StartTruncated {
@@ -738,9 +740,20 @@ func runDetect(args []string) error {
 			}
 			trunc += "end"
 		}
-		fmt.Printf("%3d %-11s %5.1f %8d %6d %5d %4d %5.1f %-5s [%.4f, %.4f]\n",
+		// reached: no dwelt destination; dest is where the trip got to.
+		reached := ""
+		if c.Reached {
+			reached = "yes"
+			nReached++
+		}
+		fmt.Printf("%3d %-11s %5.1f %8d %6d %5d %4d %5.1f %-5s %-7s [%.4f, %.4f]\n",
 			i+1, c.Start.Format("2006-01-02"), c.Days, c.DestKm, c.TrackKm,
-			c.Stops, c.Repeat, c.Score, trunc, c.Dest.Lat, c.Dest.Lon)
+			c.Stops, c.Repeat, c.Score, trunc, reached, c.Dest.Lat, c.Dest.Lon)
+	}
+
+	if nReached > 0 {
+		fmt.Printf("\n%d of %d reached without a long stop: out and back from one home, beyond %.0f km for %.0f minutes or more, no stay of %.0f minutes there\n",
+			nReached, len(res.Candidates), p.FarKm, p.MinFarMin, p.MinDwellMin)
 	}
 
 	if *jsonOut != "" {

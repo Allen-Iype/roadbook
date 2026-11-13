@@ -598,7 +598,7 @@ export interface components {
             /** Format: double */
             days: number;
             dest: components["schemas"]["LatLng"];
-            /** @description Distance home → farthest place dwelt, never merely passed through. */
+            /** @description Distance from home to the destination. The destination is the farthest place dwelt (a visit of at least MIN_DWELL_MIN), never a point merely passed through — unless `reached` is true, when it is the place the trip got to and no long stay is recorded there. */
             dest_km: number;
             track_km: number;
             stops: number;
@@ -607,6 +607,8 @@ export interface components {
             /** @description The span begins at the window edge; the real journey started earlier (bug 4). */
             start_truncated: boolean;
             end_truncated: boolean;
+            /** @description The span has no dwelt destination beyond FAR_KM and qualified another way: it left one home base, was continuously beyond FAR_KM for at least MIN_FAR_MIN minutes, and returned to the same base. `dest` is then the farthest brief visit beyond FAR_KM, or failing one the farthest recorded position of that time, and must not be presented as a place stayed. False on candidates stored before the rule existed. */
+            reached: boolean;
             modes: components["schemas"]["ModeCount"][];
             /**
              * Format: double
