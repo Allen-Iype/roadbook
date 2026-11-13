@@ -1073,6 +1073,47 @@ func runJourney(args []string) error {
 				s.Start.Format("02 Jan 15:04"), s.End.Format("02 Jan 15:04"), regionLine(rs))
 		}
 	}
+
+	// Where each night was spent (phase 19): one line per night, with the
+	// class, the hours that decided it, and — for a night at a stop — the
+	// stop and its town when the stop has one. The page's Nights row is
+	// built from exactly these lines. Pure: printed with or without a
+	// database; the towns need one.
+	nightParams := journey.DefaultNightParams()
+	nights := journey.Nights(j, nightParams)
+	atStop, moving := 0, 0
+	for _, n := range nights {
+		switch n.Kind {
+		case journey.NightStop:
+			atStop++
+		case journey.NightMoving:
+			moving++
+		}
+	}
+	fmt.Printf("\n=== nights: %d (%d at a stop, %d on the move, %d not known; window %02d:00–%02d:00, at least %.0f h) ===\n",
+		len(nights), atStop, moving, len(nights)-atStop-moving,
+		nightParams.StartHour, nightParams.EndHour, nightParams.MinHours)
+	for _, n := range nights {
+		day, _ := time.Parse("2006-01-02", n.Date)
+		switch n.Kind {
+		case journey.NightStop:
+			where := "no listed town in range"
+			if !attributed {
+				where = "towns need -candidate and a database"
+			} else if names[n.StopIndex] != nil {
+				where = "near " + names[n.StopIndex].Name
+				if !names[n.StopIndex].Near {
+					where = fmt.Sprintf("%.0f km from %s", names[n.StopIndex].DistanceKm, names[n.StopIndex].Name)
+				}
+			}
+			fmt.Printf("%s  at stop %d for %.1f h (%s)\n", day.Format("02 Jan"), n.StopIndex+1, n.Hours, where)
+		case journey.NightMoving:
+			fmt.Printf("%s  on the move for %.1f h of it\n", day.Format("02 Jan"), n.Hours)
+		default:
+			fmt.Printf("%s  not known — under %.0f h at any stop and under %.0f h of recorded travel\n",
+				day.Format("02 Jan"), nightParams.MinHours, nightParams.MinHours)
+		}
+	}
 	return nil
 }
 

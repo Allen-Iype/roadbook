@@ -85,7 +85,21 @@ func Summarize(j Journey) Summary {
 func civilDate(t time.Time) string { return t.Format("2006-01-02") }
 
 func civilDays(j Journey) int {
-	first, last := civilDate(j.WindowStart), civilDate(j.WindowEnd)
+	first, last := civilRange(j)
+	// Lexical order is chronological for YYYY-MM-DD; the count is the
+	// difference in whole days, measured on the dates alone (never on the
+	// timestamps, whose offsets would shift it), plus one for inclusivity.
+	a, _ := time.Parse("2006-01-02", first)
+	b, _ := time.Parse("2006-01-02", last)
+	return int(math.Round(b.Sub(a).Hours()/24)) + 1
+}
+
+// civilRange is the first and last civil date the journey touches: the
+// window edges, every leg endpoint and every stop endpoint, each read in
+// its own offset. Nights (nights.go) walks the same range, so a journey of
+// N civil days always has N-1 nights.
+func civilRange(j Journey) (first, last string) {
+	first, last = civilDate(j.WindowStart), civilDate(j.WindowEnd)
 	touch := func(t time.Time) {
 		d := civilDate(t)
 		if d < first {
@@ -103,10 +117,5 @@ func civilDays(j Journey) int {
 		touch(st.Start)
 		touch(st.End)
 	}
-	// Lexical order is chronological for YYYY-MM-DD; the count is the
-	// difference in whole days, measured on the dates alone (never on the
-	// timestamps, whose offsets would shift it), plus one for inclusivity.
-	a, _ := time.Parse("2006-01-02", first)
-	b, _ := time.Parse("2006-01-02", last)
-	return int(math.Round(b.Sub(a).Hours()/24)) + 1
+	return first, last
 }

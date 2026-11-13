@@ -224,6 +224,27 @@ func (e LegKind) Valid() bool {
 	}
 }
 
+// Defines values for NightKind.
+const (
+	NightKindMoving  NightKind = "moving"
+	NightKindStop    NightKind = "stop"
+	NightKindUnknown NightKind = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the NightKind enum.
+func (e NightKind) Valid() bool {
+	switch e {
+	case NightKindMoving:
+		return true
+	case NightKindStop:
+		return true
+	case NightKindUnknown:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PhotoPlaceKind.
 const (
 	PhotoPlaceKindAir      PhotoPlaceKind = "air"
@@ -646,7 +667,13 @@ type Journey struct {
 
 	// ModeBreakdown Source-asserted per-mode distance (phase 11 §6.2): the window's activity distances summed by Google's own mode labels, ordered km-descending. These are the source's guesses (recorded failures: a 1,023 km "motorcycling" relocation, probability-0.00 modes; the pipeline itself trusts speed over mode for flight), so display keeps them visually subordinate, labels the source, and never sums them against measured geometry. Absent — not empty — when the journey's evidence carries no activities at all (photo-sourced journeys): the display states that rather than showing zeros.
 	ModeBreakdown *[]ModeKm `json:"mode_breakdown,omitempty"`
-	ObservedKm    float64   `json:"observed_km"`
+
+	// NightParams The thresholds that classed every entry of `Journey.nights` (invariant 3). The window opens at `start_hour` on one civil date and closes at `end_hour` on the next, on the traveller's own clock.
+	NightParams NightParams `json:"night_params"`
+
+	// Nights One entry per night of the journey, in order (phase 19) — every pair of consecutive civil dates the journey touches, so the length is always `summary.civil_days - 1`. Empty on a day trip.
+	Nights     []Night `json:"nights"`
+	ObservedKm float64 `json:"observed_km"`
 
 	// Params Exactly the parameters that produced this assembly (invariant 3).
 	Params map[string]interface{} `json:"params"`
@@ -752,6 +779,31 @@ type NameSuggestion struct {
 
 	// Source Where the answer came from: the list that named the place ("osm") when the places table suggested one, "places" when it had nothing within the limit, "none" for the null implementation, "nominatim" for the network geocoder.
 	Source string `json:"source"`
+}
+
+// Night Where one night was spent. `stop` — one stop covered at least `night_params.min_hours` of the window (the one covering the most, if several did). `moving` — no stop did, and recorded travel covered that much: an overnight bus, a night drive. `unknown` — neither; the night is counted, and the record is too thin to say where it was spent. A night carries no place of its own: one at a stop points at the stop, which carries its town.
+type Night struct {
+	// Date The civil date the night began on, in the traveller's own offset, as YYYY-MM-DD ("2026-05-22" for the night of the 22nd into the 23rd).
+	Date string `json:"date"`
+
+	// Hours The overlap that decided the class — the holding stop's, or the recorded travel's. Absent when `kind` is `unknown`.
+	Hours *float64  `json:"hours,omitempty"`
+	Kind  NightKind `json:"kind"`
+
+	// StopIndex Index into `Journey.stops`; present exactly when `kind` is `stop`.
+	StopIndex *int `json:"stop_index,omitempty"`
+}
+
+// NightKind defines model for Night.kind.
+type NightKind string
+
+// NightParams The thresholds that classed every entry of `Journey.nights` (invariant 3). The window opens at `start_hour` on one civil date and closes at `end_hour` on the next, on the traveller's own clock.
+type NightParams struct {
+	EndHour int `json:"end_hour"`
+
+	// MinHours How much of the window one stop — or, failing that, recorded travel — must cover to hold the night.
+	MinHours  float64 `json:"min_hours"`
+	StartHour int     `json:"start_hour"`
 }
 
 // Photo defines model for Photo.

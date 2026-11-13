@@ -757,6 +757,30 @@ export interface components {
             /** Format: double */
             max_km: number;
         };
+        /** @description The thresholds that classed every entry of `Journey.nights` (invariant 3). The window opens at `start_hour` on one civil date and closes at `end_hour` on the next, on the traveller's own clock. */
+        NightParams: {
+            start_hour: number;
+            end_hour: number;
+            /**
+             * Format: double
+             * @description How much of the window one stop — or, failing that, recorded travel — must cover to hold the night.
+             */
+            min_hours: number;
+        };
+        /** @description Where one night was spent. `stop` — one stop covered at least `night_params.min_hours` of the window (the one covering the most, if several did). `moving` — no stop did, and recorded travel covered that much: an overnight bus, a night drive. `unknown` — neither; the night is counted, and the record is too thin to say where it was spent. A night carries no place of its own: one at a stop points at the stop, which carries its town. */
+        Night: {
+            /** @description The civil date the night began on, in the traveller's own offset, as YYYY-MM-DD ("2026-05-22" for the night of the 22nd into the 23rd). */
+            date: string;
+            /** @enum {string} */
+            kind: "stop" | "moving" | "unknown";
+            /** @description Index into `Journey.stops`; present exactly when `kind` is `stop`. */
+            stop_index?: number;
+            /**
+             * Format: double
+             * @description The overlap that decided the class — the holding stop's, or the recorded travel's. Absent when `kind` is `unknown`.
+             */
+            hours?: number;
+        };
         Country: {
             /** @description ISO 3166-1 alpha-2 where Natural Earth provides one (Kosovo's XK is user-assigned); territories without any alpha-2 carry Natural Earth's three-letter ADM0_A3 instead. */
             iso_code: string;
@@ -781,6 +805,9 @@ export interface components {
                 [key: string]: unknown;
             };
             place_params: components["schemas"]["PlaceParams"];
+            night_params: components["schemas"]["NightParams"];
+            /** @description One entry per night of the journey, in order (phase 19) — every pair of consecutive civil dates the journey touches, so the length is always `summary.civil_days - 1`. Empty on a day trip. */
+            nights: components["schemas"]["Night"][];
             legs: components["schemas"]["Leg"][];
             stops: components["schemas"]["Stop"][];
             /** @description Countries the route's points fall in, ordered by first appearance along the journey. Derived locally by point-in-polygon against bundled Natural Earth polygons — never a network lookup. Empty when `roadbook countries` has not been run. Border-adjacent points can misattribute at 1:110m resolution; the UI labels this line as derived. */

@@ -1535,6 +1535,57 @@ components:
           type: number
           format: double
 
+    NightParams:
+      type: object
+      description: >
+        The thresholds that classed every entry of `Journey.nights`
+        (invariant 3). The window opens at `start_hour` on one civil date
+        and closes at `end_hour` on the next, on the traveller's own clock.
+      required: [start_hour, end_hour, min_hours]
+      properties:
+        start_hour:
+          type: integer
+        end_hour:
+          type: integer
+        min_hours:
+          type: number
+          format: double
+          description: >
+            How much of the window one stop — or, failing that, recorded
+            travel — must cover to hold the night.
+
+    Night:
+      type: object
+      description: >
+        Where one night was spent. `stop` — one stop covered at least
+        `night_params.min_hours` of the window (the one covering the most,
+        if several did). `moving` — no stop did, and recorded travel covered
+        that much: an overnight bus, a night drive. `unknown` — neither; the
+        night is counted, and the record is too thin to say where it was
+        spent. A night carries no place of its own: one at a stop points at
+        the stop, which carries its town.
+      required: [date, kind]
+      properties:
+        date:
+          type: string
+          description: >
+            The civil date the night began on, in the traveller's own
+            offset, as YYYY-MM-DD ("2026-05-22" for the night of the 22nd
+            into the 23rd).
+        kind:
+          type: string
+          enum: [stop, moving, unknown]
+          x-go-type-name: NightKind
+        stop_index:
+          type: integer
+          description: Index into `Journey.stops`; present exactly when `kind` is `stop`.
+        hours:
+          type: number
+          format: double
+          description: >
+            The overlap that decided the class — the holding stop's, or the
+            recorded travel's. Absent when `kind` is `unknown`.
+
     Country:
       type: object
       required: [iso_code, name]
@@ -1573,7 +1624,7 @@ components:
     Journey:
       type: object
       required:
-        [window_start, window_end, params, place_params, legs, stops, countries, states, summary, total_km,
+        [window_start, window_end, params, place_params, night_params, legs, stops, nights, countries, states, summary, total_km,
          observed_km, inferred_km, air_km, unknown_km, routed_km, ground_km,
          google_km, google_ground_km, merged_points, trace_points_kept,
          raw_points_kept]
@@ -1590,6 +1641,16 @@ components:
           description: Exactly the parameters that produced this assembly (invariant 3).
         place_params:
           $ref: "#/components/schemas/PlaceParams"
+        night_params:
+          $ref: "#/components/schemas/NightParams"
+        nights:
+          type: array
+          description: >
+            One entry per night of the journey, in order (phase 19) — every
+            pair of consecutive civil dates the journey touches, so the
+            length is always `summary.civil_days - 1`. Empty on a day trip.
+          items:
+            $ref: "#/components/schemas/Night"
         legs:
           type: array
           items:
