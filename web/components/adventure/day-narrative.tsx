@@ -16,6 +16,11 @@
 // …") and a stay row ends with its nearest listed town ("· near Höfn").
 // The words come from lib/day-places.ts; the lookups are the API's.
 //
+// Phase 19 "nights": the stay that held a night says so ("Stayed the
+// night"), a night of recorded travel is said on the day line, and so is a
+// night the record cannot place. Which night is which is the API's
+// (`Journey.nights`); lib/nights.ts picks the row.
+//
 // No "use client" directive: this module renders inside the adventure view,
 // which is already a client component — the directive marks entry points
 // into the client graph, not every file in it.
@@ -23,6 +28,7 @@ import { StopDot } from "@/components/legend";
 import { ProvenanceBar } from "@/components/provenance-bar";
 import { Term } from "@/components/term";
 import { dayRegions, regionsPhrase, stayPhrases } from "@/lib/day-places";
+import { nightOf, stayNight } from "@/lib/nights";
 import {
   clockOf,
   dayComposition,
@@ -277,7 +283,23 @@ function DayLine({
       </>,
     );
   }
-  if (overnight !== undefined && overnight !== null) {
+  // The night this day ran into (phase 19), said once, where it belongs:
+  // recorded travel through it and a night the record cannot place are
+  // said here; a night at a stop is said on the stay's own row. The older
+  // "overnight into Day N" only knew that some stretch crossed midnight —
+  // usually the gap around an overnight stay — so it remains only for a
+  // day with no night of its own to describe (a stretch that runs past
+  // the trip's last civil date).
+  const night = nightOf(journey, day.date);
+  if (night?.kind === "moving") {
+    parts.push(<span data-night="moving">travelling through the night</span>);
+  } else if (night?.kind === "unknown") {
+    parts.push(
+      <span className="text-ink-2" data-night="unknown">
+        night not recorded
+      </span>,
+    );
+  } else if (night === undefined && overnight !== undefined && overnight !== null) {
     parts.push(<>overnight into Day {overnight}</>);
   }
   if (end) {
@@ -336,6 +358,10 @@ function StayRow({
   );
   const s = journey.stops[e.stopIndex];
   const unplaced = s.loc.lat === 0 && s.loc.lon === 0;
+  // Whether this row is where one of the trip's nights is said: the stay
+  // from the evening on ("tonight"), or a stay that began after midnight
+  // and held the night before ("lastNight").
+  const held = stayNight(journey, e.stopIndex, day.date);
   let time: string;
   let words: React.ReactNode;
   switch (e.type) {
@@ -344,20 +370,30 @@ function StayRow({
       words = (
         <>
           Stayed <span className="font-mono">{fmtDuration(e.minutes)}</span>
+          {held === "lastNight" && muted("overnight")}
         </>
       );
       break;
     case "dwellBegin":
       time = clockOf(e.at);
-      words = (
-        <>
-          Stayed{muted(`through to Day ${e.endsDay}`)}
-        </>
-      );
+      // "the night" already says the stay runs into the next day; the
+      // day it ends is added only when that is later still.
+      words =
+        held === "tonight" ? (
+          <>
+            Stayed the night
+            {e.endsDay > day.index + 1 && muted(`through to Day ${e.endsDay}`)}
+          </>
+        ) : (
+          <>
+            Stayed{muted(`through to Day ${e.endsDay}`)}
+            {held === "lastNight" && muted("overnight")}
+          </>
+        );
       break;
     case "dwellDay":
       time = "all day";
-      words = <>Stayed all day</>;
+      words = held === "tonight" ? <>Stayed all day and the night</> : <>Stayed all day</>;
       break;
     case "dwellEnd":
       time = clockOf(e.at);
@@ -370,7 +406,10 @@ function StayRow({
       break;
   }
   return (
-    <li className="grid grid-cols-[2.25rem_5.5rem_minmax(0,1fr)] items-baseline gap-x-2.5 py-1.5 text-sm">
+    <li
+      data-night-held={held}
+      className="grid grid-cols-[2.25rem_5.5rem_minmax(0,1fr)] items-baseline gap-x-2.5 py-1.5 text-sm"
+    >
       {/* A stay with no recorded position: hollow marker, the words on
           hover and for assistive tech — not in the row (maintainer's
           review: not a first-glance fact). The map draws no such stop. */}

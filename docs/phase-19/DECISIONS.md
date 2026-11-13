@@ -113,3 +113,54 @@ our mind. Written as the decisions were made.
 - One trip the maintainer had already read for place names in phase 18
   shows two nights, each at the stop that review listed as its overnight
   stay.
+
+## 2026-11-13 — #22: how the Nights row is worded
+
+- **Chosen:** the count, then where: nights at a stop grouped by the
+  stop's town, most nights first (ties in the order reached), the first
+  three towns by name and the remainder as "elsewhere"; then "no town
+  nearby", "on the move", "not recorded". A group of more than one night
+  carries its number after the words, in brackets — "near Trimbak (2)" —
+  and a row with a single group carries none, the count beside it says
+  it. The numbers always add up to the count
+  (`web/lib/nights.ts`, `nightsSummary`). Absent on a day trip.
+- **Rejected:** the number in front ("2 near Trimbak" reads well, "2 13 km
+  from Barshi" does not); every town listed (the longest trip measured
+  has dozens of night halts; the block is one line); grouping by stop
+  (consecutive nights in one town are usually different stops).
+- **Would change our mind:** testers wanting the full list of night halts
+  — then a list of its own under the days, not a longer row.
+
+## 2026-11-13 — #22: a night is said once, on the row or the line it belongs to
+
+- **Chosen:** the stay that held a night says so on its own row:
+  "Stayed the night" for a stay from the evening on (with "through to
+  Day N" only when it ends later than the next day), "Stayed all day and
+  the night" for a full day inside a stay, and "overnight" after the
+  duration for a stay that began after midnight and held the night
+  before. Recorded travel through a night is "travelling through the
+  night" on the day line, and a night the record cannot place is "night
+  not recorded" there. The older "overnight into Day N" on the day line,
+  which only knew that some stretch crossed midnight, now appears only on
+  a day that has no night of its own to describe.
+- **Rejected:** keeping "overnight into Day N" beside "Stayed the night"
+  (the same night said twice, in two places, in different words); a moon
+  glyph on the row (a new mark the legend would have to teach).
+- **Would change our mind:** readers missing which day a "not recorded"
+  night belongs to — then it gets a row of its own between the days.
+
+## 2026-11-13 — #22 review: the trip page's three slots carry keys
+
+- **Chosen:** the elements the trip page makes on the server and hands
+  to the client view (`PhotosSection`, `EditTrip`, `ShareLinks`) each
+  carry a `key`. Found at the web stop: the maintainer's Firefox-based
+  browser showed React's "each child in a list should have a unique key"
+  twice on every load of a kept trip in development. It predates this
+  phase (it reproduces without the nights changes) and Chromium, the only
+  engine the browser tests run, does not report it reliably.
+- **Rejected:** leaving a development-only warning (it hides the next
+  real one); wrapping each slot in a fragment in the view (the same
+  effect, further from the cause).
+- **Would change our mind:** nothing; noted for the log that the browser
+  tests do not read the console, and run one engine.
+

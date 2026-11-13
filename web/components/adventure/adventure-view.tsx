@@ -26,6 +26,7 @@ import { useMemo, useState } from "react";
 
 import { LegendInfo } from "@/components/legend-info";
 import { ProvenanceBar } from "@/components/provenance-bar";
+import { nightsSummary } from "@/lib/nights";
 import { fmtHours, fmtMode } from "@/lib/format";
 import { fmtDateRange, isFixLeg, sliceDays } from "@/lib/slice-days";
 import { DayNarrative } from "./day-narrative";
@@ -320,7 +321,8 @@ function Cover({
 // The trip block (phase 14's summary, made the hero in phase 16 CP1): what
 // the trip was, in the traveller's words. The headline kilometres carry
 // their provenance bar and its caption — the one place the bar is taught
-// (a Term) — then time away, time on the move, stops, distance from home.
+// (a Term) — then time away, time on the move, stops, nights, distance
+// from home.
 // Every figure is served by the API and printed identically by
 // `roadbook journey -candidate N`. "On the move" is the source's own
 // transit time — the sum of its activity durations, the same claim as the
@@ -342,6 +344,7 @@ function TripBlock({
   const bd = journey.mode_breakdown;
   const transitHours =
     bd === undefined ? undefined : bd.reduce((acc, m) => acc + m.hours, 0);
+  const nights = nightsSummary(journey);
   return (
     <section
       aria-label="The trip"
@@ -398,6 +401,20 @@ function TripBlock({
             </>
           )}
         </dd>
+        {/* Nights (phase 19): how many, and where — grouped by the town of
+            the stop that held each, then nights on the move and nights
+            the record cannot place. Absent on a day trip. The same nights
+            are printed one per line by `roadbook journey`. */}
+        {nights.count > 0 && (
+          <>
+            <dt className="text-ink-2">Nights</dt>
+            <dd data-nights>
+              <span className="font-mono">{nights.count}</span>
+              {" · "}
+              {nights.parts.join(", ")}
+            </dd>
+          </>
+        )}
         {candidate && (
           <>
             <dt className="text-ink-2">Farthest</dt>
