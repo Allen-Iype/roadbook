@@ -715,6 +715,17 @@ Natural Earth's populated places; there is no Nominatim pass and no
 villages (#13), a nearest-region rule for points just off a coast, and
 the wording distances — all waiting on tester input.
 
+### Phase 19 — Nights: where each one was spent (2026-11-13)
+
+A trip counts its nights and says where each was spent: "2 · near
+Ísafjörður" on the trip block, "Stayed the night" on the stay that held
+it, and a night on the move or unrecorded said on its day. One pure pass
+after journey assembly (a 22:00–06:00 window, a three-hour minimum, both
+served as parameters); no migration, and detection and the score are
+untouched. Issues #14 and #22. Brief, decisions and the log:
+`docs/phase-19/`. The other half of the same proposal — deriving home
+from nights where Google's home label is missing — is backlog (#23).
+
 ### Gated alongside — not in the sequence until their evidence arrives
 
 - **Ingestion (photos as a source, GPX).** Photos-as-source was chartered

@@ -180,6 +180,26 @@ func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.Cand
 		}
 	}
 
+	// Where each night was spent (phase 19): one entry per night, in order,
+	// so the list's length is always summary.civil_days - 1. Empty, never
+	// absent, on a day trip. A night names nothing itself — one at a stop
+	// points at the stop, which carries its town above.
+	np := journey.DefaultNightParams()
+	out.NightParams = NightParams{StartHour: np.StartHour, EndHour: np.EndHour, MinHours: np.MinHours}
+	nights := journey.Nights(j, np)
+	out.Nights = make([]Night, len(nights))
+	for i, n := range nights {
+		out.Nights[i] = Night{Date: n.Date, Kind: NightKind(n.Kind)}
+		if n.Kind == journey.NightStop {
+			idx := n.StopIndex
+			out.Nights[i].StopIndex = &idx
+		}
+		if n.Kind != journey.NightUnknown {
+			h := n.Hours
+			out.Nights[i].Hours = &h
+		}
+	}
+
 	// Which regions each leg and each stop was in (phase 18, #17). Every
 	// leg carries a list — empty, never absent, like the trip-level list
 	// below; a stop's region is absent when its position is in none.

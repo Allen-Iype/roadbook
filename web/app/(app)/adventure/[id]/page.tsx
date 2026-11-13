@@ -97,14 +97,20 @@ export default async function AdventurePage({
         photos={photos}
         importPhotos={importPhotos}
         styleUrl={MAP_STYLE_URL}
+        // The three slots below are elements made here, on the server, and
+        // rendered by a client component among its other children. React's
+        // development build asks for a key on each (it cannot tell such an
+        // element from an item of a list); without one the dev console
+        // warns in Firefox on every load. The keys change nothing rendered.
         photosSection={
           photos !== null && candidate ? (
-            <PhotosSection candidateId={candidate.id} photos={photos} />
+            <PhotosSection key="photos" candidateId={candidate.id} photos={photos} />
           ) : undefined
         }
         ownerWords={
           confirmed && candidate ? (
             <EditTrip
+              key="edit"
               candidateId={candidate.id}
               name={candidate.decision?.name ?? ""}
               notes={candidate.decision?.notes}
@@ -114,6 +120,7 @@ export default async function AdventurePage({
         shareControls={
           confirmed && candidate ? (
             <ShareLinks
+              key="share"
               candidateId={candidate.id}
               shares={shares}
               photoCount={(photos?.length ?? 0) + importPhotos.length}

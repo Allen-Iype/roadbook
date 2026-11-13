@@ -1,0 +1,224 @@
+package journey_test
+
+// Phase 19 brief measurement. NOT part of the build: the .txt suffix keeps
+// it out of `go test ./...`. To regenerate the brief's tables:
+//
+//	cp docs/phase-19/measure/nights_test.go.txt internal/journey/zz_nights_test.go
+//	go test -count=1 ./internal/journey -run TestZZNights -v
+//	rm internal/journey/zz_nights_test.go
+//
+// It reads the committed demo and, when present, the private datasets in
+// data/. Only counts are printed — never a coordinate, a date or a place
+// name — so its output is safe to quote.
+//
+// A "night" here is the window from 22:00 on one civil date to 06:00 on
+// the next, on the trip's own clock, for every pair of consecutive civil
+// dates the trip touches. Each night is put in exactly one class, tried in
+// this order.
+
+import (
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"sort"
+	"strconv"
+	"testing"
+	"time"
+
+	"roadbook/internal/detect"
+	"roadbook/internal/geo"
+	"roadbook/internal/journey"
+	"roadbook/internal/timeline"
+)
+
+const (
+	nightStartHour = 22
+	nightEndHour   = 6
+	samePlaceKm    = 1.0
+)
+
+// MIN_NIGHT_HOURS=2 go test … reruns the tally at another minimum.
+var minNightHours = func() float64 {
+	if v, err := strconv.ParseFloat(os.Getenv("MIN_NIGHT_HOURS"), 64); err == nil {
+		return v
+	}
+	return 3.0
+}()
+
+func overlapHours(a0, a1, b0, b1 time.Time) float64 {
+	if a0.Before(b0) {
+		a0 = b0
+	}
+	if a1.After(b1) {
+		a1 = b1
+	}
+	if !a1.After(a0) {
+		return 0
+	}
+	return a1.Sub(a0).Hours()
+}
+
+type nightTally struct {
+	trips, tripsWithNights int
+	nights                 int
+	held                   int // one stop covers >= minNightHours of the window
+	heldWhole              int // ...of which the stop covers all eight hours
+	heldNoPosition         int // ...of which the stop has no recorded position
+	splitSamePlace         int // no single stop reaches it, but stops within samePlaceKm of each other add up to it
+	bridged                int // no stop time at all in the window, but the stops either side are within samePlaceKm
+	moving                 int // none of the above; observed legs cover >= minNightHours
+	shortStop              int // none of the above; some stop time, under the minimum
+	silent                 int // none of the above
+	perTrip                []int
+	heldPerTrip            []int
+	distinctPerTrip        []int // distinct stops holding a night, per trip with nights
+}
+
+func tallyNights(j journey.Journey, c *nightTally) {
+	loc := j.WindowStart.Location()
+	first := j.WindowStart.In(loc)
+	last := j.WindowEnd.In(loc)
+	day := time.Date(first.Year(), first.Month(), first.Day(), 0, 0, 0, 0, loc)
+	end := time.Date(last.Year(), last.Month(), last.Day(), 0, 0, 0, 0, loc)
+	nights, held := 0, 0
+	holders := map[int]bool{}
+	for ; day.Before(end); day = day.AddDate(0, 0, 1) {
+		n0 := day.Add(nightStartHour * time.Hour)
+		n1 := day.AddDate(0, 0, 1).Add(nightEndHour * time.Hour)
+		nights++
+		best, bestIdx, total := 0.0, -1, 0.0
+		var inWindow []int
+		for i, s := range j.Stops {
+			h := overlapHours(s.Start, s.End, n0, n1)
+			if h <= 0 {
+				continue
+			}
+			total += h
+			inWindow = append(inWindow, i)
+			if h > best {
+				best, bestIdx = h, i
+			}
+		}
+		switch {
+		case best >= minNightHours:
+			c.held++
+			held++
+			holders[bestIdx] = true
+			if best >= 7.999 {
+				c.heldWhole++
+			}
+			s := j.Stops[bestIdx]
+			if s.Loc.Lat == 0 && s.Loc.Lon == 0 {
+				c.heldNoPosition++
+			}
+			continue
+		case total >= minNightHours && allWithin(j, inWindow):
+			c.splitSamePlace++
+			continue
+		}
+		if total == 0 {
+			// The stop that ended last before the window and the one that
+			// starts first after it.
+			before, after := -1, -1
+			for i, s := range j.Stops {
+				if !s.End.After(n0) {
+					before = i
+				}
+				if after < 0 && !s.Start.Before(n1) {
+					after = i
+				}
+			}
+			if before >= 0 && after >= 0 && placed(j, before) && placed(j, after) &&
+				geo.HaversineM(j.Stops[before].Loc, j.Stops[after].Loc) <= samePlaceKm*1000 {
+				c.bridged++
+				continue
+			}
+		}
+		obs := 0.0
+		for _, l := range j.Legs {
+			if l.Kind == journey.LegObserved {
+				obs += overlapHours(l.Start(), l.End(), n0, n1)
+			}
+		}
+		switch {
+		case obs >= minNightHours:
+			c.moving++
+		case total > 0:
+			c.shortStop++
+		default:
+			c.silent++
+		}
+	}
+	c.nights += nights
+	c.perTrip = append(c.perTrip, nights)
+	if nights > 0 {
+		c.tripsWithNights++
+		c.heldPerTrip = append(c.heldPerTrip, held)
+		c.distinctPerTrip = append(c.distinctPerTrip, len(holders))
+	}
+}
+
+func placed(j journey.Journey, i int) bool {
+	return j.Stops[i].Loc.Lat != 0 || j.Stops[i].Loc.Lon != 0
+}
+
+func allWithin(j journey.Journey, idx []int) bool {
+	for _, a := range idx {
+		for _, b := range idx {
+			if !placed(j, a) || !placed(j, b) ||
+				geo.HaversineM(j.Stops[a].Loc, j.Stops[b].Loc) > samePlaceKm*1000 {
+				return false
+			}
+		}
+	}
+	return len(idx) > 0
+}
+
+func spread(v []int) string {
+	if len(v) == 0 {
+		return "-"
+	}
+	s := append([]int(nil), v...)
+	sort.Ints(s)
+	return fmt.Sprintf("median %d, p90 %d, max %d", s[len(s)/2], s[len(s)*9/10], s[len(s)-1])
+}
+
+func TestZZNights(t *testing.T) {
+	for _, src := range []string{
+		"../../testdata/demo/demo.json",
+		"../../data/fixture-2025-04.timeline.json",
+		"../../data/Timeline.json",
+		"../../data/ios-timeline.json",
+	} {
+		f, err := os.Open(src)
+		if errors.Is(err, fs.ErrNotExist) {
+			t.Logf("%s: not present, skipped", src)
+			continue
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		obs, _, err := timeline.Parse(f)
+		f.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		res := detect.Run(obs, detect.DefaultParams())
+		var c nightTally
+		for _, cand := range res.Candidates {
+			c.trips++
+			tallyNights(journey.Assemble(obs, cand.Start, cand.End, journey.DefaultParams()), &c)
+		}
+		t.Logf("%s (minimum %.0f h)\n  trips %d, with at least one night %d; nights %d (per trip: %s)\n"+
+			"  held by one stop %d (the whole eight hours %d; stop without a position %d)\n"+
+			"  same place, split across stops %d; same place either side of a silence %d\n"+
+			"  on the move %d; a short stop only %d; nothing recorded %d\n"+
+			"  held nights per trip: %s; distinct holding stops per trip: %s",
+			src, minNightHours, c.trips, c.tripsWithNights, c.nights, spread(c.perTrip),
+			c.held, c.heldWhole, c.heldNoPosition,
+			c.splitSamePlace, c.bridged,
+			c.moving, c.shortStop, c.silent,
+			spread(c.heldPerTrip), spread(c.distinctPerTrip))
+	}
+}
