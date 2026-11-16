@@ -738,6 +738,16 @@ unchanged; a journey between two homes still is not a trip. Issue #8.
 Brief, decisions and the log: `docs/phase-20/`. Carried: an outing cut
 in two by a stray position near home appears as two trips.
 
+### Phase 21 — Home from nights: measured, not built (2026-11-16)
+
+Issue #23 asked for home bases derived from where nights are spent when
+Google's home label yields none. The measurement found no dataset where
+that is the case, and found instead that a labelled home goes on being
+used outside the period its label covers, where a stay there counts as a
+trip. Decided: it is a trip, until a user says otherwise. No code. The
+brief, the decision and the log: `docs/phase-21/`. #23 stays in the
+backlog with its trigger: an export whose home label yields no base.
+
 ### Gated alongside — not in the sequence until their evidence arrives
 
 - **Ingestion (photos as a source, GPX).** Photos-as-source was chartered
