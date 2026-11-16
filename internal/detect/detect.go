@@ -36,6 +36,12 @@ type Params struct {
 	// come home, for the same-base test above only: a shorter one is looked
 	// through to the next span. It never joins or splits spans.
 	MinHomeMin float64 `json:"MIN_HOME_MIN"`
+	// MaxStrayObs and MaxStrayMin (phase 22, issue #28): a run of at most
+	// MaxStrayObs observations near home, none of them a visit, does not
+	// end a span when the away observations either side of it are less
+	// than MaxStrayMin minutes apart. See findSpans.
+	MaxStrayObs int     `json:"MAX_STRAY_OBS"`
+	MaxStrayMin float64 `json:"MAX_STRAY_MIN"`
 
 	Score ScoreParams `json:"SCORE"` // confidence-scoring weights and anchors (score.go)
 	Synth SynthParams `json:"SYNTH"` // stay-point visit synthesis over photo fixes (synth.go)
@@ -45,6 +51,7 @@ type Params struct {
 // DefaultParams are the measured defaults from the exploration phase.
 func DefaultParams() Params {
 	return Params{NearM: 25000, FarKm: 100, MinObs: 5, MinHrs: 1.0, MinDwellMin: 60, MaxKmh: 900, MinFarMin: 30, MinHomeMin: 30,
+		MaxStrayObs: 1, MaxStrayMin: 30,
 		Score: DefaultScoreParams(), Synth: DefaultSynthParams(), Bases: DefaultBaseParams()}
 }
 
@@ -143,7 +150,7 @@ func Run(o domain.Observations, p Params) Result {
 		dist[i] = homeDistM(bases, ob.start, ob.loc)
 	}
 
-	spans := findSpans(dist, p.NearM)
+	spans := findSpans(all, dist, p)
 
 	// File-order key slices for the same binary searches the prototype does.
 	// The export is chronological; the search replicates bisect exactly either
@@ -337,22 +344,53 @@ func rejectOutliers(all []obs, p Params) ([]obs, int) {
 
 type span struct{ s, e int }
 
-// findSpans returns maximal runs of observations farther than nearM from every
+// findSpans returns runs of observations farther than NearM from every
 // active home base.
-func findSpans(dist []float64, nearM float64) []span {
+//
+// One observation near home ends a run, with one exception (phase 22, issue
+// #28). An export, an iPhone's above all, holds positions that are not where
+// the phone was: for a moment the record jumps to a place the phone knows,
+// often home, and jumps back. Outlier rejection keeps them (the implied
+// speed is possible). Such a position in the middle of time away would end
+// the span and cut the trip's edge off. So a run of observations near home
+// is looked past, and stays inside the span, when all of these hold:
+//   - it is at most MaxStrayObs observations;
+//   - none of them is a visit (a visit is the export saying the traveller
+//     stopped there);
+//   - an away observation follows it, and starts less than MaxStrayMin
+//     minutes after the latest end among the span's observations so far.
+//     That is the time the record leaves for having gone home and back.
+func findSpans(all []obs, dist []float64, p Params) []span {
 	var spans []span
 	cur := -1
 	last := -1
+	hold := -1 // observations up to this index are a stray run inside the open span
+	var end time.Time
 	for i := range dist {
-		if dist[i] > nearM {
+		if dist[i] > p.NearM {
 			if cur < 0 {
-				cur = i
+				cur, end = i, all[i].end
+			} else if all[i].end.After(end) {
+				end = all[i].end
 			}
 			last = i
-		} else if cur >= 0 {
-			spans = append(spans, span{cur, last})
-			cur = -1
+			continue
 		}
+		if cur < 0 || i <= hold {
+			continue
+		}
+		j, visit := i, all[i].visit
+		for j+1 < len(dist) && dist[j+1] <= p.NearM {
+			j++
+			visit = visit || all[j].visit
+		}
+		if j+1 < len(dist) && j-i+1 <= p.MaxStrayObs && !visit &&
+			all[j+1].start.Sub(end).Minutes() < p.MaxStrayMin {
+			hold = j
+			continue
+		}
+		spans = append(spans, span{cur, last})
+		cur = -1
 	}
 	if cur >= 0 {
 		spans = append(spans, span{cur, last})

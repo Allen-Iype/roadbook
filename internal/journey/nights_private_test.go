@@ -99,6 +99,8 @@ var (
 	// / 79; iPhone 60 trips, 53 with a night, 264 nights = 193 / 9 / 62.
 	archiveNights = nightCount{trips: 67, tripsWithNights: 59, nights: 569,
 		atStop: 444, moving: 46, unknown: 79, atStopWithoutOwnPosition: 18, civilDaysMinusTripsCounted: 569}
-	iphoneNights = nightCount{trips: 79, tripsWithNights: 56, nights: 281,
-		atStop: 203, moving: 10, unknown: 68, atStopWithoutOwnPosition: 17, civilDaysMinusTripsCounted: 281}
+	// iPhone re-pinned 2026-11-16 by phase 22: was 79 trips, 281 nights, 203
+	// at a stop.
+	iphoneNights = nightCount{trips: 77, tripsWithNights: 56, nights: 282,
+		atStop: 204, moving: 10, unknown: 68, atStopWithoutOwnPosition: 17, civilDaysMinusTripsCounted: 282}
 )

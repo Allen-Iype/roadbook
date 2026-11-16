@@ -30,6 +30,9 @@ def run(src):
     sys_argv=sys.argv; sys.argv=['x',src,'/dev/null']
     with contextlib.redirect_stdout(io.StringIO()): exec(HEAD,g)
     sys.argv=sys_argv
+    # Phase 22 added a rule to the detector after these figures were recorded; switch it off
+    # so the script still prints what the brief says.
+    if 'MAX_STRAY_OBS' in g['P']: g['P']['MAX_STRAY_OBS']=0
     return g
 
 def cluster(g,ev,minn):

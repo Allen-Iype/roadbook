@@ -505,3 +505,115 @@ func TestReached(t *testing.T) {
 		})
 	}
 }
+
+// TestStray pins the rule that one stray position near home does not end
+// time away (phase 22, issue #28; docs/phase-22/BRIEF.md §7). Latitudes as in
+// TestReached: 10.1 is near home (11 km), 10.5 to 10.7 away but not far, 11
+// and above far.
+func TestStray(t *testing.T) {
+	home := loc(10, 20)
+	pt := func(hour, min int, lat float64) domain.PathPoint {
+		return domain.PathPoint{Time: at(10, hour, min), Loc: loc(lat, 20)}
+	}
+	framed := func(extra []domain.Visit, pts ...domain.PathPoint) domain.Observations {
+		visits := append(homeDays(1, 8, home), extra...)
+		visits = append(visits, homeVisit(11, home))
+		return domain.Observations{Visits: visits, Points: pts}
+	}
+	// The main part of the outing: five observations, an hour beyond FAR.
+	// Alone it is a reached candidate starting at its first observation.
+	main := func(firstHour, firstMin int) []domain.PathPoint {
+		return []domain.PathPoint{
+			pt(firstHour, firstMin, 10.7), pt(10, 0, 11), pt(10, 40, 11.1), pt(11, 0, 11), pt(12, 0, 10.5),
+		}
+	}
+	// The way out before the stray position: two observations, too few to
+	// be a candidate, so cut off they are simply lost.
+	lead := []domain.PathPoint{pt(9, 0, 10.5), pt(9, 10, 10.6)}
+	with := func(parts ...[]domain.PathPoint) []domain.PathPoint {
+		var out []domain.PathPoint
+		for _, p := range parts {
+			out = append(out, p...)
+		}
+		return out
+	}
+	tight := DefaultParams()
+	tight.MaxStrayMin = 10
+	two := DefaultParams()
+	two.MaxStrayObs = 2
+
+	cases := []struct {
+		name      string
+		obs       domain.Observations
+		params    Params
+		wantCands int
+		wantStart time.Time
+	}{
+		{
+			name:      "one point near home with away observations 20 minutes apart either side does not end the trip",
+			obs:       framed(nil, with(lead, []domain.PathPoint{pt(9, 20, 10.1)}, main(9, 30))...),
+			params:    DefaultParams(),
+			wantCands: 1,
+			wantStart: at(10, 9, 0),
+		},
+		{
+			name:      "the same 20 minutes end it when MAX_STRAY_MIN is 10: the threshold is the parameter",
+			obs:       framed(nil, with(lead, []domain.PathPoint{pt(9, 20, 10.1)}, main(9, 30))...),
+			params:    tight,
+			wantCands: 1,
+			wantStart: at(10, 9, 30),
+		},
+		{
+			name:      "away observations 40 minutes apart leave room for a return home, so the point ends the trip",
+			obs:       framed(nil, with(lead, []domain.PathPoint{pt(9, 30, 10.1)}, main(9, 50))...),
+			params:    DefaultParams(),
+			wantCands: 1,
+			wantStart: at(10, 9, 50),
+		},
+		{
+			name:      "two points near home are more than MAX_STRAY_OBS",
+			obs:       framed(nil, with(lead, []domain.PathPoint{pt(9, 15, 10.1), pt(9, 20, 10.1)}, main(9, 30))...),
+			params:    DefaultParams(),
+			wantCands: 1,
+			wantStart: at(10, 9, 30),
+		},
+		{
+			name:      "the same two points are looked past when MAX_STRAY_OBS is 2",
+			obs:       framed(nil, with(lead, []domain.PathPoint{pt(9, 15, 10.1), pt(9, 20, 10.1)}, main(9, 30))...),
+			params:    two,
+			wantCands: 1,
+			wantStart: at(10, 9, 0),
+		},
+		{
+			name: "a visit near home, however short, is the export saying the traveller was home",
+			obs: framed([]domain.Visit{
+				{Start: at(10, 9, 15), End: at(10, 9, 20), Loc: loc(10.1, 20), SemanticType: "UNKNOWN"},
+			}, with(lead, main(9, 30))...),
+			params:    DefaultParams(),
+			wantCands: 1,
+			wantStart: at(10, 9, 30),
+		},
+		{
+			name: "two halves that would each be a card become one trip",
+			obs: framed(nil,
+				pt(9, 0, 10.5), pt(9, 15, 10.7), pt(9, 30, 11), pt(10, 0, 11.1), pt(10, 20, 11),
+				pt(10, 30, 10.1),
+				pt(10, 40, 11), pt(11, 0, 11.1), pt(11, 20, 11), pt(12, 0, 10.6), pt(13, 0, 10.5)),
+			params:    DefaultParams(),
+			wantCands: 1,
+			wantStart: at(10, 9, 0),
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sort.SliceStable(tc.obs.Visits, func(i, j int) bool { return tc.obs.Visits[i].Start.Before(tc.obs.Visits[j].Start) })
+			r := Run(tc.obs, tc.params)
+			if len(r.Candidates) != tc.wantCands {
+				t.Fatalf("candidates = %d, want %d", len(r.Candidates), tc.wantCands)
+			}
+			if got := r.Candidates[0].Start; !got.Equal(tc.wantStart) {
+				t.Errorf("Start = %s, want %s", got.Format("15:04"), tc.wantStart.Format("15:04"))
+			}
+		})
+	}
+}

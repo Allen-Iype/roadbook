@@ -6,7 +6,7 @@ import statistics as st
 SRC=sys.argv[1] if len(sys.argv)>1 else 'data/fixture-2025-04.segments.timeline.json'
 # Where the expected file is written. It holds real coordinates: keep it under data/.
 OUT=sys.argv[2] if len(sys.argv)>2 else 'data/fixture-candidates.json'
-P=dict(NEAR_M=25000, FAR_KM=100, MIN_OBS=5, MIN_HRS=1.0, MIN_DWELL_MIN=60, MAX_KMH=900, MIN_FAR_MIN=30, MIN_HOME_MIN=30)
+P=dict(NEAR_M=25000, FAR_KM=100, MIN_OBS=5, MIN_HRS=1.0, MIN_DWELL_MIN=60, MAX_KMH=900, MIN_FAR_MIN=30, MIN_HOME_MIN=30, MAX_STRAY_OBS=1, MAX_STRAY_MIN=30)
  
 def hav(a,b):
     R=6371008.8;p1,p2=math.radians(a[0]),math.radians(b[0]);dp=p2-p1;dl=math.radians(b[1]-a[1])
@@ -125,10 +125,24 @@ def reached(k):
     return vis or run
  
 # ---------- spans -> candidates ----------
-sp=[];cur=None
+# One observation near home ends a span, unless it is a stray position (phase
+# 22, issue #28): a run of at most MAX_STRAY_OBS observations near home, none a
+# visit, followed by an away observation that starts less than MAX_STRAY_MIN
+# minutes after the latest end among the span's observations so far. Such a run
+# stays inside the span.
+sp=[];cur=None;end=None;hold=-1
 for i in range(len(obs)):
-    if dist[i]>P['NEAR_M']: cur=[i,i] if cur is None else [cur[0],i]
-    elif cur: sp.append(tuple(cur));cur=None
+    if dist[i]>P['NEAR_M']:
+        if cur is None: cur=[i,i];end=obs[i][1]
+        else: cur[1]=i;end=max(end,obs[i][1])
+        continue
+    if cur is None or i<=hold: continue
+    j=i
+    while j+1<len(obs) and dist[j+1]<=P['NEAR_M']: j+=1
+    if (j+1<len(obs) and j-i+1<=P['MAX_STRAY_OBS'] and not any(obs[k][3] for k in range(i,j+1))
+            and (obs[j+1][0]-end).total_seconds()/60<P['MAX_STRAY_MIN']):
+        hold=j;continue
+    sp.append(tuple(cur));cur=None
 if cur: sp.append(tuple(cur))
 ak=[a['s'] for a in acts]; vk=[v['s'] for v in visits]
 cand=[]
