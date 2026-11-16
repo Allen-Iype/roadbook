@@ -136,7 +136,10 @@ another home, and 2 overlap no time away beyond 100 km.
 - **A far detour inside a journey between two homes is not found.** The
   three spans the iPhone export lost to the correction are that case.
 - **The tester's spans run long** because of a home Google never
-  labelled: home from nights (#23).
+  labelled: home from nights (#23). *Corrected 2026-11-16 by phase 21's
+  measurement:* it is a labelled home used outside the period its label
+  covers, it affects two of that export's trips, and such a stay is a
+  trip by decision (`docs/phase-21/DECISIONS.md`).
 - **The landing page** still says a trip needs "somewhere you stayed".
 - **Waiting on the tester:** whether the 19 added trips are ones they
   recognise, and whether the two named in #8 now appear.
