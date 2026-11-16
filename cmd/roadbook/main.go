@@ -612,6 +612,8 @@ func runDetect(args []string) error {
 	fs.Float64Var(&p.MaxKmh, "max-kmh", p.MaxKmh, "implied-speed outlier threshold, km/h")
 	fs.Float64Var(&p.MinFarMin, "min-far-min", p.MinFarMin, "a span out and back from one home base with no dwelt destination qualifies when continuously beyond -far-km this long, minutes")
 	fs.Float64Var(&p.MinHomeMin, "min-home-min", p.MinHomeMin, "for the out-and-back test, a time near home shorter than this does not count as having come home, minutes")
+	fs.IntVar(&p.MaxStrayObs, "max-stray-obs", p.MaxStrayObs, "a run of at most this many observations near home, none a visit, does not end time away (see -max-stray-min)")
+	fs.Float64Var(&p.MaxStrayMin, "max-stray-min", p.MaxStrayMin, "…when the away observations either side of it are less than this many minutes apart")
 	fs.Float64Var(&p.Score.WeightDistance, "score-w-distance", p.Score.WeightDistance, "score weight: distance from home")
 	fs.Float64Var(&p.Score.WeightDwell, "score-w-dwell", p.Score.WeightDwell, "score weight: destination dwell")
 	fs.Float64Var(&p.Score.WeightDensity, "score-w-density", p.Score.WeightDensity, "score weight: observation density")

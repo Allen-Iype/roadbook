@@ -748,6 +748,16 @@ trip. Decided: it is a trip, until a user says otherwise. No code. The
 brief, the decision and the log: `docs/phase-21/`. #23 stays in the
 backlog with its trigger: an export whose home label yields no base.
 
+### Phase 22 — A stray position near home cuts a trip (2026-11-16)
+
+One recorded position near home, in the middle of time away, ended the
+trip there and cut its edge off. A single observation that is not a
+visit now stays inside the span when the away observations either side
+are less than `MAX_STRAY_MIN` (30) minutes apart. Measured: 11 trips'
+dates on a tester's iPhone export, one on the maintainer's archive, none
+on the fixture or the demo. Detection only; no migration, contract or
+web change. Issue #28. Brief, decisions and the log: `docs/phase-22/`.
+
 ### Gated alongside — not in the sequence until their evidence arrives
 
 - **Ingestion (photos as a source, GPX).** Photos-as-source was chartered

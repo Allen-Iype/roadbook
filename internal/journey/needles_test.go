@@ -101,7 +101,10 @@ func TestNeedlesIOS(t *testing.T) {
 	checkNeedles(t, needlesOn(t, "../../data/ios-timeline.json"),
 		// Re-pinned 2026-11-13 (phase 20): 19 more trips, reached without a
 		// long stop. Before: 60 trips, 67 needles on 7, 4 left on 4, 63 set aside.
-		needleCount{trips: 79, before: 99, tripsBefore: 10, after: 8, tripsAfter: 5, rejected: 88})
+		// Re-pinned 2026-11-16 (phase 22): stray positions near home now sit
+		// inside trips, where this pass finds them. Before: 79 trips, 99
+		// needles on 10, 8 left on 5, 88 set aside.
+		needleCount{trips: 77, before: 111, tripsBefore: 13, after: 8, tripsAfter: 5, rejected: 96})
 }
 
 func TestNeedlesFixture(t *testing.T) {
