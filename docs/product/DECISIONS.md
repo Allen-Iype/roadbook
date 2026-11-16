@@ -225,3 +225,16 @@ settled on the way.
 - **Would change our mind:** the five-second test with friends failing on
   the new words — then `words.md` is the place to change, and each screen
   follows.
+
+## 2026-11-16 — The landing no longer says a trip needs a stay
+
+- **Chosen:** step 2 on the landing reads "Your trips appear, found for
+  you — the ones far from home." The clause "with somewhere you stayed"
+  is dropped. Since phase 20 a trip that went far and came back with no
+  long stay is found too, so the clause was untrue. The app's own pages
+  dropped it in phase 20.
+- **Rejected:** a longer sentence naming both ways a trip is found (the
+  landing is written for a traveller; the run summary on "Trips to
+  review" is where the rule is stated).
+- **Would change our mind:** nothing; the old wording described a rule
+  that no longer holds.
