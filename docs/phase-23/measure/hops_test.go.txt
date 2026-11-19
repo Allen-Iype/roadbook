@@ -1,0 +1,107 @@
+package journey_test
+
+// Phase 23 measurement (#9): how far apart are consecutive drawn points
+// inside a recorded stretch? Counts and distances only; no coordinate, date
+// or place. To run, copy into internal/journey/ as hops_test.go and:
+//
+//	go test ./internal/journey/ -run TestHops -v
+//
+// then delete the copy. The inputs are private; without them it skips.
+
+import (
+	"errors"
+	"io/fs"
+	"os"
+	"sort"
+	"testing"
+
+	"roadbook/internal/detect"
+	"roadbook/internal/geo"
+	"roadbook/internal/journey"
+	"roadbook/internal/timeline"
+)
+
+func TestHops(t *testing.T) {
+	for _, path := range []string{
+		"../../testdata/demo/demo.json",
+		"../../data/fixture-2025-04.segments.timeline.json",
+		"../../data/Timeline.json",
+		"../../data/ios-timeline.json",
+	} {
+		src, err := os.Open(path)
+		if errors.Is(err, fs.ErrNotExist) {
+			t.Logf("%s not present; skipped", path)
+			continue
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		obs, _, err := timeline.Parse(src)
+		src.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		res := detect.Run(obs, detect.DefaultParams())
+		var hops []float64 // km, every hop inside a recorded stretch
+		var legs, legPts, gaps, air int
+		var obsKm, gapKm, legLen []float64
+		bands := []float64{0.2, 1, 2, 5, 10, 25, 50}
+		kmIn := make([]float64, len(bands)+1)
+		nIn := make([]int, len(bands)+1)
+		for _, c := range res.Candidates {
+			j := journey.Assemble(obs, c.Start, c.End, journey.DefaultParams())
+			for _, l := range j.Legs {
+				if l.Kind != journey.LegObserved {
+					gaps++
+					if l.GapKind == journey.GapAir {
+						air++
+					}
+					gapKm = append(gapKm, l.DistanceKm)
+					continue
+				}
+				legs++
+				legPts += len(l.Points)
+				legLen = append(legLen, float64(len(l.Points)))
+				obsKm = append(obsKm, l.DistanceKm)
+				for i := 1; i < len(l.Points); i++ {
+					km := geo.HaversineM(l.Points[i-1].Loc, l.Points[i].Loc) / 1000
+					hops = append(hops, km)
+					b := sort.SearchFloat64s(bands, km)
+					kmIn[b] += km
+					nIn[b]++
+				}
+			}
+		}
+		sum := func(xs []float64) (s float64) {
+			for _, x := range xs {
+				s += x
+			}
+			return
+		}
+		q := func(xs []float64, p float64) float64 {
+			if len(xs) == 0 {
+				return 0
+			}
+			s := append([]float64(nil), xs...)
+			sort.Float64s(s)
+			return s[int(p*float64(len(s)-1))]
+		}
+		total := sum(hops)
+		t.Logf("%s: %d trips; %d recorded stretches holding %d points (median %.0f, p90 %.0f per stretch), %.0f km; %d gaps (%d air), %.0f km",
+			path, len(res.Candidates), legs, legPts, q(legLen, .5), q(legLen, .9), sum(obsKm), gaps, air, sum(gapKm))
+		t.Logf("  hops inside recorded stretches: %d; km median %.2f, p90 %.1f, p99 %.1f, longest %.0f", len(hops), q(hops, .5), q(hops, .9), q(hops, .99), q(hops, 1))
+		lo := 0.0
+		for i := range kmIn {
+			hi := "more"
+			if i < len(bands) {
+				hi = ""
+			}
+			up := 0.0
+			if i < len(bands) {
+				up = bands[i]
+			}
+			t.Logf("    %5.1f to %4.0f%s km: %6d hops, %6.0f km (%2.0f%% of recorded distance)", lo, up, hi, nIn[i], kmIn[i], 100*kmIn[i]/total)
+			lo = up
+		}
+	}
+}
