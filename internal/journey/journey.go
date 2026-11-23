@@ -158,6 +158,17 @@ type Leg struct {
 	// measurement.
 	RoutedPoints []domain.LatLng
 	RoutedKm     float64
+
+	// SnappedPoints and SnappedKm are set only by route.ApplyMatches, from
+	// the batch-filled match cache, and only on an observed leg (phase 23,
+	// #9): the road these recorded points lie on, and its length. Like
+	// RoutedPoints they ride alongside Points and replace nothing — the
+	// recorded points are the measurement and are never altered or
+	// discarded (invariant 6); the leg's kind and DistanceKm do not change.
+	// Nil when no road was asked for, none fits, or the fit failed the
+	// length guard: the leg is then drawn point to point, as before.
+	SnappedPoints []domain.LatLng
+	SnappedKm     float64
 }
 
 func (l Leg) Start() time.Time { return l.Points[0].Time }
@@ -216,6 +227,13 @@ type Journey struct {
 	// only by route.Apply — Assemble never routes.
 	UnknownKm float64
 	RoutedKm  float64
+	// SnappedObservedKm is how much of ObservedKm lies on legs drawn along a
+	// road (their point-to-point distance); SnappedRoadKm is the length of
+	// those roads. Both set only by route.ApplyMatches, both reported and
+	// nothing more: no other distance on a journey is computed from them
+	// (phase 23 BRIEF §4 D).
+	SnappedObservedKm float64
+	SnappedRoadKm     float64
 
 	// GoogleDistanceKm sums Google's own distanceMeters over the activities
 	// intersecting the window — the independent figure routed distance is

@@ -83,7 +83,7 @@ func usage() {
   roadbook places  [-src <places list.tsv[.gz]>] [-if-empty] [-db url]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
   roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
-  roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh]
+  roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh] [-match=false] [-match-radius-m 100] [-match-min-m 200]
   roadbook serve   [-db url] [-addr :8080]
   roadbook backup  -out <file.tar.gz> [-db url] [-photos-dir dir]
   roadbook restore -src <file.tar.gz> [-db url] [-photos-dir dir]
@@ -109,7 +109,9 @@ routing cache, exactly as the API does; with -src it is pure file-in.
 'route' fills unknown gaps from a router, in batch, into the route_cache
 table — the only network step in routing, and entirely optional: with the
 default null router it inventories the gaps and fills nothing. Scope
-defaults to confirmed adventures of the latest run.
+defaults to confirmed adventures of the latest run. The same run asks which
+road each recorded stretch lies on and caches that too (match_cache), so
+the stretch can be drawn along the road; -match=false leaves that out.
 'serve' runs the HTTP API.
 'backup' writes the irreplaceable set — decisions, photo rows, thumbnail
 files — as one archive. Everything else regenerates from your export files.
@@ -860,11 +862,11 @@ func runJourney(args []string) error {
 		}
 		j = journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, p)
 		acts = obs.Activities
-		lookup, err := s.LookupRoutes(ctx, route.UnknownKeys(j, api.RouteProfile))
-		if err != nil {
+		// The same function the page's handler calls: gap routes and, since
+		// phase 23, the roads recorded stretches are drawn along.
+		if j, err = api.ApplyCaches(ctx, s, j); err != nil {
 			return err
 		}
-		j = route.Apply(j, api.RouteProfile, lookup)
 		var pts []domain.LatLng
 		for _, l := range j.Legs {
 			for _, p := range l.Points {
@@ -937,6 +939,14 @@ func runJourney(args []string) error {
 	}
 	if j.RoutedKm > 0 {
 		fmt.Printf("routed roads cover %.1f km (cache); %.1f km of gaps stay unknown\n", j.RoutedKm, j.UnknownKm)
+	}
+	// Phase 23: the reproduction line for "How this route was drawn". Shown
+	// only when something is matched; distances above stay from the points.
+	if j.SnappedObservedKm > 0 {
+		mp := route.DefaultMatchParams()
+		fmt.Printf("recorded stretches drawn along roads: %.1f of %.1f km (the roads measure %.1f km); the other %.1f km point to point (radius %.0f m, road under %.1f times point to point, stretches of %.0f m or more)\n",
+			j.SnappedObservedKm, j.ObservedKm, j.SnappedRoadKm, j.ObservedKm-j.SnappedObservedKm,
+			mp.RadiusM, mp.MaxRatio, mp.MinM)
 	}
 	if j.GoogleDistanceKm > 0 {
 		fmt.Printf("google's own figure %.1f km total\n", j.GoogleDistanceKm)
@@ -1014,13 +1024,22 @@ func runJourney(args []string) error {
 	}
 
 	fmt.Printf("\n=== %d legs ===\n", len(j.Legs))
-	fmt.Printf("%3s %-8s %-7s %-9s %-9s %7s %6s %s\n",
-		"#", "kind", "gap", "start", "end", "min", "km", "pts")
+	fmt.Printf("%3s %-8s %-7s %-9s %-9s %7s %6s %4s %s\n",
+		"#", "kind", "gap", "start", "end", "min", "km", "pts", "road km")
 	for i, l := range j.Legs {
-		fmt.Printf("%3d %-8s %-7s %-9s %-9s %7.1f %6.1f %d\n",
+		// "road km": the routed length of a road gap, or the length of the
+		// road a recorded stretch is drawn along; blank when drawn straight.
+		road := ""
+		switch {
+		case l.GapKind == journey.GapRoad:
+			road = fmt.Sprintf("%.1f routed", l.RoutedKm)
+		case l.SnappedPoints != nil:
+			road = fmt.Sprintf("%.1f along the road", l.SnappedKm)
+		}
+		fmt.Printf("%3d %-8s %-7s %-9s %-9s %7.1f %6.1f %4d %s\n",
 			i+1, l.Kind, l.GapKind,
 			l.Start().Format("15:04:05"), l.End().Format("15:04:05"),
-			l.End().Sub(l.Start()).Minutes(), l.DistanceKm, len(l.Points))
+			l.End().Sub(l.Start()).Minutes(), l.DistanceKm, len(l.Points), road)
 	}
 
 	fmt.Printf("\n=== %d stops ===\n", len(j.Stops))
@@ -1139,6 +1158,12 @@ func runJourney(args []string) error {
 // run. The serve binary never routes — this command is the one place the
 // product touches a routing service, and with the default null router it
 // touches nothing at all.
+//
+// Since phase 23 it asks a second question of the same service, in the
+// same way: for every recorded stretch of the same journeys, which road do
+// its points lie on (route.Matcher)? Every answer is cached whatever its
+// length — the length guard is applied when a journey is read — so the
+// guard can change without a new batch.
 func runRoute(args []string) error {
 	fs := flag.NewFlagSet("route", flag.ExitOnError)
 	db := dbFlag(fs)
@@ -1153,17 +1178,26 @@ func runRoute(args []string) error {
 		"OSM snapshot identity recorded with each answer (e.g. the extract filename)")
 	all := fs.Bool("all", false, "route every candidate of the latest run, not just confirmed ones")
 	candidateID := fs.Int64("candidate", 0, "route one candidate by id (any decision state)")
-	refresh := fs.Bool("refresh", false, "re-ask the router even for cached pairs and replace the rows")
+	refresh := fs.Bool("refresh", false, "re-ask the router even for cached pairs and stretches and replace the rows")
+	mp := route.DefaultMatchParams()
+	doMatch := fs.Bool("match", true,
+		"also ask which road each recorded stretch lies on; -match=false routes gaps only")
+	fs.Float64Var(&mp.RadiusM, "match-radius-m", mp.RadiusM,
+		"matching: how far from a recorded point to look for its road, metres. The served journey reads answers at the default radius only")
+	fs.Float64Var(&mp.MinM, "match-min-m", mp.MinM,
+		"matching: recorded stretches shorter than this, point to point, are not asked about, metres")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 
 	var router route.Router
+	var matcher route.Matcher
 	switch *routerName {
 	case "none":
-		router = route.Null{}
+		router, matcher = route.Null{}, route.Null{}
 	case "osrm":
-		router = route.NewOSRM(*routerURL, *profile)
+		o := route.NewOSRM(*routerURL, *profile)
+		router, matcher = o, o
 	default:
 		return fmt.Errorf("unknown -router %q: use none or osrm", *routerName)
 	}
@@ -1239,6 +1273,11 @@ func runRoute(args []string) error {
 	perTarget := make([][]route.Key, len(targets))
 	var keys []route.Key
 	seen := map[route.Key]bool{}
+	// The same collection for matching: every recorded stretch long enough
+	// to ask about, deduped across the scope.
+	perTargetTraces := make([][]route.Trace, len(targets))
+	var traces []route.Trace
+	seenTrace := map[route.MatchKey]bool{}
 	for i, tg := range targets {
 		obs, err := s.LoadJourneyInputs(ctx, store.SelfUser, tg.cand.SpanStart, tg.cand.SpanEnd)
 		if err != nil {
@@ -1250,6 +1289,15 @@ func runRoute(args []string) error {
 			if !seen[k] {
 				seen[k] = true
 				keys = append(keys, k)
+			}
+		}
+		if *doMatch {
+			perTargetTraces[i] = route.Traces(j, *profile, mp)
+			for _, tr := range perTargetTraces[i] {
+				if !seenTrace[tr.Key] {
+					seenTrace[tr.Key] = true
+					traces = append(traces, tr)
+				}
 			}
 		}
 	}
@@ -1307,6 +1355,64 @@ func runRoute(args []string) error {
 		}
 	}
 
+	// Matching, the same four steps: consult the cache, ask only what it
+	// cannot answer, persist every data answer, report failures uncached.
+	matchStatus := make(map[route.MatchKey]string, len(traces))
+	if *doMatch {
+		matchKeys := make([]route.MatchKey, len(traces))
+		for i, tr := range traces {
+			matchKeys[i] = tr.Key
+		}
+		cachedMatches, err := s.LookupMatches(ctx, matchKeys)
+		if err != nil {
+			return err
+		}
+		counts.StretchesFound = len(traces)
+		var toMatch []route.Trace
+		for _, tr := range traces {
+			if c, ok := cachedMatches[tr.Key]; ok && !*refresh {
+				counts.MatchCacheHits++
+				matchStatus[tr.Key] = c.Status + " (cached)"
+				continue
+			}
+			toMatch = append(toMatch, tr)
+		}
+		if _, isNull := matcher.(route.Null); isNull && len(toMatch) > 0 {
+			fmt.Printf("null router: %d uncached recorded stretch(es) stay drawn point to point — run with -router osrm to match them\n", len(toMatch))
+		} else {
+			for i, tr := range toMatch {
+				if i > 0 && *interval > 0 {
+					time.Sleep(*interval)
+				}
+				m, err := matcher.Match(ctx, tr.Points, int(tr.Key.RadiusM))
+				switch {
+				case err == nil:
+					if err := s.SaveMatch(ctx, tr, route.CachedMatch{
+						Status: route.StatusMatched, Points: m.Points, DistanceM: m.DistanceM,
+						Unplaced: m.Unplaced, EndsPlaced: m.EndsPlaced,
+					}, *routerName+" "+*routerURL, *dataset); err != nil {
+						return err
+					}
+					counts.Matched++
+					matchStatus[tr.Key] = "matched"
+				case err == route.ErrNoMatch:
+					if err := s.SaveMatch(ctx, tr, route.CachedMatch{Status: route.StatusNoMatch},
+						*routerName+" "+*routerURL, *dataset); err != nil {
+						return err
+					}
+					counts.NoMatch++
+					matchStatus[tr.Key] = "no_match"
+				default:
+					// Operational: report, never cache. No coordinates in the
+					// line — a stretch is named by its size and its key.
+					counts.MatchFailures++
+					matchStatus[tr.Key] = "failed"
+					fmt.Printf("  FAILED match of %d points (%s…): %v\n", len(tr.Points), tr.Key.PointsHash[:12], err)
+				}
+			}
+		}
+	}
+
 	for i, tg := range targets {
 		tally := map[string]int{}
 		for _, k := range perTarget[i] {
@@ -1321,13 +1427,29 @@ func runRoute(args []string) error {
 			label += fmt.Sprintf(" %q", tg.name)
 		}
 		fmt.Printf("  %s: %d unknown gap(s) — %s\n", label, len(perTarget[i]), tallyString(tally))
+		if *doMatch {
+			mt := map[string]int{}
+			for _, tr := range perTargetTraces[i] {
+				st := matchStatus[tr.Key]
+				if st == "" {
+					st = "unknown"
+				}
+				mt[st]++
+			}
+			fmt.Printf("  %s: %d recorded stretch(es) of %.0f m or more — %s\n", label, len(perTargetTraces[i]), mp.MinM, tallyString(mt))
+		}
 	}
 	fmt.Printf("totals: %d unique pair(s) | %d cached | %d routed | %d no_route | %d failed\n",
 		counts.GapsFound, counts.CacheHits, counts.Routed, counts.NoRoute, counts.Failures)
+	if *doMatch {
+		fmt.Printf("matching: %d unique stretch(es) | %d cached | %d matched | %d no_match | %d failed (radius %.0f m; the length guard is applied when a journey is read)\n",
+			counts.StretchesFound, counts.MatchCacheHits, counts.Matched, counts.NoMatch, counts.MatchFailures, mp.RadiusM)
+	}
 
 	runID, err := s.InsertRouteRun(ctx, *routerName+" "+*routerURL, *dataset, map[string]any{
 		"profile": *profile, "interval": interval.String(), "refresh": *refresh,
 		"scope": scopeName(*candidateID, *all), "journey_params": params,
+		"match": *doMatch, "match_params": mp,
 	}, counts)
 	if err != nil {
 		return err
@@ -1351,7 +1473,8 @@ func tallyString(t map[string]int) string {
 	if len(t) == 0 {
 		return "none"
 	}
-	order := []string{"routed", "routed (cached)", "no_route", "no_route (cached)", "failed", "unknown"}
+	order := []string{"routed", "routed (cached)", "no_route", "no_route (cached)",
+		"matched", "matched (cached)", "no_match", "no_match (cached)", "failed", "unknown"}
 	out := ""
 	for _, k := range order {
 		if t[k] > 0 {

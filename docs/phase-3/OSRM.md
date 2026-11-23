@@ -74,10 +74,14 @@ run: ..." on success.
 ## 3. Serve, route, shut down
 
 ```
-osrm-routed --algorithm mld data/osrm/india-latest.osrm
+osrm-routed --algorithm mld --max-matching-size 2000 data/osrm/india-latest.osrm
 ```
 
 (or the Docker equivalent with `-p 5000:5000`). Listens on port 5000.
+`--max-matching-size` is there since phase 23: the batch also asks which
+road each recorded stretch lies on, one request per stretch, and the
+server's default refuses a request of more than 100 points. Those
+stretches would be reported as failed on every run.
 
 Two snags seen in practice: the dataset path is resolved relative to the
 current directory — "Missing/Broken File" for files that exist means the

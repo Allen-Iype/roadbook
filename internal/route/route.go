@@ -3,8 +3,11 @@
 // client as the network implementation. Routing is batch-only — the serve
 // binary never dials a router; it reads the route_cache table that
 // `roadbook route` fills, and Apply decorates an assembled journey from
-// those cached answers. Only unknown gaps are ever routed: observed legs are
-// measurement (invariant 6) and air legs are flights.
+// those cached answers. Only unknown gaps are ever routed: air legs are
+// flights, and a recorded stretch is never routed between its ends — it may
+// be drawn along the road its own points lie on, which is matching, a
+// different question with its own seam beside this one (match.go;
+// invariant 6 as amended 2026-11-16).
 package route
 
 import (

@@ -714,6 +714,13 @@ export interface components {
              * @description The routed road distance — present only when gap_kind is "road". distance_km keeps its chord meaning regardless.
              */
             routed_km?: number;
+            /** @description The road this recorded stretch's points lie on (phase 23) — present only on an observed leg, and only when the match cache holds a road for exactly these points that passed the length guard (`match_params.max_ratio`). The leg is still "observed" and `points` still holds every recorded point, unaltered: this geometry rides alongside as a better line between them than straight segments, and its vertices have no timestamps. Absent means the stretch is drawn point to point — no road was asked for, none fits, or the fit was refused. */
+            snapped_points?: components["schemas"]["LatLng"][];
+            /**
+             * Format: double
+             * @description The length of `snapped_points` along the road — present exactly when `snapped_points` is. distance_km keeps its point-to-point meaning regardless.
+             */
+            snapped_km?: number;
             /** Format: date-time */
             start: string;
             /** Format: date-time */
@@ -758,6 +765,24 @@ export interface components {
             near_km: number;
             /** Format: double */
             max_km: number;
+        };
+        /** @description The named thresholds behind `Leg.snapped_points` (phase 23), echoed so a page can say what was used (invariant 3). */
+        MatchParams: {
+            /**
+             * Format: double
+             * @description How far from a recorded point the matcher looked for its road, metres (MATCH_RADIUS_M).
+             */
+            radius_m: number;
+            /**
+             * Format: double
+             * @description The length guard (MATCH_MAX_RATIO): a matched road is drawn only when it is under this many times the stretch's point-to-point length. Positions are mostly WiFi and cell; a matcher will sometimes take a side road to reach one, and the result is far longer than the points justify.
+             */
+            max_ratio: number;
+            /**
+             * Format: double
+             * @description A recorded stretch shorter than this, point to point, is not matched at all, metres (MATCH_MIN_M).
+             */
+            min_m: number;
         };
         /** @description The thresholds that classed every entry of `Journey.nights` (invariant 3). The window opens at `start_hour` on one civil date and closes at `end_hour` on the next, on the traveller's own clock. */
         NightParams: {
@@ -808,6 +833,7 @@ export interface components {
             };
             place_params: components["schemas"]["PlaceParams"];
             night_params: components["schemas"]["NightParams"];
+            match_params: components["schemas"]["MatchParams"];
             /** @description One entry per night of the journey, in order (phase 19) — every pair of consecutive civil dates the journey touches, so the length is always `summary.civil_days - 1`. Empty on a day trip. */
             nights: components["schemas"]["Night"][];
             legs: components["schemas"]["Leg"][];
@@ -838,6 +864,16 @@ export interface components {
              * @description Routed road distance summed over road legs. 0 when nothing is routed — the product is fully usable without a router.
              */
             routed_km: number;
+            /**
+             * Format: double
+             * @description How much of observed_km lies on legs drawn along a road — the sum of distance_km over legs that carry `snapped_points` (phase 23). The rest of observed_km is drawn point to point. 0 when nothing is matched, which is every instance that has not run `roadbook route` against a router.
+             */
+            snapped_observed_km: number;
+            /**
+             * Format: double
+             * @description The length of those roads — the sum of the legs' snapped_km. Reported beside snapped_observed_km and used for nothing else: observed_km, total_km, ground_km, the pace and the divergence figures all stay computed from the recorded points.
+             */
+            snapped_road_km: number;
             /**
              * Format: double
              * @description The road-comparable reconstruction: observed + routed + unknown chords. Air legs are excluded by construction.

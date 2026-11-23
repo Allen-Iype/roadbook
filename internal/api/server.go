@@ -264,11 +264,36 @@ func (s *Server) assembledJourney(ctx context.Context, userID string, cand *stor
 		return journey.Journey{}, obs, err
 	}
 	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
-	lookup, err := s.Store.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
+	j, err = ApplyCaches(ctx, s.Store, j)
+	return j, obs, err
+}
+
+// ApplyCaches decorates an assembled journey from the two caches the batch
+// command fills: road geometry for unknown gaps (route.Apply) and, since
+// phase 23, the road a recorded stretch's own points lie on
+// (route.ApplyMatches). Exported because `roadbook journey -candidate`
+// calls it too — one function, so the command and the page cannot disagree
+// about the same trip. No router is ever dialled here: an empty cache
+// leaves every gap unknown and every recorded stretch drawn point to
+// point.
+func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey) (journey.Journey, error) {
+	lookup, err := st.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
 	if err != nil {
-		return journey.Journey{}, obs, err
+		return journey.Journey{}, err
 	}
-	return route.Apply(j, RouteProfile, lookup), obs, nil
+	j = route.Apply(j, RouteProfile, lookup)
+
+	mp := route.DefaultMatchParams()
+	traces := route.Traces(j, RouteProfile, mp)
+	keys := make([]route.MatchKey, len(traces))
+	for i, tr := range traces {
+		keys[i] = tr.Key
+	}
+	matches, err := st.LookupMatches(ctx, keys)
+	if err != nil {
+		return journey.Journey{}, err
+	}
+	return route.ApplyMatches(j, RouteProfile, mp, matches), nil
 }
 
 func toAPIJourney(j journey.Journey) (Journey, error) {
@@ -283,24 +308,30 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 		return Journey{}, err
 	}
 
+	mp := route.DefaultMatchParams()
 	out := Journey{
-		WindowStart:     j.WindowStart,
-		WindowEnd:       j.WindowEnd,
-		Params:          params,
-		Legs:            make([]Leg, 0, len(j.Legs)),
-		Stops:           make([]Stop, 0, len(j.Stops)),
-		TotalKm:         j.TotalKm,
-		ObservedKm:      j.ObservedKm,
-		InferredKm:      j.InferredKm,
-		AirKm:           j.AirKm,
-		UnknownKm:       j.UnknownKm,
-		RoutedKm:        j.RoutedKm,
-		GroundKm:        j.GroundKm(),
-		GoogleGroundKm:  j.GoogleGroundKm,
-		GoogleKm:        j.GoogleDistanceKm,
-		MergedPoints:    j.MergedPoints(),
-		TracePointsKept: j.TracePointsKept,
-		RawPointsKept:   j.RawPointsKept,
+		MatchParams: MatchParams{RadiusM: mp.RadiusM, MaxRatio: mp.MaxRatio, MinM: mp.MinM},
+		WindowStart: j.WindowStart,
+		WindowEnd:   j.WindowEnd,
+		Params:      params,
+		Legs:        make([]Leg, 0, len(j.Legs)),
+		Stops:       make([]Stop, 0, len(j.Stops)),
+		TotalKm:     j.TotalKm,
+		ObservedKm:  j.ObservedKm,
+		InferredKm:  j.InferredKm,
+		AirKm:       j.AirKm,
+		UnknownKm:   j.UnknownKm,
+		RoutedKm:    j.RoutedKm,
+		// Phase 23: how much recorded distance is drawn along roads, and
+		// those roads' length — reported only; nothing else reads them.
+		SnappedObservedKm: j.SnappedObservedKm,
+		SnappedRoadKm:     j.SnappedRoadKm,
+		GroundKm:          j.GroundKm(),
+		GoogleGroundKm:    j.GoogleGroundKm,
+		GoogleKm:          j.GoogleDistanceKm,
+		MergedPoints:      j.MergedPoints(),
+		TracePointsKept:   j.TracePointsKept,
+		RawPointsKept:     j.RawPointsKept,
 	}
 	// Both stay absent when Google recorded no ground distance — nothing to
 	// compare is not zero divergence.
@@ -329,6 +360,18 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 			al.RoutedPoints = &pts
 			rk := l.RoutedKm
 			al.RoutedKm = &rk
+		}
+		// A recorded stretch drawn along the road (phase 23): the kind is
+		// untouched above, and points below still carries every recorded
+		// point — the road line rides alongside.
+		if l.SnappedPoints != nil {
+			pts := make([]LatLng, len(l.SnappedPoints))
+			for i, p := range l.SnappedPoints {
+				pts[i] = LatLng{Lat: p.Lat, Lon: p.Lon}
+			}
+			al.SnappedPoints = &pts
+			sk := l.SnappedKm
+			al.SnappedKm = &sk
 		}
 		for i, pt := range l.Points {
 			al.Points[i] = TimedPoint{T: pt.Time, Lat: pt.Loc.Lat, Lon: pt.Loc.Lon}

@@ -1465,6 +1465,27 @@ components:
           description: >
             The routed road distance — present only when gap_kind is
             "road". distance_km keeps its chord meaning regardless.
+        snapped_points:
+          type: array
+          description: >
+            The road this recorded stretch's points lie on (phase 23) —
+            present only on an observed leg, and only when the match cache
+            holds a road for exactly these points that passed the length
+            guard (`match_params.max_ratio`). The leg is still "observed"
+            and `points` still holds every recorded point, unaltered: this
+            geometry rides alongside as a better line between them than
+            straight segments, and its vertices have no timestamps. Absent
+            means the stretch is drawn point to point — no road was asked
+            for, none fits, or the fit was refused.
+          items:
+            $ref: "#/components/schemas/LatLng"
+        snapped_km:
+          type: number
+          format: double
+          description: >
+            The length of `snapped_points` along the road — present exactly
+            when `snapped_points` is. distance_km keeps its point-to-point
+            meaning regardless.
         start:
           type: string
           format: date-time
@@ -1548,6 +1569,35 @@ components:
         max_km:
           type: number
           format: double
+
+    MatchParams:
+      type: object
+      description: >
+        The named thresholds behind `Leg.snapped_points` (phase 23),
+        echoed so a page can say what was used (invariant 3).
+      required: [radius_m, max_ratio, min_m]
+      properties:
+        radius_m:
+          type: number
+          format: double
+          description: >
+            How far from a recorded point the matcher looked for its road,
+            metres (MATCH_RADIUS_M).
+        max_ratio:
+          type: number
+          format: double
+          description: >
+            The length guard (MATCH_MAX_RATIO): a matched road is drawn
+            only when it is under this many times the stretch's
+            point-to-point length. Positions are mostly WiFi and cell; a
+            matcher will sometimes take a side road to reach one, and the
+            result is far longer than the points justify.
+        min_m:
+          type: number
+          format: double
+          description: >
+            A recorded stretch shorter than this, point to point, is not
+            matched at all, metres (MATCH_MIN_M).
 
     NightParams:
       type: object
@@ -1638,8 +1688,8 @@ components:
     Journey:
       type: object
       required:
-        [window_start, window_end, params, place_params, night_params, legs, stops, nights, countries, states, summary, total_km,
-         observed_km, inferred_km, air_km, unknown_km, routed_km, ground_km,
+        [window_start, window_end, params, place_params, night_params, match_params, legs, stops, nights, countries, states, summary, total_km,
+         observed_km, inferred_km, air_km, unknown_km, routed_km, snapped_observed_km, snapped_road_km, ground_km,
          google_km, google_ground_km, merged_points, trace_points_kept,
          raw_points_kept]
       properties:
@@ -1657,6 +1707,8 @@ components:
           $ref: "#/components/schemas/PlaceParams"
         night_params:
           $ref: "#/components/schemas/NightParams"
+        match_params:
+          $ref: "#/components/schemas/MatchParams"
         nights:
           type: array
           description: >
@@ -1727,6 +1779,23 @@ components:
           description: >
             Routed road distance summed over road legs. 0 when nothing is
             routed — the product is fully usable without a router.
+        snapped_observed_km:
+          type: number
+          format: double
+          description: >
+            How much of observed_km lies on legs drawn along a road — the
+            sum of distance_km over legs that carry `snapped_points`
+            (phase 23). The rest of observed_km is drawn point to point. 0
+            when nothing is matched, which is every instance that has not
+            run `roadbook route` against a router.
+        snapped_road_km:
+          type: number
+          format: double
+          description: >
+            The length of those roads — the sum of the legs' snapped_km.
+            Reported beside snapped_observed_km and used for nothing else:
+            observed_km, total_km, ground_km, the pace and the divergence
+            figures all stay computed from the recorded points.
         ground_km:
           type: number
           format: double
