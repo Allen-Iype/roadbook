@@ -83,7 +83,7 @@ func usage() {
   roadbook places  [-src <places list.tsv[.gz]>] [-if-empty] [-db url]
   roadbook detect  (-src <export.json> | -db url) [threshold flags] [-json out.json]
   roadbook journey (-src <export.json> -from <RFC3339> -to <RFC3339> | -candidate id [-db url]) [threshold flags]
-  roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh] [-match=false] [-match-radius-m 100] [-match-min-m 200]
+  roadbook route   [-db url] [-router none|osrm] [-router-url url] [-profile driving] [-interval 1s] [-dataset name] [-all | -candidate id] [-refresh] [-match[=false]] [-match-radius-m 100] [-match-min-m 200]
   roadbook serve   [-db url] [-addr :8080]
   roadbook backup  -out <file.tar.gz> [-db url] [-photos-dir dir]
   roadbook restore -src <file.tar.gz> [-db url] [-photos-dir dir]
@@ -111,7 +111,9 @@ table — the only network step in routing, and entirely optional: with the
 default null router it inventories the gaps and fills nothing. Scope
 defaults to confirmed adventures of the latest run. The same run asks which
 road each recorded stretch lies on and caches that too (match_cache), so
-the stretch can be drawn along the road; -match=false leaves that out.
+the stretch can be drawn along the road; -match=false leaves that out, and
+against the public demo server it is off unless -match is given. Stretches
+labelled train, subway, ferry or flying are never asked about.
 'serve' runs the HTTP API.
 'backup' writes the irreplaceable set — decisions, photo rows, thumbnail
 files — as one archive. Everything else regenerates from your export files.
@@ -864,7 +866,7 @@ func runJourney(args []string) error {
 		acts = obs.Activities
 		// The same function the page's handler calls: gap routes and, since
 		// phase 23, the roads recorded stretches are drawn along.
-		if j, err = api.ApplyCaches(ctx, s, j); err != nil {
+		if j, err = api.ApplyCaches(ctx, s, j, obs.Activities); err != nil {
 			return err
 		}
 		var pts []domain.LatLng
@@ -944,9 +946,9 @@ func runJourney(args []string) error {
 	// only when something is matched; distances above stay from the points.
 	if j.SnappedObservedKm > 0 {
 		mp := route.DefaultMatchParams()
-		fmt.Printf("recorded stretches drawn along roads: %.1f of %.1f km (the roads measure %.1f km); the other %.1f km point to point (radius %.0f m, road under %.1f times point to point, stretches of %.0f m or more)\n",
+		fmt.Printf("recorded stretches drawn along roads: %.1f of %.1f km (the roads measure %.1f km); the other %.1f km point to point (radius %.0f m, road under %.1f times point to point, stretches of %.0f m or more, never %s)\n",
 			j.SnappedObservedKm, j.ObservedKm, j.SnappedRoadKm, j.ObservedKm-j.SnappedObservedKm,
-			mp.RadiusM, mp.MaxRatio, mp.MinM)
+			mp.RadiusM, mp.MaxRatio, mp.MinM, strings.Join(mp.SkipModes, ", "))
 	}
 	if j.GoogleDistanceKm > 0 {
 		fmt.Printf("google's own figure %.1f km total\n", j.GoogleDistanceKm)
@@ -1181,13 +1183,20 @@ func runRoute(args []string) error {
 	refresh := fs.Bool("refresh", false, "re-ask the router even for cached pairs and stretches and replace the rows")
 	mp := route.DefaultMatchParams()
 	doMatch := fs.Bool("match", true,
-		"also ask which road each recorded stretch lies on; -match=false routes gaps only")
+		"also ask which road each recorded stretch lies on; -match=false routes gaps only. Without the flag: on, except against the public demo server, which would be sent every recorded point")
 	fs.Float64Var(&mp.RadiusM, "match-radius-m", mp.RadiusM,
 		"matching: how far from a recorded point to look for its road, metres. The served journey reads answers at the default radius only")
 	fs.Float64Var(&mp.MinM, "match-min-m", mp.MinM,
 		"matching: recorded stretches shorter than this, point to point, are not asked about, metres")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+	// -match not given: the default depends on whose router this is.
+	matchGiven := false
+	fs.Visit(func(f *flag.Flag) { matchGiven = matchGiven || f.Name == "match" })
+	if !matchGiven && *routerName == "osrm" && !route.MatchByDefault(*routerURL) {
+		*doMatch = false
+		fmt.Println("matching is off against the public demo server: a matching request carries every recorded point of a stretch. Routing gaps only; pass -match to match as well, or point -router-url at your own OSRM.")
 	}
 
 	var router route.Router
@@ -1292,7 +1301,7 @@ func runRoute(args []string) error {
 			}
 		}
 		if *doMatch {
-			perTargetTraces[i] = route.Traces(j, *profile, mp)
+			perTargetTraces[i] = route.Traces(j, obs.Activities, *profile, mp)
 			for _, tr := range perTargetTraces[i] {
 				if !seenTrace[tr.Key] {
 					seenTrace[tr.Key] = true

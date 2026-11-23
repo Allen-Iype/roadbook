@@ -12,6 +12,7 @@ import (
 	"math"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	"roadbook/internal/api"
@@ -39,8 +40,9 @@ func TestServedJourneyCarriesSnappedGeometry(t *testing.T) {
 	// Before anything is cached: today's drawing, with the parameters served.
 	var before api.Journey
 	fetchJSON(t, url, &before)
-	if want := (api.MatchParams{RadiusM: 100, MaxRatio: 1.3, MinM: 200}); before.MatchParams != want {
-		t.Errorf("match_params = %+v, want %+v", before.MatchParams, want)
+	if mp := before.MatchParams; mp.RadiusM != 100 || mp.MaxRatio != 1.3 || mp.MinM != 200 ||
+		strings.Join(mp.SkipModes, " ") != "IN_TRAIN IN_SUBWAY IN_FERRY FLYING" {
+		t.Errorf("match_params = %+v, want 100 m, 1.3, 200 m and the four skipped modes", mp)
 	}
 	if before.SnappedObservedKm != 0 || before.SnappedRoadKm != 0 {
 		t.Errorf("empty cache: snapped %.1f / %.1f km, want 0 / 0", before.SnappedObservedKm, before.SnappedRoadKm)
@@ -65,7 +67,7 @@ func TestServedJourneyCarriesSnappedGeometry(t *testing.T) {
 		for _, pt := range l.Points {
 			leg.Points = append(leg.Points, journey.TimedPoint{Time: pt.T, Loc: domain.LatLng{Lat: pt.Lat, Lon: pt.Lon}})
 		}
-		if got, ok := route.TraceFor(leg, api.RouteProfile, p); ok {
+		if got, ok := route.TraceFor(leg, "", api.RouteProfile, p); ok {
 			target, tr = i, got
 			break
 		}

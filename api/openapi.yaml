@@ -1575,7 +1575,7 @@ components:
       description: >
         The named thresholds behind `Leg.snapped_points` (phase 23),
         echoed so a page can say what was used (invariant 3).
-      required: [radius_m, max_ratio, min_m]
+      required: [radius_m, max_ratio, min_m, skip_modes]
       properties:
         radius_m:
           type: number
@@ -1598,6 +1598,16 @@ components:
           description: >
             A recorded stretch shorter than this, point to point, is not
             matched at all, metres (MATCH_MIN_M).
+        skip_modes:
+          type: array
+          description: >
+            Mode labels that are never drawn along a road
+            (MATCH_SKIP_MODES): the matcher knows roads only, and a railway
+            beside a road would be drawn on that road. A stretch takes the
+            label of the activity that overlaps it the longest; the label
+            is the source's guess.
+          items:
+            type: string
 
     NightParams:
       type: object

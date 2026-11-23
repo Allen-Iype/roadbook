@@ -61,7 +61,7 @@ func TestTracesAskOnlyAboutRecordedStretchesLongEnough(t *testing.T) {
 	j := matchJourney(t)
 	p := route.DefaultMatchParams()
 
-	traces := route.Traces(j, "driving", p)
+	traces := route.Traces(j, nil, "driving", p)
 	if len(traces) != 1 {
 		t.Fatalf("traces = %d, want 1: the 3.3 km stretch only — never a gap, never the 110 m stretch under MATCH_MIN_M", len(traces))
 	}
@@ -80,7 +80,7 @@ func TestTracesAskOnlyAboutRecordedStretchesLongEnough(t *testing.T) {
 	// Lowering the minimum brings the short stretch in: the threshold is the
 	// parameter, not a literal.
 	p.MinM = 50
-	if n := len(route.Traces(j, "driving", p)); n != 2 {
+	if n := len(route.Traces(j, nil, "driving", p)); n != 2 {
 		t.Errorf("with MATCH_MIN_M 50: %d traces, want 2", n)
 	}
 }
@@ -90,11 +90,11 @@ func TestMatchKeyIsTheRequest(t *testing.T) {
 	p := route.DefaultMatchParams()
 	leg := j.Legs[0]
 
-	base, ok := route.TraceFor(leg, "driving", p)
+	base, ok := route.TraceFor(leg, "", "driving", p)
 	if !ok {
 		t.Fatal("the 3.3 km stretch must be eligible")
 	}
-	again, _ := route.TraceFor(leg, "driving", p)
+	again, _ := route.TraceFor(leg, "", "driving", p)
 	if base.Key != again.Key {
 		t.Error("the same stretch must give the same key every time")
 	}
@@ -110,7 +110,7 @@ func TestMatchKeyIsTheRequest(t *testing.T) {
 		l.Points = append([]journey.TimedPoint(nil), leg.Points...)
 		profile, mp := "driving", p
 		mutate(&l, &profile, &mp)
-		got, ok := route.TraceFor(l, profile, mp)
+		got, ok := route.TraceFor(l, "", profile, mp)
 		if !ok {
 			t.Fatalf("%s: stretch became ineligible", name)
 		}
@@ -135,7 +135,7 @@ func TestMatchKeyIsTheRequest(t *testing.T) {
 	// changing it must reuse every cached answer (BRIEF §3).
 	mp := p
 	mp.MaxRatio = 1.5
-	if got, _ := route.TraceFor(leg, "driving", mp); got.Key != base.Key {
+	if got, _ := route.TraceFor(leg, "", "driving", mp); got.Key != base.Key {
 		t.Error("MATCH_MAX_RATIO must not be part of the cache key")
 	}
 }
@@ -153,7 +153,7 @@ func TestTraceTimesStrictlyIncrease(t *testing.T) {
 			{Time: at(0), Loc: domain.LatLng{Lat: 10.02, Lon: 70}},
 		},
 	}
-	tr, ok := route.TraceFor(leg, "driving", route.DefaultMatchParams())
+	tr, ok := route.TraceFor(leg, "", "driving", route.DefaultMatchParams())
 	if !ok {
 		t.Fatal("eligible stretch refused")
 	}
@@ -180,13 +180,13 @@ var snapped = []domain.LatLng{{Lat: 10.0001, Lon: 70.0002}, {Lat: 10.015, Lon: 7
 func TestApplyMatches(t *testing.T) {
 	j := matchJourney(t)
 	p := route.DefaultMatchParams()
-	tr := route.Traces(j, "driving", p)[0]
+	tr := route.Traces(j, nil, "driving", p)[0]
 	chordKm := j.Legs[0].DistanceKm
 	lookup := map[route.MatchKey]route.CachedMatch{
 		tr.Key: {Status: route.StatusMatched, Points: snapped, DistanceM: chordKm * 1000 * 1.2, EndsPlaced: true},
 	}
 
-	out := route.ApplyMatches(j, "driving", p, lookup)
+	out := route.ApplyMatches(j, nil, "driving", p, lookup)
 
 	got := out.Legs[0]
 	if got.Kind != journey.LegObserved || got.GapKind != journey.GapNone {
@@ -237,7 +237,7 @@ func TestApplyMatches(t *testing.T) {
 func TestApplyMatchesGuards(t *testing.T) {
 	j := matchJourney(t)
 	p := route.DefaultMatchParams()
-	tr := route.Traces(j, "driving", p)[0]
+	tr := route.Traces(j, nil, "driving", p)[0]
 	chordM := j.Legs[0].DistanceKm * 1000
 	matched := func(ratio float64) route.CachedMatch {
 		return route.CachedMatch{Status: route.StatusMatched, Points: snapped, DistanceM: chordM * ratio, EndsPlaced: true}
@@ -286,7 +286,7 @@ func TestApplyMatchesGuards(t *testing.T) {
 		if c.cached != nil {
 			lookup[tr.Key] = *c.cached
 		}
-		out := route.ApplyMatches(j, "driving", mp, lookup)
+		out := route.ApplyMatches(j, nil, "driving", mp, lookup)
 		got := out.Legs[0].SnappedPoints != nil
 		if got != c.want {
 			t.Errorf("%s: drawn along the road = %v, want %v", c.name, got, c.want)
@@ -380,6 +380,120 @@ func TestOSRMMatchAnswersAndErrors(t *testing.T) {
 		_, err := ask(http.StatusBadRequest, body)
 		if err == nil || errors.Is(err, route.ErrNoMatch) {
 			t.Errorf("%s: err = %v, want an operational error distinct from ErrNoMatch", name, err)
+		}
+	}
+}
+
+// --- Modes that do not travel on roads (phase 23, decided 2026-11-23) ---
+//
+// Written before the code. Measured: at the default guard, 69% to 100% of
+// the kilometres Google labels as train pass it and would be drawn on the
+// road beside the railway. The matcher has one profile, driving, so a
+// stretch whose mode is in MATCH_SKIP_MODES is not asked about and not
+// drawn along a road, whatever the cache holds.
+
+// act is an activity over [fromS, toS] seconds of the fixture clock.
+func act(mode string, fromS, toS int) domain.Activity {
+	return domain.Activity{Start: at(fromS), End: at(toS), Mode: mode}
+}
+
+func TestDefaultSkipModes(t *testing.T) {
+	got := strings.Join(route.DefaultMatchParams().SkipModes, " ")
+	if got != "IN_TRAIN IN_SUBWAY IN_FERRY FLYING" {
+		t.Errorf("MATCH_SKIP_MODES = %q, want the four measured labels that are not road travel", got)
+	}
+}
+
+func TestLegMode(t *testing.T) {
+	j := matchJourney(t)
+	first := j.Legs[0] // recorded from 0 s to 180 s
+	cases := []struct {
+		name string
+		acts []domain.Activity
+		want string
+	}{
+		{"no activity at all", nil, ""},
+		{"an activity that does not overlap the stretch", []domain.Activity{act("IN_TRAIN", 600, 900)}, ""},
+		{"an activity that only touches its end", []domain.Activity{act("IN_TRAIN", 180, 900)}, ""},
+		{"the one overlapping activity", []domain.Activity{act("IN_BUS", -60, 400)}, "IN_BUS"},
+		{"the longer overlap wins", []domain.Activity{act("WALKING", 0, 50), act("IN_TRAIN", 50, 180)}, "IN_TRAIN"},
+		{"the longer overlap wins whatever the order", []domain.Activity{act("IN_TRAIN", 50, 180), act("WALKING", 0, 50)}, "IN_TRAIN"},
+		{"equal overlaps: the earlier activity", []domain.Activity{act("IN_TRAIN", 90, 180), act("WALKING", 0, 90)}, "WALKING"},
+	}
+	for _, tc := range cases {
+		if got := route.LegMode(first, tc.acts); got != tc.want {
+			t.Errorf("%s: mode = %q, want %q", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestSkippedModesAreNotAskedAbout(t *testing.T) {
+	j := matchJourney(t)
+	p := route.DefaultMatchParams()
+	train := []domain.Activity{act("IN_TRAIN", 0, 180)}
+	bus := []domain.Activity{act("IN_BUS", 0, 180)}
+
+	if n := len(route.Traces(j, train, "driving", p)); n != 0 {
+		t.Errorf("a stretch labelled train: %d traces, want 0", n)
+	}
+	if n := len(route.Traces(j, bus, "driving", p)); n != 1 {
+		t.Errorf("a stretch labelled bus: %d traces, want 1", n)
+	}
+	if n := len(route.Traces(j, nil, "driving", p)); n != 1 {
+		t.Errorf("a stretch with no label: %d traces, want 1 — no label is not a reason to skip", n)
+	}
+	// The list is the parameter: emptied, the train stretch is asked about;
+	// with the bus added, the bus stretch is not.
+	p.SkipModes = nil
+	if n := len(route.Traces(j, train, "driving", p)); n != 1 {
+		t.Errorf("empty MATCH_SKIP_MODES: %d traces for the train stretch, want 1", n)
+	}
+	p.SkipModes = []string{"IN_BUS"}
+	if n := len(route.Traces(j, bus, "driving", p)); n != 0 {
+		t.Errorf("MATCH_SKIP_MODES = IN_BUS: %d traces for the bus stretch, want 0", n)
+	}
+}
+
+// The skip is applied on reading too: an answer already in the cache (from
+// before the rule, or from a run with another list) is not drawn.
+func TestSkippedModesAreNotDrawnFromTheCache(t *testing.T) {
+	j := matchJourney(t)
+	p := route.DefaultMatchParams()
+	tr := route.Traces(j, nil, "driving", p)[0]
+	lookup := map[route.MatchKey]route.CachedMatch{
+		tr.Key: {Status: route.StatusMatched, Points: snapped, DistanceM: j.Legs[0].DistanceKm * 1000 * 1.1, EndsPlaced: true},
+	}
+
+	out := route.ApplyMatches(j, []domain.Activity{act("IN_TRAIN", 0, 180)}, "driving", p, lookup)
+	if out.Legs[0].SnappedPoints != nil || out.SnappedObservedKm != 0 || out.SnappedRoadKm != 0 {
+		t.Errorf("a train stretch was drawn along a road from the cache: %d points, %.2f km", len(out.Legs[0].SnappedPoints), out.SnappedObservedKm)
+	}
+	out = route.ApplyMatches(j, []domain.Activity{act("IN_BUS", 0, 180)}, "driving", p, lookup)
+	if out.Legs[0].SnappedPoints == nil {
+		t.Error("a bus stretch with a passing answer in the cache was not drawn along the road")
+	}
+}
+
+// Matching sends every recorded point of a stretch, where gap routing
+// sends two ends. Against the public demonstration server it is therefore
+// off unless asked for.
+func TestMatchByDefault(t *testing.T) {
+	cases := []struct {
+		url  string
+		want bool
+	}{
+		{route.PublicOSRMURL, false},
+		{route.PublicOSRMURL + "/", false},
+		{"http://router.project-osrm.org", false},
+		{"https://ROUTER.project-osrm.org", false},
+		{"http://127.0.0.1:5001", true},
+		{"http://osrm:5000", true},
+		{"https://osrm.example.org/", true},
+		{"not a url", true},
+	}
+	for _, tc := range cases {
+		if got := route.MatchByDefault(tc.url); got != tc.want {
+			t.Errorf("MatchByDefault(%q) = %v, want %v", tc.url, got, tc.want)
 		}
 	}
 }

@@ -10,6 +10,10 @@ package route_test
 //	osrm-routed --algorithm mld -i 127.0.0.1 -p 5001 --max-matching-size 2000 \
 //	  data/osrm/<region>-latest.osrm > /dev/null 2>&1
 //
+// It passes no activities to the matching functions, so MATCH_SKIP_MODES
+// (added after this was first run, because of what its per-mode table
+// showed) does not apply: every mode is matched and reported.
+//
 // Prints counts, distances and ratios only; no coordinate, date or place.
 // To run, copy into internal/route/ as built_test.go and:
 //
@@ -112,7 +116,7 @@ func TestBuilt(t *testing.T) {
 				routeFailed++
 			}
 		}
-		for _, tr := range route.Traces(j, profile, mp) {
+		for _, tr := range route.Traces(j, nil, profile, mp) {
 			if _, ok := matches[tr.Key]; ok {
 				continue
 			}
@@ -182,7 +186,7 @@ func TestBuilt(t *testing.T) {
 		var flagToday, flagAlong, compared int
 		for _, j := range journeys {
 			j = route.Apply(j, profile, routes)
-			j = route.ApplyMatches(j, profile, p, matches)
+			j = route.ApplyMatches(j, nil, profile, p, matches)
 			observedKm += j.ObservedKm
 			snappedObs += j.SnappedObservedKm
 			snappedRoad += j.SnappedRoadKm
@@ -227,13 +231,13 @@ func TestBuilt(t *testing.T) {
 		}
 		modes := map[string]*modeRow{}
 		for _, j := range journeys {
-			jm := route.ApplyMatches(j, profile, p, matches)
+			jm := route.ApplyMatches(j, nil, profile, p, matches)
 			if j.GoogleGroundKm > 0 {
 				chordToday += jm.GroundKm()
 				chordAlong += jm.GroundKm() - jm.SnappedObservedKm + jm.SnappedRoadKm
 			}
 			for _, l := range jm.Legs {
-				if _, ok := route.TraceFor(l, profile, p); !ok {
+				if _, ok := route.TraceFor(l, "", profile, p); !ok {
 					continue
 				}
 				m := modeOf(l)
@@ -342,7 +346,7 @@ func TestProbe(t *testing.T) {
 	for _, c := range res.Candidates {
 		j := journey.Assemble(obs, c.Start, c.End, journey.DefaultParams())
 		for _, l := range j.Legs {
-			tr, ok := route.TraceFor(l, "driving", mp)
+			tr, ok := route.TraceFor(l, "", "driving", mp)
 			if !ok {
 				continue
 			}

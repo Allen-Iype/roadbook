@@ -116,3 +116,101 @@ our mind. Written as each was made.
   `snapped_road_km`.
 - **Rejected:** adding the three fields by hand.
 - **Would change our mind:** nothing.
+
+## 2026-11-23 — What the three datasets make of the matcher as built
+
+Not a choice; the measurement the checkpoint owed, recorded where the
+decisions below rest on it. `measure/built_test.go.txt`, local OSRM,
+India data, 100 m, every mode matched, counts only.
+
+| at guard 1.3 | Android fixture | archive | iPhone export |
+|---|---|---|---|
+| stretches drawn along roads | 513 | 1,988 | 1,014 |
+| share of recorded km | 78% | 83% | 75% |
+| road length ÷ point-to-point | 1.08 | 1.08 | 1.10 |
+| largest stretch, points | 144 | 221 | 238 |
+| against Google's distances, today | +12.0% | +8.0% | −2.8% |
+| against Google's distances, along roads | +17.6% | +12.4% | +0.3% |
+| requests over 5 s | 69 | 252 | 129 |
+| time for the whole history | 27 min | 86 min | 36 min |
+
+The comparison with Google is without gap routing, so it shows matching
+alone. On two datasets of three the road lengths move away from Google's
+figures, not toward them. That is the "would change our mind" of choice
+D read the other way round: it supports keeping every distance from the
+recorded points.
+
+The brief's §2.2 figures (842 matched, 82% at 1.3) were taken with a
+looser rule than was built: the built rule also refuses a line whose
+first or last point the matcher did not place.
+
+## 2026-11-23 — Train, subway, ferry and flight stretches are not matched
+
+- **Chosen:** `MATCH_SKIP_MODES` (`IN_TRAIN`, `IN_SUBWAY`, `IN_FERRY`,
+  `FLYING`), served with the journey. A stretch takes the label of the
+  activity that overlaps it the longest (`route.LegMode`); a stretch
+  with one of these labels is not asked about, and not drawn along a
+  road even when the cache holds an answer. A stretch with no label is
+  matched as before.
+- **Why:** the matcher has one profile, driving. At guard 1.3 the
+  stretches labelled train pass it for 69% (iPhone export), 81%
+  (archive) and 100% (fixture) of their kilometres, at about 1.2 times
+  point to point: a railway drawn on the road beside it. On the iPhone
+  export that is 3,744 km. Taking the four labels out of the table
+  above leaves 75%, 80% and 62% of recorded kilometres along roads
+  (by subtraction from the per-mode rows, not a new run).
+- **Rejected:** leaving it to the guard (it does not separate them);
+  a lower guard for these modes (no value does: train roads are 1.12 to
+  1.25 times at every guard measured); a rail profile (another prepared
+  dataset per region, and not in this phase).
+- **Would change our mind:** a report of a road trip left point to
+  point because Google called it a train; or a rail profile.
+
+## 2026-11-23 — Matching is off against the public demonstration server
+
+- **Chosen:** when `-match` is not given, `roadbook route` matches
+  unless the router is the public demonstration server
+  (`route.MatchByDefault`, by host name). It says so when it skips.
+  `-match` given explicitly is obeyed either way. Supersedes the
+  default in the 2026-11-19 entry.
+- **Why:** a gap request carries two ends; a matching request carries
+  every recorded point of a stretch, to a third party, tens to hundreds
+  of times a trip, against a courtesy service.
+- **Rejected:** refusing outright (a self-hoster may decide for
+  themselves); off everywhere (the 2026-11-19 reason stands for one's
+  own router).
+- **Would change our mind:** nothing foreseen.
+
+## 2026-11-23 — The shared cache and account deletion: before STOP 3
+
+- **Chosen:** recorded, not built. `match_cache`, like `route_cache`,
+  is not tied to an account, so deleting an account leaves the road
+  lines matched for it. The hosted instance has no router and both
+  tables are empty there. This is settled before a router goes live on
+  it (STOP 3), not before.
+- **Rejected:** building account-scoped caches now, ahead of the
+  decision that would need them.
+- **Would change our mind:** STOP 3 going ahead.
+
+## 2026-11-23 — Slow matching requests are accepted for the batch
+
+- **Chosen:** nothing built. About one request in ten takes over 5
+  seconds and the slowest over a minute; a whole history takes 27 to 86
+  minutes, once, after which every answer is cached. The slow ones are
+  sparse stretches, a few points kilometres apart; timestamps and the
+  `gaps` option were ruled out as the cause. Not explained further. The
+  brief's "several minutes" for the fixture was not reproduced.
+- **Rejected:** a smaller radius for sparse stretches, untested.
+- **Would change our mind:** STOP 3, where the same requests would run
+  on a host with less memory; measured there before anything is
+  promised.
+
+## 2026-11-23 — One constant added to the web fixtures by hand
+
+- **Chosen:** `match_params.skip_modes` was written into the three demo
+  journeys directly. It is a constant echoed from the defaults, and the
+  API test pins the served value.
+- **Rejected:** a scratch instance for one constant. The 2026-11-19
+  entry's rule stands for anything computed.
+- **Would change our mind:** any fixture difference found at STOP 2,
+  when the fixtures are served again anyway.

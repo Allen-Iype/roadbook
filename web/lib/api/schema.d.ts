@@ -783,6 +783,8 @@ export interface components {
              * @description A recorded stretch shorter than this, point to point, is not matched at all, metres (MATCH_MIN_M).
              */
             min_m: number;
+            /** @description Mode labels that are never drawn along a road (MATCH_SKIP_MODES): the matcher knows roads only, and a railway beside a road would be drawn on that road. A stretch takes the label of the activity that overlaps it the longest; the label is the source's guess. */
+            skip_modes: string[];
         };
         /** @description The thresholds that classed every entry of `Journey.nights` (invariant 3). The window opens at `start_hour` on one civil date and closes at `end_hour` on the next, on the traveller's own clock. */
         NightParams: {

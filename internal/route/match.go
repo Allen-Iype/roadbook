@@ -24,6 +24,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"math"
+	"net/url"
+	"slices"
+	"strings"
+	"time"
 
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
@@ -54,10 +58,57 @@ type MatchParams struct {
 	// about — at that length the road and the straight line are the same
 	// line on any map.
 	MinM float64 `json:"match_min_m"`
+	// SkipModes: a stretch whose mode label (LegMode) is one of these is
+	// not asked about and not drawn along a road. The matcher has one
+	// profile, driving; a railway mostly runs beside a road, so a train
+	// stretch passes the length guard and would be drawn on that road
+	// (measured: 69% to 100% of train kilometres at the default guard,
+	// docs/phase-23/DECISIONS.md). The label is Google's guess; a wrong
+	// one costs a road stretch its road line, which is today's drawing.
+	// Applied when asking and again when reading.
+	SkipModes []string `json:"match_skip_modes"`
 }
 
 func DefaultMatchParams() MatchParams {
-	return MatchParams{RadiusM: 100, MaxRatio: 1.3, MinM: 200}
+	return MatchParams{RadiusM: 100, MaxRatio: 1.3, MinM: 200,
+		SkipModes: []string{"IN_TRAIN", "IN_SUBWAY", "IN_FERRY", "FLYING"}}
+}
+
+// LegMode is the source's mode label for a stretch: the mode of the
+// activity that overlaps it in time the longest, the earlier one on a tie,
+// "" when none overlaps. Legs carry no mode of their own (Assemble builds
+// them from points), so it is read from the same activities the journey
+// was assembled from. Pure.
+func LegMode(l journey.Leg, acts []domain.Activity) string {
+	best, bestD := "", time.Duration(0)
+	var bestStart time.Time
+	for _, a := range acts {
+		st, en := a.Start, a.End
+		if l.Start().After(st) {
+			st = l.Start()
+		}
+		if l.End().Before(en) {
+			en = l.End()
+		}
+		d := en.Sub(st)
+		if d > bestD || (d == bestD && d > 0 && a.Start.Before(bestStart)) {
+			best, bestD, bestStart = a.Mode, d, a.Start
+		}
+	}
+	return best
+}
+
+// MatchByDefault says whether the batch command matches when -match is not
+// given. A matching request carries every recorded point of a stretch,
+// where a gap request carries two ends, so against the public
+// demonstration server it is off unless asked for.
+func MatchByDefault(routerURL string) bool {
+	pub, _ := url.Parse(PublicOSRMURL)
+	u, err := url.Parse(strings.TrimSpace(routerURL))
+	if err != nil {
+		return true
+	}
+	return !strings.EqualFold(u.Hostname(), pub.Hostname())
 }
 
 // TracePoint is one point of a matching request: the recorded coordinate
@@ -119,12 +170,15 @@ type Trace struct {
 
 // TraceFor builds the request for one leg, or reports that the leg is not
 // asked about: only a recorded stretch of two or more points and at least
-// MinM is. Times are made strictly increasing in the request (the matcher
+// MinM, whose mode (LegMode; "" for none) is not in SkipModes, is. Times are made strictly increasing in the request (the matcher
 // requires it; Assemble's thinning already spaces points, so this is a
 // guarantee, not a routine correction) — in the request only, the leg's
 // points are not touched.
-func TraceFor(l journey.Leg, profile string, p MatchParams) (Trace, bool) {
+func TraceFor(l journey.Leg, mode string, profile string, p MatchParams) (Trace, bool) {
 	if l.Kind != journey.LegObserved || len(l.Points) < 2 || l.DistanceKm*1000 < p.MinM {
+		return Trace{}, false
+	}
+	if mode != "" && slices.Contains(p.SkipModes, mode) {
 		return Trace{}, false
 	}
 	pts := make([]TracePoint, len(l.Points))
@@ -154,12 +208,13 @@ func TraceFor(l journey.Leg, profile string, p MatchParams) (Trace, bool) {
 }
 
 // Traces collects the matching requests for a journey's recorded stretches,
-// deduped, in first-appearance order.
-func Traces(j journey.Journey, profile string, p MatchParams) []Trace {
+// deduped, in first-appearance order. acts are the activities the journey
+// was assembled from; they supply each stretch's mode.
+func Traces(j journey.Journey, acts []domain.Activity, profile string, p MatchParams) []Trace {
 	seen := map[MatchKey]bool{}
 	var out []Trace
 	for _, l := range j.Legs {
-		tr, ok := TraceFor(l, profile, p)
+		tr, ok := TraceFor(l, LegMode(l, acts), profile, p)
 		if !ok || seen[tr.Key] {
 			continue
 		}
@@ -186,7 +241,8 @@ type CachedMatch struct {
 
 // ApplyMatches lays cached road geometry alongside a journey's recorded
 // stretches. A stretch gains SnappedPoints and SnappedKm when all of these
-// hold: a matched answer is cached for exactly its points; the matcher
+// hold: its mode is not in SkipModes; a matched answer is cached for
+// exactly its points; the matcher
 // placed both its first and its last point (otherwise the line stops short
 // of the stretch); and the road is under MaxRatio times the stretch's
 // point-to-point length.
@@ -201,7 +257,7 @@ type CachedMatch struct {
 //
 // Pure, like Apply: the lookup map is the only bridge to the cache, and
 // the input journey is not mutated.
-func ApplyMatches(j journey.Journey, profile string, p MatchParams, lookup map[MatchKey]CachedMatch) journey.Journey {
+func ApplyMatches(j journey.Journey, acts []domain.Activity, profile string, p MatchParams, lookup map[MatchKey]CachedMatch) journey.Journey {
 	legs := make([]journey.Leg, len(j.Legs))
 	copy(legs, j.Legs)
 	j.Legs = legs
@@ -209,7 +265,7 @@ func ApplyMatches(j journey.Journey, profile string, p MatchParams, lookup map[M
 	j.SnappedObservedKm = 0
 	j.SnappedRoadKm = 0
 	for i, l := range j.Legs {
-		tr, ok := TraceFor(l, profile, p)
+		tr, ok := TraceFor(l, LegMode(l, acts), profile, p)
 		if !ok {
 			continue
 		}

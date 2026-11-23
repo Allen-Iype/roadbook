@@ -783,6 +783,9 @@ type MatchParams struct {
 
 	// RadiusM How far from a recorded point the matcher looked for its road, metres (MATCH_RADIUS_M).
 	RadiusM float64 `json:"radius_m"`
+
+	// SkipModes Mode labels that are never drawn along a road (MATCH_SKIP_MODES): the matcher knows roads only, and a railway beside a road would be drawn on that road. A stretch takes the label of the activity that overlaps it the longest; the label is the source's guess.
+	SkipModes []string `json:"skip_modes"`
 }
 
 // ModeCount defines model for ModeCount.

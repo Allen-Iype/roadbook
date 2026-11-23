@@ -264,7 +264,7 @@ func (s *Server) assembledJourney(ctx context.Context, userID string, cand *stor
 		return journey.Journey{}, obs, err
 	}
 	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
-	j, err = ApplyCaches(ctx, s.Store, j)
+	j, err = ApplyCaches(ctx, s.Store, j, obs.Activities)
 	return j, obs, err
 }
 
@@ -275,8 +275,9 @@ func (s *Server) assembledJourney(ctx context.Context, userID string, cand *stor
 // calls it too — one function, so the command and the page cannot disagree
 // about the same trip. No router is ever dialled here: an empty cache
 // leaves every gap unknown and every recorded stretch drawn point to
-// point.
-func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey) (journey.Journey, error) {
+// point. acts are the activities j was assembled from: a stretch's mode
+// decides whether it may be drawn along a road at all.
+func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey, acts []domain.Activity) (journey.Journey, error) {
 	lookup, err := st.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
 	if err != nil {
 		return journey.Journey{}, err
@@ -284,7 +285,7 @@ func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey) (journ
 	j = route.Apply(j, RouteProfile, lookup)
 
 	mp := route.DefaultMatchParams()
-	traces := route.Traces(j, RouteProfile, mp)
+	traces := route.Traces(j, acts, RouteProfile, mp)
 	keys := make([]route.MatchKey, len(traces))
 	for i, tr := range traces {
 		keys[i] = tr.Key
@@ -293,7 +294,7 @@ func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey) (journ
 	if err != nil {
 		return journey.Journey{}, err
 	}
-	return route.ApplyMatches(j, RouteProfile, mp, matches), nil
+	return route.ApplyMatches(j, acts, RouteProfile, mp, matches), nil
 }
 
 func toAPIJourney(j journey.Journey) (Journey, error) {
@@ -310,7 +311,7 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 
 	mp := route.DefaultMatchParams()
 	out := Journey{
-		MatchParams: MatchParams{RadiusM: mp.RadiusM, MaxRatio: mp.MaxRatio, MinM: mp.MinM},
+		MatchParams: MatchParams{RadiusM: mp.RadiusM, MaxRatio: mp.MaxRatio, MinM: mp.MinM, SkipModes: mp.SkipModes},
 		WindowStart: j.WindowStart,
 		WindowEnd:   j.WindowEnd,
 		Params:      params,
