@@ -500,6 +500,8 @@ func runServe(args []string) error {
 		"OIDC client id (default $ROADBOOK_OIDC_CLIENT_ID)")
 	publicURL := fs.String("public-url", envOr("ROADBOOK_PUBLIC_URL", "http://127.0.0.1:3000"),
 		"browser-facing origin, the base of the OIDC redirect (default $ROADBOOK_PUBLIC_URL)")
+	matchRatio := fs.String("match-max-ratio", envOr("ROADBOOK_MATCH_MAX_RATIO", ""),
+		"the length guard (MATCH_MAX_RATIO): a recorded stretch is drawn along its matched road only when the road is under this many times its point-to-point length; 0 draws none (default $ROADBOOK_MATCH_MAX_RATIO, else 1.3)")
 	userCapFlag := fs.String("user-cap", envOr("ROADBOOK_USER_CAP", "0"),
 		"account limit in oidc mode: 0 = unlimited; once reached, first sign-ins are refused to the sign-in page's full state (default $ROADBOOK_USER_CAP)")
 	if err := fs.Parse(args); err != nil {
@@ -557,6 +559,16 @@ func runServe(args []string) error {
 	}
 
 	srv := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), Suggester: sug, Photos: photos, Uploads: uploads}
+	if *matchRatio != "" {
+		r, err := strconv.ParseFloat(*matchRatio, 64)
+		if err != nil || r < 0 {
+			return fmt.Errorf("-match-max-ratio %q: want a number, 0 or more", *matchRatio)
+		}
+		rm := route.DefaultMatchParams()
+		rm.MaxRatio = r
+		srv.RoadMatch = &rm
+		fmt.Printf("recorded stretches follow a matched road when it is under %.2f times point to point\n", r)
+	}
 
 	// The auth mode switch (phase 13 BRIEF §2): off is the default and the
 	// self-host reference — no auth service, no sign-in surface, everything
@@ -791,6 +803,9 @@ func runJourney(args []string) error {
 	from := fs.String("from", "", "window start, RFC3339 (file mode)")
 	to := fs.String("to", "", "window end, RFC3339 (file mode)")
 	candidateID := fs.Int64("candidate", 0, "assemble a candidate's span from the database, cache-applied (DB mode)")
+	roadMatch := route.DefaultMatchParams()
+	fs.Float64Var(&roadMatch.MaxRatio, "match-max-ratio", roadMatch.MaxRatio,
+		"DB mode: the length guard for drawing a recorded stretch along its matched road — give the value the server runs with to reproduce its page")
 	db := dbFlag(fs)
 	p := journey.DefaultParams()
 	fs.Float64Var(&p.GapThresholdMinutes, "gap-min", p.GapThresholdMinutes,
@@ -866,7 +881,7 @@ func runJourney(args []string) error {
 		acts = obs.Activities
 		// The same function the page's handler calls: gap routes and, since
 		// phase 23, the roads recorded stretches are drawn along.
-		if j, err = api.ApplyCaches(ctx, s, j, obs.Activities); err != nil {
+		if j, err = api.ApplyCaches(ctx, s, j, obs.Activities, roadMatch); err != nil {
 			return err
 		}
 		var pts []domain.LatLng
@@ -945,7 +960,7 @@ func runJourney(args []string) error {
 	// Phase 23: the reproduction line for "How this route was drawn". Shown
 	// only when something is matched; distances above stay from the points.
 	if j.SnappedObservedKm > 0 {
-		mp := route.DefaultMatchParams()
+		mp := roadMatch
 		fmt.Printf("recorded stretches drawn along roads: %.1f of %.1f km (the roads measure %.1f km); the other %.1f km point to point (radius %.0f m, road under %.1f times point to point, stretches of %.0f m or more, never %s)\n",
 			j.SnappedObservedKm, j.ObservedKm, j.SnappedRoadKm, j.ObservedKm-j.SnappedObservedKm,
 			mp.RadiusM, mp.MaxRatio, mp.MinM, strings.Join(mp.SkipModes, ", "))

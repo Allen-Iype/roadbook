@@ -482,6 +482,7 @@ function DrawingAccount({ journey }: { journey: Journey }) {
           </>
         )}
       </p>
+      <RoadLine journey={journey} />
       <ModeLine journey={journey} />
       <DivergenceFigures journey={journey} />
       {/* The towns on the stay rows come from the embedded OpenStreetMap
@@ -491,6 +492,27 @@ function DrawingAccount({ journey }: { journey: Journey }) {
         <p data-place-credit>Place names © OpenStreetMap contributors</p>
       )}
     </div>
+  );
+}
+
+// How much of the recorded distance is drawn along a road (phase 23): where
+// the road a stretch's points lie on was found and is not much longer than
+// the points themselves, the line follows it; the rest is drawn point to
+// point. Every distance on the page stays measured from the recorded
+// points — the road's own length is stated here and nowhere else. Absent
+// when nothing follows a road (no router was run for this trip).
+// Reproduction: `roadbook journey -candidate N` prints the same figures.
+function RoadLine({ journey }: { journey: Journey }) {
+  if (!(journey.snapped_observed_km > 0)) return null;
+  const rest = Math.max(0, journey.observed_km - journey.snapped_observed_km);
+  return (
+    <p data-road-line>
+      Recorded stretches follow the road for{" "}
+      <span className="font-mono">{journey.snapped_observed_km.toFixed(0)} km</span>{" "}
+      (<span className="font-mono">{journey.snapped_road_km.toFixed(0)} km</span>{" "}
+      measured along it) and run point to point for{" "}
+      <span className="font-mono">{rest.toFixed(0)} km</span>
+    </p>
   );
 }
 

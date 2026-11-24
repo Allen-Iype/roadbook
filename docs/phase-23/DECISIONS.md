@@ -214,3 +214,66 @@ first or last point the matcher did not place.
   entry's rule stands for anything computed.
 - **Would change our mind:** any fixture difference found at STOP 2,
   when the fixtures are served again anyway.
+
+## 2026-11-24 — The guard is 1.5
+
+- **Chosen:** `MATCH_MAX_RATIO` defaults to 1.5. The maintainer compared
+  the same trips of the archive at 1.3 and 1.5 on two private previews
+  over one database and preferred 1.5. Over the archive's 67 trips, 80%
+  of recorded km are drawn along roads at 1.3 and 84% at 1.5; the roads
+  drawn are 1.08 and 1.09 times their point-to-point length. (Read from
+  the served journeys after `roadbook route -all`; `roadbook journey
+  -candidate N -match-max-ratio R` prints the same per trip. These are
+  with train, subway, ferry and flight stretches skipped.) 29 of the 67
+  trips are identical at both values.
+- **Rejected:** 1.3, the brief's default. Stricter, and it left
+  stretches straight that at 1.5 follow the road the maintainer took.
+- **Would change our mind:** a trip where a line at 1.5 leaves the road
+  travelled for a side road. Changing it costs no new requests: the
+  guard is applied on reading.
+
+## 2026-11-24 — The guard is a server setting
+
+- **Chosen:** `roadbook serve -match-max-ratio` /
+  `ROADBOOK_MATCH_MAX_RATIO`, and the same flag on `roadbook journey`.
+  Built so two previews could serve one database at two values; kept
+  because the value is one judged by eye, and a self-hoster may judge
+  differently. The value used is served with every journey.
+- **Rejected:** a per-account setting. Nothing asks for it.
+- **Would change our mind:** nobody ever sets it.
+
+## 2026-11-24 — One drawing rule on the web
+
+- **Chosen:** `legLine` in `web/lib/geo.ts` decides the line for a leg
+  and is used by the maps, the thumbnails and the exported image. A
+  recorded stretch with a road is drawn along it and joined to its own
+  first and last recorded positions, so the line stays continuous with
+  the gaps either side. The leg's kind is not changed.
+- **Rejected:** a second rule in the image export; drawing the road
+  alone, which leaves breaks where the road starts away from the point.
+- **Would change our mind:** the joins reading as spurs on real trips.
+
+## 2026-11-24 — The wording behind "Observed"
+
+- **Chosen:** the note and the how-it's-built page say: where the
+  positions lie on a road the line follows it, where no road fits it
+  joins them point to point, and the positions are never moved. The
+  legend's own wording ("the phone recorded it") stays. `DESIGN.md` §6
+  carries the dated amendment.
+- **Rejected:** leaving "the line joins them exactly as recorded",
+  which is no longer true.
+- **Would change our mind:** a reader taking the solid line for a
+  recording of the road itself.
+
+## 2026-11-24 — Found, not acted on: flights and trains in gaps
+
+- **Found:** on a trip made by two flights and a train, every gap was
+  routed along roads. A gap is a flight only above `AIR_SPEED_MIN_KMH`
+  between its ends, and a silence that includes time at an airport
+  falls under it; a gap on a train is routed with the driving profile.
+  The export's own mode labels are not read for gaps. This is gap
+  routing as built in phase 3, not matching.
+- **Open:** whether gaps should read the labels (flying: an arc; train,
+  subway, ferry: left unrouted), and whether in this phase. To be
+  measured before it is decided.
+

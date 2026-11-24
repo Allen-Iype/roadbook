@@ -16,7 +16,7 @@ export const TERMS = {
   observed: {
     term: "Observed",
     note:
-      "The phone recorded positions along this stretch. The line joins them exactly as recorded; nothing is added.",
+      "The phone recorded positions along this stretch. Where they lie on a road, the line follows that road; where no road fits, it joins them point to point. The positions themselves are never moved.",
   },
   routed: {
     term: "Routed",

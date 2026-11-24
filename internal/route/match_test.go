@@ -52,8 +52,8 @@ func matchJourney(t *testing.T) journey.Journey {
 
 func TestDefaultMatchParams(t *testing.T) {
 	p := route.DefaultMatchParams()
-	if p.RadiusM != 100 || p.MaxRatio != 1.3 || p.MinM != 200 {
-		t.Errorf("defaults = %+v, want radius 100 m, ratio 1.3, minimum 200 m (phase 23 BRIEF §4 B, C)", p)
+	if p.RadiusM != 100 || p.MaxRatio != 1.5 || p.MinM != 200 {
+		t.Errorf("defaults = %+v, want radius 100 m, ratio 1.5, minimum 200 m (phase 23 BRIEF §4 B, C; DECISIONS 2026-11-24)", p)
 	}
 }
 
@@ -251,8 +251,8 @@ func TestApplyMatchesGuards(t *testing.T) {
 	}{
 		{name: "nothing cached", want: false},
 		{name: "a remembered no_match", cached: &route.CachedMatch{Status: route.StatusNoMatch}, want: false},
-		{name: "road 1.29 times point to point", cached: ptr(matched(1.29)), want: true},
-		{name: "road exactly 1.3 times: kept only when under", cached: ptr(matched(1.3)), want: false},
+		{name: "road 1.49 times point to point", cached: ptr(matched(1.49)), want: true},
+		{name: "road exactly 1.5 times: kept only when under", cached: ptr(matched(1.5)), want: false},
 		{name: "road twice as long: a side-road detour", cached: ptr(matched(2)), want: false},
 		{
 			name:   "the same detour under a guard of 2.5: the guard is read, not stored",

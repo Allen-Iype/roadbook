@@ -157,3 +157,15 @@ The mockups predate three of the five decisions; when reading them:
 and direction A's visible index rail becomes the summoned list (§5). The
 mockups are not being regenerated — they are review artifacts, and this
 document records the deltas.
+
+*Amendment (2026-11-24, phase 23, issue #9, maintainer-approved):* an
+observed stretch may be drawn along the road its recorded positions lie
+on, in the same ink, width and style as any observed stretch; where no
+road fits it is drawn point to point as before. There is no new line
+kind and no new legend entry, and the legend's fixed wording is
+unchanged. The note behind the word "Observed" (`web/lib/terms.ts`) and
+the same sentence on `landing/how-its-built.html` now say that the line
+follows the road where one fits and that the positions are never moved.
+"How this route was drawn" gains one line stating how much of the
+recorded distance follows roads. Decision record:
+`docs/phase-23/DECISIONS.md`.

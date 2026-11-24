@@ -70,7 +70,7 @@ type MatchParams struct {
 }
 
 func DefaultMatchParams() MatchParams {
-	return MatchParams{RadiusM: 100, MaxRatio: 1.3, MinM: 200,
+	return MatchParams{RadiusM: 100, MaxRatio: 1.5, MinM: 200,
 		SkipModes: []string{"IN_TRAIN", "IN_SUBWAY", "IN_FERRY", "FLYING"}}
 }
 

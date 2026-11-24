@@ -11,11 +11,13 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
 
 	"roadbook/internal/api"
+	"roadbook/internal/detect"
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
 	"roadbook/internal/route"
@@ -40,9 +42,9 @@ func TestServedJourneyCarriesSnappedGeometry(t *testing.T) {
 	// Before anything is cached: today's drawing, with the parameters served.
 	var before api.Journey
 	fetchJSON(t, url, &before)
-	if mp := before.MatchParams; mp.RadiusM != 100 || mp.MaxRatio != 1.3 || mp.MinM != 200 ||
+	if mp := before.MatchParams; mp.RadiusM != 100 || mp.MaxRatio != 1.5 || mp.MinM != 200 ||
 		strings.Join(mp.SkipModes, " ") != "IN_TRAIN IN_SUBWAY IN_FERRY FLYING" {
-		t.Errorf("match_params = %+v, want 100 m, 1.3, 200 m and the four skipped modes", mp)
+		t.Errorf("match_params = %+v, want 100 m, 1.5, 200 m and the four skipped modes", mp)
 	}
 	if before.SnappedObservedKm != 0 || before.SnappedRoadKm != 0 {
 		t.Errorf("empty cache: snapped %.1f / %.1f km, want 0 / 0", before.SnappedObservedKm, before.SnappedRoadKm)
@@ -128,5 +130,22 @@ func TestServedJourneyCarriesSnappedGeometry(t *testing.T) {
 	fetchJSON(t, url, &guarded)
 	if guarded.Legs[target].SnappedPoints != nil || guarded.SnappedObservedKm != 0 {
 		t.Error("a match twice as long as its points was served; the guard must refuse it on reading")
+	}
+
+	// The guard is a setting of the server, not of the cache: a second
+	// server over the same database with a looser guard draws that same
+	// row, and says which guard it used.
+	loose := route.DefaultMatchParams()
+	loose.MaxRatio = 2.5
+	srv2 := &api.Server{Store: s, MatchParams: detect.DefaultMatchParams(), RoadMatch: &loose}
+	ts2 := httptest.NewServer(api.HandlerFromMux(api.NewStrictHandler(srv2, []api.StrictMiddlewareFunc{srv2.AuthMiddleware}), http.NewServeMux()))
+	defer ts2.Close()
+	var wide api.Journey
+	fetchJSON(t, fmt.Sprintf("%s/candidates/%d/journey", ts2.URL, list.Candidates[0].Id), &wide)
+	if wide.MatchParams.MaxRatio != 2.5 {
+		t.Errorf("match_params.max_ratio = %v, want the server's 2.5", wide.MatchParams.MaxRatio)
+	}
+	if wide.Legs[target].SnappedPoints == nil {
+		t.Error("with the guard at 2.5 the row at 2.0 times was not drawn")
 	}
 }

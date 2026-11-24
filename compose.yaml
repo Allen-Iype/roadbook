@@ -69,6 +69,9 @@ services:
       ROADBOOK_OIDC_CLIENT_SECRET: ${ROADBOOK_OIDC_CLIENT_SECRET:-}
       ROADBOOK_PUBLIC_URL: ${ROADBOOK_PUBLIC_URL:-http://127.0.0.1:3000}
       ROADBOOK_USER_CAP: ${ROADBOOK_USER_CAP:-0}
+      # The length guard for recorded stretches drawn along a road (phase
+      # 23). Empty = the built-in default.
+      ROADBOOK_MATCH_MAX_RATIO: ${ROADBOOK_MATCH_MAX_RATIO:-}
     volumes:
       # Thumbnails are irreplaceable user data (originals are discarded at
       # upload) — a named volume, covered by `roadbook backup`.

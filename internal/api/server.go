@@ -49,6 +49,18 @@ type Server struct {
 	// OIDC accounts exist, and the sign-in page shows its "full" state.
 	// Returning accounts are never refused. Unread when Auth is nil.
 	UserCap int
+	// RoadMatch holds the thresholds for drawing a recorded stretch along
+	// its road (phase 23); nil is route.DefaultMatchParams. A setting of
+	// the server because the length guard is applied when a journey is
+	// read: changing it needs no new batch run, only a restart.
+	RoadMatch *route.MatchParams
+}
+
+func (s *Server) roadMatch() route.MatchParams {
+	if s.RoadMatch != nil {
+		return *s.RoadMatch
+	}
+	return route.DefaultMatchParams()
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -144,7 +156,7 @@ func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.Cand
 	if err != nil {
 		return Journey{}, j, err
 	}
-	out, err := toAPIJourney(j)
+	out, err := toAPIJourney(j, s.roadMatch())
 	if err != nil {
 		return Journey{}, j, err
 	}
@@ -264,7 +276,7 @@ func (s *Server) assembledJourney(ctx context.Context, userID string, cand *stor
 		return journey.Journey{}, obs, err
 	}
 	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
-	j, err = ApplyCaches(ctx, s.Store, j, obs.Activities)
+	j, err = ApplyCaches(ctx, s.Store, j, obs.Activities, s.roadMatch())
 	return j, obs, err
 }
 
@@ -277,14 +289,13 @@ func (s *Server) assembledJourney(ctx context.Context, userID string, cand *stor
 // leaves every gap unknown and every recorded stretch drawn point to
 // point. acts are the activities j was assembled from: a stretch's mode
 // decides whether it may be drawn along a road at all.
-func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey, acts []domain.Activity) (journey.Journey, error) {
+func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey, acts []domain.Activity, mp route.MatchParams) (journey.Journey, error) {
 	lookup, err := st.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
 	if err != nil {
 		return journey.Journey{}, err
 	}
 	j = route.Apply(j, RouteProfile, lookup)
 
-	mp := route.DefaultMatchParams()
 	traces := route.Traces(j, acts, RouteProfile, mp)
 	keys := make([]route.MatchKey, len(traces))
 	for i, tr := range traces {
@@ -297,7 +308,7 @@ func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey, acts [
 	return route.ApplyMatches(j, acts, RouteProfile, mp, matches), nil
 }
 
-func toAPIJourney(j journey.Journey) (Journey, error) {
+func toAPIJourney(j journey.Journey, mp route.MatchParams) (Journey, error) {
 	// Round-trip params through JSON so the response echoes exactly the named
 	// parameters that produced the assembly (invariant 3).
 	raw, err := json.Marshal(j.Params)
@@ -309,7 +320,6 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 		return Journey{}, err
 	}
 
-	mp := route.DefaultMatchParams()
 	out := Journey{
 		MatchParams: MatchParams{RadiusM: mp.RadiusM, MaxRatio: mp.MaxRatio, MinM: mp.MinM, SkipModes: mp.SkipModes},
 		WindowStart: j.WindowStart,
