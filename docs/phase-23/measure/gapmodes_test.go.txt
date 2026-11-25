@@ -1,0 +1,164 @@
+package route_test
+
+// Phase 23 addendum measurement (#9): what Google's own mode labels say
+// about gaps. A gap is drawn as a flight today only when the speed between
+// its two ends reaches AIR_SPEED_MIN_KMH; every other gap is sent to the
+// road router. This counts, per export, the gaps whose longest-overlapping
+// activity (route.LegMode, the rule matching already uses) is a flight or
+// rail/ferry, set against how each is classified today.
+//
+// Needs no router. Prints counts and distances only; no coordinate, date
+// or place. To run, copy into internal/route/ as gapmodes_test.go and:
+//
+//	MATCH_SRC=../../data/<file> go test ./internal/route/ -run TestGapModes -v
+//
+// then delete the copy.
+
+import (
+	"os"
+	"sort"
+	"testing"
+	"time"
+
+	"roadbook/internal/detect"
+	"roadbook/internal/journey"
+	"roadbook/internal/route"
+	"roadbook/internal/timeline"
+)
+
+func TestGapModes(t *testing.T) {
+	path := os.Getenv("MATCH_SRC")
+	if path == "" {
+		t.Skip("MATCH_SRC not set")
+	}
+	src, err := os.Open(path)
+	if err != nil {
+		t.Skip(err)
+	}
+	obs, _, err := timeline.Parse(src)
+	src.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := detect.Run(obs, detect.DefaultParams())
+	group := func(m string) string {
+		switch m {
+		case "FLYING":
+			return "flying"
+		case "IN_TRAIN", "IN_SUBWAY", "IN_FERRY":
+			return "rail or ferry"
+		case "":
+			return "no activity"
+		}
+		return "other (road)"
+	}
+	// share: how much of the gap's duration the winning activity covers.
+	share := func(l journey.Leg, mode string) float64 {
+		var best time.Duration
+		for _, a := range obs.Activities {
+			if a.Mode != mode {
+				continue
+			}
+			st, en := a.Start, a.End
+			if l.Start().After(st) {
+				st = l.Start()
+			}
+			if l.End().Before(en) {
+				en = l.End()
+			}
+			if d := en.Sub(st); d > best {
+				best = d
+			}
+		}
+		return best.Seconds() / l.End().Sub(l.Start()).Seconds()
+	}
+	type cell struct {
+		n  int
+		km float64
+	}
+	tab := map[string]map[string]*cell{}
+	add := func(kind, g string, km float64) {
+		if tab[kind] == nil {
+			tab[kind] = map[string]*cell{}
+		}
+		if tab[kind][g] == nil {
+			tab[kind][g] = &cell{}
+		}
+		tab[kind][g].n++
+		tab[kind][g].km += km
+	}
+	var flipKm, flipKmh, flipShare []float64
+	var railShare []float64
+	trips, tripsFlip, tripsRail := 0, 0, 0
+	var gaps int
+	for _, c := range res.Candidates {
+		j := journey.Assemble(obs, c.Start, c.End, journey.DefaultParams())
+		trips++
+		f, r := false, false
+		for _, l := range j.Legs {
+			if l.Kind != journey.LegGap {
+				continue
+			}
+			gaps++
+			m := route.LegMode(l, obs.Activities)
+			g := group(m)
+			add(string(l.GapKind), g, l.DistanceKm)
+			if l.GapKind == journey.GapAir {
+				continue
+			}
+			switch g {
+			case "flying":
+				f = true
+				flipKm = append(flipKm, l.DistanceKm)
+				flipKmh = append(flipKmh, l.DistanceKm/l.End().Sub(l.Start()).Hours())
+				flipShare = append(flipShare, share(l, m))
+			case "rail or ferry":
+				r = true
+				railShare = append(railShare, share(l, m))
+			}
+		}
+		if f {
+			tripsFlip++
+		}
+		if r {
+			tripsRail++
+		}
+	}
+	t.Logf("%d trips, %d gaps", trips, gaps)
+	for _, kind := range []string{"air", "unknown"} {
+		for _, g := range []string{"flying", "rail or ferry", "other (road)", "no activity"} {
+			c := tab[kind][g]
+			if c == nil {
+				c = &cell{}
+			}
+			t.Logf("  today %-8s label %-14s %5d gaps %8.0f km", kind, g, c.n, c.km)
+		}
+	}
+	band := func(v []float64, lo, hi float64) int {
+		n := 0
+		for _, x := range v {
+			if x >= lo && x < hi {
+				n++
+			}
+		}
+		return n
+	}
+	q := func(v []float64, p float64) float64 {
+		if len(v) == 0 {
+			return 0
+		}
+		s := append([]float64(nil), v...)
+		sort.Float64s(s)
+		return s[int(p*float64(len(s)-1))]
+	}
+	t.Logf("gaps labelled flying but under the speed line: %d, in %d trips", len(flipKm), tripsFlip)
+	t.Logf("  length: under 50 km %d; 50 to 200 %d; 200 to 500 %d; 500 or more %d",
+		band(flipKm, 0, 50), band(flipKm, 50, 200), band(flipKm, 200, 500), band(flipKm, 500, 1e9))
+	t.Logf("  speed between ends: under 50 km/h %d; 50 to 150 %d; 150 to 250 %d; median %.0f",
+		band(flipKmh, 0, 50), band(flipKmh, 50, 150), band(flipKmh, 150, 250), q(flipKmh, .5))
+	t.Logf("  share of the gap the flight covers: under 25%% %d; 25 to 50%% %d; 50 to 75%% %d; 75%% or more %d",
+		band(flipShare, 0, .25), band(flipShare, .25, .5), band(flipShare, .5, .75), band(flipShare, .75, 9))
+	t.Logf("gaps labelled rail or ferry, routed by road today: %d, in %d trips", len(railShare), tripsRail)
+	t.Logf("  share of the gap the activity covers: under 25%% %d; 25 to 50%% %d; 50 to 75%% %d; 75%% or more %d",
+		band(railShare, 0, .25), band(railShare, .25, .5), band(railShare, .5, .75), band(railShare, .75, 9))
+}

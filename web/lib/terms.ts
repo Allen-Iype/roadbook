@@ -31,7 +31,7 @@ export const TERMS = {
   air: {
     term: "Air",
     note:
-      "A flight, told by its speed. The dotted arc is the shortest path between where it began and ended, not where the aircraft flew.",
+      "A flight, told by its speed or by the phone's own record of a flight. The dotted arc is the shortest path between where it began and ended, not where the aircraft flew.",
   },
   originals: {
     term: "Original photos",

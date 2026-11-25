@@ -27,7 +27,6 @@ import (
 	"net/url"
 	"slices"
 	"strings"
-	"time"
 
 	"roadbook/internal/domain"
 	"roadbook/internal/journey"
@@ -80,22 +79,7 @@ func DefaultMatchParams() MatchParams {
 // them from points), so it is read from the same activities the journey
 // was assembled from. Pure.
 func LegMode(l journey.Leg, acts []domain.Activity) string {
-	best, bestD := "", time.Duration(0)
-	var bestStart time.Time
-	for _, a := range acts {
-		st, en := a.Start, a.End
-		if l.Start().After(st) {
-			st = l.Start()
-		}
-		if l.End().Before(en) {
-			en = l.End()
-		}
-		d := en.Sub(st)
-		if d > bestD || (d == bestD && d > 0 && a.Start.Before(bestStart)) {
-			best, bestD, bestStart = a.Mode, d, a.Start
-		}
-	}
-	return best
+	return journey.LegMode(l, acts)
 }
 
 // MatchByDefault says whether the batch command matches when -match is not

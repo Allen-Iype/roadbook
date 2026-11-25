@@ -818,6 +818,8 @@ func runJourney(args []string) error {
 		"exclude raw positions with worse reported accuracy, metres (0 = off)")
 	fs.Float64Var(&p.AirSpeedMinKmh, "air-kmh", p.AirSpeedMinKmh,
 		"a gap implying at least this speed classifies as air (0 = off)")
+	fs.Float64Var(&p.AirLabelMinKm, "air-label-min-km", p.AirLabelMinKm,
+		"a slower gap labelled a flight classifies as air when at least this long, km (0 = off)")
 	fs.Float64Var(&p.MaxSpeedKmh, "max-kmh", p.MaxSpeedKmh,
 		"teleport rejection: cluster edge speed above this is impossible (0 = off)")
 	fs.Float64Var(&p.ClusterRadiusM, "cluster-m", p.ClusterRadiusM,
@@ -1308,7 +1310,7 @@ func runRoute(args []string) error {
 			return err
 		}
 		j := journey.Assemble(obs, tg.cand.SpanStart, tg.cand.SpanEnd, params)
-		perTarget[i] = route.UnknownKeys(j, *profile)
+		perTarget[i] = route.UnknownKeys(j, obs.Activities, *profile, mp.SkipModes)
 		for _, k := range perTarget[i] {
 			if !seen[k] {
 				seen[k] = true

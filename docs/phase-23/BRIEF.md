@@ -272,3 +272,79 @@ same stroke, which closes §3F.
 - **STOP 3 — the hosted instance.** Option E.3 measured on the host;
   go or no-go.
 - **Close.** Log, plan, PR, host rebuild (migration 18), a note on #9.
+
+---
+
+## 7. Addendum, 2026-11-25 — gaps that Google labels a flight or a train
+
+Found by the maintainer at STOP 2 on a trip made by two flights and a
+train: every gap on it was drawn along roads. Figures are printed by
+`docs/phase-23/measure/gapmodes_test.go.txt`; it needs no router.
+
+### What happens today
+
+A gap is a flight only when the speed between its two ends reaches
+`AIR_SPEED_MIN_KMH` (250). The silence around a flight includes time at
+the airport, so a flight can fall under the line. Every other gap is
+sent to the road router with the driving profile, a train included. The
+export's mode labels are not read for gaps. This is gap routing as built
+in phase 3; matching did not cause it, and `MATCH_SKIP_MODES` covers
+recorded stretches only.
+
+### What was measured
+
+The label of a gap is that of the activity overlapping it longest
+(`route.LegMode`, the rule matching uses).
+
+| | Android fixture | archive | iPhone export |
+|---|---|---|---|
+| trips · gaps | 18 · 1,299 | 67 · 4,785 | 77 · 2,183 |
+| flights by speed today | 3 gaps, 3,443 km | 9, 12,588 km | 15, 22,509 km |
+| labelled flying, under the speed line | 4 gaps, 2 km | 7, 1,584 km | 8, 4,684 km |
+| of those, 200 km or longer | 0 | 2 | 3 |
+| of those, under 50 km | 4 | 5 | 5 |
+| labelled train, subway or ferry, sent to the road router | 5 gaps, 145 km | 84, 3,014 km | 134, 6,103 km |
+| trips holding such a gap | 2 | 14 | 26 |
+
+Three things follow.
+
+- The missed flights are few and long: 2 gaps on the archive and 3 on
+  the iPhone export, 6,268 km between them drawn as road.
+- A flying label alone is not enough. Five short gaps on each long file
+  carry it: the ground at either end of a flight. There is no such gap
+  between 50 and 200 km on any dataset, so a minimum length anywhere in
+  that range gives the same result.
+- Rail is the larger effect: 14 of the archive's 67 trips and 26 of the
+  iPhone export's 77 have a train or ferry gap drawn along a road.
+
+The speed rule also catches flights the labels miss (5 gaps on the
+iPhone export labelled as road travel, 8,922 km, at 250 km/h or more),
+so it stays.
+
+### What would be built
+
+- **A flight by label.** In `journey.Assemble`, a gap is also air when
+  its label is `FLYING` and it is at least `AIR_LABEL_MIN_KM` (100)
+  long. Additive: no gap that is air today changes. Pure, as today.
+- **Rail and ferry gaps are not routed.** A gap whose label is in
+  `MATCH_SKIP_MODES` is not asked about by `roadbook route` and a cached
+  road is not drawn on it. It stays "Unknown": a dashed straight line
+  that says nothing was recorded.
+- **Tests first**: each rule's edges as table tests; the journey
+  goldens are expected not to move and are checked.
+- No migration. The parameter and the contract's
+  `match_params.skip_modes` keep their names (decided when built; see
+  `DECISIONS.md`).
+
+### Choices
+
+- **F. A train gap is drawn straight and dashed — recommended.** Against
+  a rail profile (a second router dataset, out of scope) and against
+  leaving it on the road (the page then claims a road nobody took).
+- **G. The flying label needs a minimum length of 100 km —
+  recommended.** Flat from 50 to 200 on all three datasets.
+
+### Decided, 2026-11-25
+
+F and G as recommended. A rail router is a later piece of work of its
+own.

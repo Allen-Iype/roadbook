@@ -99,7 +99,7 @@ func TestBuilt(t *testing.T) {
 				stretches++
 			}
 		}
-		for _, k := range route.UnknownKeys(j, profile) {
+		for _, k := range route.UnknownKeys(j, nil, profile, nil) {
 			if _, ok := routes[k]; ok {
 				continue
 			}
@@ -185,7 +185,7 @@ func TestBuilt(t *testing.T) {
 		var divToday, divAlong []float64
 		var flagToday, flagAlong, compared int
 		for _, j := range journeys {
-			j = route.Apply(j, profile, routes)
+			j = route.Apply(j, nil, profile, nil, routes)
 			j = route.ApplyMatches(j, nil, profile, p, matches)
 			observedKm += j.ObservedKm
 			snappedObs += j.SnappedObservedKm

@@ -14,6 +14,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"slices"
 
 	"roadbook/internal/domain"
 	"roadbook/internal/geo"
@@ -103,14 +104,30 @@ type Cached struct {
 	DurationS float64
 }
 
-// UnknownKeys collects the cache keys for a journey's unroutable gaps —
-// unknown gaps only: air is a flight and observed is measurement. Deduped,
-// in first-appearance order.
-func UnknownKeys(j journey.Journey, profile string) []Key {
+// routable says whether a leg is a gap the road router may be asked about:
+// an unknown gap whose mode label (LegMode over acts) is not in skip. Air is
+// a flight, observed is measurement, and a gap the export labels a train,
+// subway or ferry is not on a road: the driving profile would draw the
+// railway along the nearest highway (phase 23 BRIEF §7).
+func routable(l journey.Leg, acts []domain.Activity, skip []string) bool {
+	if l.Kind != journey.LegGap || l.GapKind != journey.GapUnknown {
+		return false
+	}
+	if len(skip) == 0 {
+		return true
+	}
+	return !slices.Contains(skip, journey.LegMode(l, acts))
+}
+
+// UnknownKeys collects the cache keys for the gaps of a journey that may be
+// routed (routable). acts are the activities j was assembled from and skip
+// the mode labels never routed (MatchParams.SkipModes). Deduped, in
+// first-appearance order.
+func UnknownKeys(j journey.Journey, acts []domain.Activity, profile string, skip []string) []Key {
 	seen := map[Key]bool{}
 	var keys []Key
 	for _, l := range j.Legs {
-		if l.Kind != journey.LegGap || l.GapKind != journey.GapUnknown {
+		if !routable(l, acts, skip) {
 			continue
 		}
 		k := KeyFor(l.Points[0].Loc, l.Points[1].Loc, profile)
@@ -125,13 +142,14 @@ func UnknownKeys(j journey.Journey, profile string) []Key {
 // Apply decorates an assembled journey from cached answers: an unknown gap
 // whose key has a routed cache entry becomes a road leg carrying the routed
 // geometry and distance. Everything else — observed legs, air legs, unknown
-// gaps without an answer — passes through untouched, and the leg still
+// gaps without an answer, and gaps whose mode label is in skip, whatever
+// the cache holds — passes through untouched, and the leg still
 // carries exactly its two timestamped endpoints either way (the routed
 // geometry rides alongside, in RoutedPoints). Pure: a function of its
 // arguments, no I/O — the lookup map is the only bridge to the cache, so
 // this is testable with a literal. The input journey is not mutated; legs
 // are copied before decoration.
-func Apply(j journey.Journey, profile string, lookup map[Key]Cached) journey.Journey {
+func Apply(j journey.Journey, acts []domain.Activity, profile string, skip []string, lookup map[Key]Cached) journey.Journey {
 	legs := make([]journey.Leg, len(j.Legs))
 	copy(legs, j.Legs)
 	j.Legs = legs
@@ -143,7 +161,7 @@ func Apply(j journey.Journey, profile string, lookup map[Key]Cached) journey.Jou
 			continue
 		}
 		c, ok := lookup[KeyFor(l.Points[0].Loc, l.Points[1].Loc, profile)]
-		if !ok || c.Status != StatusRouted {
+		if !ok || c.Status != StatusRouted || !routable(l, acts, skip) {
 			j.UnknownKm += l.DistanceKm
 			continue
 		}

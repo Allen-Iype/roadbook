@@ -169,3 +169,10 @@ follows the road where one fits and that the positions are never moved.
 "How this route was drawn" gains one line stating how much of the
 recorded distance follows roads. Decision record:
 `docs/phase-23/DECISIONS.md`.
+
+*Amendment (2026-11-25, phase 23, maintainer-approved):* the note behind
+the word "Air" now reads "A flight, told by its speed or by the phone's
+own record of a flight", because a gap the export labels a flight is
+drawn as one. A gap the export labels train, subway or ferry is drawn as
+"Unknown", never "Routed". The legend's fixed wording and the four line
+styles are unchanged.

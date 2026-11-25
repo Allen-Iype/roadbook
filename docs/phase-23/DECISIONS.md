@@ -277,3 +277,65 @@ first or last point the matcher did not place.
   subway, ferry: left unrouted), and whether in this phase. To be
   measured before it is decided.
 
+## 2026-11-25 — A gap the export labels a flight is a flight
+
+- **Chosen:** in `Assemble`, a gap under the speed line is air when the
+  activity overlapping it longest is `FLYING` and it is at least
+  `AIR_LABEL_MIN_KM` (100) long. Additive: the speed rule is unchanged,
+  and it still catches flights the labels miss. Measured (BRIEF §7): 2
+  gaps on the archive and 3 on the iPhone export, 6,268 km that were
+  drawn as road; the minimum is flat from 50 to 200 km. On the archive's
+  67 trips, served from one database before and after: air 12,588 →
+  14,135 km, and the trip that raised it goes from 144% over Google's
+  ground distance to 6%. Both journey goldens and every pinned count are
+  unchanged.
+- **Rejected:** the label alone (five short gaps on each long file carry
+  it: the ground at either end of a flight); lowering
+  `AIR_SPEED_MIN_KMH` (ground transport reaches it).
+- **Would change our mind:** a gap labelled flying that was not a
+  flight and is 100 km or longer.
+
+## 2026-11-25 — A gap labelled train, subway or ferry is not routed
+
+- **Chosen:** `route.UnknownKeys` and `route.Apply` take the activities
+  and the skipped modes; a gap whose label is in `MATCH_SKIP_MODES` is
+  not asked about and a cached road is not drawn on it. It stays
+  "unknown": a dashed straight line. On the archive: routed 41,826 →
+  36,253 km, unknown 0 → 3,051 km; trips flagged for diverging from
+  Google 40 → 39.
+- **Rejected:** a rail profile (a second router dataset; a later piece
+  of work); leaving the gap on the road, which draws a road nobody
+  took.
+- **Would change our mind:** a rail router being added, at which point
+  these gaps have somewhere to go.
+
+## 2026-11-25 — The parameter keeps its name
+
+- **Chosen:** `MATCH_SKIP_MODES` and `match_params.skip_modes` now
+  govern gaps as well as recorded stretches, under the same names. The
+  brief's addendum proposed `ROAD_SKIP_MODES`.
+- **Rejected:** the rename: it changes a served field and the recorded
+  parameters of earlier runs two days after they were introduced, for a
+  name.
+- **Would change our mind:** the two uses needing different lists.
+
+## 2026-11-25 — `LegMode` moved into `journey`
+
+- **Chosen:** the longest-overlap rule lives in `internal/journey`,
+  because `Assemble` now needs it and `route` imports `journey`, not
+  the reverse. `route.LegMode` remains as a call through.
+- **Rejected:** a second copy of the rule.
+
+## 2026-11-25 — The road caches will belong to an account
+
+- **Chosen (not yet built):** rows of `route_cache` and `match_cache`
+  are tied to the account whose history produced them and are deleted
+  with it. A row is keyed by the exact recorded positions, so two
+  accounts do not share rows in practice and nothing is lost.
+- **Rejected:** keeping the caches shared and saying so on the privacy
+  page. What a person contributes on purpose for others may one day be
+  kept after they leave; a road derived from their history for their
+  own page is not that.
+- **Would change our mind:** nothing foreseen. To be built before a
+  router runs on the hosted instance.
+

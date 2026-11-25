@@ -354,8 +354,11 @@ OSRM, run as an explicit batch step against a local OSRM instance — the
 served application never depends on a routing service; it only reads answers
 cached in Postgres. Without routing, gaps are drawn as straight lines that
 say what they are. That degraded state is designed, not an error: the
-product is fully usable with no routing at all. Air-speed gaps are
-classified as flights and drawn as arcs either way.
+product is fully usable with no routing at all. A gap is classified as a
+flight and drawn as an arc either way: by the speed between its ends, or
+because the export labels it a flight and it is at least 100 km long
+(`AIR_LABEL_MIN_KM`). A gap the export labels train, subway or ferry is
+never sent to the road router and stays a dashed straight line.
 
 The compose stack carries an optional `routing` profile for exactly this.
 One script prepares a regional extract (run it yourself, from the

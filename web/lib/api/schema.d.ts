@@ -696,7 +696,7 @@ export interface components {
             /** @description The admin-1 regions this leg's `points` fall in, each once, in order of first appearance along the leg — what lets a day say which regions it crossed, where `Journey.states` lists the whole trip's. From the timestamped points only (a gap's two endpoints), never from `routed_points`: inference does not testify to where a person was. Empty when no point falls in a region, and on every leg when `roadbook states` has not been run. */
             states: components["schemas"]["State"][];
             /**
-             * @description Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
+             * @description Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter, or the source labels it a flight and it is at least air_label_min_km long — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
              * @enum {string}
              */
             gap_kind?: "unknown" | "road" | "air";
@@ -783,7 +783,7 @@ export interface components {
              * @description A recorded stretch shorter than this, point to point, is not matched at all, metres (MATCH_MIN_M).
              */
             min_m: number;
-            /** @description Mode labels that are never drawn along a road (MATCH_SKIP_MODES): the matcher knows roads only, and a railway beside a road would be drawn on that road. A stretch takes the label of the activity that overlaps it the longest; the label is the source's guess. */
+            /** @description Mode labels that are never drawn along a road (MATCH_SKIP_MODES): the router knows roads only, and a railway beside a road would be drawn on that road. It governs recorded stretches and gaps alike: a gap with one of these labels is not routed and stays "unknown". A leg takes the label of the activity that overlaps it the longest; the label is the source's guess. */
             skip_modes: string[];
         };
         /** @description The thresholds that classed every entry of `Journey.nights` (invariant 3). The window opens at `start_hour` on one civil date and closes at `end_hour` on the next, on the traveller's own clock. */
