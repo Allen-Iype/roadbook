@@ -139,6 +139,9 @@ services:
     # ("TooBig"), which the batch reports as failures every run. Points are
     # at least 30 s apart and a stretch ends at a 20-minute silence, so
     # 2000 covers more than sixteen hours of unbroken recording.
+    # On a machine with less memory than the dataset, add --mmap: the
+    # server then maps the files instead of loading them all
+    # (docs/phase-3/OSRM.md §3 has the measurement).
     command: osrm-routed --algorithm mld --max-matching-size 2000 /data/${OSRM_DATA:-unset-see-env-example}.osrm
     volumes:
       - ./data/osrm:/data:ro

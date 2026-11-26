@@ -326,16 +326,47 @@ first or last point the matcher did not place.
   the reverse. `route.LegMode` remains as a call through.
 - **Rejected:** a second copy of the rule.
 
-## 2026-11-25 — The road caches will belong to an account
+## 2026-11-25 — The road caches belong to an account
 
-- **Chosen (not yet built):** rows of `route_cache` and `match_cache`
-  are tied to the account whose history produced them and are deleted
-  with it. A row is keyed by the exact recorded positions, so two
-  accounts do not share rows in practice and nothing is lost.
+- **Chosen:** migration 19 gives `route_cache` and `match_cache` an
+  owner. A row is read only by the account it was made for, two
+  accounts asking the same question each keep their own answer, and
+  `DeleteUserData` removes both tables' rows with the account
+  (`UserDataTables`). This reverses phase 13's decision that
+  `route_cache` stays global "so one user's routing warms another's",
+  and the 2026-11-19 entry here that followed it for `match_cache`.
+  Little is lost: a match row is keyed by a hash of the exact recorded
+  points, a route row by the two ends of one gap rounded to about 11 m,
+  so two accounts rarely ask the same question.
 - **Rejected:** keeping the caches shared and saying so on the privacy
   page. What a person contributes on purpose for others may one day be
-  kept after they leave; a road derived from their history for their
-  own page is not that.
-- **Would change our mind:** nothing foreseen. To be built before a
-  router runs on the hosted instance.
+  kept after they leave, stated when they give it; a road derived from
+  their history for their own page is not that. Also rejected:
+  reference counting shared rows, which is more machinery for the same
+  result.
+- **Would change our mind:** nothing foreseen.
+- **Open, for STOP 3:** `roadbook route` reads and writes the `self`
+  account only. On an instance with accounts it needs to run for each
+  account before any hosted user sees a routed gap.
+
+## 2026-11-26 — STOP 3: the hosted router is not tried in this phase
+
+- **Measured, on a laptop:** the India dataset is 19 GB on disk and the
+  router loaded normally holds 13.2 GB; the hosted machine has 7.9 GB.
+  In the router's file-mapped mode (`--mmap`) the same history, 3,938
+  gaps and 2,778 stretches, was answered identically with 0.65 GB of
+  the server's own memory and at most 2.7 GB of the files resident.
+  Wall time for the full run was not obtained (the machine slept); two
+  trips of 4 and 429 gaps took 10 and 58 seconds.
+- **Chosen:** stop there. Memory is no longer the obstacle; the trial
+  on the host itself (disk speed, a memory cap beside the app) is not
+  run now, by the maintainer's decision. The file-mapped mode is
+  documented for self-hosters. Hosted users keep straight gaps and
+  point-to-point recorded lines; phase 15 §3F stays open.
+- **Rejected for now:** a larger plan, a smaller extract, another
+  engine (Valhalla is tiled and has map matching; not measured).
+- **Still needed before a hosted router:** the trial on the host, and
+  `roadbook route` running for every account, not `self` only.
+- **Would change our mind:** the maintainer taking up the trial; a
+  hosted user asking for road-following lines again.
 

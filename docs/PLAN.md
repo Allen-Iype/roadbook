@@ -758,6 +758,21 @@ dates on a tester's iPhone export, one on the maintainer's archive, none
 on the fixture or the demo. Detection only; no migration, contract or
 web change. Issue #28. Brief, decisions and the log: `docs/phase-22/`.
 
+### Phase 23 — Recorded stretches drawn along the road (2026-11-26)
+
+A recorded stretch is drawn along the road its points lie on, still as
+"Observed" (invariant 6, amended 2026-11-16; no third line kind). The
+routing batch also asks a matcher which road each stretch lies on and
+caches the answer; a road is drawn only when it is under
+`MATCH_MAX_RATIO` (1.5) times the point-to-point length. Stretches and
+gaps labelled train, subway, ferry or flight are never put on a road,
+and a gap labelled a flight is drawn as one. Distances stay measured
+between recorded points. The road caches now belong to an account and
+are deleted with it (migrations 18, 19). The hosted instance has no
+router yet: measured, memory is not the obstacle, and the trial on the
+host is carried. Issue #9. Brief, decisions and the log:
+`docs/phase-23/`.
+
 ### Gated alongside — not in the sequence until their evidence arrives
 
 - **Ingestion (photos as a source, GPX).** Photos-as-source was chartered
