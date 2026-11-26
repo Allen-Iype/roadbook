@@ -90,6 +90,8 @@ var UserDataTables = []string{
 	"photos", "share_links", "decisions", "photo_records",
 	"raw_positions", "path_points", "activities", "visits",
 	"candidates", "detection_runs", "imports", "sessions",
+	// The roads drawn from this account's recorded positions (phase 23).
+	"route_cache", "match_cache",
 }
 
 // CountUserRows counts a user's rows in one user-data table — a test and

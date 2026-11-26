@@ -276,7 +276,7 @@ func (s *Server) assembledJourney(ctx context.Context, userID string, cand *stor
 		return journey.Journey{}, obs, err
 	}
 	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
-	j, err = ApplyCaches(ctx, s.Store, j, obs.Activities, s.roadMatch())
+	j, err = ApplyCaches(ctx, s.Store, userID, j, obs.Activities, s.roadMatch())
 	return j, obs, err
 }
 
@@ -288,9 +288,11 @@ func (s *Server) assembledJourney(ctx context.Context, userID string, cand *stor
 // about the same trip. No router is ever dialled here: an empty cache
 // leaves every gap unknown and every recorded stretch drawn point to
 // point. acts are the activities j was assembled from: a stretch's mode
-// decides whether it may be drawn along a road at all.
-func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey, acts []domain.Activity, mp route.MatchParams) (journey.Journey, error) {
-	lookup, err := st.LookupRoutes(ctx, route.UnknownKeys(j, acts, RouteProfile, mp.SkipModes))
+// decides whether it may be drawn along a road at all. Both caches are
+// read for userID only: a cached road belongs to the account whose
+// positions it was derived from (migration 19).
+func ApplyCaches(ctx context.Context, st *store.Store, userID string, j journey.Journey, acts []domain.Activity, mp route.MatchParams) (journey.Journey, error) {
+	lookup, err := st.LookupRoutes(ctx, userID, route.UnknownKeys(j, acts, RouteProfile, mp.SkipModes))
 	if err != nil {
 		return journey.Journey{}, err
 	}
@@ -301,7 +303,7 @@ func ApplyCaches(ctx context.Context, st *store.Store, j journey.Journey, acts [
 	for i, tr := range traces {
 		keys[i] = tr.Key
 	}
-	matches, err := st.LookupMatches(ctx, keys)
+	matches, err := st.LookupMatches(ctx, userID, keys)
 	if err != nil {
 		return journey.Journey{}, err
 	}

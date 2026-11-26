@@ -29,7 +29,7 @@ func TestMatchCacheRoundTrip(t *testing.T) {
 	a, b, never := matchTrace("aaaa", 4), matchTrace("bbbb", 2), matchTrace("cccc", 3)
 	keys := []route.MatchKey{a.Key, b.Key, never.Key}
 
-	got, err := s.LookupMatches(ctx, keys)
+	got, err := s.LookupMatches(ctx, store.SelfUser, keys)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,16 +38,16 @@ func TestMatchCacheRoundTrip(t *testing.T) {
 	}
 
 	road := []domain.LatLng{{Lat: 10.0001, Lon: 70.0002}, {Lat: 10.015, Lon: 70.003}}
-	if err := s.SaveMatch(ctx, a, route.CachedMatch{
+	if err := s.SaveMatch(ctx, store.SelfUser, a, route.CachedMatch{
 		Status: route.StatusMatched, Points: road, DistanceM: 3601.5, Unplaced: 1, EndsPlaced: true,
 	}, "osrm http://localhost:5000", "test-extract"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SaveMatch(ctx, b, route.CachedMatch{Status: route.StatusNoMatch}, "osrm http://localhost:5000", ""); err != nil {
+	if err := s.SaveMatch(ctx, store.SelfUser, b, route.CachedMatch{Status: route.StatusNoMatch}, "osrm http://localhost:5000", ""); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err = s.LookupMatches(ctx, keys)
+	got, err = s.LookupMatches(ctx, store.SelfUser, keys)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestMatchCacheRoundTrip(t *testing.T) {
 	other.RadiusM = 50
 	cyc := a.Key
 	cyc.Profile = "cycling"
-	got, err = s.LookupMatches(ctx, []route.MatchKey{other, cyc})
+	got, err = s.LookupMatches(ctx, store.SelfUser, []route.MatchKey{other, cyc})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,10 +79,10 @@ func TestMatchCacheRoundTrip(t *testing.T) {
 	}
 
 	// -refresh: a later answer replaces the row.
-	if err := s.SaveMatch(ctx, a, route.CachedMatch{Status: route.StatusNoMatch}, "osrm http://localhost:5000", "newer-extract"); err != nil {
+	if err := s.SaveMatch(ctx, store.SelfUser, a, route.CachedMatch{Status: route.StatusNoMatch}, "osrm http://localhost:5000", "newer-extract"); err != nil {
 		t.Fatal(err)
 	}
-	got, err = s.LookupMatches(ctx, []route.MatchKey{a.Key})
+	got, err = s.LookupMatches(ctx, store.SelfUser, []route.MatchKey{a.Key})
 	if err != nil {
 		t.Fatal(err)
 	}

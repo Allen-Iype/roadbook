@@ -82,7 +82,7 @@ func TestServedJourneyCarriesSnappedGeometry(t *testing.T) {
 	road := []domain.LatLng{{Lat: first.Lat, Lon: first.Lon}, {Lat: (first.Lat + last.Lat) / 2, Lon: (first.Lon+last.Lon)/2 + 0.001}, {Lat: last.Lat, Lon: last.Lon}}
 	save := func(ratio float64) {
 		t.Helper()
-		if err := s.SaveMatch(context.Background(), tr, route.CachedMatch{
+		if err := s.SaveMatch(context.Background(), "self", tr, route.CachedMatch{
 			Status: route.StatusMatched, Points: road, DistanceM: chordKm * 1000 * ratio, EndsPlaced: true,
 		}, "test", ""); err != nil {
 			t.Fatal(err)

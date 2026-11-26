@@ -883,7 +883,7 @@ func runJourney(args []string) error {
 		acts = obs.Activities
 		// The same function the page's handler calls: gap routes and, since
 		// phase 23, the roads recorded stretches are drawn along.
-		if j, err = api.ApplyCaches(ctx, s, j, obs.Activities, roadMatch); err != nil {
+		if j, err = api.ApplyCaches(ctx, s, store.SelfUser, j, obs.Activities, roadMatch); err != nil {
 			return err
 		}
 		var pts []domain.LatLng
@@ -1328,7 +1328,7 @@ func runRoute(args []string) error {
 		}
 	}
 
-	cached, err := s.LookupRoutes(ctx, keys)
+	cached, err := s.LookupRoutes(ctx, store.SelfUser, keys)
 	if err != nil {
 		return err
 	}
@@ -1356,7 +1356,7 @@ func runRoute(args []string) error {
 			r, err := router.Route(ctx, k.From(), k.To())
 			switch {
 			case err == nil:
-				if err := s.SaveRoute(ctx, k, route.Cached{
+				if err := s.SaveRoute(ctx, store.SelfUser, k, route.Cached{
 					Status: route.StatusRouted, Points: r.Points,
 					DistanceM: r.DistanceM, DurationS: r.DurationS,
 				}, *routerName+" "+*routerURL, *dataset); err != nil {
@@ -1365,7 +1365,7 @@ func runRoute(args []string) error {
 				counts.Routed++
 				status[k] = "routed"
 			case err == route.ErrNoRoute:
-				if err := s.SaveRoute(ctx, k, route.Cached{Status: route.StatusNoRoute},
+				if err := s.SaveRoute(ctx, store.SelfUser, k, route.Cached{Status: route.StatusNoRoute},
 					*routerName+" "+*routerURL, *dataset); err != nil {
 					return err
 				}
@@ -1389,7 +1389,7 @@ func runRoute(args []string) error {
 		for i, tr := range traces {
 			matchKeys[i] = tr.Key
 		}
-		cachedMatches, err := s.LookupMatches(ctx, matchKeys)
+		cachedMatches, err := s.LookupMatches(ctx, store.SelfUser, matchKeys)
 		if err != nil {
 			return err
 		}
@@ -1413,7 +1413,7 @@ func runRoute(args []string) error {
 				m, err := matcher.Match(ctx, tr.Points, int(tr.Key.RadiusM))
 				switch {
 				case err == nil:
-					if err := s.SaveMatch(ctx, tr, route.CachedMatch{
+					if err := s.SaveMatch(ctx, store.SelfUser, tr, route.CachedMatch{
 						Status: route.StatusMatched, Points: m.Points, DistanceM: m.DistanceM,
 						Unplaced: m.Unplaced, EndsPlaced: m.EndsPlaced,
 					}, *routerName+" "+*routerURL, *dataset); err != nil {
@@ -1422,7 +1422,7 @@ func runRoute(args []string) error {
 					counts.Matched++
 					matchStatus[tr.Key] = "matched"
 				case err == route.ErrNoMatch:
-					if err := s.SaveMatch(ctx, tr, route.CachedMatch{Status: route.StatusNoMatch},
+					if err := s.SaveMatch(ctx, store.SelfUser, tr, route.CachedMatch{Status: route.StatusNoMatch},
 						*routerName+" "+*routerURL, *dataset); err != nil {
 						return err
 					}

@@ -12,10 +12,11 @@ import (
 	"roadbook/internal/route"
 )
 
-// LookupRoutes reads cached answers for a set of keys. One query per key:
+// LookupRoutes reads one account's cached answers for a set of keys (the
+// cache is owned since migration 19). One query per key:
 // a journey holds a handful of gaps and the batch a few dozen — building
 // for thousands is theatre (CLAUDE.md).
-func (s *Store) LookupRoutes(ctx context.Context, keys []route.Key) (map[route.Key]route.Cached, error) {
+func (s *Store) LookupRoutes(ctx context.Context, userID string, keys []route.Key) (map[route.Key]route.Cached, error) {
 	out := make(map[route.Key]route.Cached, len(keys))
 	for _, k := range keys {
 		var (
@@ -27,8 +28,9 @@ func (s *Store) LookupRoutes(ctx context.Context, keys []route.Key) (map[route.K
 			SELECT status, geometry, distance_m, duration_s
 			FROM route_cache
 			WHERE from_lat_e4 = $1 AND from_lon_e4 = $2
-			  AND to_lat_e4 = $3 AND to_lon_e4 = $4 AND profile = $5`,
-			k.FromLatE4, k.FromLonE4, k.ToLatE4, k.ToLonE4, k.Profile,
+			  AND to_lat_e4 = $3 AND to_lon_e4 = $4 AND profile = $5
+			  AND user_id = $6`,
+			k.FromLatE4, k.FromLonE4, k.ToLatE4, k.ToLonE4, k.Profile, userID,
 		).Scan(&status, &geometry, &distanceM, &duration)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -64,7 +66,7 @@ func (s *Store) LookupRoutes(ctx context.Context, keys []route.Key) (map[route.K
 
 // SaveRoute upserts one answered question. The upsert (not insert-ignore)
 // is the -refresh path: re-asking with a better extract replaces the row.
-func (s *Store) SaveRoute(ctx context.Context, k route.Key, c route.Cached, router, dataset string) error {
+func (s *Store) SaveRoute(ctx context.Context, userID string, k route.Key, c route.Cached, router, dataset string) error {
 	var geometry []byte
 	var distanceM, durationS *float64
 	if c.Status == route.StatusRouted {
@@ -82,15 +84,15 @@ func (s *Store) SaveRoute(ctx context.Context, k route.Key, c route.Cached, rout
 	_, err := s.pool.Exec(ctx, `
 		INSERT INTO route_cache
 			(from_lat_e4, from_lon_e4, to_lat_e4, to_lon_e4, profile,
-			 status, geometry, distance_m, duration_s, router, dataset)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		ON CONFLICT (from_lat_e4, from_lon_e4, to_lat_e4, to_lon_e4, profile)
+			 status, geometry, distance_m, duration_s, router, dataset, user_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT (user_id, from_lat_e4, from_lon_e4, to_lat_e4, to_lon_e4, profile)
 		DO UPDATE SET status = EXCLUDED.status, geometry = EXCLUDED.geometry,
 			distance_m = EXCLUDED.distance_m, duration_s = EXCLUDED.duration_s,
 			router = EXCLUDED.router, dataset = EXCLUDED.dataset,
 			routed_at = now()`,
 		k.FromLatE4, k.FromLonE4, k.ToLatE4, k.ToLonE4, k.Profile,
-		c.Status, geometry, distanceM, durationS, router, dataset)
+		c.Status, geometry, distanceM, durationS, router, dataset, userID)
 	if err != nil {
 		return fmt.Errorf("store: save route: %w", err)
 	}

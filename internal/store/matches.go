@@ -14,7 +14,7 @@ import (
 // query — because a trip holds a recorded stretch for every gap and then
 // some (the archive: 4,852 stretches over 67 trips), and a page load that
 // made a round trip per stretch would be felt.
-func (s *Store) LookupMatches(ctx context.Context, keys []route.MatchKey) (map[route.MatchKey]route.CachedMatch, error) {
+func (s *Store) LookupMatches(ctx context.Context, userID string, keys []route.MatchKey) (map[route.MatchKey]route.CachedMatch, error) {
 	type group struct {
 		profile string
 		radiusM int32
@@ -29,8 +29,9 @@ func (s *Store) LookupMatches(ctx context.Context, keys []route.MatchKey) (map[r
 		rows, err := s.pool.Query(ctx, `
 			SELECT points_hash, status, geometry, distance_m, unplaced, ends_placed
 			FROM match_cache
-			WHERE profile = $1 AND radius_m = $2 AND points_hash = ANY($3)`,
-			g.profile, g.radiusM, hs)
+			WHERE profile = $1 AND radius_m = $2 AND points_hash = ANY($3)
+			  AND user_id = $4`,
+			g.profile, g.radiusM, hs, userID)
 		if err != nil {
 			return nil, fmt.Errorf("store: lookup matches: %w", err)
 		}
@@ -85,7 +86,7 @@ func (s *Store) LookupMatches(ctx context.Context, keys []route.MatchKey) (map[r
 // SaveMatch upserts one answered question. The upsert is the -refresh
 // path, as in SaveRoute. A no_match row carries no geometry or figures,
 // whatever the caller passed.
-func (s *Store) SaveMatch(ctx context.Context, tr route.Trace, c route.CachedMatch, router, dataset string) error {
+func (s *Store) SaveMatch(ctx context.Context, userID string, tr route.Trace, c route.CachedMatch, router, dataset string) error {
 	var geometry []byte
 	var distanceM *float64
 	var unplaced *int
@@ -105,16 +106,16 @@ func (s *Store) SaveMatch(ctx context.Context, tr route.Trace, c route.CachedMat
 	_, err := s.pool.Exec(ctx, `
 		INSERT INTO match_cache
 			(points_hash, profile, radius_m, points,
-			 status, geometry, distance_m, unplaced, ends_placed, router, dataset)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		ON CONFLICT (points_hash, profile, radius_m)
+			 status, geometry, distance_m, unplaced, ends_placed, router, dataset, user_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT (user_id, points_hash, profile, radius_m)
 		DO UPDATE SET points = EXCLUDED.points, status = EXCLUDED.status,
 			geometry = EXCLUDED.geometry, distance_m = EXCLUDED.distance_m,
 			unplaced = EXCLUDED.unplaced, ends_placed = EXCLUDED.ends_placed,
 			router = EXCLUDED.router, dataset = EXCLUDED.dataset,
 			matched_at = now()`,
 		tr.Key.PointsHash, tr.Key.Profile, tr.Key.RadiusM, len(tr.Points),
-		c.Status, geometry, distanceM, unplaced, endsPlaced, router, dataset)
+		c.Status, geometry, distanceM, unplaced, endsPlaced, router, dataset, userID)
 	if err != nil {
 		return fmt.Errorf("store: save match: %w", err)
 	}
