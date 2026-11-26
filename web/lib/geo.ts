@@ -21,7 +21,7 @@ export function lngLat(p: { lat: number; lon: number }): LonLat {
   return [p.lon, p.lat];
 }
 
-// One leg → one LineString feature. The geometry per kind:
+// The line one leg is drawn with, per kind:
 //   air  — a great-circle arc between the two endpoints, generated here
 //          because it is presentation: the API reports exactly the two
 //          timestamped points it measured, and fabricated intermediate
@@ -29,7 +29,39 @@ export function lngLat(p: { lat: number; lon: number }): LonLat {
 //          only measurements (phase 3 BRIEF §3F).
 //   road — the cached routed geometry, riding alongside the two timestamped
 //          endpoints in routed_points.
-//   else — the leg's own points (observed run, or an unknown gap's chord).
+//   a recorded stretch with a road (phase 23) — snapped_points, the road
+//          its points lie on, joined to its own first and last recorded
+//          points. The join matters: the matcher puts each end on the
+//          nearest road, up to match_params.radius_m from where it was
+//          recorded, while the neighbouring legs start and end at the
+//          recorded point itself; without it the drawn line would break
+//          at every seam when zoomed in. The stretch is still "observed"
+//          — the kind is not read from the geometry (invariant 6).
+//   else — the leg's own points (a recorded stretch point to point, or an
+//          unknown gap's chord).
+// The one place this choice is made: the maps, the cover thumbnails and the
+// exported image all draw from it, so they cannot disagree about a leg.
+export function legLine(leg: Leg, arcSegments?: number): LonLat[] {
+  if (leg.gap_kind === "air")
+    return greatCircleArc(lngLat(leg.points[0]), lngLat(leg.points[1]), arcSegments);
+  if (leg.gap_kind === "road" && leg.routed_points)
+    return leg.routed_points.map(lngLat);
+  if (leg.kind === "observed" && leg.snapped_points && leg.snapped_points.length >= 2) {
+    const line = leg.snapped_points.map(lngLat);
+    const first = lngLat(leg.points[0]);
+    const last = lngLat(leg.points[leg.points.length - 1]);
+    if (!samePosition(first, line[0])) line.unshift(first);
+    if (!samePosition(last, line[line.length - 1])) line.push(last);
+    return line;
+  }
+  return leg.points.map(lngLat);
+}
+
+function samePosition(a: LonLat, b: LonLat): boolean {
+  return a[0] === b[0] && a[1] === b[1];
+}
+
+// One leg → one LineString feature, drawn with legLine.
 // `extraProps` lets a caller stamp every feature — the life map stamps
 // adventure_id so hover and click can resolve which adventure a line is.
 export function legFeatures(
@@ -39,15 +71,7 @@ export function legFeatures(
   return legs.map((leg) => ({
     type: "Feature",
     properties: { ...extraProps, kind: leg.kind, gap_kind: leg.gap_kind ?? null },
-    geometry: {
-      type: "LineString",
-      coordinates:
-        leg.gap_kind === "air"
-          ? greatCircleArc(lngLat(leg.points[0]), lngLat(leg.points[1]))
-          : leg.gap_kind === "road" && leg.routed_points
-            ? leg.routed_points.map(lngLat)
-            : leg.points.map(lngLat),
-    },
+    geometry: { type: "LineString", coordinates: legLine(leg) },
   }));
 }
 

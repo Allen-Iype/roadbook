@@ -329,12 +329,12 @@ Adopted into the backlog from the Dawarich comparison or moved here from a phase
 none is scheduled:
 
 - Snapped lines (added 2026-11-10, phase 17 STOP 1b; asked for by the
-  maintainer). Recorded points drawn along the road they were on, by map
-  matching against OSM (OSRM's match service, in the batch `roadbook
-  route`, cached like routing). Changes invariant 6 — recorded stretches
-  are never routed today — so it needs a brief, a charter decision and its
-  own line kind, distinct from both recorded and routed. Comes after the
-  needle filter, which it cannot replace (`docs/phase-17/DECISIONS.md`).
+  maintainer). **Taken up as phase 23** (#9, `docs/phase-23/`). The charter
+  decision went the other way from this entry's first wording: no line
+  kind of its own. Invariant 6 was amended on 2026-11-16 — a recorded
+  stretch may be drawn along the road its points lie on and stays
+  recorded; recorded points are never altered; gaps remain their own
+  kind.
 - Landing cut (added 2026-11-03, copy pass close; `docs/product/LOG.md`).
   The landing is still cluttered: eight blocks, two pictures of a trip, two
   "Make mine" buttons. A layout cut — one picture, one button, one-line
@@ -757,6 +757,21 @@ are less than `MAX_STRAY_MIN` (30) minutes apart. Measured: 11 trips'
 dates on a tester's iPhone export, one on the maintainer's archive, none
 on the fixture or the demo. Detection only; no migration, contract or
 web change. Issue #28. Brief, decisions and the log: `docs/phase-22/`.
+
+### Phase 23 — Recorded stretches drawn along the road (2026-11-26)
+
+A recorded stretch is drawn along the road its points lie on, still as
+"Observed" (invariant 6, amended 2026-11-16; no third line kind). The
+routing batch also asks a matcher which road each stretch lies on and
+caches the answer; a road is drawn only when it is under
+`MATCH_MAX_RATIO` (1.5) times the point-to-point length. Stretches and
+gaps labelled train, subway, ferry or flight are never put on a road,
+and a gap labelled a flight is drawn as one. Distances stay measured
+between recorded points. The road caches now belong to an account and
+are deleted with it (migrations 18, 19). The hosted instance has no
+router yet: measured, memory is not the obstacle, and the trial on the
+host is carried. Issue #9. Brief, decisions and the log:
+`docs/phase-23/`.
 
 ### Gated alongside — not in the sequence until their evidence arrives
 

@@ -11,7 +11,7 @@
 // the same non-color channels as everywhere else (solid / cased / dashed /
 // dotted — the component maps kinds to the reserved inks and dash
 // patterns).
-import { greatCircleArc, lngLat } from "@/lib/geo";
+import { legLine } from "@/lib/geo";
 import type { components } from "@/lib/api/schema";
 
 type Leg = components["schemas"]["Leg"];
@@ -39,16 +39,9 @@ function kindOf(leg: Leg): ThumbKind {
   return "unknown";
 }
 
-// The drawn geometry per kind mirrors lib/geo.legFeatures: air bulges into
-// its great-circle arc (fewer segments — thumbnail pixels cannot show 64),
-// road rides its routed polyline, everything else its own points.
-function lineOf(leg: Leg): [number, number][] {
-  if (leg.gap_kind === "air")
-    return greatCircleArc(lngLat(leg.points[0]), lngLat(leg.points[1]), 24);
-  if (leg.gap_kind === "road" && leg.routed_points)
-    return leg.routed_points.map(lngLat);
-  return leg.points.map(lngLat);
-}
+// The drawn geometry is lib/geo.legLine's — the same rule as the maps — with
+// fewer arc segments, because thumbnail pixels cannot show 64.
+const lineOf = (leg: Leg): [number, number][] => legLine(leg, 24);
 
 /** A [lon, lat] → [x, y] projection fitting every given coordinate inside
  * a width×height box with `pad` clear on each side, aspect preserved,

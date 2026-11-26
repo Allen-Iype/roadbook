@@ -86,9 +86,13 @@ Not preferences. Breaking one is a bug. Each has a reason; the reason is the poi
 5. **A journey is a list of legs, each observed or inferred.** Never one
    undifferentiated line. *Why:* the product's honesty depends on the distinction
    surviving all the way to the renderer. A single geometry loses it irrecoverably.
-6. **Observed legs are never routed.** Routing belongs only to gaps. *Why:* routing
-   replaces measurement with inference. Applying it to observed data destroys the only
-   ground truth available.
+6. **Recorded points are never altered or discarded.** A recorded stretch may be drawn
+   along the road its points lie on; where no road fits, it is drawn point to point.
+   Gaps remain their own kind. *Why:* the points are the measurement and the only
+   ground truth available; the line between two of them was always a guess, and a road
+   is a better guess than a straight line. A gap is different: nothing was recorded
+   there, so the map must keep saying so. (Amended 2026-11-16: was "observed legs are
+   never routed".)
 7. **Routing is pluggable** — one interface, three implementations: self-hosted OSRM, a
    public endpoint, and a null router that draws straight lines and says so. *Why:* a
    self-hoster must be able to see their adventures without building an OSM extract.

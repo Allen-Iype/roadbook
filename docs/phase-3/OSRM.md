@@ -74,10 +74,25 @@ run: ..." on success.
 ## 3. Serve, route, shut down
 
 ```
-osrm-routed --algorithm mld data/osrm/india-latest.osrm
+osrm-routed --algorithm mld --max-matching-size 2000 data/osrm/india-latest.osrm
 ```
 
 (or the Docker equivalent with `-p 5000:5000`). Listens on port 5000.
+`--max-matching-size` is there since phase 23: the batch also asks which
+road each recorded stretch lies on, one request per stretch, and the
+server's default refuses a request of more than 100 points. Those
+stretches would be reported as failed on every run.
+
+**On a machine with less memory than the dataset.** By default the server
+loads the whole dataset into memory: for the India extract (19 GB on
+disk) that measured 13.2 GB. Adding `--mmap` makes it map the files
+instead and read only what each request touches. Measured on the same
+extract (phase 23): 3 MB at start, ready in about 2 seconds, and after
+routing and matching an 8-year history (3,938 gaps, 2,778 stretches,
+with the same answers) the server's own memory stood at 0.65 GB with at
+most 2.7 GB of the files held in memory. The first request into an area
+reads from disk, so it is slower on a slow disk; that was measured on a
+laptop with a fast one, and not on a small server.
 
 Two snags seen in practice: the dataset path is resolved relative to the
 current directory — "Missing/Broken File" for files that exist means the

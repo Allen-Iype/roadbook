@@ -1,0 +1,187 @@
+package journey_test
+
+// Phase 23 measurement (#9): what does road matching make of the recorded
+// stretches? Needs a local OSRM on 127.0.0.1:5001 holding the region
+// (docs/phase-3/OSRM.md); run it with its log sent to /dev/null, because the
+// request lines carry coordinates. Prints counts, distances and ratios only.
+// To run, copy into internal/journey/ as match_test.go and:
+//
+//	MATCH_SRC=../../data/<file> go test ./internal/journey/ -run TestMatch -v
+//
+// then delete the copy.
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"sort"
+	"strings"
+	"testing"
+
+	"roadbook/internal/detect"
+	"roadbook/internal/journey"
+	"roadbook/internal/timeline"
+)
+
+type matchResp struct {
+	Code      string `json:"code"`
+	Matchings []struct {
+		Distance   float64 `json:"distance"`
+		Confidence float64 `json:"confidence"`
+	} `json:"matchings"`
+	Tracepoints []*struct{} `json:"tracepoints"`
+	Routes      []struct {
+		Distance float64 `json:"distance"`
+	} `json:"routes"`
+}
+
+func osrmGet(t *testing.T, url string) matchResp {
+	t.Helper()
+	resp, err := http.Get(url)
+	if err != nil {
+		t.Fatalf("OSRM not reachable: %v", err)
+	}
+	defer resp.Body.Close()
+	var m matchResp
+	_ = json.NewDecoder(resp.Body).Decode(&m)
+	return m
+}
+
+func TestMatch(t *testing.T) {
+	path := os.Getenv("MATCH_SRC")
+	if path == "" {
+		t.Skip("MATCH_SRC not set")
+	}
+	src, err := os.Open(path)
+	if err != nil {
+		t.Skip(err)
+	}
+	obs, _, err := timeline.Parse(src)
+	src.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := detect.Run(obs, detect.DefaultParams())
+	const base = "http://127.0.0.1:5001"
+	// A radius of 250 m was tried and abandoned: single requests ran for minutes.
+	for _, radius := range []int{50, 100} {
+		var stretches, tried, matchedWhole, split, failed int
+		var pts, unplaced int
+		var chordKm, matchKm, hopRouteKm float64
+		var ratios, conf []float64
+		type one struct{ chord, ratio float64 }
+		var each []one
+		for _, c := range res.Candidates {
+			j := journey.Assemble(obs, c.Start, c.End, journey.DefaultParams())
+			for _, l := range j.Legs {
+				if l.Kind != journey.LegObserved {
+					continue
+				}
+				stretches++
+				if len(l.Points) < 2 || l.DistanceKm < 0.2 {
+					continue
+				}
+				tried++
+				var co, ts, rd []string
+				last := int64(0)
+				for _, p := range l.Points {
+					u := p.Time.Unix()
+					if u <= last {
+						u = last + 1
+					}
+					last = u
+					co = append(co, fmt.Sprintf("%.5f,%.5f", p.Loc.Lon, p.Loc.Lat))
+					ts = append(ts, fmt.Sprint(u))
+					rd = append(rd, fmt.Sprint(radius))
+				}
+				m := osrmGet(t, fmt.Sprintf("%s/match/v1/driving/%s?timestamps=%s&radiuses=%s&gaps=ignore&tidy=false&overview=false",
+					base, strings.Join(co, ";"), strings.Join(ts, ";"), strings.Join(rd, ";")))
+				pts += len(l.Points)
+				if m.Code != "Ok" || len(m.Matchings) == 0 {
+					failed++
+					continue
+				}
+				for _, tp := range m.Tracepoints {
+					if tp == nil {
+						unplaced++
+					}
+				}
+				if len(m.Matchings) > 1 {
+					split++
+					continue
+				}
+				matchedWhole++
+				km := m.Matchings[0].Distance / 1000
+				chordKm += l.DistanceKm
+				matchKm += km
+				ratios = append(ratios, km/l.DistanceKm)
+				each = append(each, one{l.DistanceKm, km / l.DistanceKm})
+				conf = append(conf, m.Matchings[0].Confidence)
+				if radius == 100 && os.Getenv("MATCH_HOPS") != "" {
+					// the alternative: route each hop on its own
+					for i := 1; i < len(l.Points); i++ {
+						a, b := l.Points[i-1].Loc, l.Points[i].Loc
+						r := osrmGet(t, fmt.Sprintf("%s/route/v1/driving/%.5f,%.5f;%.5f,%.5f?overview=false", base, a.Lon, a.Lat, b.Lon, b.Lat))
+						if len(r.Routes) > 0 {
+							hopRouteKm += r.Routes[0].Distance / 1000
+						}
+					}
+				}
+			}
+		}
+		sort.Float64s(ratios)
+		sort.Float64s(conf)
+		q := func(xs []float64, p float64) float64 {
+			if len(xs) == 0 {
+				return 0
+			}
+			return xs[int(p*float64(len(xs)-1))]
+		}
+		band := func(lo, hi float64) int {
+			n := 0
+			for _, r := range ratios {
+				if r >= lo && r < hi {
+					n++
+				}
+			}
+			return n
+		}
+		t.Logf("radius %d m: %d recorded stretches, %d with two or more points and 200 m or more; matched as one piece %d, split by the matcher %d, no match %d; points not placed on a road %d of %d",
+			radius, stretches, tried, matchedWhole, split, failed, unplaced, pts)
+		t.Logf("  matched as one piece: point-to-point %.0f km, along roads %.0f km (%.2f times); ratio median %.2f, p90 %.2f, p99 %.2f",
+			chordKm, matchKm, matchKm/chordKm, q(ratios, .5), q(ratios, .9), q(ratios, .99))
+		t.Logf("  ratio under 1.1: %d; 1.1 to 1.3: %d; 1.3 to 2: %d; 2 or more: %d; matcher confidence median %.2f, p10 %.2f",
+			band(0, 1.1), band(1.1, 1.3), band(1.3, 2), band(2, 1e9), q(conf, .5), q(conf, .1))
+		// Where the long detours are: by the stretch's point-to-point length.
+		for _, b := range [][2]float64{{0, 2}, {2, 20}, {20, 1e9}} {
+			var n, bad int
+			var km, badKm float64
+			for _, e := range each {
+				if e.chord >= b[0] && e.chord < b[1] {
+					n++
+					km += e.chord
+					if e.ratio >= 1.5 {
+						bad++
+						badKm += e.chord
+					}
+				}
+			}
+			t.Logf("  stretches of %.0f to %.0f km point-to-point: %d (%.0f km); along roads at least 1.5 times as long: %d (%.0f km)", b[0], b[1], n, km, bad, badKm)
+		}
+		for _, cut := range []float64{1.2, 1.3, 1.5, 2} {
+			var n int
+			var km float64
+			for _, e := range each {
+				if e.ratio < cut {
+					n++
+					km += e.chord
+				}
+			}
+			t.Logf("  kept if the road is under %.1f times point-to-point: %d stretches, %.0f km (%.0f%% of the matched distance)", cut, n, km, 100*km/chordKm)
+		}
+		if radius == 100 && os.Getenv("MATCH_HOPS") != "" {
+			t.Logf("  the same stretches with every hop routed on its own: %.0f km (%.2f times point-to-point)", hopRouteKm, hopRouteKm/chordKm)
+		}
+	}
+}

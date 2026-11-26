@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"roadbook/internal/domain"
+	"roadbook/internal/route"
 	"roadbook/internal/store"
 	"roadbook/internal/store/storetest"
 )
@@ -34,6 +36,19 @@ func TestDeleteUserDataIsCompleteAndScoped(t *testing.T) {
 		TimeSource: "none", PosSource: "none", ThumbW: 512, ThumbH: 384,
 	}); err != nil {
 		t.Fatal(err)
+	}
+
+	// Both hold a cached road for the SAME question (phase 23): a road
+	// derived from a person's history is theirs, and goes with them.
+	gap := route.KeyFor(domain.LatLng{Lat: 10, Lon: 70}, domain.LatLng{Lat: 10.1, Lon: 70}, "driving")
+	stretch := matchTrace("shared-question", 3)
+	for _, u := range []string{userA, userB} {
+		if err := s.SaveRoute(ctx, u, gap, route.Cached{Status: route.StatusNoRoute}, "test", ""); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SaveMatch(ctx, u, stretch, route.CachedMatch{Status: route.StatusNoMatch}, "test", ""); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Every table holds at least one A row before — the test would be

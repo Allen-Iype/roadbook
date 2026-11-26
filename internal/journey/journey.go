@@ -45,6 +45,14 @@ type Params struct {
 	// a stated blind spot the divergence check exists to catch. Speed, not
 	// Google's activity mode: modes are guesses that fail at extremes.
 	AirSpeedMinKmh float64 `json:"air_speed_min_kmh"`
+	// AirLabelMinKm: a gap under the speed line is still air when the
+	// activity overlapping it longest (LegMode) is labelled FLYING and the
+	// gap is at least this long. The silence around a flight includes time
+	// at the airport, which is what pulls its speed under the line; the
+	// minimum keeps out the short gaps on the ground at either end, which
+	// carry the same label. Additive to the speed rule; 0 disables it.
+	// Measured flat from 50 to 200 km (phase 23 BRIEF §7).
+	AirLabelMinKm float64 `json:"air_label_min_km"`
 	// MaxSpeedKmh and ClusterRadiusM drive teleport rejection: consecutive
 	// selected points within ClusterRadiusM of a cluster's first point form
 	// a cluster, and a cluster is rejected iff (its entry OR exit implied
@@ -100,7 +108,7 @@ type Params struct {
 func DefaultParams() Params {
 	return Params{
 		GapThresholdMinutes: 20, ThinSpacingSeconds: 30, MinStopDwellSeconds: 300,
-		MaxAccuracyM: 0, AirSpeedMinKmh: 250, MaxSpeedKmh: 900, ClusterRadiusM: 1000,
+		MaxAccuracyM: 0, AirSpeedMinKmh: 250, AirLabelMinKm: 100, MaxSpeedKmh: 900, ClusterRadiusM: 1000,
 		ExcursionMinKm: 20, ExcursionReturnRatio: 0.25, ExcursionMaxMinutes: 120,
 		DivergenceWarnPct: 15,
 	}
@@ -158,6 +166,17 @@ type Leg struct {
 	// measurement.
 	RoutedPoints []domain.LatLng
 	RoutedKm     float64
+
+	// SnappedPoints and SnappedKm are set only by route.ApplyMatches, from
+	// the batch-filled match cache, and only on an observed leg (phase 23,
+	// #9): the road these recorded points lie on, and its length. Like
+	// RoutedPoints they ride alongside Points and replace nothing — the
+	// recorded points are the measurement and are never altered or
+	// discarded (invariant 6); the leg's kind and DistanceKm do not change.
+	// Nil when no road was asked for, none fits, or the fit failed the
+	// length guard: the leg is then drawn point to point, as before.
+	SnappedPoints []domain.LatLng
+	SnappedKm     float64
 }
 
 func (l Leg) Start() time.Time { return l.Points[0].Time }
@@ -216,6 +235,13 @@ type Journey struct {
 	// only by route.Apply — Assemble never routes.
 	UnknownKm float64
 	RoutedKm  float64
+	// SnappedObservedKm is how much of ObservedKm lies on legs drawn along a
+	// road (their point-to-point distance); SnappedRoadKm is the length of
+	// those roads. Both set only by route.ApplyMatches, both reported and
+	// nothing more: no other distance on a journey is computed from them
+	// (phase 23 BRIEF §4 D).
+	SnappedObservedKm float64
+	SnappedRoadKm     float64
 
 	// GoogleDistanceKm sums Google's own distanceMeters over the activities
 	// intersecting the window — the independent figure routed distance is
@@ -331,7 +357,7 @@ func Assemble(obs domain.Observations, winStart, winEnd time.Time, p Params) Jou
 			prev := run[len(run)-1]
 			if pt.Time.Sub(prev.Time).Minutes() > p.GapThresholdMinutes {
 				j.Legs = append(j.Legs, observedLeg(run))
-				j.Legs = append(j.Legs, gapLeg(prev, pt, p))
+				j.Legs = append(j.Legs, gapLeg(prev, pt, obs.Activities, p))
 				run = []TimedPoint{pt}
 			} else {
 				run = append(run, pt)
@@ -483,24 +509,53 @@ func observedLeg(run []TimedPoint) Leg {
 	return Leg{Kind: LegObserved, GapKind: GapNone, Points: pts, DistanceKm: km}
 }
 
+// ModeFlying is the export's label for a flight.
+const ModeFlying = "FLYING"
+
+// LegMode is the export's mode label for a leg: that of the activity whose
+// time overlaps the leg's the longest, the earlier one on a tie, "" when
+// none overlaps. A guess, as every mode label is.
+func LegMode(l Leg, acts []domain.Activity) string {
+	best, bestD := "", time.Duration(0)
+	var bestStart time.Time
+	for _, a := range acts {
+		st, en := a.Start, a.End
+		if l.Start().After(st) {
+			st = l.Start()
+		}
+		if l.End().Before(en) {
+			en = l.End()
+		}
+		d := en.Sub(st)
+		if d > bestD || (d == bestD && d > 0 && a.Start.Before(bestStart)) {
+			best, bestD, bestStart = a.Mode, d, a.Start
+		}
+	}
+	return best
+}
+
 // gapLeg emits a gap holding exactly its two endpoints, classified at
 // assembly time (pure arithmetic, so the batch router and the renderer can
-// never disagree about which gaps are flights): implied speed at or above
-// AirSpeedMinKmh is air, everything else stays unknown until the routing
-// cache supplies a road. Gap duration is always above GapThresholdMinutes,
-// so the division is safe.
-func gapLeg(from, to TimedPoint, p Params) Leg {
+// never disagree about which gaps are flights). A gap is air when its
+// implied speed is at or above AirSpeedMinKmh, or when the export labels
+// it a flight and it is at least AirLabelMinKm long; everything else stays
+// unknown until the routing cache supplies a road. Gap duration is always
+// above GapThresholdMinutes, so the division is safe.
+func gapLeg(from, to TimedPoint, acts []domain.Activity, p Params) Leg {
 	km := geo.HaversineM(from.Loc, to.Loc) / 1000
-	kind := GapUnknown
-	if p.AirSpeedMinKmh > 0 && km/to.Time.Sub(from.Time).Hours() >= p.AirSpeedMinKmh {
-		kind = GapAir
-	}
-	return Leg{
+	l := Leg{
 		Kind:       LegGap,
-		GapKind:    kind,
+		GapKind:    GapUnknown,
 		Points:     []TimedPoint{from, to},
 		DistanceKm: km,
 	}
+	switch {
+	case p.AirSpeedMinKmh > 0 && km/to.Time.Sub(from.Time).Hours() >= p.AirSpeedMinKmh:
+		l.GapKind = GapAir
+	case p.AirLabelMinKm > 0 && km >= p.AirLabelMinKm && LegMode(l, acts) == ModeFlying:
+		l.GapKind = GapAir
+	}
+	return l
 }
 
 // findStops reports pauses between consecutive activities inside the window.

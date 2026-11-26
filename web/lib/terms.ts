@@ -16,7 +16,7 @@ export const TERMS = {
   observed: {
     term: "Observed",
     note:
-      "The phone recorded positions along this stretch. The line joins them exactly as recorded; nothing is added.",
+      "The phone recorded positions along this stretch. Where they lie on a road, the line follows that road; where no road fits, it joins them point to point. The positions themselves are never moved.",
   },
   routed: {
     term: "Routed",
@@ -31,7 +31,7 @@ export const TERMS = {
   air: {
     term: "Air",
     note:
-      "A flight, told by its speed. The dotted arc is the shortest path between where it began and ended, not where the aircraft flew.",
+      "A flight, told by its speed or by the phone's own record of a flight. The dotted arc is the shortest path between where it began and ended, not where the aircraft flew.",
   },
   originals: {
     term: "Original photos",

@@ -87,7 +87,7 @@ func gapJourney(t *testing.T) journey.Journey {
 
 func TestUnknownKeysSkipsAirAndObserved(t *testing.T) {
 	j := gapJourney(t)
-	keys := route.UnknownKeys(j, "driving")
+	keys := route.UnknownKeys(j, nil, "driving", nil)
 	if len(keys) != 1 {
 		t.Fatalf("keys = %d, want 1 (the unknown gap only — never air, never observed)", len(keys))
 	}
@@ -99,13 +99,13 @@ func TestUnknownKeysSkipsAirAndObserved(t *testing.T) {
 
 func TestApply(t *testing.T) {
 	j := gapJourney(t)
-	key := route.UnknownKeys(j, "driving")[0]
+	key := route.UnknownKeys(j, nil, "driving", nil)[0]
 	road := []domain.LatLng{{Lat: 10.01, Lon: 70.0}, {Lat: 10.05, Lon: 70.02}, {Lat: 10.11, Lon: 70.0}}
 	lookup := map[route.Key]route.Cached{
 		key: {Status: route.StatusRouted, Points: road, DistanceM: 13200, DurationS: 900},
 	}
 
-	out := route.Apply(j, "driving", lookup)
+	out := route.Apply(j, nil, "driving", nil, lookup)
 
 	var gotRoad, gotAir *journey.Leg
 	for i := range out.Legs {
@@ -157,10 +157,10 @@ func TestApplyWithoutAnswersLeavesEverythingUnknown(t *testing.T) {
 	for name, lookup := range map[string]map[route.Key]route.Cached{
 		"empty cache": {},
 		"cached no_route": {
-			route.UnknownKeys(j, "driving")[0]: {Status: route.StatusNoRoute},
+			route.UnknownKeys(j, nil, "driving", nil)[0]: {Status: route.StatusNoRoute},
 		},
 	} {
-		out := route.Apply(j, "driving", lookup)
+		out := route.Apply(j, nil, "driving", nil, lookup)
 		for _, l := range out.Legs {
 			if l.GapKind == journey.GapRoad {
 				t.Errorf("%s: produced a road leg from nothing", name)
@@ -216,5 +216,54 @@ func TestOSRMNoRouteAndErrors(t *testing.T) {
 	_, err = route.NewOSRM(down.URL, "driving").Route(context.Background(), domain.LatLng{Lat: 1, Lon: 1}, domain.LatLng{Lat: 2, Lon: 2})
 	if err == nil || err == route.ErrNoRoute {
 		t.Fatalf("err = %v, want an operational error distinct from ErrNoRoute (never cached)", err)
+	}
+}
+
+// Phase 23 BRIEF §7: a gap the export labels train, subway or ferry is not
+// asked about and never drawn along a road — the driving profile would put
+// a railway on the nearest highway. It stays unknown.
+func TestSkippedModeGapsAreNotRouted(t *testing.T) {
+	j := gapJourney(t) // the unknown gap runs from 60 s to 1860 s
+	skip := route.DefaultMatchParams().SkipModes
+	key := route.KeyFor(domain.LatLng{Lat: 10.01, Lon: 70.0}, domain.LatLng{Lat: 10.11, Lon: 70.0}, "driving")
+	lookup := map[route.Key]route.Cached{key: {
+		Status: route.StatusRouted, DistanceM: 14000,
+		Points: []domain.LatLng{{Lat: 10.01, Lon: 70.0}, {Lat: 10.05, Lon: 70.02}, {Lat: 10.11, Lon: 70.0}},
+	}}
+	mk := func(mode string, from, to int) []domain.Activity {
+		return []domain.Activity{{Start: at(from), End: at(to), Mode: mode}}
+	}
+	cases := []struct {
+		name   string
+		acts   []domain.Activity
+		skip   []string
+		routed bool
+	}{
+		{"no activity", nil, skip, true},
+		{"a bus", mk("IN_BUS", 0, 1900), skip, true},
+		{"a train", mk("IN_TRAIN", 0, 1900), skip, false},
+		{"a ferry", mk("IN_FERRY", 0, 1900), skip, false},
+		{"a subway", mk("IN_SUBWAY", 0, 1900), skip, false},
+		{"a train, with nothing skipped", mk("IN_TRAIN", 0, 1900), nil, true},
+		{"a train that does not overlap the gap", mk("IN_TRAIN", 2000, 3000), skip, true},
+	}
+	for _, tc := range cases {
+		keys := route.UnknownKeys(j, tc.acts, "driving", tc.skip)
+		if (len(keys) == 1) != tc.routed {
+			t.Errorf("%s: %d keys asked about, want routed=%v", tc.name, len(keys), tc.routed)
+		}
+		out := route.Apply(j, tc.acts, "driving", tc.skip, lookup)
+		var kind journey.GapKind
+		for _, l := range out.Legs {
+			if l.Kind == journey.LegGap && l.GapKind != journey.GapAir {
+				kind = l.GapKind
+			}
+		}
+		if want := map[bool]journey.GapKind{true: journey.GapRoad, false: journey.GapUnknown}[tc.routed]; kind != want {
+			t.Errorf("%s: gap drawn as %q, want %q", tc.name, kind, want)
+		}
+		if !tc.routed && (out.RoutedKm != 0 || out.UnknownKm == 0) {
+			t.Errorf("%s: routed %.1f km, unknown %.1f km; a skipped gap counts as unknown", tc.name, out.RoutedKm, out.UnknownKm)
+		}
 	}
 }

@@ -663,10 +663,13 @@ type Journey struct {
 	GoogleKm float64 `json:"google_km"`
 
 	// GroundKm The road-comparable reconstruction: observed + routed + unknown chords. Air legs are excluded by construction.
-	GroundKm     float64 `json:"ground_km"`
-	InferredKm   float64 `json:"inferred_km"`
-	Legs         []Leg   `json:"legs"`
-	MergedPoints int     `json:"merged_points"`
+	GroundKm   float64 `json:"ground_km"`
+	InferredKm float64 `json:"inferred_km"`
+	Legs       []Leg   `json:"legs"`
+
+	// MatchParams The named thresholds behind `Leg.snapped_points` (phase 23), echoed so a page can say what was used (invariant 3).
+	MatchParams  MatchParams `json:"match_params"`
+	MergedPoints int         `json:"merged_points"`
 
 	// ModeBreakdown Source-asserted per-mode distance (phase 11 §6.2): the window's activity distances summed by Google's own mode labels, ordered km-descending. These are the source's guesses (recorded failures: a 1,023 km "motorcycling" relocation, probability-0.00 modes; the pipeline itself trusts speed over mode for flight), so display keeps them visually subordinate, labels the source, and never sums them against measured geometry. Absent — not empty — when the journey's evidence carries no activities at all (photo-sourced journeys): the display states that rather than showing zeros.
 	ModeBreakdown *[]ModeKm `json:"mode_breakdown,omitempty"`
@@ -687,6 +690,12 @@ type Journey struct {
 
 	// RoutedKm Routed road distance summed over road legs. 0 when nothing is routed — the product is fully usable without a router.
 	RoutedKm float64 `json:"routed_km"`
+
+	// SnappedObservedKm How much of observed_km lies on legs drawn along a road — the sum of distance_km over legs that carry `snapped_points` (phase 23). The rest of observed_km is drawn point to point. 0 when nothing is matched, which is every instance that has not run `roadbook route` against a router.
+	SnappedObservedKm float64 `json:"snapped_observed_km"`
+
+	// SnappedRoadKm The length of those roads — the sum of the legs' snapped_km. Reported beside snapped_observed_km and used for nothing else: observed_km, total_km, ground_km, the pace and the divergence figures all stay computed from the recorded points.
+	SnappedRoadKm float64 `json:"snapped_road_km"`
 
 	// States Admin-1 regions the route's points fall in, ordered by first appearance along the journey — the same local point-in-polygon derivation as countries, against the embedded Natural Earth 1:10m admin-1 polygons. Empty when `roadbook states` has not been run. Reproduction: `roadbook journey -candidate N`.
 	States []State `json:"states"`
@@ -734,7 +743,7 @@ type Leg struct {
 	DistanceKm float64   `json:"distance_km"`
 	End        time.Time `json:"end"`
 
-	// GapKind Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
+	// GapKind Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter, or the source labels it a flight and it is at least air_label_min_km long — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
 	GapKind *LegGapKind `json:"gap_kind,omitempty"`
 	Kind    LegKind     `json:"kind"`
 
@@ -746,17 +755,38 @@ type Leg struct {
 
 	// RoutedPoints Road geometry from the routing cache — present only when gap_kind is "road". Rides alongside points (which still holds exactly the two timestamped endpoints): routed vertices have no timestamps, and are inference, not measurement.
 	RoutedPoints *[]LatLng `json:"routed_points,omitempty"`
-	Start        time.Time `json:"start"`
+
+	// SnappedKm The length of `snapped_points` along the road — present exactly when `snapped_points` is. distance_km keeps its point-to-point meaning regardless.
+	SnappedKm *float64 `json:"snapped_km,omitempty"`
+
+	// SnappedPoints The road this recorded stretch's points lie on (phase 23) — present only on an observed leg, and only when the match cache holds a road for exactly these points that passed the length guard (`match_params.max_ratio`). The leg is still "observed" and `points` still holds every recorded point, unaltered: this geometry rides alongside as a better line between them than straight segments, and its vertices have no timestamps. Absent means the stretch is drawn point to point — no road was asked for, none fits, or the fit was refused.
+	SnappedPoints *[]LatLng `json:"snapped_points,omitempty"`
+	Start         time.Time `json:"start"`
 
 	// States The admin-1 regions this leg's `points` fall in, each once, in order of first appearance along the leg — what lets a day say which regions it crossed, where `Journey.states` lists the whole trip's. From the timestamped points only (a gap's two endpoints), never from `routed_points`: inference does not testify to where a person was. Empty when no point falls in a region, and on every leg when `roadbook states` has not been run.
 	States []State `json:"states"`
 }
 
-// LegGapKind Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
+// LegGapKind Present only when kind is "gap". "air": the gap's implied speed (endpoint chord over duration) met the air_speed_min_kmh parameter, or the source labels it a flight and it is at least air_label_min_km long — rendered as a great-circle arc, never routed, excluded from road-distance validation. "road": the routing cache supplied road geometry for this gap. "unknown": neither — drawn as a dashed straight line that is not a route.
 type LegGapKind string
 
 // LegKind defines model for Leg.Kind.
 type LegKind string
+
+// MatchParams The named thresholds behind `Leg.snapped_points` (phase 23), echoed so a page can say what was used (invariant 3).
+type MatchParams struct {
+	// MaxRatio The length guard (MATCH_MAX_RATIO): a matched road is drawn only when it is under this many times the stretch's point-to-point length. Positions are mostly WiFi and cell; a matcher will sometimes take a side road to reach one, and the result is far longer than the points justify.
+	MaxRatio float64 `json:"max_ratio"`
+
+	// MinM A recorded stretch shorter than this, point to point, is not matched at all, metres (MATCH_MIN_M).
+	MinM float64 `json:"min_m"`
+
+	// RadiusM How far from a recorded point the matcher looked for its road, metres (MATCH_RADIUS_M).
+	RadiusM float64 `json:"radius_m"`
+
+	// SkipModes Mode labels that are never drawn along a road (MATCH_SKIP_MODES): the router knows roads only, and a railway beside a road would be drawn on that road. It governs recorded stretches and gaps alike: a gap with one of these labels is not routed and stays "unknown". A leg takes the label of the activity that overlaps it the longest; the label is the source's guess.
+	SkipModes []string `json:"skip_modes"`
+}
 
 // ModeCount defines model for ModeCount.
 type ModeCount struct {

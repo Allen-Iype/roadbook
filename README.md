@@ -238,6 +238,7 @@ default — an empty or absent `.env` brings the stack up.
 | `ROADBOOK_PUBLIC_URL` | `http://127.0.0.1:3000` | the origin browsers use — the OIDC redirect is built on it |
 | `ROADBOOK_USER_CAP` | `0` (unlimited) | account limit with `oidc`; at the cap a first sign-in is refused |
 | `ROADBOOK_WAITLIST_URL` | empty | where a refused sign-in is pointed (a waitlist form); empty = no link |
+| `ROADBOOK_MATCH_MAX_RATIO` | empty (the default guard) | a recorded stretch is drawn along its matched road only when the road is under this many times its point-to-point length; `0` draws none |
 
 Map tiles are the one thing the browser fetches from a third party — the
 viewport you look at leaks to the style's tile host. Point
@@ -353,8 +354,11 @@ OSRM, run as an explicit batch step against a local OSRM instance — the
 served application never depends on a routing service; it only reads answers
 cached in Postgres. Without routing, gaps are drawn as straight lines that
 say what they are. That degraded state is designed, not an error: the
-product is fully usable with no routing at all. Air-speed gaps are
-classified as flights and drawn as arcs either way.
+product is fully usable with no routing at all. A gap is classified as a
+flight and drawn as an arc either way: by the speed between its ends, or
+because the export labels it a flight and it is at least 100 km long
+(`AIR_LABEL_MIN_KM`). A gap the export labels train, subway or ferry is
+never sent to the road router and stays a dashed straight line.
 
 The compose stack carries an optional `routing` profile for exactly this.
 One script prepares a regional extract (run it yourself, from the
@@ -380,6 +384,14 @@ network cannot connect stay visibly unknown, which is the road network
 being incomplete, not the product failing. Pick the smallest Geofabrik
 region that covers your adventures; the manual (non-Docker) path and the
 operational details are in `docs/phase-3/OSRM.md`.
+
+The same batch also asks which road each recorded stretch lies on. Where a
+road fits, the stretch is drawn along it, still in the "Observed" ink; where
+none does, or where the road would be more than 1.5 times the point-to-point
+length (`MATCH_MAX_RATIO`), it is drawn point to point as before. Recorded
+positions are never moved, distances are still measured between them, and
+stretches the export labels train, subway, ferry or flight are not matched
+to roads. `roadbook route -match=false` skips this step.
 
 ## Backup and restore
 

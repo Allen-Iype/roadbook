@@ -49,6 +49,18 @@ type Server struct {
 	// OIDC accounts exist, and the sign-in page shows its "full" state.
 	// Returning accounts are never refused. Unread when Auth is nil.
 	UserCap int
+	// RoadMatch holds the thresholds for drawing a recorded stretch along
+	// its road (phase 23); nil is route.DefaultMatchParams. A setting of
+	// the server because the length guard is applied when a journey is
+	// read: changing it needs no new batch run, only a restart.
+	RoadMatch *route.MatchParams
+}
+
+func (s *Server) roadMatch() route.MatchParams {
+	if s.RoadMatch != nil {
+		return *s.RoadMatch
+	}
+	return route.DefaultMatchParams()
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -144,7 +156,7 @@ func (s *Server) journeyFor(ctx context.Context, userID string, cand *store.Cand
 	if err != nil {
 		return Journey{}, j, err
 	}
-	out, err := toAPIJourney(j)
+	out, err := toAPIJourney(j, s.roadMatch())
 	if err != nil {
 		return Journey{}, j, err
 	}
@@ -264,14 +276,41 @@ func (s *Server) assembledJourney(ctx context.Context, userID string, cand *stor
 		return journey.Journey{}, obs, err
 	}
 	j := journey.Assemble(obs, cand.SpanStart, cand.SpanEnd, journey.DefaultParams())
-	lookup, err := s.Store.LookupRoutes(ctx, route.UnknownKeys(j, RouteProfile))
-	if err != nil {
-		return journey.Journey{}, obs, err
-	}
-	return route.Apply(j, RouteProfile, lookup), obs, nil
+	j, err = ApplyCaches(ctx, s.Store, userID, j, obs.Activities, s.roadMatch())
+	return j, obs, err
 }
 
-func toAPIJourney(j journey.Journey) (Journey, error) {
+// ApplyCaches decorates an assembled journey from the two caches the batch
+// command fills: road geometry for unknown gaps (route.Apply) and, since
+// phase 23, the road a recorded stretch's own points lie on
+// (route.ApplyMatches). Exported because `roadbook journey -candidate`
+// calls it too — one function, so the command and the page cannot disagree
+// about the same trip. No router is ever dialled here: an empty cache
+// leaves every gap unknown and every recorded stretch drawn point to
+// point. acts are the activities j was assembled from: a stretch's mode
+// decides whether it may be drawn along a road at all. Both caches are
+// read for userID only: a cached road belongs to the account whose
+// positions it was derived from (migration 19).
+func ApplyCaches(ctx context.Context, st *store.Store, userID string, j journey.Journey, acts []domain.Activity, mp route.MatchParams) (journey.Journey, error) {
+	lookup, err := st.LookupRoutes(ctx, userID, route.UnknownKeys(j, acts, RouteProfile, mp.SkipModes))
+	if err != nil {
+		return journey.Journey{}, err
+	}
+	j = route.Apply(j, acts, RouteProfile, mp.SkipModes, lookup)
+
+	traces := route.Traces(j, acts, RouteProfile, mp)
+	keys := make([]route.MatchKey, len(traces))
+	for i, tr := range traces {
+		keys[i] = tr.Key
+	}
+	matches, err := st.LookupMatches(ctx, userID, keys)
+	if err != nil {
+		return journey.Journey{}, err
+	}
+	return route.ApplyMatches(j, acts, RouteProfile, mp, matches), nil
+}
+
+func toAPIJourney(j journey.Journey, mp route.MatchParams) (Journey, error) {
 	// Round-trip params through JSON so the response echoes exactly the named
 	// parameters that produced the assembly (invariant 3).
 	raw, err := json.Marshal(j.Params)
@@ -284,23 +323,28 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 	}
 
 	out := Journey{
-		WindowStart:     j.WindowStart,
-		WindowEnd:       j.WindowEnd,
-		Params:          params,
-		Legs:            make([]Leg, 0, len(j.Legs)),
-		Stops:           make([]Stop, 0, len(j.Stops)),
-		TotalKm:         j.TotalKm,
-		ObservedKm:      j.ObservedKm,
-		InferredKm:      j.InferredKm,
-		AirKm:           j.AirKm,
-		UnknownKm:       j.UnknownKm,
-		RoutedKm:        j.RoutedKm,
-		GroundKm:        j.GroundKm(),
-		GoogleGroundKm:  j.GoogleGroundKm,
-		GoogleKm:        j.GoogleDistanceKm,
-		MergedPoints:    j.MergedPoints(),
-		TracePointsKept: j.TracePointsKept,
-		RawPointsKept:   j.RawPointsKept,
+		MatchParams: MatchParams{RadiusM: mp.RadiusM, MaxRatio: mp.MaxRatio, MinM: mp.MinM, SkipModes: mp.SkipModes},
+		WindowStart: j.WindowStart,
+		WindowEnd:   j.WindowEnd,
+		Params:      params,
+		Legs:        make([]Leg, 0, len(j.Legs)),
+		Stops:       make([]Stop, 0, len(j.Stops)),
+		TotalKm:     j.TotalKm,
+		ObservedKm:  j.ObservedKm,
+		InferredKm:  j.InferredKm,
+		AirKm:       j.AirKm,
+		UnknownKm:   j.UnknownKm,
+		RoutedKm:    j.RoutedKm,
+		// Phase 23: how much recorded distance is drawn along roads, and
+		// those roads' length — reported only; nothing else reads them.
+		SnappedObservedKm: j.SnappedObservedKm,
+		SnappedRoadKm:     j.SnappedRoadKm,
+		GroundKm:          j.GroundKm(),
+		GoogleGroundKm:    j.GoogleGroundKm,
+		GoogleKm:          j.GoogleDistanceKm,
+		MergedPoints:      j.MergedPoints(),
+		TracePointsKept:   j.TracePointsKept,
+		RawPointsKept:     j.RawPointsKept,
 	}
 	// Both stay absent when Google recorded no ground distance — nothing to
 	// compare is not zero divergence.
@@ -329,6 +373,18 @@ func toAPIJourney(j journey.Journey) (Journey, error) {
 			al.RoutedPoints = &pts
 			rk := l.RoutedKm
 			al.RoutedKm = &rk
+		}
+		// A recorded stretch drawn along the road (phase 23): the kind is
+		// untouched above, and points below still carries every recorded
+		// point — the road line rides alongside.
+		if l.SnappedPoints != nil {
+			pts := make([]LatLng, len(l.SnappedPoints))
+			for i, p := range l.SnappedPoints {
+				pts[i] = LatLng{Lat: p.Lat, Lon: p.Lon}
+			}
+			al.SnappedPoints = &pts
+			sk := l.SnappedKm
+			al.SnappedKm = &sk
 		}
 		for i, pt := range l.Points {
 			al.Points[i] = TimedPoint{T: pt.Time, Lat: pt.Loc.Lat, Lon: pt.Loc.Lon}

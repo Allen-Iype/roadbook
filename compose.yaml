@@ -69,6 +69,9 @@ services:
       ROADBOOK_OIDC_CLIENT_SECRET: ${ROADBOOK_OIDC_CLIENT_SECRET:-}
       ROADBOOK_PUBLIC_URL: ${ROADBOOK_PUBLIC_URL:-http://127.0.0.1:3000}
       ROADBOOK_USER_CAP: ${ROADBOOK_USER_CAP:-0}
+      # The length guard for recorded stretches drawn along a road (phase
+      # 23). Empty = the built-in default.
+      ROADBOOK_MATCH_MAX_RATIO: ${ROADBOOK_MATCH_MAX_RATIO:-}
     volumes:
       # Thumbnails are irreplaceable user data (originals are discarded at
       # upload) — a named volume, covered by `roadbook backup`.
@@ -130,7 +133,16 @@ services:
     image: ghcr.io/project-osrm/osrm-backend
     restart: unless-stopped
     profiles: ["routing"]
-    command: osrm-routed --algorithm mld /data/${OSRM_DATA:-unset-see-env-example}.osrm
+    # --max-matching-size: the batch also asks which road each recorded
+    # stretch lies on (phase 23), one request per stretch. The server's
+    # default accepts 100 points per request and refuses longer stretches
+    # ("TooBig"), which the batch reports as failures every run. Points are
+    # at least 30 s apart and a stretch ends at a 20-minute silence, so
+    # 2000 covers more than sixteen hours of unbroken recording.
+    # On a machine with less memory than the dataset, add --mmap: the
+    # server then maps the files instead of loading them all
+    # (docs/phase-3/OSRM.md §3 has the measurement).
+    command: osrm-routed --algorithm mld --max-matching-size 2000 /data/${OSRM_DATA:-unset-see-env-example}.osrm
     volumes:
       - ./data/osrm:/data:ro
 

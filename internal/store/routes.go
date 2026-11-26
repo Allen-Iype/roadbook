@@ -12,10 +12,11 @@ import (
 	"roadbook/internal/route"
 )
 
-// LookupRoutes reads cached answers for a set of keys. One query per key:
+// LookupRoutes reads one account's cached answers for a set of keys (the
+// cache is owned since migration 19). One query per key:
 // a journey holds a handful of gaps and the batch a few dozen — building
 // for thousands is theatre (CLAUDE.md).
-func (s *Store) LookupRoutes(ctx context.Context, keys []route.Key) (map[route.Key]route.Cached, error) {
+func (s *Store) LookupRoutes(ctx context.Context, userID string, keys []route.Key) (map[route.Key]route.Cached, error) {
 	out := make(map[route.Key]route.Cached, len(keys))
 	for _, k := range keys {
 		var (
@@ -27,8 +28,9 @@ func (s *Store) LookupRoutes(ctx context.Context, keys []route.Key) (map[route.K
 			SELECT status, geometry, distance_m, duration_s
 			FROM route_cache
 			WHERE from_lat_e4 = $1 AND from_lon_e4 = $2
-			  AND to_lat_e4 = $3 AND to_lon_e4 = $4 AND profile = $5`,
-			k.FromLatE4, k.FromLonE4, k.ToLatE4, k.ToLonE4, k.Profile,
+			  AND to_lat_e4 = $3 AND to_lon_e4 = $4 AND profile = $5
+			  AND user_id = $6`,
+			k.FromLatE4, k.FromLonE4, k.ToLatE4, k.ToLonE4, k.Profile, userID,
 		).Scan(&status, &geometry, &distanceM, &duration)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -64,7 +66,7 @@ func (s *Store) LookupRoutes(ctx context.Context, keys []route.Key) (map[route.K
 
 // SaveRoute upserts one answered question. The upsert (not insert-ignore)
 // is the -refresh path: re-asking with a better extract replaces the row.
-func (s *Store) SaveRoute(ctx context.Context, k route.Key, c route.Cached, router, dataset string) error {
+func (s *Store) SaveRoute(ctx context.Context, userID string, k route.Key, c route.Cached, router, dataset string) error {
 	var geometry []byte
 	var distanceM, durationS *float64
 	if c.Status == route.StatusRouted {
@@ -82,15 +84,15 @@ func (s *Store) SaveRoute(ctx context.Context, k route.Key, c route.Cached, rout
 	_, err := s.pool.Exec(ctx, `
 		INSERT INTO route_cache
 			(from_lat_e4, from_lon_e4, to_lat_e4, to_lon_e4, profile,
-			 status, geometry, distance_m, duration_s, router, dataset)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		ON CONFLICT (from_lat_e4, from_lon_e4, to_lat_e4, to_lon_e4, profile)
+			 status, geometry, distance_m, duration_s, router, dataset, user_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT (user_id, from_lat_e4, from_lon_e4, to_lat_e4, to_lon_e4, profile)
 		DO UPDATE SET status = EXCLUDED.status, geometry = EXCLUDED.geometry,
 			distance_m = EXCLUDED.distance_m, duration_s = EXCLUDED.duration_s,
 			router = EXCLUDED.router, dataset = EXCLUDED.dataset,
 			routed_at = now()`,
 		k.FromLatE4, k.FromLonE4, k.ToLatE4, k.ToLonE4, k.Profile,
-		c.Status, geometry, distanceM, durationS, router, dataset)
+		c.Status, geometry, distanceM, durationS, router, dataset, userID)
 	if err != nil {
 		return fmt.Errorf("store: save route: %w", err)
 	}
@@ -99,13 +101,19 @@ func (s *Store) SaveRoute(ctx context.Context, k route.Key, c route.Cached, rout
 
 // RouteRunCounts is a batch invocation's report, persisted (invariant 3
 // applied to routing: a batch that writes derived data records what
-// produced it).
+// produced it). The second group is matching (phase 23).
 type RouteRunCounts struct {
 	GapsFound int
 	CacheHits int
 	Routed    int
 	NoRoute   int
 	Failures  int
+
+	StretchesFound int
+	MatchCacheHits int
+	Matched        int
+	NoMatch        int
+	MatchFailures  int
 }
 
 func (s *Store) InsertRouteRun(ctx context.Context, router, dataset string, params any, c RouteRunCounts) (int64, error) {
@@ -115,13 +123,30 @@ func (s *Store) InsertRouteRun(ctx context.Context, router, dataset string, para
 	}
 	var id int64
 	err = s.pool.QueryRow(ctx, `
-		INSERT INTO route_runs (router, dataset, params, gaps_found, cache_hits, routed, no_route, failures)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO route_runs (router, dataset, params, gaps_found, cache_hits, routed, no_route, failures,
+			stretches_found, match_cache_hits, matched, no_match, match_failures)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		RETURNING id`,
 		router, dataset, p, c.GapsFound, c.CacheHits, c.Routed, c.NoRoute, c.Failures,
+		c.StretchesFound, c.MatchCacheHits, c.Matched, c.NoMatch, c.MatchFailures,
 	).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("store: insert route run: %w", err)
 	}
 	return id, nil
+}
+
+// RouteRun reads one recorded batch's counts back.
+func (s *Store) RouteRun(ctx context.Context, id int64) (RouteRunCounts, error) {
+	var c RouteRunCounts
+	err := s.pool.QueryRow(ctx, `
+		SELECT gaps_found, cache_hits, routed, no_route, failures,
+			stretches_found, match_cache_hits, matched, no_match, match_failures
+		FROM route_runs WHERE id = $1`, id,
+	).Scan(&c.GapsFound, &c.CacheHits, &c.Routed, &c.NoRoute, &c.Failures,
+		&c.StretchesFound, &c.MatchCacheHits, &c.Matched, &c.NoMatch, &c.MatchFailures)
+	if err != nil {
+		return c, fmt.Errorf("store: route run %d: %w", id, err)
+	}
+	return c, nil
 }

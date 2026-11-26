@@ -1,0 +1,374 @@
+package route_test
+
+// Phase 23 STOP 1 measurement (#9): an export through the matcher AS BUILT —
+// route.Traces, OSRM.Match, route.ApplyMatches — with every unknown gap
+// routed as `roadbook route` would, and the result set beside Google's own
+// activity distances. Needs a local OSRM holding the region, started with a
+// raised matching limit and its log sent to /dev/null, because request
+// lines carry coordinates:
+//
+//	osrm-routed --algorithm mld -i 127.0.0.1 -p 5001 --max-matching-size 2000 \
+//	  data/osrm/<region>-latest.osrm > /dev/null 2>&1
+//
+// It passes no activities to the matching functions, so MATCH_SKIP_MODES
+// (added after this was first run, because of what its per-mode table
+// showed) does not apply: every mode is matched and reported.
+//
+// Prints counts, distances and ratios only; no coordinate, date or place.
+// To run, copy into internal/route/ as built_test.go and:
+//
+//	MATCH_SRC=../../data/<file> go test ./internal/route/ -run TestBuilt -v -timeout 3h
+//
+// then delete the copy. MATCH_URL overrides http://127.0.0.1:5001.
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"math"
+	"net/http"
+	"os"
+	"sort"
+	"strings"
+	"testing"
+	"time"
+
+	"roadbook/internal/detect"
+	"roadbook/internal/journey"
+	"roadbook/internal/route"
+	"roadbook/internal/timeline"
+)
+
+func TestBuilt(t *testing.T) {
+	path := os.Getenv("MATCH_SRC")
+	if path == "" {
+		t.Skip("MATCH_SRC not set")
+	}
+	base := os.Getenv("MATCH_URL")
+	if base == "" {
+		base = "http://127.0.0.1:5001"
+	}
+	src, err := os.Open(path)
+	if err != nil {
+		t.Skip(err)
+	}
+	obs, _, err := timeline.Parse(src)
+	src.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := detect.Run(obs, detect.DefaultParams())
+	const profile = "driving"
+	mp := route.DefaultMatchParams()
+	osrm := route.NewOSRM(base, profile)
+	ctx := context.Background()
+	started := time.Now()
+
+	// modeOf: Google's mode label for the activity overlapping a stretch the
+	// longest ("none" when no activity overlaps it). A guess, as everywhere.
+	modeOf := func(l journey.Leg) string {
+		best, bestD := "none", time.Duration(0)
+		for _, a := range obs.Activities {
+			st, en := a.Start, a.End
+			if l.Start().After(st) {
+				st = l.Start()
+			}
+			if l.End().Before(en) {
+				en = l.End()
+			}
+			if d := en.Sub(st); d > bestD {
+				best, bestD = a.Mode, d
+			}
+		}
+		return best
+	}
+	var journeys []journey.Journey
+	routes := map[route.Key]route.Cached{}
+	matches := map[route.MatchKey]route.CachedMatch{}
+	var stretches, asked, matched, noMatch, failed, endsOff int
+	var pts, unplaced, maxPts, over100 int
+	var gaps, routed, noRoute, routeFailed int
+	var matchTime time.Duration
+	var slowest time.Duration
+	var slow int
+	for _, c := range res.Candidates {
+		j := journey.Assemble(obs, c.Start, c.End, journey.DefaultParams())
+		journeys = append(journeys, j)
+		for _, l := range j.Legs {
+			if l.Kind == journey.LegObserved {
+				stretches++
+			}
+		}
+		for _, k := range route.UnknownKeys(j, nil, profile, nil) {
+			if _, ok := routes[k]; ok {
+				continue
+			}
+			gaps++
+			r, err := osrm.Route(ctx, k.From(), k.To())
+			switch {
+			case err == nil:
+				routed++
+				routes[k] = route.Cached{Status: route.StatusRouted, Points: r.Points[:1], DistanceM: r.DistanceM}
+			case err == route.ErrNoRoute:
+				noRoute++
+				routes[k] = route.Cached{Status: route.StatusNoRoute}
+			default:
+				routeFailed++
+			}
+		}
+		for _, tr := range route.Traces(j, nil, profile, mp) {
+			if _, ok := matches[tr.Key]; ok {
+				continue
+			}
+			asked++
+			pts += len(tr.Points)
+			if len(tr.Points) > maxPts {
+				maxPts = len(tr.Points)
+			}
+			if len(tr.Points) > 100 {
+				over100++
+			}
+			t0 := time.Now()
+			m, err := osrm.Match(ctx, tr.Points, int(tr.Key.RadiusM))
+			d := time.Since(t0)
+			matchTime += d
+			if d > slowest {
+				slowest = d
+			}
+			// Progress on stderr, sizes and times only: a run is thousands of
+			// requests and a silent one cannot be told from a stuck one.
+			if d > 5*time.Second {
+				slow++
+				fmt.Fprintf(os.Stderr, "slow: %d points took %.0f s (err %v)\n", len(tr.Points), d.Seconds(), err != nil && err != route.ErrNoMatch)
+			}
+			if asked%100 == 0 {
+				fmt.Fprintf(os.Stderr, "%d stretches asked, %d gaps, %.0f s\n", asked, gaps, time.Since(started).Seconds())
+			}
+			switch {
+			case err == nil:
+				matched++
+				unplaced += m.Unplaced
+				if !m.EndsPlaced {
+					endsOff++
+				}
+				// Two points stand in for the geometry: only its length is measured here.
+				matches[tr.Key] = route.CachedMatch{Status: route.StatusMatched, Points: m.Points[:2],
+					DistanceM: m.DistanceM, Unplaced: m.Unplaced, EndsPlaced: m.EndsPlaced}
+			case err == route.ErrNoMatch:
+				noMatch++
+				matches[tr.Key] = route.CachedMatch{Status: route.StatusNoMatch}
+			default:
+				failed++
+			}
+		}
+	}
+
+	t.Logf("%d trips; %d recorded stretches, %d asked about (two or more points, %.0f m or more); matched %d, no match %d, failed %d; of the matched, %d with the first or last point not placed; points not placed %d of %d",
+		len(journeys), stretches, asked, mp.MinM, matched, noMatch, failed, endsOff, unplaced, pts)
+	t.Logf("largest stretch %d points; %d stretches over 100 points (the limit of a server started without --max-matching-size)", maxPts, over100)
+	t.Logf("gaps: %d asked, %d routed, %d no route, %d failed", gaps, routed, noRoute, routeFailed)
+	t.Logf("time: %.0f s in all, %.0f s matching (%.2f s a stretch on average, slowest %.1f s)",
+		time.Since(started).Seconds(), matchTime.Seconds(), matchTime.Seconds()/math.Max(1, float64(asked)), slowest.Seconds())
+	t.Logf("requests over 5 s: %d", slow)
+
+	// Against Google's own activity distances, trip by trip. "Today" is the
+	// ground reconstruction with every gap routed and recorded stretches
+	// point to point; "along roads" replaces each drawn-along-the-road
+	// stretch's point-to-point length by its road length. Phase 23 does NOT
+	// change the served figure (BRIEF §4 D); this asks which is nearer.
+	for _, ratio := range []float64{1.2, 1.3, 1.5, 2.0} {
+		p := mp
+		p.MaxRatio = ratio
+		var observedKm, snappedObs, snappedRoad float64
+		var drawn int
+		var google, today, along float64
+		var divToday, divAlong []float64
+		var flagToday, flagAlong, compared int
+		for _, j := range journeys {
+			j = route.Apply(j, nil, profile, nil, routes)
+			j = route.ApplyMatches(j, nil, profile, p, matches)
+			observedKm += j.ObservedKm
+			snappedObs += j.SnappedObservedKm
+			snappedRoad += j.SnappedRoadKm
+			for _, l := range j.Legs {
+				if l.SnappedPoints != nil {
+					drawn++
+				}
+			}
+			if j.GoogleGroundKm <= 0 {
+				continue
+			}
+			compared++
+			g := j.GroundKm()
+			a := g - j.SnappedObservedKm + j.SnappedRoadKm
+			google += j.GoogleGroundKm
+			today += g
+			along += a
+			dt := math.Abs(g-j.GoogleGroundKm) / j.GoogleGroundKm * 100
+			da := math.Abs(a-j.GoogleGroundKm) / j.GoogleGroundKm * 100
+			divToday = append(divToday, dt)
+			divAlong = append(divAlong, da)
+			if dt > j.Params.DivergenceWarnPct {
+				flagToday++
+			}
+			if da > j.Params.DivergenceWarnPct {
+				flagAlong++
+			}
+		}
+		med := func(xs []float64) float64 {
+			if len(xs) == 0 {
+				return 0
+			}
+			sort.Float64s(xs)
+			return xs[len(xs)/2]
+		}
+		// The same comparison with no gap routed (an instance without a
+		// router for gaps): separates the matcher's effect from gap routing's.
+		var chordToday, chordAlong float64
+		type modeRow struct {
+			asked, drawn      int
+			km, drawnKm, road float64
+		}
+		modes := map[string]*modeRow{}
+		for _, j := range journeys {
+			jm := route.ApplyMatches(j, nil, profile, p, matches)
+			if j.GoogleGroundKm > 0 {
+				chordToday += jm.GroundKm()
+				chordAlong += jm.GroundKm() - jm.SnappedObservedKm + jm.SnappedRoadKm
+			}
+			for _, l := range jm.Legs {
+				if _, ok := route.TraceFor(l, "", profile, p); !ok {
+					continue
+				}
+				m := modeOf(l)
+				if modes[m] == nil {
+					modes[m] = &modeRow{}
+				}
+				r := modes[m]
+				r.asked++
+				r.km += l.DistanceKm
+				if l.SnappedPoints != nil {
+					r.drawn++
+					r.drawnKm += l.DistanceKm
+					r.road += l.SnappedKm
+				}
+			}
+		}
+		printModes := func() {
+			names := make([]string, 0, len(modes))
+			for m := range modes {
+				names = append(names, m)
+			}
+			sort.Slice(names, func(a, b int) bool { return modes[names[a]].km > modes[names[b]].km })
+			for _, m := range names {
+				r := modes[m]
+				t.Logf("  guard %.1f, by Google's mode label — %s: %d stretches asked (%.0f km), %d drawn along roads (%.0f km, %.0f%%), roads %.2f times",
+					ratio, m, r.asked, r.km, r.drawn, r.drawnKm, 100*r.drawnKm/math.Max(1, r.km), r.road/math.Max(1, r.drawnKm))
+			}
+			t.Logf("  guard %.1f, no gap routed: Google %.0f km; today %.0f km (%+.1f%%), along roads %.0f km (%+.1f%%)",
+				ratio, google, chordToday, 100*(chordToday-google)/math.Max(1, google), chordAlong, 100*(chordAlong-google)/math.Max(1, google))
+		}
+		t.Logf("guard %.1f: %d stretches drawn along roads; %.0f of %.0f recorded km (%.0f%%), the roads measure %.0f km (%.2f times)",
+			ratio, drawn, snappedObs, observedKm, 100*snappedObs/math.Max(1, observedKm), snappedRoad, snappedRoad/math.Max(1, snappedObs))
+		t.Logf("  against Google over %d trips: Google %.0f km; today %.0f km (%+.1f%%), along roads %.0f km (%+.1f%%); median trip off by %.1f%% today, %.1f%% along roads; trips over the %.0f%% warning: %d today, %d along roads",
+			compared, google, today, 100*(today-google)/math.Max(1, google), along, 100*(along-google)/math.Max(1, google),
+			med(divToday), med(divAlong), journey.DefaultParams().DivergenceWarnPct, flagToday, flagAlong)
+		printModes()
+	}
+}
+
+// TestProbe asks why some matching requests take tens of seconds. For the
+// first MATCH_PROBE_N stretches (default 150) it times the request as built
+// and two variants — without timestamps, and with gaps=split — and prints,
+// for every stretch where the built request took over 3 s: its size, its
+// time span, the longest silence between two of its points, its
+// point-to-point length, the three times and the three road lengths.
+//
+//	MATCH_SRC=../../data/<file> go test ./internal/route/ -run TestProbe -v -timeout 1h
+func TestProbe(t *testing.T) {
+	path := os.Getenv("MATCH_SRC")
+	if path == "" {
+		t.Skip("MATCH_SRC not set")
+	}
+	base := os.Getenv("MATCH_URL")
+	if base == "" {
+		base = "http://127.0.0.1:5001"
+	}
+	limit := 150
+	if v := os.Getenv("MATCH_PROBE_N"); v != "" {
+		fmt.Sscan(v, &limit)
+	}
+	src, err := os.Open(path)
+	if err != nil {
+		t.Skip(err)
+	}
+	obs, _, err := timeline.Parse(src)
+	src.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := detect.Run(obs, detect.DefaultParams())
+	mp := route.DefaultMatchParams()
+	client := &http.Client{Timeout: 3 * time.Minute}
+	ask := func(tr route.Trace, timestamps bool, gaps string) (float64, float64, string) {
+		var co, ts, rd []string
+		for _, p := range tr.Points {
+			loc := p.Loc()
+			co = append(co, fmt.Sprintf("%.5f,%.5f", loc.Lon, loc.Lat))
+			ts = append(ts, fmt.Sprint(p.Unix))
+			rd = append(rd, "100")
+		}
+		u := fmt.Sprintf("%s/match/v1/driving/%s?radiuses=%s&gaps=%s&tidy=false&overview=false", base, strings.Join(co, ";"), strings.Join(rd, ";"), gaps)
+		if timestamps {
+			u += "&timestamps=" + strings.Join(ts, ";")
+		}
+		t0 := time.Now()
+		resp, err := client.Get(u)
+		if err != nil {
+			return time.Since(t0).Seconds(), 0, "error"
+		}
+		defer resp.Body.Close()
+		var out struct {
+			Code      string `json:"code"`
+			Matchings []struct {
+				Distance float64 `json:"distance"`
+			} `json:"matchings"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&out)
+		var km float64
+		for _, m := range out.Matchings {
+			km += m.Distance / 1000
+		}
+		return time.Since(t0).Seconds(), km, fmt.Sprintf("%s/%d", out.Code, len(out.Matchings))
+	}
+	n := 0
+	var tBuilt, tNoTS, tSplit float64
+	for _, c := range res.Candidates {
+		j := journey.Assemble(obs, c.Start, c.End, journey.DefaultParams())
+		for _, l := range j.Legs {
+			tr, ok := route.TraceFor(l, "", "driving", mp)
+			if !ok {
+				continue
+			}
+			if n++; n > limit {
+				t.Logf("%d stretches: as built %.0f s, without timestamps %.0f s, gaps=split %.0f s", limit, tBuilt, tNoTS, tSplit)
+				return
+			}
+			a, akm, ac := ask(tr, true, "ignore")
+			b, bkm, bc := ask(tr, false, "ignore")
+			s, skm, sc := ask(tr, true, "split")
+			tBuilt, tNoTS, tSplit = tBuilt+a, tNoTS+b, tSplit+s
+			if a > 3 || b > 3 {
+				var maxGap int64
+				for i := 1; i < len(tr.Points); i++ {
+					if g := tr.Points[i].Unix - tr.Points[i-1].Unix; g > maxGap {
+						maxGap = g
+					}
+				}
+				span := tr.Points[len(tr.Points)-1].Unix - tr.Points[0].Unix
+				t.Logf("%3d points, %5d s span, longest silence %4d s, %6.1f km point to point | built %5.1f s %6.1f km %s | no timestamps %5.1f s %6.1f km %s | gaps=split %5.1f s %6.1f km %s",
+					len(tr.Points), span, maxGap, l.DistanceKm, a, akm, ac, b, bkm, bc, s, skm, sc)
+			}
+		}
+	}
+}
